@@ -750,7 +750,7 @@ public sealed partial class InteractionPanelSystem : EntitySystem
             ("entity", ent),
             ("message", colored));
 
-        var filter = Filter.Empty().AddPlayersByPvs(source, 2f, EntityManager, _player);
+        var filter = Filter.Empty().AddPlayersByPvs(source, 0.12f, EntityManager, _player);
 
         // Ghosts do not get to snoop on ERP emotes.
         filter.RemoveWhere(session => session.AttachedEntity is { } attached && HasComp<GhostComponent>(attached));
