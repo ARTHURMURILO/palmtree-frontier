@@ -702,3 +702,30 @@ Entries:
   id: 90041
   time: '2026-10-11T00:25:42.0000000+00:00'
   url: https://github.com/xTheLifex/palmtree-frontier/pull/1
+- author: TheLife
+  changes:
+    - type: Fix
+      message: >-
+        Fallout weapons no longer show the wrong gun (AK/M2 placeholder) in hand
+        or in the suit slot.
+    - type: Fix
+      message: >-
+        Magazine and bolt visuals now match the weapon state for the American
+        180, AUG A10, DP-27, M1919, M1A1, P90, Saiga-12, SCAR-L, M1 Garand and
+        Mosin.
+    - type: Tweak
+      message: The M1919 fires slower and the Saiga-12 fires faster.
+  id: 90042
+  time: '2026-10-12T13:51:41.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/8a9359fb1352729e0d437c26dc90967f2c2ab05e
+- author: TheLife
+  changes:
+    - type: Fix
+      message: >-
+        The DP-27 and Saiga-12 now visibly lose their magazine when it is
+        removed.
+  id: 90043
+  time: '2026-10-12T13:51:41.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/22fb2f4d580433df5d3b40595394c6c49bbb591d
