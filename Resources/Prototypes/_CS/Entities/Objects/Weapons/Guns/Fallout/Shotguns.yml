@@ -13,13 +13,17 @@
   - type: Clothing
     sprite: _CS/Objects/Weapons/Guns/Fallout/Saiga12.rsi
   - type: Gun
-    fireRate: 1.25
+    fireRate: 4 # Palmtree: QA - was 1.25 (source 75 rpm); raised to the automatic shotgun baseline
     selectedMode: FullAuto
     availableModes:
     - FullAuto
     - SemiAuto
     soundGunshot:
       path: /Audio/_CS/Weapons/Fallout/auto5.ogg
+  - type: MagazineVisuals # Palmtree: QA - mag states were blank/missing
+    magState: mag
+    steps: 2
+    zeroVisible: true
   - type: StaticPrice
     price: 3600
 

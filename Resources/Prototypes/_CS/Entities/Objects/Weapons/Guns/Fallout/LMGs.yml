@@ -40,7 +40,7 @@
   - type: Clothing
     sprite: _CS/Objects/Weapons/Guns/Fallout/M1919.rsi
   - type: Gun
-    fireRate: 13.2
+    fireRate: 10 # Palmtree: QA - was 13.2, in line with the other belt-fed LMGs
     selectedMode: FullAuto
     availableModes:
     - FullAuto
@@ -137,7 +137,10 @@
     - SemiAuto
     soundGunshot:
       path: /Audio/_CS/Weapons/Fallout/bozar_fire.ogg
-  # Palmtree: no magazine sprite - the source only has the pan baked into the base art.
+  - type: MagazineVisuals # Palmtree: QA - the pan is baked into the base art; mag states kept in sync
+    magState: mag
+    steps: 2
+    zeroVisible: true
   - type: ItemSlots # Palmtree: feeds from its pan magazine, not from other .308 magazines
     slots:
       gun_magazine:

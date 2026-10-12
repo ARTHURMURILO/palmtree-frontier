@@ -46,6 +46,10 @@
     - SemiAuto
     soundGunshot:
       path: /Audio/_CS/Weapons/Fallout/varmint_rifle.ogg
+  - type: MagazineVisuals # Palmtree: QA - mag states were blank/inherited steps
+    magState: mag
+    steps: 2
+    zeroVisible: true
   - type: StaticPrice
     price: 2600
 
@@ -69,6 +73,10 @@
     - SemiAuto
     soundGunshot:
       path: /Audio/_CS/Weapons/Fallout/assault_carbine.ogg
+  - type: MagazineVisuals # Palmtree: QA - mag states were blank/inherited steps
+    magState: mag
+    steps: 2
+    zeroVisible: true
   - type: StaticPrice
     price: 4200
 
@@ -120,6 +128,10 @@
           - CSCartridge5mm
   - type: GunDamageMultiplier # Palmtree: 1.25x damage
     multiplier: 1.25
+  - type: MagazineVisuals # Palmtree: QA - mag states were blank/inherited steps
+    magState: mag
+    steps: 2
+    zeroVisible: true
   - type: StaticPrice
     price: 4200
 

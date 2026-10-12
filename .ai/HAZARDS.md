@@ -308,6 +308,25 @@ value line.
   `mag-N` overlay uses the *with-magazine* states, and `zeroVisible: false` unless `mag-0` really
   draws an empty magazine. A child prototype can add `- type: MagazineVisuals` with its own
   `steps`/`zeroVisible` (fields merge). If `base` has the mag and `bolt-open` does not, the magazine
-  only appears when the player racks the gun (RPD bug); if the `mag-0` art is blank the gun never
-  shows a magazine at all even with `zeroVisible: true`.
+  only appears when the player racks the gun (RPD bug). With `steps >= 2` + `zeroVisible: true`,
+  `mag-0` is drawn for *partial* magazines as well, so it must be a copy of the with-magazine art;
+  a blank `mag-0` makes the magazine vanish after the first shot (2026-10 QA: American180, AUGA10,
+  DP27, M1A1, P90, Saiga12 and ScarL shipped with blank mag art and inherited `steps: 1`).
+- **Fallout gun sprite QA (2026-10)**: the `gen_guns.py` generator left the following traps; the
+  states were regenerated from the coyote-bayou DMIs and these rules must hold for future edits:
+  - `equipped-BACKPACK`/`equipped-SUITSTORAGE` were the AK/viper placeholder art for most guns. The
+    per-weapon worn art lives in `modular_coyote/icons/objects/back.dmi` under the gun's own name
+    (`bar`, `dp`, `m1garand`, `mosin`, `mp5`, `ppsh`, `rpd`, `saiga12`, `scarl`, `sks`, `crossbow0`).
+    M1919/M1A1 use the un-wired `browlmg`/`mcar` states (inferred - review before relying on them);
+    no worn art exists for AUGA10, American180, P90, Uzi or the composite bow (still AK art).
+  - `guns_lefthand/righthand` mixes dedicated held art with generic/hands-only states (`gun`,
+    `shotgun`, `rifle`, `R84`). Dedicated states: `american`, `M38closedmag`, `crossbow`, `m90`,
+    `rpd`, `aug`, `coltwalker`, `44colt`, `45revolver`, `judge`, `deagle`, `glock`, `pistolchrome`;
+    `ww2gunsleft/right.dmi` holds the two-handed art for `bar`, `dp`, `m1garand`, `mosin`, `mp5`,
+    `ppsh`, `saiga12`, `scarl`, `sks`, `uzi`, `skorpion`. Before the QA pass the M1919, M1A1, PPSh
+    and M1 Garand all shared the generic `rifle` art and the DP-27 used `R84`.
+  - **DMIs use the `(0,128,128,0)` colour key** for transparency; zero those pixels' RGB on
+    conversion. A state missing from `guns_righthand` (e.g. `crossbow`) is mirrored from the left.
+  - M1919 belt tiers are `mag-0` = empty belt, `mag-1..4` = 20/40/60/80 rounds (`M38closed0/20/40/
+    60/80`); `base`/`bolt-open` are `M38closed-empty`/`M38open-empty`.
 

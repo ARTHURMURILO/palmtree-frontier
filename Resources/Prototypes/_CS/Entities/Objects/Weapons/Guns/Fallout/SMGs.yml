@@ -47,6 +47,10 @@
     - SemiAuto
     soundGunshot:
       path: /Audio/_CS/Weapons/Fallout/american180.ogg
+  - type: MagazineVisuals # Palmtree: QA - mag states were blank/inherited steps
+    magState: mag
+    steps: 2
+    zeroVisible: true
   - type: StaticPrice
     price: 3200
 
@@ -101,6 +105,10 @@
           - CSCartridge10mm
   - type: GunDamageMultiplier # Palmtree: 1.25x damage
     multiplier: 1.25
+  - type: MagazineVisuals # Palmtree: QA - mag states were blank/inherited steps
+    magState: mag
+    steps: 2
+    zeroVisible: true
   - type: StaticPrice
     price: 3400
 
