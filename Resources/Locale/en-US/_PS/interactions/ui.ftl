@@ -18,7 +18,9 @@ interaction-auto-pace = Auto-repeat speed
 interaction-consent = Allow lewd interactions
 interaction-lewd-sounds = Lewd interaction sounds
 interaction-lust-gain = Custom lust gain
+interaction-lust-gain-input-tooltip = Type the exact lust gain percentage (0-300), or use the slider.
 interaction-moaning = Custom moaning chance
+interaction-moaning-input-tooltip = Type the exact moaning chance percentage (0-100), or use the slider.
 
 interaction-no-interactions = No interactions available.
 interaction-no-matching = No matching results.

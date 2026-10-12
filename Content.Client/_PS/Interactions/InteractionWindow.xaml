@@ -40,11 +40,15 @@
                 <CheckBox Name="SoundsCheck" />
                 <BoxContainer Orientation="Horizontal" SeparationOverride="4">
                     <CheckBox Name="ArousalMultiplierCheck" />
+                    <SpinBox Name="ArousalMultiplierSpin" VerticalAlignment="Center"
+                             ToolTip="{Loc 'interaction-lust-gain-input-tooltip'}" />
                     <Slider Name="ArousalMultiplierSlider" MinValue="0" MaxValue="300"
                             HorizontalExpand="True" />
                 </BoxContainer>
                 <BoxContainer Orientation="Horizontal" SeparationOverride="4">
                     <CheckBox Name="MoaningMultiplierCheck" />
+                    <SpinBox Name="MoaningMultiplierSpin" VerticalAlignment="Center"
+                             ToolTip="{Loc 'interaction-moaning-input-tooltip'}" />
                     <Slider Name="MoaningMultiplierSlider" MinValue="0" MaxValue="100"
                             HorizontalExpand="True" />
                 </BoxContainer>

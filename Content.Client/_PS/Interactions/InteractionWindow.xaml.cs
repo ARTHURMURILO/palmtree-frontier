@@ -61,6 +61,7 @@ public sealed partial class InteractionWindow : FancyWindow
 
     private InteractionBoundUserInterfaceState? _state;
     private bool _updating;
+    private bool _syncingMultiplierInput; // Palmtree: guards slider -> input field feedback loops
     private string _search = string.Empty;
     private bool _favoritesOnly;
 
@@ -121,7 +122,29 @@ public sealed partial class InteractionWindow : FancyWindow
         ArousalMultiplierSlider.OnValueChanged += _ =>
         {
             if (!_updating)
+            {
+                SyncMultiplierInput(ArousalMultiplierSpin, ArousalMultiplierSlider);
                 OnArousalMultiplierChanged?.Invoke(ArousalMultiplierCheck.Pressed, ArousalMultiplierSlider.Value);
+            }
+        };
+
+        // Palmtree: type an exact percentage instead of fiddling with the slider.
+        ArousalMultiplierSpin.IsValid = value => value is >= 0 and <= 300;
+        ArousalMultiplierSpin.InitDefaultButtons();
+        ArousalMultiplierSpin.ValueChanged += args =>
+        {
+            if (_updating || _syncingMultiplierInput)
+                return;
+
+            _syncingMultiplierInput = true;
+            try
+            {
+                ArousalMultiplierSlider.Value = args.Value;
+            }
+            finally
+            {
+                _syncingMultiplierInput = false;
+            }
         };
 
         MoaningMultiplierCheck.OnToggled += args =>
@@ -133,7 +156,29 @@ public sealed partial class InteractionWindow : FancyWindow
         MoaningMultiplierSlider.OnValueChanged += _ =>
         {
             if (!_updating)
+            {
+                SyncMultiplierInput(MoaningMultiplierSpin, MoaningMultiplierSlider);
                 OnMoaningMultiplierChanged?.Invoke(MoaningMultiplierCheck.Pressed, MoaningMultiplierSlider.Value);
+            }
+        };
+
+        // Palmtree: type an exact percentage instead of fiddling with the slider.
+        MoaningMultiplierSpin.IsValid = value => value is >= 0 and <= 100;
+        MoaningMultiplierSpin.InitDefaultButtons();
+        MoaningMultiplierSpin.ValueChanged += args =>
+        {
+            if (_updating || _syncingMultiplierInput)
+                return;
+
+            _syncingMultiplierInput = true;
+            try
+            {
+                MoaningMultiplierSlider.Value = args.Value;
+            }
+            finally
+            {
+                _syncingMultiplierInput = false;
+            }
         };
     }
 
@@ -166,11 +211,17 @@ public sealed partial class InteractionWindow : FancyWindow
             ArousalMultiplierCheck.Pressed = state.UseArousalMultiplier;
             ArousalMultiplierSlider.Value = (float) state.ArousalMultiplier;
             ArousalMultiplierSlider.Disabled = !state.UseArousalMultiplier;
+            ArousalMultiplierSpin.Value = (int) Math.Round(state.ArousalMultiplier);
+            ArousalMultiplierSpin.LineEditDisabled = !state.UseArousalMultiplier;
+            ArousalMultiplierSpin.SetButtonDisabled(!state.UseArousalMultiplier);
 
             MoaningMultiplierCheck.Text = Loc.GetString("interaction-moaning");
             MoaningMultiplierCheck.Pressed = state.UseMoaningMultiplier;
             MoaningMultiplierSlider.Value = (float) state.MoaningMultiplier;
             MoaningMultiplierSlider.Disabled = !state.UseMoaningMultiplier;
+            MoaningMultiplierSpin.Value = (int) Math.Round(state.MoaningMultiplier);
+            MoaningMultiplierSpin.LineEditDisabled = !state.UseMoaningMultiplier;
+            MoaningMultiplierSpin.SetButtonDisabled(!state.UseMoaningMultiplier);
 
             if (state.Speeds.Count > 0)
             {
@@ -192,6 +243,24 @@ public sealed partial class InteractionWindow : FancyWindow
     {
         AutoBar.Visible = Tabs.CurrentTab == 0;
         StopAutoButton.Disabled = _state?.ActiveAutoInteraction == null;
+    }
+
+    /// <summary>
+    /// Palmtree: mirrors a multiplier slider's value onto its numeric input field. SpinBox raises
+    /// ValueChanged even when the new value is unchanged, so the sync is guarded against feedback.
+    /// </summary>
+    private void SyncMultiplierInput(SpinBox input, Slider slider)
+    {
+        var wasSyncing = _syncingMultiplierInput;
+        _syncingMultiplierInput = true;
+        try
+        {
+            input.Value = (int) MathF.Round(slider.Value);
+        }
+        finally
+        {
+            _syncingMultiplierInput = wasSyncing;
+        }
     }
 
     private void RebuildInteractions()
