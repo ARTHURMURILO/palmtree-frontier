@@ -78,8 +78,11 @@ additional loot protection.
   become cullable again.
 - CVars: `nf14.gc.enabled`, `nf14.gc.period`, `nf14.gc.entities_per_tick`, `nf14.gc.idle_count`,
   `nf14.gc.max_value`, `nf14.gc.grid_max_value`, `nf14.gc.touched_immune`,
-  `nf14.gc.touched_duration`. Defaults: 30-minute period, 4 idle passes (~2 hours), touched-item
+  `nf14.gc.touched_duration`, `nf14.gc.ignore_loaded_chunks` (debug: cull regardless of chunk
+  loading, for testing). Defaults: 30-minute period, 4 idle passes (~2 hours), touched-item
   protection on and lapsing 60 seconds after a drop.
+- Tests: `Content.IntegrationTests/Tests/_NF/DeletionCensusTest.cs` covers chunk gating, exemptions,
+  touched expiry, loot rescue, value guards and the station exemption.
 - `WorldControllerSystem.TryGetChunk` avoids creating chunks during census checks and NPC activity
   checks (`HTNSystem.IsNPCActive`).
 

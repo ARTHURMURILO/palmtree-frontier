@@ -70,6 +70,7 @@ public sealed class DeletionCensusSystem : EntitySystem
     private int _censusGridMaxValue = 30000; // Palmtree: grids worth more than this are never culled.
     private bool _touchedImmune = true; // Palmtree: entities players picked up are never culled.
     private int _touchedDuration = 60; // Palmtree: seconds of protection after a picked-up entity is dropped.
+    private bool _ignoreLoadedChunks; // Palmtree: debug - cull regardless of chunk loading.
 
     public override void Initialize()
     {
@@ -91,6 +92,7 @@ public sealed class DeletionCensusSystem : EntitySystem
         Subs.CVar(_cfg, NFCCVars.GarbageCollectionGridMaxValue, SetGarbageCollectionGridMaxValue, true); // Palmtree
         Subs.CVar(_cfg, NFCCVars.GarbageCollectionTouchedImmune, SetGarbageCollectionTouchedImmune, true); // Palmtree
         Subs.CVar(_cfg, NFCCVars.GarbageCollectionTouchedDuration, SetGarbageCollectionTouchedDuration, true); // Palmtree
+        Subs.CVar(_cfg, NFCCVars.GarbageCollectionIgnoreLoadedChunks, SetGarbageCollectionIgnoreLoadedChunks, true); // Palmtree
 
         // TODO: reset tally on reparent
         SubscribeLocalEvent<DeletionCensusTallyComponent, EntParentChangedMessage>(OnDeletionParentChanged);
@@ -149,6 +151,11 @@ public sealed class DeletionCensusSystem : EntitySystem
     private void SetGarbageCollectionTouchedDuration(int value)
     {
         _touchedDuration = value;
+    }
+
+    private void SetGarbageCollectionIgnoreLoadedChunks(bool value)
+    {
+        _ignoreLoadedChunks = value;
     }
     #endregion
 
@@ -235,10 +242,19 @@ public sealed class DeletionCensusSystem : EntitySystem
         }
         else
         {
-            if (!_worldControllerQuery.TryComp(_defaultMapUid, out var worldController))
+            // Palmtree: debug - treat every chunk as unloaded, and don't require worldgen to be set up.
+            if (_ignoreLoadedChunks)
+            {
+                _defaultChildEnumeratorValid = CheckNextDefaultEntities(_censusEntitiesPerTick, null);
+            }
+            else if (!_worldControllerQuery.TryComp(_defaultMapUid, out var worldController))
+            {
                 _defaultChildEnumeratorValid = false;
+            }
             else
+            {
                 _defaultChildEnumeratorValid = CheckNextDefaultEntities(_censusEntitiesPerTick, worldController);
+            }
         }
 
         if (!_ftlChildEnumeratorValid)
@@ -347,7 +363,7 @@ public sealed class DeletionCensusSystem : EntitySystem
     /// <param name="maxCount">The maximum number of entities to check.</param>
     /// <param name="worldController">The current world controller component of the default map.</param>
     /// <returns>If there are more entities to be enumerated in the list.</returns>
-    private bool CheckNextDefaultEntities(int maxCount, WorldControllerComponent worldController)
+    private bool CheckNextDefaultEntities(int maxCount, WorldControllerComponent? worldController)
     {
         int count = 0;
         while (_defaultChildEnumerator.MoveNext())
@@ -363,7 +379,8 @@ public sealed class DeletionCensusSystem : EntitySystem
             {
 
                 // Check chunk
-                if (!_world.TryGetChunk(WorldGen.WorldToChunkCoords(_transform.GetWorldPosition(xform)).Floored(), _defaultMapUid, out var chunk, worldController)
+                if (_ignoreLoadedChunks
+                    || !_world.TryGetChunk(WorldGen.WorldToChunkCoords(_transform.GetWorldPosition(xform)).Floored(), _defaultMapUid, out var chunk, worldController)
                     || !_loadedChunkQuery.TryGetComponent(chunk, out var loaded)
                     || loaded.Loaders == null
                     || loaded.Loaders.Count == 0)

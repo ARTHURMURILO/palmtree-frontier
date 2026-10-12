@@ -324,6 +324,13 @@ public sealed class NFCCVars
     public static readonly CVarDef<int> GarbageCollectionTouchedDuration =
         CVarDef.Create("nf14.gc.touched_duration", 60, CVar.SERVER | CVar.ARCHIVE);
 
+    /// <summary>
+    /// Debug: if true, garbage collection ignores whether an entity's chunk is loaded, acting as if
+    /// every chunk were unloaded. Intended for testing only; do not enable on a live server.
+    /// </summary>
+    public static readonly CVarDef<bool> GarbageCollectionIgnoreLoadedChunks =
+        CVarDef.Create("nf14.gc.ignore_loaded_chunks", false, CVar.SERVER | CVar.ARCHIVE);
+
     /*
      * Greeting
      */
