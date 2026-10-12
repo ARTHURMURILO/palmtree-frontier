@@ -11,6 +11,7 @@ using Content.Shared._NF.CCVar;
 using Content.Shared._NF.Item;
 using Content.Shared._NF.Pinpointer;
 using Content.Shared.GameTicking;
+using Content.Shared.Interaction.Events;
 using Content.Shared.Item;
 using Content.Shared.Mind.Components;
 using Content.Shared.Shuttles.Components;
@@ -68,6 +69,7 @@ public sealed class DeletionCensusSystem : EntitySystem
     private int _censusMaxValue = 3000; // Palmtree: entities worth more than this are never culled.
     private int _censusGridMaxValue = 30000; // Palmtree: grids worth more than this are never culled.
     private bool _touchedImmune = true; // Palmtree: entities players picked up are never culled.
+    private int _touchedDuration = 60; // Palmtree: seconds of protection after a picked-up entity is dropped.
 
     public override void Initialize()
     {
@@ -88,11 +90,13 @@ public sealed class DeletionCensusSystem : EntitySystem
         Subs.CVar(_cfg, NFCCVars.GarbageCollectionMaxValue, SetGarbageCollectionMaxValue, true); // Palmtree
         Subs.CVar(_cfg, NFCCVars.GarbageCollectionGridMaxValue, SetGarbageCollectionGridMaxValue, true); // Palmtree
         Subs.CVar(_cfg, NFCCVars.GarbageCollectionTouchedImmune, SetGarbageCollectionTouchedImmune, true); // Palmtree
+        Subs.CVar(_cfg, NFCCVars.GarbageCollectionTouchedDuration, SetGarbageCollectionTouchedDuration, true); // Palmtree
 
         // TODO: reset tally on reparent
         SubscribeLocalEvent<DeletionCensusTallyComponent, EntParentChangedMessage>(OnDeletionParentChanged);
         SubscribeLocalEvent<DeletionCensusExemptComponent, GridSplitEvent>(OnExemptGridSplit);
         SubscribeLocalEvent<ItemComponent, PickedUpEvent>(OnPickedUp); // Palmtree: mark player-touched items
+        SubscribeLocalEvent<ItemComponent, DroppedEvent>(OnDropped); // Palmtree: protection lapses after dropping
         SubscribeLocalEvent<RoundRestartCleanupEvent>(OnRoundRestart);
     }
 
@@ -141,6 +145,11 @@ public sealed class DeletionCensusSystem : EntitySystem
     {
         _touchedImmune = value;
     }
+
+    private void SetGarbageCollectionTouchedDuration(int value)
+    {
+        _touchedDuration = value;
+    }
     #endregion
 
     #region Event handlers
@@ -176,7 +185,17 @@ public sealed class DeletionCensusSystem : EntitySystem
     // Palmtree: items a player has picked up are kept around by the census.
     private void OnPickedUp(EntityUid uid, ItemComponent component, PickedUpEvent args)
     {
-        EnsureComp<PlayerTouchedComponent>(uid);
+        var touched = EnsureComp<PlayerTouchedComponent>(uid);
+        touched.ProtectionExpiry = null; // While held, the census has no reason to touch it.
+    }
+
+    // Palmtree: dropped items keep their census protection for a little while, then lapse.
+    private void OnDropped(EntityUid uid, ItemComponent component, DroppedEvent args)
+    {
+        var touched = EnsureComp<PlayerTouchedComponent>(uid);
+        touched.ProtectionExpiry = _touchedDuration > 0
+            ? _timing.CurTime + TimeSpan.FromSeconds(_touchedDuration)
+            : null;
     }
     #endregion Event handlers
 
@@ -276,7 +295,7 @@ public sealed class DeletionCensusSystem : EntitySystem
         if (_pinpointerTargetQuery.HasComp(uid))
             return true;
         // Palmtree: don't cull anything a player has handled.
-        if (_touchedImmune && _playerTouchedQuery.HasComp(uid))
+        if (IsProtectedByPlayerTouched(uid))
             return true;
         return _deletionCensusExemptQuery.HasComp(uid);
     }
@@ -307,7 +326,19 @@ public sealed class DeletionCensusSystem : EntitySystem
     /// </summary>
     private bool ShouldRescueFromGrid(EntityUid uid)
     {
-        return (_touchedImmune && _playerTouchedQuery.HasComp(uid)) || _pinpointerTargetQuery.HasComp(uid);
+        return IsProtectedByPlayerTouched(uid) || _pinpointerTargetQuery.HasComp(uid);
+    }
+
+    /// <summary>
+    /// Palmtree: returns if this entity is currently protected because a player has handled it.
+    /// Protection lasts while the entity is held, and for a configurable time after it is dropped.
+    /// </summary>
+    private bool IsProtectedByPlayerTouched(EntityUid uid)
+    {
+        if (!_touchedImmune || !_playerTouchedQuery.TryComp(uid, out var touched))
+            return false;
+
+        return touched.ProtectionExpiry == null || _timing.CurTime < touched.ProtectionExpiry.Value;
     }
 
     /// <summary>

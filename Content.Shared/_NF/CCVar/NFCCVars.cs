@@ -317,6 +317,13 @@ public sealed class NFCCVars
     public static readonly CVarDef<bool> GarbageCollectionTouchedImmune =
         CVarDef.Create("nf14.gc.touched_immune", true, CVar.SERVER | CVar.ARCHIVE);
 
+    /// <summary>
+    /// How long, in seconds, items players have dropped stay protected from garbage collection.
+    /// Set to 0 or less to keep protection forever.
+    /// </summary>
+    public static readonly CVarDef<int> GarbageCollectionTouchedDuration =
+        CVarDef.Create("nf14.gc.touched_duration", 60, CVar.SERVER | CVar.ARCHIVE);
+
     /*
      * Greeting
      */

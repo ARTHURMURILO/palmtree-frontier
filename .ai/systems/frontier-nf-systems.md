@@ -73,10 +73,13 @@ additional loot protection.
   (`PlayerTouchedComponent`).
 - Loot protection (Palmtree): entities worth more than `nf14.gc.max_value` and grids worth more than
   `nf14.gc.grid_max_value` are never culled; player-touched or pinned entities are moved off a grid
-  before it is culled instead of dying with it.
+  before it is culled instead of dying with it. Player-touched protection lapses
+  `nf14.gc.touched_duration` seconds (default 60) after the entity is dropped, so abandoned items
+  become cullable again.
 - CVars: `nf14.gc.enabled`, `nf14.gc.period`, `nf14.gc.entities_per_tick`, `nf14.gc.idle_count`,
-  `nf14.gc.max_value`, `nf14.gc.grid_max_value`, `nf14.gc.touched_immune`. Defaults: 30-minute
-  period, 4 idle passes (~2 hours), touched-item immunity on.
+  `nf14.gc.max_value`, `nf14.gc.grid_max_value`, `nf14.gc.touched_immune`,
+  `nf14.gc.touched_duration`. Defaults: 30-minute period, 4 idle passes (~2 hours), touched-item
+  protection on and lapsing 60 seconds after a drop.
 - `WorldControllerSystem.TryGetChunk` avoids creating chunks during census checks and NPC activity
   checks (`HTNSystem.IsNPCActive`).
 

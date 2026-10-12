@@ -757,7 +757,8 @@ Entries:
         cards are exempt.
     - type: Add
       message: >-
-        Loot players have picked up or tracked with a pinpointer is never
-        cleaned up, and anything valuable is left alone.
+        Items a player has handled are kept safe for a minute after being
+        dropped, anything tracked with a pinpointer is never cleaned up, and
+        valuable items are left alone.
   id: 90045
   time: '2026-10-12T18:45:00.0000000+00:00'
