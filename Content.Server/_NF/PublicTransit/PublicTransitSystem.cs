@@ -11,6 +11,7 @@ using Content.Server.Shuttles.Events;
 using Content.Server.Shuttles.Systems;
 using Content.Server.Station.Systems;
 using Content.Server._NF.GameTicking.Events;
+using Content.Server._NF.GC.Components;
 using Content.Server._NF.PublicTransit.Components;
 using Content.Server._NF.PublicTransit.Prototypes;
 using Content.Server._NF.SectorServices;
@@ -617,6 +618,7 @@ public sealed class PublicTransitSystem : EntitySystem
                 transitComp.ScreenText = Loc.GetString("public-transit-shuttle-screen-text", ("number", route.Prototype.RouteNumber), ("suffix", busSuffix));
 
                 EnsureComp<PreventPilotComponent>(shuttleEnt.Owner);
+                EnsureComp<DeletionCensusExemptComponent>(shuttleEnt.Owner); // Palmtree: the bus is infrastructure.
 
                 var shuttleName = Loc.GetString("public-transit-shuttle-name", ("number", route.Prototype.RouteNumber), ("suffix", busSuffix));
 

@@ -11,6 +11,7 @@ using Content.Server._NF.SectorServices;
 using Content.Server._NF.Shipyard.Systems;
 using Content.Server._NF.Smuggling.Components;
 using Content.Server._NF.Station.Systems;
+using Content.Server._NF.GC.Components;
 using Content.Shared.Database;
 using Content.Shared.GameTicking;
 using Content.Shared.Hands.Components;
@@ -457,6 +458,9 @@ public sealed class DeadDropSystem : EntitySystem
         //setup the radar properties
         _shuttle.SetIFFColor(grid, component.Color);
         _shuttle.AddIFFFlag(grid, IFFFlags.HideLabel);
+
+        // Palmtree: ensure the drop pod isn't deleted.
+        EnsureComp<DeletionCensusExemptComponent>(grid);
 
         //this is where we set up all the information that FTL is going to need, including a new null entity as a destination target because FTL needs it for reasons?
         //dont ask me im just fulfilling FTL requirements.

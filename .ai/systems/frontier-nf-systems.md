@@ -32,6 +32,7 @@ default (`rules: []` in upstream presets).
 | Trade/smuggling | `_NF/Trade`, `_NF/Smuggling` | Trade outposts, contraband |
 | Mail | `_NF/Mail` | Mail delivery |
 | Size attributes | `_NF/SizeAttribute` | `ShortWhitelist`/`TallWhitelist` (used by Rodentia/Anthromorph) |
+| Garbage collection | `_NF/GC` | Deletion census for abandoned map items/wrecks; exemptions and loot protection |
 
 ## Round/station integration
 
@@ -52,7 +53,32 @@ default (`rules: []` in upstream presets).
 - Contractor loadout groups are extended with `_PS` (concealment implanter), `_CS` (Bayou clothes,
   leather satchel), `_DEN` (foot protectors, clicker) loadouts.
 - `_PS` lobby backgrounds/music are separate from `_NF/lobbyscreens.yml`.
-- No `_NF` core logic was changed by the port except loadout group lists.
+- No `_NF` core logic was changed by the port except loadout group lists (the garbage collection port
+  below is a deliberate exception).
+
+## Garbage collection (deletion census)
+
+Ported from Frontier PR #3574 (closed unmerged; as deployed by Coyote and several forks), with
+additional loot protection.
+
+- `_NF/GC/Systems/DeletionCensusSystem` scans direct children of the default map and the FTL map in
+  batches every `nf14.gc.period` seconds. Entities sitting on unloaded worldgen chunks (or parented
+  to the FTL map) accumulate tallies; after `nf14.gc.idle_count` passes they are deleted. Grids are
+  deleted through `LinkedLifecycleGridSystem.UnparentPlayersFromGrid`, which reparents players first
+  (and now also rescuable loot).
+- Exemptions: `DeletionCensusExemptComponent` (YAML: POIs, the bus, bluespace event grids/dungeons/
+  salvage, PDAs, ID cards, the station map grid; code: stations via `StationSystem`, shipyard and
+  admin purchases, public transit buses, dead drops), entities with a mind, anything tracked by a
+  pinpointer (`PinpointerTargetComponent`), and anything a player has picked up
+  (`PlayerTouchedComponent`).
+- Loot protection (Palmtree): entities worth more than `nf14.gc.max_value` and grids worth more than
+  `nf14.gc.grid_max_value` are never culled; player-touched or pinned entities are moved off a grid
+  before it is culled instead of dying with it.
+- CVars: `nf14.gc.enabled`, `nf14.gc.period`, `nf14.gc.entities_per_tick`, `nf14.gc.idle_count`,
+  `nf14.gc.max_value`, `nf14.gc.grid_max_value`, `nf14.gc.touched_immune`. Defaults: 30-minute
+  period, 4 idle passes (~2 hours), touched-item immunity on.
+- `WorldControllerSystem.TryGetChunk` avoids creating chunks during census checks and NPC activity
+  checks (`HTNSystem.IsNPCActive`).
 
 ## Unknowns
 

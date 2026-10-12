@@ -1,5 +1,6 @@
 using System.Linq;
 using Content.Server.Administration;
+using Content.Server._NF.GC.Components;
 using Content.Server._NF.Shipyard.Systems;
 using Content.Server.Station.Systems;
 using Content.Shared._NF.CCVar;
@@ -19,7 +20,8 @@ namespace Content.Server._NF.Shipyard.Commands;
 [AdminCommand(AdminFlags.Fun)]
 public sealed class PurchaseShuttleCommand : IConsoleCommand
 {
-    [Dependency] private readonly IEntitySystemManager _entityManager = default!;
+    [Dependency] private readonly IEntitySystemManager _sysManager = default!;
+    [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IResourceManager _resourceManager = default!;
     [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
     [Dependency] private readonly IConfigurationManager _configurationManager = default!;
@@ -46,9 +48,12 @@ public sealed class PurchaseShuttleCommand : IConsoleCommand
             }
         }
 
-        var system = _entityManager.GetEntitySystem<ShipyardSystem>();
+        var system = _sysManager.GetEntitySystem<ShipyardSystem>();
         var station = new EntityUid(stationId);
-        system.TryPurchaseShuttle(station, new ResPath(shuttlePath), out _, atmosphere);
+        if (system.TryPurchaseShuttle(station, new ResPath(shuttlePath), out var shuttleUid, atmosphere))
+        {
+            _entityManager.EnsureComponent<DeletionCensusExemptComponent>(shuttleUid.Value); // Palmtree: ensure ship doesn't get deleted, though chunks should be.
+        }
     }
 
     public CompletionResult GetCompletion(IConsoleShell shell, string[] args)
@@ -57,7 +62,7 @@ public sealed class PurchaseShuttleCommand : IConsoleCommand
         {
             case 1:
             {
-                var stationSystem = _entityManager.GetEntitySystem<StationSystem>();
+                var stationSystem = _sysManager.GetEntitySystem<StationSystem>();
                 var opts = stationSystem.GetStationNames()
                     .Select(station => new CompletionOption(station.Entity.ToString(), station.Name));
                 return CompletionResult.FromHintOptions(opts, Loc.GetString("cmd-hint-station-id"));

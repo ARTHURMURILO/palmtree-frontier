@@ -747,3 +747,17 @@ Entries:
   time: '2026-10-12T18:20:07.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/0b713c58b2f03e4336bdda5fec777b960534ccb2
+- author: TheLife
+  changes:
+    - type: Add
+      message: >-
+        Added garbage collection: abandoned items and uncrewed wrecks in deep
+        space are cleaned up after a couple of hours. Stations, player ships,
+        points of interest, buses, dead drops, bluespace events, PDAs and ID
+        cards are exempt.
+    - type: Add
+      message: >-
+        Loot players have picked up or tracked with a pinpointer is never
+        cleaned up, and anything valuable is left alone.
+  id: 90045
+  time: '2026-10-12T18:45:00.0000000+00:00'

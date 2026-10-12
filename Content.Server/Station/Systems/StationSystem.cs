@@ -1,6 +1,7 @@
 using System.Linq;
 using Content.Server.Chat.Systems;
 using Content.Server.GameTicking;
+using Content.Server._NF.GC.Components;
 using Content.Server.Station.Components;
 using Content.Server.Station.Events;
 using Content.Shared.Station;
@@ -137,7 +138,11 @@ public sealed partial class StationSystem : SharedStationSystem
         {
             // We still setup the grid
             if (TryComp<BecomesStationComponent>(grid, out var becomesStation))
+            {
+                EnsureComp<DeletionCensusExemptComponent>(grid, out var deletionCensusExemptComponent); // Palmtree: keep stations from being culled.
+                deletionCensusExemptComponent.PassOnGridSplit = true; // Palmtree: pass the exemption onto grids split from this one.
                 dict.GetOrNew(becomesStation.Id).Add(grid);
+            }
         }
 
         if (!dict.Any())

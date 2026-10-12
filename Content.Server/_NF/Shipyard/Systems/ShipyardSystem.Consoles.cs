@@ -41,6 +41,7 @@ using Content.Shared._NF.ShuttleRecords;
 using Content.Server.StationEvents.Components;
 using Content.Shared._NF.CCVar;
 using Content.Shared.Forensics.Components;
+using Content.Server._NF.GC.Components;
 using Robust.Server.Player;
 using Robust.Shared.Timing;
 using Content.Shared._NF.Whitelist.Components;
@@ -198,6 +199,7 @@ public sealed partial class ShipyardSystem : SharedShipyardSystem
         }
 
         var shuttleUid = shuttleUidOut.Value;
+        EnsureComp<DeletionCensusExemptComponent>(shuttleUid); // Palmtree: ensure ship doesn't get deleted, though chunks should be.
         if (!TryComp<ShuttleComponent>(shuttleUid, out var shuttle))
         {
             PlayDenySound(player, shipyardConsoleUid, component);

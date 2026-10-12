@@ -175,12 +175,20 @@ public sealed class LinkedLifecycleGridSystem : EntitySystem
     }
 
     // Deletes a grid, reparenting every humanoid and player character that's on it.
-    public void UnparentPlayersFromGrid(EntityUid grid, bool deleteGrid, bool ignoreLifeStage = false)
+    // Palmtree: optionally reparents entities matching an extra predicate (e.g. player-touched loot) as well.
+    public void UnparentPlayersFromGrid(EntityUid grid, bool deleteGrid, bool ignoreLifeStage = false, Func<EntityUid, bool>? extraEntityPredicate = null)
     {
+        if (!EntityManager.EntityExists(grid))
+            return;
+
         if (!ignoreLifeStage && TerminatingOrDeleted(grid))
             return;
 
         var reparentEntities = GetEntitiesToReparent(grid);
+
+        // Palmtree: collect any extra entities that should be moved off the grid (e.g. player-touched loot).
+        if (extraEntityPredicate != null)
+            GetExtraEntitiesToReparent(grid, extraEntityPredicate, ref reparentEntities);
 
         foreach (var target in reparentEntities)
         {
@@ -203,6 +211,35 @@ public sealed class LinkedLifecycleGridSystem : EntitySystem
                 continue;
 
             _transform.SetCoordinates(target.Entity.Owner, new EntityCoordinates(target.MapUid, target.MapPosition));
+        }
+    }
+
+    /// <summary>
+    /// Palmtree: collects entities matching a predicate (and their children) so they can be
+    /// moved off a grid that is about to be deleted.
+    /// </summary>
+    private void GetExtraEntitiesToReparent(EntityUid uid, Func<EntityUid, bool> predicate, ref List<(Entity<TransformComponent> Entity, EntityUid MapUid, Vector2 MapPosition)> listToReparent)
+    {
+        if (!TryComp(uid, out TransformComponent? xform))
+            return;
+
+        var enumerator = xform.ChildEnumerator;
+        while (enumerator.MoveNext(out var child))
+        {
+            if (MetaData(child).EntityLifeStage >= EntityLifeStage.Terminating)
+                continue;
+
+            if (predicate(child))
+            {
+                var childXform = Transform(child);
+                if (childXform.MapUid is { } mapUid)
+                    listToReparent.Add(((child, childXform), mapUid, _transform.GetWorldPosition(childXform)));
+
+                // Children of a reparented entity come along with it.
+                continue;
+            }
+
+            GetExtraEntitiesToReparent(child, predicate, ref listToReparent);
         }
     }
 }

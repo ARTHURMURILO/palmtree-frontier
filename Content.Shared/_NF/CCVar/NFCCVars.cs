@@ -272,6 +272,52 @@ public sealed class NFCCVars
         CVarDef.Create("nf14.xenoarch.single_use_nodes", true, CVar.REPLICATED);
 
     /*
+     * Garbage Collection
+     */
+
+    /// <summary>
+    /// If true, garbage collection will be run.
+    /// </summary>
+    public static readonly CVarDef<bool> GarbageCollectionEnabled =
+        CVarDef.Create("nf14.gc.enabled", true, CVar.SERVER | CVar.ARCHIVE);
+
+    /// <summary>
+    /// The period to run garbage collection at, in seconds.
+    /// </summary>
+    public static readonly CVarDef<int> GarbageCollectionPeriod =
+        CVarDef.Create("nf14.gc.period", 1800, CVar.SERVER | CVar.ARCHIVE); // Palmtree: instead of every 15 minutes, run every 30 minutes.
+
+    /// <summary>
+    /// The number of entities to check per tick.
+    /// </summary>
+    public static readonly CVarDef<int> GarbageCollectionEntitiesPerTick =
+        CVarDef.Create("nf14.gc.entities_per_tick", 64, CVar.SERVER | CVar.ARCHIVE);
+
+    /// <summary>
+    /// The number of times an object must be seen as idle before being garbage collected.
+    /// </summary>
+    public static readonly CVarDef<int> GarbageCollectionTally =
+        CVarDef.Create("nf14.gc.idle_count", 4, CVar.SERVER | CVar.ARCHIVE); // Palmtree: with the above change, this means an offender will be deleted in 2 hours.
+
+    /// <summary>
+    /// Entities worth more than this many spesos are never culled by garbage collection. Set to 0 or less to disable.
+    /// </summary>
+    public static readonly CVarDef<int> GarbageCollectionMaxValue =
+        CVarDef.Create("nf14.gc.max_value", 3000, CVar.SERVER | CVar.ARCHIVE);
+
+    /// <summary>
+    /// Grids worth more than this many spesos are never culled by garbage collection. Set to 0 or less to disable.
+    /// </summary>
+    public static readonly CVarDef<int> GarbageCollectionGridMaxValue =
+        CVarDef.Create("nf14.gc.grid_max_value", 30000, CVar.SERVER | CVar.ARCHIVE);
+
+    /// <summary>
+    /// If true, entities players have picked up are never culled by garbage collection.
+    /// </summary>
+    public static readonly CVarDef<bool> GarbageCollectionTouchedImmune =
+        CVarDef.Create("nf14.gc.touched_immune", true, CVar.SERVER | CVar.ARCHIVE);
+
+    /*
      * Greeting
      */
 
