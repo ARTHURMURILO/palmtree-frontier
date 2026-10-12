@@ -68,14 +68,15 @@ additional loot protection.
   (and now also rescuable loot).
 - Exemptions: `DeletionCensusExemptComponent` (YAML: POIs, the bus, bluespace event grids/dungeons/
   salvage, PDAs, ID cards, the station map grid; code: stations via `StationSystem`, shipyard and
-  admin purchases, public transit buses, dead drops), entities with a mind, anything tracked by a
+  admin purchases, public transit buses, dead drops), entities with a mind, visiting-mind ghosts
+  (`VisitingMindComponent`, how Frontier's `/ghost` and death-ghosting work), anything tracked by a
   pinpointer (`PinpointerTargetComponent`), and anything a player has picked up
   (`PlayerTouchedComponent`).
 - Loot protection (Palmtree): entities worth more than `nf14.gc.max_value` and grids worth more than
   `nf14.gc.grid_max_value` are never culled; player-touched or pinned entities are moved off a grid
   before it is culled instead of dying with it. Player-touched protection lapses
   `nf14.gc.touched_duration` seconds (default 60) after the entity is dropped, so abandoned items
-  become cullable again.
+  become cullable again. Visiting-mind ghosts are also rescued from culled grids.
 - CVars: `nf14.gc.enabled`, `nf14.gc.period`, `nf14.gc.entities_per_tick`, `nf14.gc.idle_count`,
   `nf14.gc.max_value`, `nf14.gc.grid_max_value`, `nf14.gc.touched_immune`,
   `nf14.gc.touched_duration`, `nf14.gc.ignore_loaded_chunks` (debug: cull regardless of chunk

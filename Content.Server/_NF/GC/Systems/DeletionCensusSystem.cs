@@ -46,6 +46,7 @@ public sealed class DeletionCensusSystem : EntitySystem
     EntityQuery<MindContainerComponent> _mindContainerQuery = default!;
     EntityQuery<PinpointerTargetComponent> _pinpointerTargetQuery = default!; // Palmtree
     EntityQuery<PlayerTouchedComponent> _playerTouchedQuery = default!; // Palmtree
+    EntityQuery<VisitingMindComponent> _visitingMindQuery = default!; // Palmtree: Frontier ghosts are visiting entities.
     EntityQuery<WorldControllerComponent> _worldControllerQuery = default!;
 
     // These two will be cloned from the map's transform component at regular intervals.
@@ -82,6 +83,7 @@ public sealed class DeletionCensusSystem : EntitySystem
         _mindContainerQuery = GetEntityQuery<MindContainerComponent>();
         _pinpointerTargetQuery = GetEntityQuery<PinpointerTargetComponent>(); // Palmtree
         _playerTouchedQuery = GetEntityQuery<PlayerTouchedComponent>(); // Palmtree
+        _visitingMindQuery = GetEntityQuery<VisitingMindComponent>(); // Palmtree
         _worldControllerQuery = GetEntityQuery<WorldControllerComponent>();
 
         Subs.CVar(_cfg, NFCCVars.GarbageCollectionEnabled, SetGarbageCollectionEnabled, true);
@@ -307,6 +309,10 @@ public sealed class DeletionCensusSystem : EntitySystem
     {
         if (_mindContainerQuery.TryComp(uid, out var mindContainer) && mindContainer.HasMind)
             return true;
+        // Palmtree: Frontier's ghosts are "visiting" entities (VisitingMindComponent) with no mind
+        // container, so they need their own exemption or the census eats them.
+        if (_visitingMindQuery.HasComp(uid))
+            return true;
         // Palmtree: don't cull anything a pinpointer is tracking.
         if (_pinpointerTargetQuery.HasComp(uid))
             return true;
@@ -342,7 +348,9 @@ public sealed class DeletionCensusSystem : EntitySystem
     /// </summary>
     private bool ShouldRescueFromGrid(EntityUid uid)
     {
-        return IsProtectedByPlayerTouched(uid) || _pinpointerTargetQuery.HasComp(uid);
+        return IsProtectedByPlayerTouched(uid)
+               || _pinpointerTargetQuery.HasComp(uid)
+               || _visitingMindQuery.HasComp(uid); // Palmtree: rescue visiting ghosts with the grid's loot.
     }
 
     /// <summary>

@@ -2,6 +2,7 @@ using System.Numerics;
 using Content.Server._NF.GC.Components;
 using Content.Server.Cargo.Systems;
 using Content.Server.GameTicking;
+using Content.Server.Ghost;
 using Content.Server.Station.Components;
 using Content.Server.Worldgen.Components;
 using Content.Server.Worldgen.Prototypes;
@@ -12,6 +13,7 @@ using Content.Shared.Cargo.Components;
 using Content.Shared.Interaction.Events;
 using Content.Shared.Item;
 using Content.Shared.Mind;
+using Content.Shared.Mind.Components;
 using Robust.Server.GameObjects;
 using Robust.Server.Physics;
 using Robust.Shared.Configuration;
@@ -316,6 +318,7 @@ public sealed class DeletionCensusTest
         EntityUid doomedItem = default;
         EntityUid rescuedTouched = default;
         EntityUid rescuedPinned = default;
+        EntityUid rescuedGhost = default;
         await server.WaitPost(() =>
         {
             cfg.SetCVar(NFCCVars.GarbageCollectionGridMaxValue, 30000);
@@ -339,9 +342,20 @@ public sealed class DeletionCensusTest
             rescuedPinned = entMan.SpawnEntity(null, lootSpot);
             entMan.EnsureComponent<PinpointerTargetComponent>(rescuedPinned);
 
+            // A visiting ghost on the grid must be rescued as well, not die with it.
+            var ghostSystem = server.System<GhostSystem>();
+            var ghostMind = mind.CreateMind(null);
+            rescuedGhost = ghostSystem.SpawnGhost(new Entity<MindComponent>(ghostMind.Owner, ghostMind.Comp),
+                lootSpot, canReturn: true)!.Value;
+
             // Sanity: the loot really is on the grid, or the rescue test is meaningless.
-            Assert.That(entMan.GetComponent<TransformComponent>(doomedItem).GridUid, Is.EqualTo(cullGrid),
-                "Test setup error: loot should be parented to the test grid.");
+            Assert.Multiple(() =>
+            {
+                Assert.That(entMan.GetComponent<TransformComponent>(doomedItem).GridUid, Is.EqualTo(cullGrid),
+                    "Test setup error: loot should be parented to the test grid.");
+                Assert.That(entMan.GetComponent<TransformComponent>(rescuedGhost).GridUid, Is.EqualTo(cullGrid),
+                    "Test setup error: the ghost should be parented to the test grid.");
+            });
         });
 
         await WaitUntilCulled(server, entMan, doomedItem, "untouched item on a culled grid");
@@ -350,8 +364,10 @@ public sealed class DeletionCensusTest
             Assert.That(entMan.EntityExists(cullGrid), Is.False, "An unprotected grid should be culled by the census.");
             Assert.That(entMan.EntityExists(rescuedTouched), Is.True, "Player-touched loot should be rescued from a culled grid.");
             Assert.That(entMan.EntityExists(rescuedPinned), Is.True, "Pinpointer-tracked loot should be rescued from a culled grid.");
+            Assert.That(entMan.EntityExists(rescuedGhost), Is.True, "Visiting ghosts should be rescued from a culled grid.");
             Assert.That(entMan.GetComponent<TransformComponent>(rescuedTouched).GridUid, Is.Null, "Rescued loot should be parented to the map.");
             Assert.That(entMan.GetComponent<TransformComponent>(rescuedPinned).GridUid, Is.Null, "Rescued loot should be parented to the map.");
+            Assert.That(entMan.GetComponent<TransformComponent>(rescuedGhost).GridUid, Is.Null, "Rescued ghosts should be parented to the map.");
         }));
 
         // Grids worth more than nf14.gc.grid_max_value are left alone.
@@ -424,6 +440,29 @@ public sealed class DeletionCensusTest
             Assert.That(entMan.HasComponent<DeletionCensusExemptComponent>(splitGrid), Is.True,
                 "Splitting an exempt grid should pass the exemption on to the new grid.");
         });
+
+        // Frontier ghosts are "visiting" entities: they have VisitingMindComponent and no
+        // MindContainerComponent, so the census must exempt them explicitly.
+        EntityUid ghost = default;
+        EntityUid canaryH = default;
+        await server.WaitPost(() =>
+        {
+            var ghostSystem = server.System<GhostSystem>();
+            var ghostMind = mind.CreateMind(null);
+            ghost = ghostSystem.SpawnGhost(new Entity<MindComponent>(ghostMind.Owner, ghostMind.Comp),
+                new EntityCoordinates(mapUid, FarAway + new Vector2(50f, 0f)), canReturn: true)!.Value;
+
+            canaryH = entMan.SpawnEntity(null, new EntityCoordinates(mapUid, SpaceD + new Vector2(80f, 0f)));
+
+            Assert.That(entMan.HasComponent<VisitingMindComponent>(ghost), Is.True,
+                "Test setup: ghosting via SpawnGhost(canReturn: true) should produce a visiting entity.");
+        });
+
+        await WaitUntilCulled(server, entMan, canaryH, "unprotected canary");
+        await server.WaitPost(() => Assert.That(
+            entMan.EntityExists(ghost),
+            Is.True,
+            "Visiting ghosts should not be culled by the census."));
 
         // Entities with a mind are never culled.
         EntityUid mob = default;
