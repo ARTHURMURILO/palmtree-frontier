@@ -348,9 +348,9 @@ public sealed class DeletionCensusSystem : EntitySystem
     /// </summary>
     private bool ShouldRescueFromGrid(EntityUid uid)
     {
+        // Note: visiting-mind ghosts are always rescued by LinkedLifecycleGridSystem.GetEntitiesToReparent.
         return IsProtectedByPlayerTouched(uid)
-               || _pinpointerTargetQuery.HasComp(uid)
-               || _visitingMindQuery.HasComp(uid); // Palmtree: rescue visiting ghosts with the grid's loot.
+               || _pinpointerTargetQuery.HasComp(uid);
     }
 
     /// <summary>

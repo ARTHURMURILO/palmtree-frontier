@@ -151,6 +151,16 @@ public sealed class LinkedLifecycleGridSystem : EntitySystem
             HandlePulledEntity(targetUid, ref reparentEntities);
         }
 
+        // Get visiting entities (Frontier ghosts have a visiting mind rather than an owned one).
+        var visitingQuery = AllEntityQuery<VisitingMindComponent, TransformComponent>();
+        while (visitingQuery.MoveNext(out var visitingUid, out _, out var xform))
+        {
+            if (xform.GridUid == null || xform.MapUid == null || xform.GridUid != grid)
+                continue;
+
+            reparentEntities.Add(((visitingUid, xform), xform.MapUid.Value, _transform.GetWorldPosition(xform)));
+        }
+
         return reparentEntities;
     }
 

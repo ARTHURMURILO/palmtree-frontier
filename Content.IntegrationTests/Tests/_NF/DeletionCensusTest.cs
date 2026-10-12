@@ -3,6 +3,7 @@ using Content.Server._NF.GC.Components;
 using Content.Server.Cargo.Systems;
 using Content.Server.GameTicking;
 using Content.Server.Ghost;
+using Content.Server.StationEvents.Events;
 using Content.Server.Station.Components;
 using Content.Server.Worldgen.Components;
 using Content.Server.Worldgen.Prototypes;
@@ -368,6 +369,37 @@ public sealed class DeletionCensusTest
             Assert.That(entMan.GetComponent<TransformComponent>(rescuedTouched).GridUid, Is.Null, "Rescued loot should be parented to the map.");
             Assert.That(entMan.GetComponent<TransformComponent>(rescuedPinned).GridUid, Is.Null, "Rescued loot should be parented to the map.");
             Assert.That(entMan.GetComponent<TransformComponent>(rescuedGhost).GridUid, Is.Null, "Rescued ghosts should be parented to the map.");
+        }));
+
+        // Other grid deletions (event/linked lifecycles) rescue visiting ghosts as well.
+        EntityUid lifecycleGrid = default;
+        EntityUid lifecycleGhost = default;
+        await server.WaitPost(() =>
+        {
+            var gridEnt = mapMan.CreateGridEntity(ticker.DefaultMap);
+            lifecycleGrid = gridEnt.Owner;
+            xform.SetCoordinates(lifecycleGrid, new EntityCoordinates(mapUid, GridSpotA + new Vector2(100f, 0f)));
+
+            var plating = tileDefs["Plating"];
+            mapSys.SetTile(lifecycleGrid, gridEnt.Comp, new EntityCoordinates(lifecycleGrid, 0, 0), new Tile(plating.TileId));
+
+            var ghostSystem = server.System<GhostSystem>();
+            var ghostMind = mind.CreateMind(null);
+            lifecycleGhost = ghostSystem.SpawnGhost(new Entity<MindComponent>(ghostMind.Owner, ghostMind.Comp),
+                new EntityCoordinates(lifecycleGrid, 0.5f, 0.5f), canReturn: true)!.Value;
+
+            Assert.That(entMan.GetComponent<TransformComponent>(lifecycleGhost).GridUid, Is.EqualTo(lifecycleGrid),
+                "Test setup error: the ghost should be parented to the lifecycle test grid.");
+
+            // Mirrors LinkedLifecycleGridSystem's own grid deletion path (no census predicate).
+            server.System<LinkedLifecycleGridSystem>().UnparentPlayersFromGrid(lifecycleGrid, deleteGrid: true);
+        });
+
+        await server.WaitPost(() => Assert.Multiple(() =>
+        {
+            Assert.That(entMan.EntityExists(lifecycleGrid), Is.False, "The lifecycle test grid should be deleted.");
+            Assert.That(entMan.EntityExists(lifecycleGhost), Is.True, "Grid deletions should reparent visiting ghosts, not delete them.");
+            Assert.That(entMan.GetComponent<TransformComponent>(lifecycleGhost).GridUid, Is.Null, "Reparented ghosts should be on the map.");
         }));
 
         // Grids worth more than nf14.gc.grid_max_value are left alone.
