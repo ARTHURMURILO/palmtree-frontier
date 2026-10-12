@@ -932,8 +932,7 @@
     interactSuccessSpawn: EffectHearts
     interactSuccessSound:
       path: /Audio/Animals/cow_moo.ogg
-  - type: Perishable
-    molsPerSecondPerUnitMass: 0.0015
+  # Palmtree: body rotting disabled - corpses must stay revivable.
   - type: NpcFactionMember
     factions:
     - Passive

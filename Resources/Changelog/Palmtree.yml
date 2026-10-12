@@ -772,5 +772,17 @@ Entries:
       message: >-
         Synths no longer take extra heat damage, and are now extremely
         sensitive to radiation damage.
-  id: 90045
+  id: 90046
   time: '2026-10-12T20:30:00.0000000+00:00'
+- author: TheLife
+  changes:
+    - type: Tweak
+      message: >-
+        EMP and ion pulses are now deadly to synths - an EMP grenade or ion
+        bolt fries their chassis.
+    - type: Tweak
+      message: >-
+        Bodies and pets no longer rot, so corpses stay revivable for as long as
+        it takes to find a defibrillator. Food still spoils.
+  id: 90047
+  time: '2026-10-12T23:45:45.0000000+00:00'

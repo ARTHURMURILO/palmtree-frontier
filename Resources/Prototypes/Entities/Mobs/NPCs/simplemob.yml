@@ -63,7 +63,7 @@
       80: 0.5
   - type: MobPrice
     price: 1000 # Living critters are valuable in space.
-  - type: Perishable
+  # Palmtree: body rotting disabled - corpses must stay revivable.
 
 - type: entity
   parent:

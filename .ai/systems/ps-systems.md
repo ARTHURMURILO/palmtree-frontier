@@ -165,12 +165,13 @@ Properties:
 - **3x durability**: `MobThresholds` 300 Critical / 600 Dead (human 100/200); `SlowOnDamage` and gib
   thresholds scaled.
 - **IPC-like**: custom `Synth` damage container (Brute/Burn groups, Radiation/Bloodloss types),
-  `Synth` damage modifier set (0.8 brute, immune poison/asphyxiation/cold, weak heat/shock),
-  `ZombieImmune`, `CanHostGuardian`, robot typing indicator, insulated temperature, `Oxidant` coolant
-  blood, fixture density 462.5 (heavier, matching IPC).
+  `Synth` damage modifier set (0.8 brute, immune poison/asphyxiation/cold, weak shock, extremely
+  radiation-sensitive; no heat coefficient - see below), `ZombieImmune`, `CanHostGuardian`, robot
+  typing indicator, insulated temperature, `Oxidant` coolant blood, fixture density 462.5 (heavier,
+  matching IPC).
 - **Temperature immunity**: `Temperature heatDamageThreshold: 4000` (only a 4000K+ plasma fire
-  damages them; cold threshold 0 and `Cold: 0`). Temperature damage ignores resistances, so the
-  `Heat: 1.5` modifier only affects direct fire/burn damage.
+  damages them; cold threshold 0 and `Cold: 0`). The old `Heat: 1.5` coefficient was removed, so
+  no direct heat or burn source is amplified either - fire is purely visual (see below).
 - **No reagent effects**: `OrganSynthEyes` metabolizes Food/Drink/Medicine/Cryogenic/Narcotic/Alcohol
   with `skipEffects: true` and `OrganSynthPump` covers Poison/Gas the same way, and
   `MetabolizerSystem` additionally skips all reagent effects for any body with `SynthComponent`
@@ -187,11 +188,17 @@ Properties:
   `Heat: 0`, so being set on fire is purely visual. Lava and liquid plasma only apply
   `FlammableReaction`/`Ignite` tile effects (no direct damage), so a synth standing in either just
   catches fire cosmetically. The `Temperature` threshold (4000K) covers environmental heat.
-- **Synthetic repair topicals**: `RepairPatch`, `RepairSpray` and `RepairSprayPlus`
-  (`_CS/Entities/Objects/Specific/Medical/healing.yml`, ported from coyote-bayou with the `Synth`
-  damage container added) cover brute, burn, cold, shock, radiation and bloodloss. They print from
-  the medical/exosuit/mercenary techfabs (`CSIPCTopicalsStatic` pack) and the patch can also be
-  hand-crafted (steel + cable construction graph).
+- **EMPs are deadly**: `SynthComponent.EmpDamage` (100 Shock) is applied on every `EmpPulseEvent`
+  by `Content.Server/_PS/Synth/SynthEmpSystem.cs`, and the 1.5x shock weakness multiplies it to 150
+  per pulse. EMP grenades, ion/EMP bolts and rockets, EMP mines and implants, xenoarch EMP
+  artifacts and the EMP generator all share this path, so one pulse takes half a synth's health
+  and a second is fatal, while non-synths (no `SynthComponent`) are unaffected.
+- **Synthetic repair topicals**: `RepairPatch`, `RepairSpray`, `RepairSprayPlus` and the
+  single-use `RepairAutoinjector` (`_CS/Entities/Objects/Specific/Medical/healing.yml`, ported
+  from coyote-bayou with the `Synth` damage container added) cover brute, burn, cold, shock,
+  radiation and bloodloss. They print from the medical/exosuit/mercenary techfabs
+  (`CSIPCTopicalsStatic` pack) and the patch can also be hand-crafted (steel + cable construction
+  graph).
 - **Reboot**: `DeadStartupButton` on `BaseMobSynth` adds a "Reboot" verb to a dead synth
   (`Content.{Shared,Server}/_PS/Synth/DeadStartupButton/`, ported from the EE IPC mechanic via
   coyote-bayou). It applies a small repair first (like a defib zap) and revives the synth if the
@@ -237,8 +244,10 @@ Upstream actions/implants/inventory/equipment visuals, `ContentAudioSystem`/lobb
 ## Tests
 
 `HilbertHotelTest` covers room-map loading and the hotel lifecycle; `InteractionPanelTest` covers
-the interaction/organ plumbing. Everything else is validated by the build, the YAMLLinter and
-in-game checks — do not add a new test file per feature.
+the interaction/organ plumbing; `SynthTest` covers synth physiology (reboot, pressure immunity,
+heat/shock/radiation, EMP lethality, built-in prying) and that bodies no longer rot. Everything
+else is validated by the build, the YAMLLinter and in-game checks — do not add a new test file per
+feature.
 
 ## Character customization (2026-10)
 
@@ -279,6 +288,9 @@ in-game checks — do not add a new test file per feature.
   `NFCalmPestEventsTable` are now `!type:NoneSelector`) and power shut-off (`BreakerFlip`,
   `PowerGridCheck`, `NFBreakerFlip`, `NFPowerGridCheck` removed from their tables).
 - Forensic pad `ScanDelay` 0.5 s; SSD bodies with a mind skip `RespiratorSystem` updates.
+- Body rotting is disabled (no `Perishable` on `BaseMobSpecies`/`SimpleSpaceMobBase`, nor on the
+  mobs that redefined it: cow, xenos, hellspawn, baby dragon, argocyte), so corpses never rot and
+  stay defibrillatable; food shelf life (`FoodMeatRawBase`, `FoodHivelordRemains`) is untouched.
 
 ## Currency and lobby branding (2026-10)
 

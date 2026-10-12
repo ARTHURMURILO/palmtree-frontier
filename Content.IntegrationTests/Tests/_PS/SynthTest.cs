@@ -3,7 +3,9 @@ using System;
 using System.Linq;
 using Content.Server.Atmos.Components;
 using Content.Server.Doors.Systems;
+using Content.Server.Emp;
 using Content.Shared.Atmos.Components;
+using Content.Shared.Atmos.Rotting;
 using Content.Shared.Doors.Components;
 using Content.Shared.FixedPoint;
 using Content.Shared._PS.Synth;
@@ -41,6 +43,7 @@ public sealed class SynthTest
         EntityUid synth = default;
         EntityUid wreck = default;
         EntityUid medic = default;
+        EntityUid shockSynth = default;
 
         await server.WaitPost(() =>
         {
@@ -58,6 +61,10 @@ public sealed class SynthTest
             // A wrecked chassis fails to reboot.
             wreck = entMan.SpawnEntity("MobSynth", map.GridCoords);
             damageable.TryChangeDamage(wreck, new DamageSpecifier(heat, 1000));
+
+            // Palmtree: shock damage is multiplied by the synth modifier set (guidebook claim).
+            shockSynth = entMan.SpawnEntity("MobSynth", map.GridCoords);
+            damageable.TryChangeDamage(shockSynth, new DamageSpecifier(protoMan.Index<DamageTypePrototype>("Shock"), 100));
 
             foreach (var target in new[] { synth, wreck })
             {
@@ -104,10 +111,13 @@ public sealed class SynthTest
                     "synths should be extremely sensitive to radiation");
                 Assert.That(modifierSet.Coefficients.ContainsKey("Heat"), Is.False,
                     "synths should not take extra heat damage");
+                Assert.That(entMan.GetComponent<DamageableComponent>(shockSynth).Damage.DamageDict["Shock"].Float(),
+                    Is.EqualTo(150f).Within(0.1f), "synths should take 1.5x shock damage");
             });
 
             entMan.DeleteEntity(synth);
             entMan.DeleteEntity(wreck);
+            entMan.DeleteEntity(shockSynth);
             entMan.DeleteEntity(medic);
         });
 
@@ -210,6 +220,102 @@ public sealed class SynthTest
             entMan.DeleteEntity(airlock);
             entMan.DeleteEntity(synth);
             entMan.DeleteEntity(human);
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    /// Palmtree: EMP and ion pulses are deadly to synths - their chassis is electronics, so an EMP
+    /// fries a synth while a human shrugs it off.
+    /// </summary>
+    [Test]
+    public async Task SynthTakesEmpDamage()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var map = await pair.CreateTestMap();
+
+        EntityUid synth = default;
+        EntityUid human = default;
+
+        await server.WaitPost(() =>
+        {
+            synth = entMan.SpawnEntity("MobSynth", map.GridCoords);
+            human = entMan.SpawnEntity("MobHuman", map.GridCoords);
+
+            var emp = entMan.System<EmpSystem>();
+            emp.TryEmpEffects(synth, 2700000f, 10f);
+            emp.TryEmpEffects(human, 2700000f, 10f);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.Multiple(() =>
+            {
+                Assert.That(entMan.GetComponent<DamageableComponent>(synth).Damage.DamageDict["Shock"].Float(),
+                    Is.EqualTo(150f).Within(0.1f),
+                    "an EMP pulse should heavily shock a synth (100 damage x 1.5 shock weakness)");
+                Assert.That(entMan.GetComponent<DamageableComponent>(human).Damage.GetTotal().Float(),
+                    Is.EqualTo(0f).Within(0.1f), "an EMP pulse should not damage humans");
+            });
+
+            entMan.DeleteEntity(synth);
+            entMan.DeleteEntity(human);
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    /// Palmtree: body rotting is disabled - the corpses of people, synths and pets stay revivable -
+    /// while food shelf life (raw meat, hivelord remains) is untouched.
+    /// </summary>
+    [Test]
+    public async Task BodiesDoNotRot()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var map = await pair.CreateTestMap();
+
+        EntityUid human = default;
+        EntityUid synth = default;
+        EntityUid corgi = default;
+        EntityUid mouse = default;
+        EntityUid meat = default;
+
+        await server.WaitPost(() =>
+        {
+            human = entMan.SpawnEntity("MobHuman", map.GridCoords);
+            synth = entMan.SpawnEntity("MobSynth", map.GridCoords);
+            corgi = entMan.SpawnEntity("MobCorgi", map.GridCoords);
+            mouse = entMan.SpawnEntity("MobMouse", map.GridCoords);
+            meat = entMan.SpawnEntity("FoodMeat", map.GridCoords);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.Multiple(() =>
+            {
+                Assert.That(entMan.HasComponent<PerishableComponent>(human), Is.False,
+                    "human corpses should not rot");
+                Assert.That(entMan.HasComponent<PerishableComponent>(synth), Is.False,
+                    "synth corpses should not rot");
+                Assert.That(entMan.HasComponent<PerishableComponent>(corgi), Is.False,
+                    "pet corpses should not rot");
+                Assert.That(entMan.HasComponent<PerishableComponent>(mouse), Is.False,
+                    "animal corpses should not rot");
+                Assert.That(entMan.HasComponent<PerishableComponent>(meat), Is.True,
+                    "food shelf life should be untouched");
+            });
+
+            entMan.DeleteEntity(human);
+            entMan.DeleteEntity(synth);
+            entMan.DeleteEntity(corgi);
+            entMan.DeleteEntity(mouse);
+            entMan.DeleteEntity(meat);
         });
 
         await pair.CleanReturnAsync();

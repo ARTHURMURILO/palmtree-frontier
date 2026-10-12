@@ -61,8 +61,7 @@
     accent: genericAggressive
   - type: Speech
     speechVerb: LargeMob
-  - type: Perishable #Ummmm the acid kills a lot of the bacteria or something
-    molsPerSecondPerUnitMass: 0.0005
+  # Palmtree: body rotting disabled - corpses must stay revivable.
   - type: Tag
     tags:
     - CannotSuicide

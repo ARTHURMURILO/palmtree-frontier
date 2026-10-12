@@ -17,7 +17,7 @@
       80: 0.5
   - type: MobPrice
     price: 2000
-  - type: Perishable
+  # Palmtree: body rotting disabled - corpses must stay revivable.
   - type: Hunger
     thresholds:
       Overfed: 100

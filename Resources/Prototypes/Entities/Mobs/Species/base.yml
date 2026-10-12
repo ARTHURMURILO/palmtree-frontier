@@ -277,7 +277,7 @@
     shiveringHeatRegulation: 2000
     normalBodyTemperature: 310.15
     thermalRegulationTemperatureThreshold: 2
-  - type: Perishable
+  # Palmtree: body rotting disabled - corpses must stay revivable.
   - type: Butcherable
     butcheringType: Spike # TODO human.
     spawned:
