@@ -322,9 +322,18 @@ value line.
   - `guns_lefthand/righthand` mixes dedicated held art with generic/hands-only states (`gun`,
     `shotgun`, `rifle`, `R84`). Dedicated states: `american`, `M38closedmag`, `crossbow`, `m90`,
     `rpd`, `aug`, `coltwalker`, `44colt`, `45revolver`, `judge`, `deagle`, `glock`, `pistolchrome`;
-    `ww2gunsleft/right.dmi` holds the two-handed art for `bar`, `dp`, `m1garand`, `mosin`, `mp5`,
+    `ww2gunsleft/right.dmi` holds the two-handed art for `dp`, `m1garand`, `mosin`, `mp5`,
     `ppsh`, `saiga12`, `scarl`, `sks`, `uzi`, `skorpion`. Before the QA pass the M1919, M1A1, PPSh
     and M1 Garand all shared the generic `rifle` art and the DP-27 used `R84`.
+  - **The coyote BAR has no held art**: its `inhand_icon_state` is `BAR`, which does not exist in
+    any onmob DMI, and `ww2gunsleft:bar` is actually the DP-27 drawing minus its bipod. The BAR
+    keeps the `ww2gunsleft/right:bar` art for now - an accepted known mismatch; a proper BAR held
+    art does not exist in the source.
+  - **Magazine-less world states hide behind `-e` names**: for the DP-27 the pan-less art is
+    `mgs.dmi:dp-e`/`dp_open` (the plain `dp`/`dp-47` states still contain it), and for the Saiga-12
+    the magazine-less art is `ballistic.dmi:saiga-e`/`automatic.dmi:saiga12_open` (`saiga-8-e`
+    keeps the magazine and only drops the chambered round). Base/bolt-open use these; `mag-0`/
+    `mag-1` keep the with-magazine art so removing the magazine is visible.
   - **DMIs use the `(0,128,128,0)` colour key** for transparency; zero those pixels' RGB on
     conversion. A state missing from `guns_righthand` (e.g. `crossbow`) is mirrored from the left.
   - M1919 belt tiers are `mag-0` = empty belt, `mag-1..4` = 20/40/60/80 rounds (`M38closed0/20/40/
