@@ -21,10 +21,10 @@
         <BoxContainer Orientation="Horizontal"
                       HorizontalAlignment="Right">
             <Button Name="CancelButton"
-                    Text="{Loc 'trait-window-cancel'}"
+                    Text="{Loc 'emote-window-cancel'}"
                     Margin="0 0 5 0"/>
             <Button Name="SaveButton"
-                    Text="{Loc 'trait-window-save'}"/>
+                    Text="{Loc 'emote-window-save'}"/>
         </BoxContainer>
     </BoxContainer>
 </DefaultWindow>

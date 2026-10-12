@@ -7,6 +7,7 @@ using Content.Shared._PS.Interactions;
 using Content.Shared._PS.Organs;
 using Content.Shared.Chat;
 using Content.Shared.Database;
+using Content.Shared.Examine;
 using Content.Shared.Ghost;
 using Content.Shared.Hands.Components;
 using Content.Shared.Humanoid;
@@ -46,6 +47,7 @@ public sealed partial class InteractionPanelSystem : EntitySystem
     [Dependency] private readonly ChatSystem _chat = default!;
     [Dependency] private readonly IChatManager _chatManager = default!;
     [Dependency] private readonly IPlayerManager _player = default!;
+    [Dependency] private readonly ExamineSystemShared _examine = default!;
     [Dependency] private readonly GenitalOrganSystem _organs = default!;
     [Dependency] private readonly DrippingCumSystem _drip = default!;
     [Dependency] private readonly IAdminLogManager _adminLogger = default!; // Palmtree: interaction audit log
@@ -69,6 +71,12 @@ public sealed partial class InteractionPanelSystem : EntitySystem
 
     private const float InteractionRange = 6f;
     private const float SoundRange = 4f;
+
+    /// <summary>
+    /// Range of lewd interaction emotes. Unlike the old PVS multiplier this is an absolute
+    /// world-space range and is blocked by walls (see <see cref="SendErpEmote"/>).
+    /// </summary>
+    private const float ErpEmoteRange = 4f;
 
     public override void Initialize()
     {
@@ -750,10 +758,25 @@ public sealed partial class InteractionPanelSystem : EntitySystem
             ("entity", ent),
             ("message", colored));
 
-        var filter = Filter.Empty().AddPlayersByPvs(source, 0.12f, EntityManager, _player);
+        // Palmtree: an explicit range + line of sight instead of a PVS radius.
+        // AddPlayersByPvs only checks distance (net.max_update_range * multiplier, and the
+        // default 25 * 2f used to make these emotes readable 50 tiles away through walls);
+        // InRangeUnOccluded raycasts for occluders, so walls block them like any interaction.
+        var filter = Filter.Empty();
+        foreach (var session in _player.Sessions)
+        {
+            if (session.AttachedEntity is not { Valid: true } attached)
+                continue;
 
-        // Ghosts do not get to snoop on ERP emotes.
-        filter.RemoveWhere(session => session.AttachedEntity is { } attached && HasComp<GhostComponent>(attached));
+            // Ghosts do not get to snoop on ERP emotes.
+            if (HasComp<GhostComponent>(attached))
+                continue;
+
+            if (!_examine.InRangeUnOccluded(source, attached, ErpEmoteRange))
+                continue;
+
+            filter.AddPlayer(session);
+        }
 
         _chatManager.ChatMessageToManyFiltered(filter, ChatChannel.Emotes, message, wrapped, source, false, false, null);
     }

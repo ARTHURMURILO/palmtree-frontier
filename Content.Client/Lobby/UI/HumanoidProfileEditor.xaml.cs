@@ -1562,7 +1562,7 @@ namespace Content.Client.Lobby.UI
 
             var buttonText = hiddenCount > 0
                 ? Loc.GetString("emote-window-button-with-count", ("count", visibleCount))
-                : Loc.GetString("trait-window-button");
+                : Loc.GetString("emote-window-button");
 
             var button = new Button
             {

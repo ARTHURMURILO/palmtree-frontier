@@ -64,12 +64,12 @@ content are intentionally not ported.
    revealing genitals. There is still no persisted consent system.
 5. **Effects.** `TryPerform` sends an emote through `ChatSystem.TrySendInGameICMessage`
    (`InGameICChatType.Emote`, `ChatTransmitRange.Normal`) for normal interactions, or builds a
-   purple-wrapped message (`#c060ff`) and sends it through `IChatManager.ChatMessageToManyFiltered`
-   for lewd ones (the emote path strips markup). It plays the prototype's sound (lewd sounds are
-   filtered to sessions in range whose `LewdSounds` is on; normal sounds use PVS), applies
+   purple-wrapped message (`#c060ff`) and sends it through `SendErpEmote` for lewd ones (the
+   standard emote path strips markup). It plays the prototype's sound (lewd sounds are filtered
+   to sessions in range whose `LewdSounds` is on; normal sounds use PVS), applies
    intro/continuing message selection (same interaction + target within `ContinueTimeout`), then
    applies lust. Participants are **not** turned to face each other (Palmtree removed the Sandstorm
-   auto-facing).
+   auto-facing). See "Range and visibility (PVS)" below for who can read/hear what.
 6. **Arousal.** `EnsureState` randomizes tolerance (75-200) and potency (10-25) per mob once. Lust
    decays 1/s on read. Lewd interactions add 20 by default (self actions 30/20, ass slap 10; kiss
    sets at least 10) and arouse the
@@ -107,6 +107,27 @@ content are intentionally not ported.
    logs as `LogType.Interaction` with both participants and the interaction prototype id/name.
    Auto-repeat continuations are not logged again, so a chain produces one log entry.
 
+## Range and visibility (PVS)
+
+The interaction panel measures range in **world tiles**. The engine's **PVS** (*Potentially
+Visible Set*) is per-client interest management, not line of sight:
+
+- `net.max_update_range` (CVar, default **25**) is the radius in which the server sends entities
+  to a client. `Filter.AddPlayersByPvs(origin, multiplier)` is literally
+  `AddInRange(origin, 25 * multiplier)` - it does **not** raycast, so **walls never block it**.
+- The port originally filtered lewd emotes with `AddPlayersByPvs(source, 2f)` = **50 tiles**,
+  which let players read ERP emotes through walls from across the station. A stopgap lowered the
+  multiplier to `0.12f` (~3 tiles). `SendErpEmote` now uses an explicit `ErpEmoteRange = 4f` on
+  top of `ExamineSystemShared.InRangeUnOccluded` (same map + distance + occluder raycast - the
+  same check behind whispering and subtle chat), plus the existing "no ghosts" rule.
+- Performing interactions was already line-of-sight-checked: opening/using one goes through
+  `SharedInteractionSystem.InRangeUnobstructed(user, target, range)` with `InteractionRange = 6f`,
+  so an interaction cannot be started through a wall.
+- Lewd **sounds** (`SoundRange = 4f`) are distance-filtered but not wall-blocked - SS14 audio has
+  no occlusion (gunshots and speech are audible through walls too). Normal (non-lewd) interaction
+  emotes use the regular chat path (`ChatTransmitRange.Normal` -> `VoiceRange = 10`) and are
+  visible through walls like every other emote.
+
 ## Content
 
 - Prototypes are defined in `Resources/Prototypes/_PS/Interactions/interactions.yml`.
@@ -143,7 +164,9 @@ in the same system. Full details: `systems/genital-organs.md`.
   requirements. Do not reintroduce marking-based checks in requirement code.
 - Lewd emotes must go through `SendErpEmote` (purple); the standard chat path strips markup. Both
   `SendErpEmote` and the lewd sound filter drop sessions attached to a `GhostComponent`, so
-  observers (including admin ghosts) never receive ERP text or sounds.
+  observers (including admin ghosts) never receive ERP text or sounds. Do **not** filter these with
+  `Filter.AddPlayersByPvs` - it is a bare radius (`net.max_update_range` x multiplier) that ignores
+  walls; use `ErpEmoteRange` + `InRangeUnOccluded` (see "Range and visibility (PVS)").
 - The entity event bus allows **one subscription per (component, event) pair across all systems**.
   `MarkingVisibilityChangedEvent` is owned by `GenitalOrganSystem`; the client
   `HumanoidAppearanceSystem` must not subscribe to it. Local preview refreshes go through
