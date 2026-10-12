@@ -1,0 +1,28 @@
+# Palmtree: a pocketable MIDI synthesizer styled after the tape recorder.
+# The key trick is ActivatableUI.inHandsOnly: false, which keeps the instrument UI
+# (and thus MIDI playback) open when the walkman is moved into a pocket or bag.
+- type: entity
+  parent: SynthesizerInstrument
+  id: WalkmanInstrument
+  name: walkman
+  description: A portable synthesizer in a tape player's shell. Play it, pocket it, and the music keeps going.
+  components:
+  - type: Sprite
+    sprite: _DV/Objects/Devices/tape_recorder.rsi
+    layers:
+    - state: empty
+    - state: idle
+      map: ["tape"]
+  - type: Appearance
+  - type: InstrumentVisuals
+  - type: GenericVisualizer
+    visuals:
+      enum.InstrumentVisuals.Playing:
+        tape:
+          False: { state: "idle" }
+          True: { state: "playing" }
+  - type: Item
+    size: Small # Fits in pockets and bags.
+  - type: ActivatableUI
+    # Keep the UI open (and the music playing) while the walkman is stored.
+    inHandsOnly: false

@@ -32,6 +32,7 @@
       weight: 5
       children:
       - id: SynthesizerInstrument
+      - id: WalkmanInstrument
       - id: GunpetInstrument
       - id: BagpipeInstrument
       - id: RockGuitarInstrument
