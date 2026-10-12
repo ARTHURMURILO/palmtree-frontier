@@ -762,3 +762,15 @@ Entries:
         valuable items are left alone.
   id: 90045
   time: '2026-10-12T18:45:00.0000000+00:00'
+- author: TheLife
+  changes:
+    - type: Add
+      message: >-
+        Added the synthetic emergency auto-injector, a single-use repair pen
+        that patches up synths - including radiation damage.
+    - type: Tweak
+      message: >-
+        Synths no longer take extra heat damage, and are now extremely
+        sensitive to radiation damage.
+  id: 90045
+  time: '2026-10-12T20:30:00.0000000+00:00'

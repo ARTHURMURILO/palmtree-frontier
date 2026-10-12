@@ -126,6 +126,57 @@
     bloodlossModifier: -25
     modifyBloodLevel: 90
 
+# Palmtree: Coyote's synthetic emergency auto-injector. Adapted to heal directly - our synths
+# ignore reagent effects, so it works like the repair items above rather than injecting a mix.
+- type: entity
+  name: synthetic emergency auto-injector
+  parent: BaseHealingItem
+  id: RepairAutoinjector
+  description: Prevents system failure and instantly restores the system partially. Always seek medical attention after averted system failure.
+  components:
+  - type: Sprite
+    sprite: _CS/Objects/Specific/Medical/robotopicals.rsi
+    state: robor
+  - type: Item
+    size: Tiny
+    sprite: Objects/Specific/Medical/medipen.rsi
+    inhandVisuals:
+      left:
+      - state: base-needle-inhand-left
+      - state: base-colorA-inhand-left
+        color: "#5d81c7"
+      - state: base-colorB-inhand-left
+        color: "#5d81c7"
+      right:
+      - state: base-needle-inhand-right
+      - state: base-colorA-inhand-right
+        color: "#5d81c7"
+      - state: base-colorB-inhand-right
+        color: "#5d81c7"
+  - type: StaticPrice
+    vendPrice: 3000
+  - type: Healing
+    delay: 2
+    selfHealPenaltyMultiplier: 1 # Palmtree: injectors are quick to use on yourself
+    damageContainers:
+    - Silicon
+    - Synth # Palmtree: our synth species
+    damage:
+      types:
+        Heat: -90
+        Shock: -90
+        Cold: -90
+        Caustic: -90
+        Radiation: -100
+        Bloodloss: -30
+    bloodlossModifier: -10
+    modifyBloodLevel: 30
+    healingBeginSound:
+      path: "/Audio/Items/hypospray.ogg"
+      params:
+        volume: 1.0
+        variation: 0.125
+
 - type: latheRecipe
   parent: BaseToolRecipe
   id: RepairPatch
@@ -145,3 +196,13 @@
     Silver: 500
   result: RepairSpray
   completetime: 10
+
+- type: latheRecipe
+  parent: BaseToolRecipe
+  id: RepairAutoinjector
+  materials:
+    Steel: 250
+    Plastic: 250
+    Silver: 250
+  result: RepairAutoinjector
+  completetime: 5

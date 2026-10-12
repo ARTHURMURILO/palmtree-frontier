@@ -86,7 +86,7 @@ public sealed class SynthTest
             });
 
             // The synthetic repair topicals accept the Synth damage container.
-            foreach (var item in new[] { "RepairPatch", "RepairSpray", "RepairSprayPlus" })
+            foreach (var item in new[] { "RepairPatch", "RepairSpray", "RepairSprayPlus", "RepairAutoinjector" })
             {
                 var uid = entMan.SpawnEntity(item, map.GridCoords);
                 var healing = entMan.GetComponent<HealingComponent>(uid);
@@ -94,6 +94,17 @@ public sealed class SynthTest
                     $"{item} should heal the Synth damage container");
                 entMan.DeleteEntity(uid);
             }
+
+            // Palmtree: synths are extremely radiation-sensitive and no longer take extra heat damage.
+            var damageableComp = entMan.GetComponent<DamageableComponent>(synth);
+            var modifierSet = protoMan.Index<DamageModifierSetPrototype>(damageableComp.DamageModifierSetId!.Value);
+            Assert.Multiple(() =>
+            {
+                Assert.That(modifierSet.Coefficients.TryGetValue("Radiation", out var radiation) && radiation > 1f, Is.True,
+                    "synths should be extremely sensitive to radiation");
+                Assert.That(modifierSet.Coefficients.ContainsKey("Heat"), Is.False,
+                    "synths should not take extra heat damage");
+            });
 
             entMan.DeleteEntity(synth);
             entMan.DeleteEntity(wreck);

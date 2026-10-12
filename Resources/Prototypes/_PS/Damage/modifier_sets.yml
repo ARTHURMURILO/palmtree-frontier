@@ -7,6 +7,6 @@
     Poison: 0
     Asphyxiation: 0
     Cold: 0
-    Radiation: 0.5
-    Heat: 1.5
+    Radiation: 10 # Palmtree: extremely sensitive to radiation (was 0.5); repaired with synthetic repair items.
+    # Heat: 1.5 # Palmtree: removed - fire is visual only and their chassis resists heat, so no extra heat damage.
     Shock: 1.5

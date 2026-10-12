@@ -14,14 +14,17 @@
   - 50% faster than humans; their legs are built for speed.
   - Three times as durable as a human (300 critical / 600 dead).
   - Immune to poison, asphyxiation and cold, and resistant to brute damage.
+  - Fire and ordinary heat do not damage their chassis.
   - Does not need to breathe.
   - Drinks and eats anything - reagents are metabolized without any effect.
   - Heavier than most species, which noticeably slows anyone trying to drag them.
 
   ## Drawbacks
 
-  - Takes increased heat and shock damage.
-  - Uses coolant (Oxidant) instead of blood, and is repaired rather than treated by medical.
+  - Takes increased shock damage, and is extremely sensitive to radiation.
+  - Uses coolant (Oxidant) instead of blood, and is repaired rather than treated by medical:
+    repair patches, sprays and the synthetic emergency auto-injector are the only way to fix
+    them up, radiation damage included.
 
   ## Special
 
