@@ -729,3 +729,21 @@ Entries:
   time: '2026-10-12T13:51:41.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/22fb2f4d580433df5d3b40595394c6c49bbb591d
+- author: TheLife
+  changes:
+    - type: Fix
+      message: >-
+        Lewd interaction panel emotes are now limited to 4 tiles and can no
+        longer be read through walls.
+    - type: Fix
+      message: >-
+        The emote category picker's buttons now show proper labels instead of
+        untranslated text.
+    - type: Fix
+      message: >-
+        The Chitinid, male/female Avali and unisex Resomi voice barks now show
+        proper names in character creation.
+  id: 90044
+  time: '2026-10-12T18:20:07.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/0b713c58b2f03e4336bdda5fec777b960534ccb2
