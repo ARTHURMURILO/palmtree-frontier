@@ -2,6 +2,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using Content.Client.Administration.UI.CustomControls; // Palmtree: HSeparator
+using Content.Client._PS.UserInterface; // Palmtree: color clipboard
 using Content.Client.Humanoid;
 using Content.Client.Lobby.UI.Loadouts;
 using Content.Client.Lobby.UI.Roles;
@@ -126,8 +127,8 @@ namespace Content.Client.Lobby.UI
             public OptionButton SizeButton = default!;
             public OptionButton VisibilityButton = default!;
             public Label DetailColorLabel = default!;
-            public ColorSelectorSliders PrimaryColor = default!;
-            public ColorSelectorSliders DetailColor = default!;
+            public ColorSelectorWithClipboard PrimaryColor = default!;
+            public ColorSelectorWithClipboard DetailColor = default!;
             public Slider OffsetXSlider = default!;
             public Slider OffsetYSlider = default!;
             public SpinBox OffsetXBox = default!;
@@ -152,7 +153,7 @@ namespace Content.Client.Lobby.UI
 
         private Direction _previewRotation = Direction.North;
 
-        private ColorSelectorSliders _rgbSkinColorSelector;
+        private ColorSelectorWithClipboard _rgbSkinColorSelector;
 
         private bool _isDirty;
 
@@ -331,7 +332,7 @@ namespace Content.Client.Lobby.UI
                 OnSkinColorOnValueChanged();
             };
 
-            RgbSkinColorContainer.AddChild(_rgbSkinColorSelector = new ColorSelectorSliders());
+            RgbSkinColorContainer.AddChild(_rgbSkinColorSelector = new ColorSelectorWithClipboard());
             _rgbSkinColorSelector.SelectorType = ColorSelectorSliders.ColorSelectorType.Hsv; // defaults color selector to HSV
             _rgbSkinColorSelector.OnColorChanged += _ =>
             {
@@ -789,12 +790,12 @@ namespace Content.Client.Lobby.UI
                     Catalogs = typeCatalogs,
                 };
 
-                var primaryColor = new ColorSelectorSliders
+                var primaryColor = new ColorSelectorWithClipboard
                 {
                     SelectorType = ColorSelectorSliders.ColorSelectorType.Hsv,
                     IsAlphaVisible = true, // Palmtree: per-organ alpha
                 };
-                var detailColor = new ColorSelectorSliders
+                var detailColor = new ColorSelectorWithClipboard
                 {
                     SelectorType = ColorSelectorSliders.ColorSelectorType.Hsv,
                     IsAlphaVisible = true, // Palmtree: per-organ alpha

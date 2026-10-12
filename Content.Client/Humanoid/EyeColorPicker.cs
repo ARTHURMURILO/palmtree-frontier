@@ -1,5 +1,6 @@
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
+using Content.Client._PS.UserInterface; // Palmtree: color clipboard
 
 namespace Content.Client.Humanoid;
 
@@ -7,7 +8,7 @@ public sealed class EyeColorPicker : Control
 {
     public event Action<Color>? OnEyeColorPicked;
 
-    private readonly ColorSelectorSliders _colorSelectors;
+    private readonly ColorSelectorWithClipboard _colorSelectors;
 
     private Color _lastColor;
 
@@ -26,7 +27,7 @@ public sealed class EyeColorPicker : Control
         };
         AddChild(vBox);
 
-        vBox.AddChild(_colorSelectors = new ColorSelectorSliders());
+        vBox.AddChild(_colorSelectors = new ColorSelectorWithClipboard());
         _colorSelectors.SelectorType = ColorSelectorSliders.ColorSelectorType.Hsv; // defaults color selector to HSV
 
         _colorSelectors.OnColorChanged += ColorValueChanged;

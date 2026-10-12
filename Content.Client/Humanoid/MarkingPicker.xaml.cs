@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Numerics;
+using Content.Client._PS.UserInterface; // Palmtree: color clipboard
 using Content.Shared.Humanoid;
 using Content.Shared.Humanoid.Markings;
 using Content.Shared.Humanoid.Prototypes;
@@ -453,7 +454,7 @@ public sealed partial class MarkingPicker : Control
         _currentMarkingColors.Clear();
         _currentMarkingGlow.Clear(); // Palmtree/Coyote
         CMarkingColors.DisposeAllChildren();
-        List<ColorSelectorSliders> colorSliders = new();
+        List<ColorSelectorWithClipboard> colorSliders = new();
         for (int i = 0; i < prototype.Sprites.Count; i++)
         {
             var colorContainer = new BoxContainer
@@ -463,7 +464,7 @@ public sealed partial class MarkingPicker : Control
 
             CMarkingColors.AddChild(colorContainer);
 
-            ColorSelectorSliders colorSelector = new ColorSelectorSliders();
+            ColorSelectorWithClipboard colorSelector = new ColorSelectorWithClipboard();
             colorSelector.SelectorType = ColorSelectorSliders.ColorSelectorType.Hsv; // defaults color selector to HSV
             colorSelector.IsAlphaVisible = true; // Palmtree: per-marking alpha
             colorSliders.Add(colorSelector);
