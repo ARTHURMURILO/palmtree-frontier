@@ -794,3 +794,14 @@ Entries:
         when something nearby had been destroyed at the same moment.
   id: 90048
   time: '2026-10-13T00:37:05.0000000+00:00'
+- author: TheLife
+  changes:
+    - type: Tweak
+      message: >-
+        Custom votes with custom answer options now play the Yes sound on every
+        vote cast and the success sound when the vote finishes, instead of only
+        playing the vote-start sound.
+  id: 90049
+  time: '2026-10-13T01:02:34.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/241ea1bc6c09958cf72b51bf8217183aee6e41bd
