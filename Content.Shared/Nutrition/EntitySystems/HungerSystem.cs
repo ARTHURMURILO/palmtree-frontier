@@ -164,7 +164,7 @@ public sealed class HungerSystem : EntitySystem
 
         if (component.HungerThresholdDecayModifiers.TryGetValue(component.CurrentThreshold, out var modifier))
         {
-            // Palmtree: global decay slowdown (6x by default).
+            // Palmtree: global decay slowdown (2x by default).
             component.ActualDecayRate = component.BaseDecayRate * modifier * PalmtreeNutrition.DecayRateMultiplier;
             DirtyField(uid, component, nameof(HungerComponent.ActualDecayRate));
             SetAuthoritativeHungerValue((uid, component), GetHunger(component));

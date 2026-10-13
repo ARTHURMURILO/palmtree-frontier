@@ -350,11 +350,12 @@ system (`inventory: None`, `transferDamage/Name: true`, `revertOnDeath/Crit: tru
 
 ## Nutrition rate tuning (2026-10)
 
-- `Content.Shared/_PS/Nutrition/PalmtreeNutrition.cs` holds `DecayRateMultiplier = 1f / 6f`.
+- `Content.Shared/_PS/Nutrition/PalmtreeNutrition.cs` holds `DecayRateMultiplier = 1f / 2f`
+  (was `1f / 6f`, retuned to 2x slower).
 - `HungerSystem.DoHungerThresholdEffects` and `ThirstSystem.UpdateEffects` multiply the computed
   `ActualDecayRate` by it (marked `// Palmtree`), so every species and NPC - including the
   per-species `baseDecayRate` overrides (Chitinid 33% faster, Avali/Resomi 2x, Diona and Sheleg,
-  etc.) - now takes 6x longer to get hungry or thirsty.
+  etc.) - takes 2x longer to get hungry or thirsty.
 - Change the one constant to retune; hunger and thirst share it.
 
 ## Weapon detector (2026-10)
