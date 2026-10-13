@@ -59,6 +59,9 @@ Notable in-place patches added by this port:
 - `Content.Shared/Movement/Pulling/Systems/PullingSystem.cs` — mass-based pull slowdown for heavy
   pulled entities (`// Palmtree`).
 - `Content.Server/Body/Systems/RespiratorSystem.cs` — skips entities with `SynthComponent`.
+- `Content.Server/Emp/EmpSystem.cs` — `EmpPulse` skips entities the lookup returned after they
+  were deleted in the same tick (Frontier's grid-immunity check used `Transform()` and threw on
+  them) (`// Palmtree`).
 - `Content.Client/Clothing/ClientClothingSystem.cs` — leg-style displacement override.
 - All species-restricted markings — `kindAllowance` added (915 markings across 39 files), so
   markings are shared across species kinds like Coyote did.

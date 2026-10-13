@@ -786,3 +786,11 @@ Entries:
         it takes to find a defibrillator. Food still spoils.
   id: 90047
   time: '2026-10-12T23:45:45.0000000+00:00'
+- author: TheLife
+  changes:
+    - type: Fix
+      message: >-
+        Fixed EMP pulses (EMP grenades, ion bolts, goblin tools) erroring out
+        when something nearby had been destroyed at the same moment.
+  id: 90048
+  time: '2026-10-13T00:37:05.0000000+00:00'

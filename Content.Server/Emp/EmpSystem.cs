@@ -43,7 +43,12 @@ public sealed class EmpSystem : SharedEmpSystem
         foreach (var uid in _lookup.GetEntitiesInRange(coordinates, range))
         {
             // Frontier: Block EMP on grid
-            var gridUid = Transform(uid).GridUid;
+            // Palmtree: the entity lookup can still return entities that were deleted earlier this
+            // tick (their transform is already gone), so skip them instead of throwing in Transform().
+            if (!TryComp<TransformComponent>(uid, out var xform))
+                continue;
+
+            var gridUid = xform.GridUid;
             if (gridUid != null &&
                 (immuneGrids != null && immuneGrids.Contains(gridUid.Value) ||
                 TryComp<ProtectedGridComponent>(gridUid, out var prot) && prot.PreventEmpEvents))
