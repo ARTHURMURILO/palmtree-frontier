@@ -1,1 +1,3 @@
-﻿
+[game]
+# Re-enable the lobby in debug builds (development.toml disables it for straight in-game spawns).
+lobbyenabled = true
