@@ -109,7 +109,7 @@ namespace Content.Server.Voting
                     options.Options.Add((args[i], i));
                 }
 
-                // Palmtree: with custom answers only the start sound plays.
+                // Palmtree: with custom answers every cast plays the Yes cue and finish plays Success.
                 options.SoundMode = VoteSoundMode.StartedOnly;
             }
 

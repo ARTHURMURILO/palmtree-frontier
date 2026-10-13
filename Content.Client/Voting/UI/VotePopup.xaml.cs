@@ -47,8 +47,8 @@ namespace Content.Client.Voting.UI
                 {
                     ToggleMode = true,
                     Group = group,
-                    // Palmtree: binary votes use the vote_yes/vote_no cues instead of the default click.
-                    MuteSounds = vote.SoundMode == VoteSoundMode.Binary,
+                    // Palmtree: custom votes mute the click since the server broadcasts a cue.
+                    MuteSounds = vote.SoundMode != VoteSoundMode.None,
                 };
                 _voteButtons[i] = button;
                 VoteOptionsContainer.AddChild(button);

@@ -12,7 +12,7 @@ namespace Content.Shared.Voting
         /// <summary>No custom sounds (standard votes).</summary>
         None = 0,
 
-        /// <summary>Only the vote-start sound (customvotes with custom answer options).</summary>
+        /// <summary>Start, Yes on each cast, and success on finish (customvotes with custom answer options).</summary>
         StartedOnly,
 
         /// <summary>Start, Yes/No on each cast, and success/failure on finish (question-only votes).</summary>

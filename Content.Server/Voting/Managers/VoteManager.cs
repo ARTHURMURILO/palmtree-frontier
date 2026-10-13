@@ -133,9 +133,12 @@ namespace Content.Server.Voting.Managers
             v.VotesDirty.Add(player);
             v.Dirty = true;
 
-            // Palmtree: question-only custom votes announce every Yes/No cast to the whole server.
+            // Palmtree: custom votes announce every cast to the whole server.
+            // Binary votes use Yes/No cues; votes with custom options play the Yes cue for any option.
             if (v.SoundMode == VoteSoundMode.Binary && option is 0 or 1)
                 BroadcastVoteSound(v.Id, option == 0 ? VoteSoundType.Yes : VoteSoundType.No);
+            else if (v.SoundMode != VoteSoundMode.None && option != null)
+                BroadcastVoteSound(v.Id, VoteSoundType.Yes);
         }
 
         private bool IsValidOption(VoteReg voteReg, int? option)
@@ -289,8 +292,8 @@ namespace Content.Server.Voting.Managers
                     msg.TargetEntity = v.TargetEntity.Value.Id;
                 }
 
-                // Palmtree: binary custom votes mute the option buttons' default click so only the
-                // broadcast Yes/No cue is heard.
+                // Palmtree: custom votes mute the option buttons' default click so only the
+                // broadcast cue is heard.
                 msg.SoundMode = v.SoundMode;
             }
 
@@ -439,12 +442,17 @@ namespace Content.Server.Voting.Managers
             v.OnFinished?.Invoke(_voteHandles[v.Id], args);
             DirtyCanCallVoteAll();
 
-            // Palmtree: pass/fail cue for question-only custom votes (Yes is option 0, No is option 1).
+            // Palmtree: custom votes play a finish cue. Binary votes use Success/Failure based on
+            // Yes vs No; votes with custom options always play Success.
             if (v.SoundMode == VoteSoundMode.Binary)
             {
                 var yesVotes = v.Entries.Length > 0 ? v.Entries[0].Votes : 0;
                 var noVotes = v.Entries.Length > 1 ? v.Entries[1].Votes : 0;
                 BroadcastVoteSound(v.Id, yesVotes > noVotes ? VoteSoundType.Success : VoteSoundType.Failure);
+            }
+            else if (v.SoundMode != VoteSoundMode.None)
+            {
+                BroadcastVoteSound(v.Id, VoteSoundType.Success);
             }
         }
 
