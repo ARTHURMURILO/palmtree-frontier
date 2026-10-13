@@ -75,6 +75,10 @@
 #   background: /Textures/_NF/LobbyScreens/missingmail.webp
 
 # - type: lobbyBackground
+  # id: privateermedical
+  # background: /Textures/_NF/LobbyScreens/privateermedical.webp
+
+# - type: lobbyBackground
   # id: StaresBlankly
   # background: /Textures/_NF/LobbyScreens/staresblankly.webp
 
