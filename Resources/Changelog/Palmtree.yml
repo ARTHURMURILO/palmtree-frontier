@@ -805,3 +805,13 @@ Entries:
   time: '2026-10-13T01:02:34.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/241ea1bc6c09958cf72b51bf8217183aee6e41bd
+- author: TheLife
+  changes:
+    - type: Add
+      message: >-
+        Added weapon detector scanner gates that beep when someone carrying a
+        gun walks through.
+  id: 90050
+  time: '2026-10-13T18:00:03.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/17ea186d955c06c1c115203737168dd8bdeaffea
