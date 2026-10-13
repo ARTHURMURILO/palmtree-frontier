@@ -259,6 +259,8 @@
             acts: [ "Destruction" ]
   - type: PirateBountyItem # Frontier
     id: GeneratorRTG # Frontier
+  - type: RadiationSource # Palmtree: small radiation amount.
+    intensity: 0.1
 
 # TODO: need radioactive fallout when destroyed
 
