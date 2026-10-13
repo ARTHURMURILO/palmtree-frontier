@@ -1,0 +1,73 @@
+# SS13 scanner gate (guns mode) port. Base detects any gun; variants narrow it down.
+# NOTE: FixturesComponent.Fixtures is [NeverPushInheritance], so the sensor fixture must be
+# declared in full - overriding a single field of an inherited fixture wipes shape/mask/layer.
+- type: entity
+  parent: BaseMachinePowered
+  id: PSWeaponDetector
+  name: weapon detector
+  description: A walk-through scanner gate that beeps when someone carrying a gun passes under it.
+  placement:
+    mode: SnapgridCenter
+  components:
+  - type: Sprite
+    sprite: _PS/Structures/Machines/weapon_detector.rsi
+    drawdepth: Doors
+    layers:
+    - state: base
+      map: [ "base" ]
+    - state: passive
+      map: [ "scan" ]
+  - type: Appearance
+  - type: GenericVisualizer
+    visuals:
+      enum.WeaponDetectorVisuals.State:
+        scan:
+          Off: { visible: false }
+          Passive: { state: passive, visible: true }
+          Scanning: { state: scanning, visible: true }
+          Alarm: { state: alarm, visible: true }
+  - type: Transform
+    noRot: false
+  - type: Rotatable
+    rotateWhileAnchored: true
+  - type: Fixtures
+    fixtures:
+      fix1:
+        shape: !type:PhysShapeAabb
+          bounds: "-0.45,-0.45,0.45,0.45"
+        density: 190
+        hard: false
+        layer:
+        - LowImpassable
+  - type: StepTrigger
+    requiredTriggeredSpeed: 0
+    stepOn: true
+  - type: WeaponDetector
+
+- type: entity
+  parent: PSWeaponDetector
+  id: PSWeaponDetectorLethal
+  suffix: Lethal only
+  description: A walk-through scanner gate that beeps when someone carrying a lethal gun passes under it. Toy guns don't count.
+  components:
+  - type: WeaponDetector
+    scanMode: LethalOnly
+
+- type: entity
+  parent: PSWeaponDetector
+  id: PSWeaponDetectorSecBypass
+  suffix: Security bypass
+  description: A walk-through scanner gate that beeps when someone carrying a gun passes under it. Mindshielded crew and IDs with armory access pass silently.
+  components:
+  - type: WeaponDetector
+    scanMode: SecurityBypass
+
+- type: entity
+  parent: PSWeaponDetector
+  id: PSWeaponDetectorDebug
+  suffix: Debug, always on
+  description: A weapon detector that ignores power and anchoring requirements. For testing and events.
+  components:
+  - type: WeaponDetector
+    requiresAnchored: false
+    requiresPower: false

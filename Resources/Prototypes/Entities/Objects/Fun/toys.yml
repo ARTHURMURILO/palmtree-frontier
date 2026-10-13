@@ -271,6 +271,9 @@
   name: foam crossbow
   description: Aiming this at Security may get you filled with lead.
   components:
+  - type: Tag # Palmtree: ignored by lethal-only weapon detectors
+    tags:
+    - ToySidearm
   - type: Sprite
     sprite: Objects/Fun/Foam/foam_crossbow.rsi
     state: icon

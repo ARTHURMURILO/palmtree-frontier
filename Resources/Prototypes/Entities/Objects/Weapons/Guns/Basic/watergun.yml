@@ -52,6 +52,7 @@
   - type: Tag # Frontier
     tags: # Frontier
     - Sidearm # Frontier
+    - ToySidearm # Palmtree: ignored by lethal-only weapon detectors
 
 - type: entity
   id: WeaponWaterPistol

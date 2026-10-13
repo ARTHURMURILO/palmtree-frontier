@@ -1,0 +1,4 @@
+- files: ["weapon_detector_alarm.ogg"]
+  license: "CC-BY-SA-3.0"
+  copyright: "Scanner gate alarm buzz ported from S.P.L.U.R.T-tg (sound/machines/scanner/scanbuzz.ogg), originally /tg/station."
+  source: "https://github.com/tgstation/tgstation"

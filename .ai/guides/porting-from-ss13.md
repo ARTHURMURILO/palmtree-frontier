@@ -114,6 +114,11 @@ What it does and why:
   Consequence: a 4-direction state stored as 4 cells wide (or as a 2×2 block) is still valid in
   `.rsi` — Robust slices with `dimX = image.Width / meta.size.x`, so directions do not have to be
   stacked vertically in the file.
+- **RSI cell order (not just the grid shape)**: the engine reads each state image as flat
+  row-major cells where direction 0's frames come first, then direction 1's, etc. — i.e. cell
+  `dir * frames + frame`. Rows must therefore be *directions* (S, N, E, W), with frames along X;
+  writing directions along X and frames along Y (transposed) loads without errors but breaks every
+  facing except the first. `RsiDirection` values are South=0, North=1, East=2, West=3.
 - **Trap**: the metadata is authoritative and can contain an **empty state name** (`state = ""`)
   that still consumes cells. Any parser that skips it shifts every later state and silently
   extracts the wrong sprites. Match state names with `state = "([^"]*)"` and count its

@@ -356,3 +356,33 @@ system (`inventory: None`, `transferDamage/Name: true`, `revertOnDeath/Crit: tru
   per-species `baseDecayRate` overrides (Chitinid 33% faster, Avali/Resomi 2x, Diona and Sheleg,
   etc.) - now takes 6x longer to get hungry or thirsty.
 - Change the one constant to retune; hunger and thirst share it.
+
+## Weapon detector (2026-10)
+
+SS13 scanner-gate guns-mode port (S.P.L.U.R.T-tg `code/game/machinery/scanner_gate.dm`,
+`icons/obj/machines/scangate.dmi`): a walk-through arch that beeps when a gun carrier steps
+onto its tile. Guns-only; no multi-mode TGUI.
+
+- Code: `Content.Shared/_PS/WeaponDetector/WeaponDetectorComponent.cs` (scan modes + visual
+  enums), `Content.Server/_PS/WeaponDetector/WeaponDetectorSystem.cs` (step-trigger handler, gun
+  scan, bypass, alarm, examine hint).
+- Prototypes: `Resources/Prototypes/_PS/Entities/Structures/Machines/weapon_detector.yml` -
+  `PSWeaponDetector` (any gun; needs anchoring + power), `PSWeaponDetectorLethal`
+  (`scanMode: LethalOnly`, skips `ToySidearm`-tagged guns), `PSWeaponDetectorSecBypass`
+  (`scanMode: SecurityBypass`, silent for mindshield carriers and `Armory`-access IDs), and
+  `PSWeaponDetectorDebug` (ignores power/anchoring, for testing).
+- Physics: `hard: false` sensor fixture + `StepTrigger` (`stepOn: true`,
+  `requiredTriggeredSpeed: 0`). The fixture is declared in full on purpose:
+  `FixturesComponent.Fixtures` is `[NeverPushInheritance]`, so a partial `fix1:` override wipes
+  shape/mask/layer and the gate never gets contacts with mobs (this was a real bug - the gate
+  silently did nothing).
+- Sprites: `Resources/Textures/_PS/Structures/Machines/weapon_detector.rsi` - `base` plus
+  green/cyan/red scanline overlays (`passive`/`scanning`/`alarm`), 4 directions, switched by a
+  `GenericVisualizer`; `Rotatable` with `rotateWhileAnchored` (Transform `noRot: false`).
+- Feedback: SS13 `scanbuzz.ogg` (`Resources/Audio/_PS/Machines/`), large-caution popup, 2 s beep
+  cooldown, scanline flash duration; `Off` hides the scanlines while unanchored/unpowered.
+- Machines spawn anchored (`BaseStructure` sets `Transform anchored: true`); the usual reason a
+  freshly spawned detector does nothing is missing power - `ApcPowerReceiver` examine says
+  "un-powered", and the Debug variant skips both checks.
+- Toy guns carry the `ToySidearm` tag; `FoamCrossbow` and the water-gun base were tagged for the
+  lethal-only variant.
