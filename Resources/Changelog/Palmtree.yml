@@ -815,3 +815,11 @@ Entries:
   time: '2026-10-13T18:00:03.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/17ea186d955c06c1c115203737168dd8bdeaffea
+- author: TheLife
+  changes:
+    - type: Tweak
+      message: Hunger and thirst now decay 2x slower instead of 6x slower.
+  id: 90051
+  time: '2026-10-13T21:50:26.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/94932542f26116c159ce18b5b3230e6256c40671
