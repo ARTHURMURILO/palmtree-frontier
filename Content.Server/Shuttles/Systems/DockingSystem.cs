@@ -6,6 +6,7 @@ using Content.Server.Shuttles.Events;
 using Content.Shared.Doors;
 using Content.Shared.Doors.Components;
 using Content.Shared.Popups;
+using Content.Shared._PS.Shuttles.Events; // Palmtree
 using Content.Shared.Shuttles.Components;
 using Content.Shared.Shuttles.Events;
 using Content.Shared.Shuttles.Systems;
@@ -60,6 +61,7 @@ namespace Content.Server.Shuttles.Systems
             SubscribeLocalEvent<ShuttleConsoleComponent, DockRequestMessage>(OnRequestDock);
             SubscribeLocalEvent<ShuttleConsoleComponent, UndockRequestMessage>(OnRequestUndock);
             SubscribeLocalEvent<ShuttleConsoleComponent, UndockAllRequestMessage>(OnRequestUndockAll); // Frontier
+            SubscribeLocalEvent<ShuttleConsoleComponent, DockAllRequestMessage>(OnRequestDockAll); // Palmtree
         }
 
         public void UndockDocks(EntityUid gridUid)
@@ -503,5 +505,75 @@ namespace Content.Server.Shuttles.Systems
             }
         }
         // End Frontier
+
+        // Palmtree: attempt to dock every listed port to a compatible dock; ports that cannot dock are skipped.
+        private void OnRequestDockAll(EntityUid uid, ShuttleConsoleComponent component, DockAllRequestMessage args)
+        {
+            if (args.DockEntities.Count == 0)
+                return;
+
+            var console = _console.GetDroneConsole(uid);
+
+            if (console == null)
+            {
+                _popup.PopupCursor(Loc.GetString("shuttle-console-dock-fail"));
+                return;
+            }
+
+            var shuttleUid = Transform(console.Value).GridUid;
+
+            if (!CanShuttleDock(shuttleUid))
+            {
+                _popup.PopupCursor(Loc.GetString("shuttle-console-dock-fail"));
+                return;
+            }
+
+            // Collect candidate docks once: anchored docks anywhere except our own grid.
+            var candidates = new List<Entity<DockingComponent>>();
+            var query = AllEntityQuery<DockingComponent, TransformComponent>();
+
+            while (query.MoveNext(out var candidateUid, out var candidateComp, out var candidateXform))
+            {
+                if (!candidateXform.Anchored || candidateXform.GridUid == shuttleUid)
+                    continue;
+
+                candidates.Add((candidateUid, candidateComp));
+            }
+
+            var dockedAny = false;
+
+            foreach (var netDock in args.DockEntities)
+            {
+                if (!TryGetEntity(netDock, out var ourDock) ||
+                    !TryComp(ourDock, out DockingComponent? ourDockComp) ||
+                    ourDockComp.ReceiveOnly ||
+                    ourDockComp.DockedWith != null)
+                {
+                    continue;
+                }
+
+                // Cheating? Our docks must belong to the console's shuttle (mirrors OnRequestDock).
+                if (!TryComp(ourDock, out TransformComponent? ourXform) || ourXform.GridUid != shuttleUid)
+                    continue;
+
+                var dock = (ourDock.Value, ourDockComp);
+
+                foreach (var candidate in candidates)
+                {
+                    if (candidate.Comp.DockedWith != null || !CanDock(dock, candidate))
+                        continue;
+
+                    Dock(dock, candidate);
+                    dockedAny = true;
+                    break;
+                }
+            }
+
+            if (!dockedAny)
+            {
+                _popup.PopupCursor(Loc.GetString("shuttle-console-dock-fail"));
+            }
+        }
+        // End Palmtree
     }
 }

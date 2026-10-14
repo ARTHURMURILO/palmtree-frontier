@@ -30,6 +30,7 @@ public sealed partial class DockingScreen : BoxContainer
     public event Action<NetEntity, NetEntity>? DockRequest;
     public event Action<NetEntity>? UndockRequest;
     public event Action<List<NetEntity>>? UndockAllRequest; // Frontier
+    public event Action<List<NetEntity>>? DockAllRequest; // Palmtree
 
     public DockingScreen()
     {
@@ -48,6 +49,7 @@ public sealed partial class DockingScreen : BoxContainer
         };
 
         UndockAllButton.OnPressed += _ => OnUndockAllPressed(); // Frontier
+        DockAllButton.OnPressed += _ => OnDockAllPressed(); // Palmtree
     }
 
     // Frontier
@@ -78,6 +80,36 @@ public sealed partial class DockingScreen : BoxContainer
     }
     // End Frontier
 
+    // Palmtree: send every free dock of the current shuttle, so the server can attempt to dock each.
+    private void OnDockAllPressed()
+    {
+        if (DockAllRequest == null)
+            return;
+
+        if (DockingControl.GridEntity is not { } shuttle)
+            return;
+
+        var netEntity = _entManager.GetNetEntity(shuttle);
+        if (!Docks.TryGetValue(netEntity, out var shuttleDocks))
+            return;
+
+        var freePorts = new List<NetEntity>();
+
+        foreach (var dock in shuttleDocks)
+        {
+            if (!dock.Connected)
+            {
+                freePorts.Add(dock.Entity);
+            }
+        }
+
+        if (freePorts.Count > 0)
+        {
+            DockAllRequest.Invoke(freePorts);
+        }
+    }
+    // End Palmtree
+
     private void OnView(NetEntity obj)
     {
         if (_ourDockButtons.TryGetValue(obj, out var viewed))
@@ -96,16 +128,19 @@ public sealed partial class DockingScreen : BoxContainer
         // Frontier
         // Enable the undock all button only if there are docked ports
         var hasDockedPorts = false;
+        var hasFreePorts = false; // Palmtree
         if (shuttle != null)
         {
             var netEntity = _entManager.GetNetEntity(shuttle.Value);
             if (Docks.TryGetValue(netEntity, out var shuttleDocks))
             {
                 hasDockedPorts = shuttleDocks.Any(d => d.Connected);
+                hasFreePorts = shuttleDocks.Any(d => !d.Connected); // Palmtree
             }
         }
 
         UndockAllButton.Disabled = !hasDockedPorts;
+        DockAllButton.Disabled = !hasFreePorts; // Palmtree
         // End Frontier
     }
 

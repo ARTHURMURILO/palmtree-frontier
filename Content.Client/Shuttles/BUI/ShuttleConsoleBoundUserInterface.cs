@@ -1,4 +1,5 @@
 using Content.Client.Shuttles.UI;
+using Content.Shared._PS.Shuttles.Events; // Palmtree
 using Content.Shared.Shuttles.BUIStates;
 using Content.Shared.Shuttles.Events;
 using JetBrains.Annotations;
@@ -27,6 +28,7 @@ public sealed partial class ShuttleConsoleBoundUserInterface : BoundUserInterfac
         _window.DockRequest += OnDockRequest;
         _window.UndockRequest += OnUndockRequest;
         _window.UndockAllRequest += OnUndockAllRequest; // Frontier
+        _window.DockAllRequest += OnDockAllRequest; // Palmtree
         NfOpen(); // Frontier
     }
 
@@ -36,6 +38,13 @@ public sealed partial class ShuttleConsoleBoundUserInterface : BoundUserInterfac
         SendMessage(new UndockAllRequestMessage(dockEntities));
     }
     // End Frontier
+
+    // Palmtree
+    private void OnDockAllRequest(List<NetEntity> dockEntities)
+    {
+        SendMessage(new DockAllRequestMessage(dockEntities));
+    }
+    // End Palmtree
 
     private void OnUndockRequest(NetEntity entity)
     {
