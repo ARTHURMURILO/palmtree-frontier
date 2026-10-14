@@ -858,3 +858,66 @@ Entries:
   time: '2026-10-14T00:57:06.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/566a43a3f9675da346a0b0c5f1bd48c52b768d27
+- author: TheLife
+  changes:
+    - type: Tweak
+      message: >-
+        The NFSD vault bluespace event now only spawns while at least one NFSD
+        officer is on duty.
+    - type: Add
+      message: >-
+        Jukeboxes now have a Skip button that skips the currently playing song
+        and starts the next one in the queue.
+    - type: Fix
+      message: >-
+        The interaction panel no longer refreshes while it is open, so sliders
+        and input fields keep their values while you use them.
+    - type: Add
+      message: >-
+        Added a Theobromine intolerance trait; chocolate, coffee and tea no
+        longer poison you for your species unless you take the trait.
+    - type: Fix
+      message: >-
+        The "exportcharacters" command works again instead of failing with a
+        "Path must be rooted" error.
+    - type: Tweak
+      message: >-
+        Wanted criminals can no longer use regular bank ATMs; black market ATMs
+        serve everyone.
+    - type: Add
+      message: >-
+        Added six admin-only meme items (B.L.Y.A.T.M.A.N. generator, Dimitry
+        Kalashnikov, bottomless vodka, pocket immovable rod, infinite potato,
+        gloves of the red star).
+    - type: Add
+      message: >-
+        Added six researchable thruster types: the slow MicroPutt StationKeeper
+        and TugMaster, the fast TurboPutt Kobold and Dragon, and the UltraPutt
+        Vesper and Titan, each with their own machine boards.
+    - type: Tweak
+      message: >-
+        Thrusters are now named after the SpacePutt family (SpacePutt Mule and
+        SpacePutt Mini thrusters and their boards).
+    - type: Fix
+      message: Small thrusters and gyroscopes no longer stop bullets on their frames.
+    - type: Add
+      message: >-
+        Added armor plates: trauma, ballistic, diffusion and speed plates slot
+        into the standard armor vest and hardsuits, are researched in the
+        mercenary arsenal tree and printed from the techfab.
+    - type: Tweak
+      message: >-
+        NFSD thrusters are now experimental: more thrust, and they can no longer
+        be unanchored or pried off the ship.
+    - type: Fix
+      message: >-
+        Skipping a jukebox song with nothing queued behind it now stops playback
+        and clears the machine instead of holding the track.
+    - type: Tweak
+      message: >-
+        The B.L.Y.A.T.M.A.N. generator's purple light now only lights while it
+        is running.
+  id: 90055
+  time: '2026-10-14T20:58:46.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/e5617cc2f301db228d1a5b046f80558b8096d7c4
