@@ -387,3 +387,35 @@ onto its tile. Guns-only; no multi-mode TGUI.
   "un-powered", and the Debug variant skips both checks.
 - Toy guns carry the `ToySidearm` tag; `FoamCrossbow` and the water-gun base were tagged for the
   lethal-only variant.
+
+## Shuttle console: Dock All (2026-10)
+
+A "Dock All" button on the shuttle console dock screen, under Frontier's "Undock All". It sends
+every free dock of the current shuttle and the server tries to dock each one; ports that cannot
+dock are silently skipped (same as clicking "Dock" on them), and a failure popup only appears if
+nothing docked at all.
+
+- Message: `Content.Shared/_PS/Shuttles/Events/DockAllRequestMessage.cs` (list of the shuttle's
+  free dock entities).
+- Server: `OnRequestDockAll` in `Content.Server/Shuttles/Systems/DockingSystem.cs` - validates the
+  console's shuttle (`CanShuttleDock`), collects every anchored dock on other grids, and for each
+  listed port docks it to the first candidate passing `CanDock` (range + alignment + dock-type
+  mask). Receive-only and already-docked ports are skipped, as are candidates on the shuttle's own
+  grid.
+- Client: `DockAllButton` in `Content.Client/Shuttles/UI/DockingScreen.xaml`, event plumbing in
+  `DockingScreen.xaml.cs`, `ShuttleConsoleWindow.xaml.cs` and `ShuttleConsoleBoundUserInterface.cs`
+  (all marked `// Palmtree`). Enabled whenever the shuttle has at least one undocked port.
+- Locale: `Resources/Locale/en-US/_PS/shuttles.ftl` (`shuttle-console-dock-all`).
+- Docking geometry gotcha: `CanDock` uses the world-angle convention (0 = south) and
+  `Vector2.ToWorldAngle()` adds pi/2 - two docks at the exact same position are *not* aligned
+  (zero vector -> pi/2), so scratch tests must offset the ports by a fraction of a tile.
+
+## Expedition rattle return (2026-10)
+
+When a body is recovered from an expedition it is marked with `ExpedRecoveredBodyComponent`
+(`Content.Server/_PS/Salvage/Components`); when its shuttle lands back on the main map,
+`SalvageSystem.RetriggerRecoveredRattles` removes the marker and raises `RetriggerRattleEvent`
+(`Content.Shared/_PS/Implants`), which the implant relay forwards to any rattle implants so medics
+get a "STILL dead/critical" message with real coordinates. While on the expedition map the rattle
+says "on an expedition" instead of useless coordinates. Locale:
+`Resources/Locale/en-US/_PS/salvage.ftl`.

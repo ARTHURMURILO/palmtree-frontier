@@ -27,4 +27,23 @@ public sealed partial class RattleOnTriggerComponent : BaseXOnTriggerComponent
         {MobState.Critical, "rattle-on-trigger-critical-message"},
         {MobState.Dead, "rattle-on-trigger-dead-message"}
     };
+
+    // Palmtree: messages used when the target is on an expedition map, where coordinates are of no
+    // use to anyone listening.
+    [DataField]
+    public Dictionary<MobState, LocId> MessagesOnExpedition = new()
+    {
+        {MobState.Critical, "rattle-on-trigger-critical-message-expedition"},
+        {MobState.Dead, "rattle-on-trigger-dead-message-expedition"}
+    };
+
+    // Palmtree: messages used when the rattle is re-broadcast (a recovered body arriving back on
+    // the main map).
+    [DataField]
+    public Dictionary<MobState, LocId> RetryMessages = new()
+    {
+        {MobState.Critical, "rattle-on-trigger-critical-message-repeat"},
+        {MobState.Dead, "rattle-on-trigger-dead-message-repeat"}
+    };
+    // End Palmtree
 }

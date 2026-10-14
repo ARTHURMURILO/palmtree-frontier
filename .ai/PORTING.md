@@ -538,3 +538,82 @@ Ported from `BYOND/coyote-bayou` under the `_CS` prefix, one file per class in
   based on the firing weapon (`ProjectileComponent.Weapon`). Applied to AKM, AUG, Novalite and P90
   (x1.25) and Hristov (x3). Needed because SS14 damage lives on the ammunition and those guns share
   calibers with Frontier weapons.
+
+## 20. 2026-10 Shuttle radar proximity alert (Coyote)
+
+- **Source**: Coyote commit `087cbe50ee` ("radar and the silencing of the twinks", Neenner) - a
+  Coyote-original feature built on Frontier's Monolith-ported radar-blip system; it was never
+  upstreamed to Frontier/Wizden.
+- **Behaviour**: a per-console toggle + radius slider (1-300 m, default 128, locked while enabled)
+  on the nav screen. While enabled the console beeps when a radar contact or shuttle hull enters the
+  radius, pinging faster as it gets closer (30 m distance bands, 0.25-5 s interval), and the nav
+  radar draws a light-blue circle at the alert radius.
+- **Server**: `ShuttleConsoleComponent` gained `ProximityAlertEnabled`/`ProximityAlertRadius` plus
+  timers; `_NF/Shuttles/Systems/ShuttleSystem.cs` gained the two request handlers and
+  `NfUpdateProximityAlerts` (called from the base `ShuttleSystem.Update`);
+  `_NF/Radar/RadarBlipSystem` gained `TryGetNearestContactDistance` (radar blips plus a per-tick
+  cache of all shuttle hulls, own grid ignored, capped at the 300 m blip render distance).
+- **Shared/client**: `NavInterfaceState` gained `proximityAlertEnabled`/`proximityAlertRadius`;
+  `SetProximityAlertRequest`/`SetProximityAlertRadiusRequest` in
+  `_NF/Shuttles/Events/SetTrackedCoordinatesRequest.cs`; NavScreen toggle + slider; the nav control
+  draws the radius circle.
+- **Adaptations**: skipped Coyote's Wayfarer autopilot/emergency-brake hunks and the unrelated
+  global-audio changes from the same commit; `RadarBlipSystem` keeps the Palmtree
+  `SharedRadarBlipSystem` base (no jetpack-event hunks needed). Markers are `// Palmtree/Coyote`.
+- **Audio**: `beep_series1.ogg` + `short_beep2.ogg` copied from Coyote's `_Mono` computer SFX set
+  (Monolith PR #1647 -> Wayfarer PR #108 -> Coyote PR #1004); attribution in
+  `Resources/Audio/_Mono/Effects/Computer/attributions.yml`.
+- **Locale**: `shuttle-console-proximity-alert*` in `Resources/Locale/en-US/_NF/shuttles/console.ftl`.
+
+## 21. 2026-10 Expedition auto-recovery (Coyote via Wayfarer)
+
+Fixes round removal on failed expeditions: bodies (dead, ghosted or left behind) are returned to
+the shuttle instead of being deleted with the map, and an expedition where everyone worth caring
+about is dead aborts early and recovers the bodies.
+
+- **Sources**: Coyote PRs [#470](https://github.com/ARF-SS13/coyote-frontier/pull/470) (core
+  recovery + abort), [#565](https://github.com/ARF-SS13/coyote-frontier/pull/565) (SSD
+  forgiveness), [#1066](https://github.com/ARF-SS13/coyote-frontier/pull/1066) (borg fix), ported
+  via Wayfarer PR [#1590](https://github.com/project-wayfarer/wayfarer-14/pull/1590) (their
+  modern-base adaptation).
+- **Behaviour**: when a shuttle auto-departs, every `HasHadMind` mob on the map that is not on that
+  shuttle is teleported aboard (beds -> chairs -> consoles -> warp points), damaged (`TendToDork`),
+  extinguished and temperature-reset, with sparks and a sound. If all relevant players are dead
+  (aghosts, never-mind mobs, SSD-on-arrival players and borg brains excluded), `AbortNow` announces
+  and forces departure in 20 s.
+- **Files**: `Content.Server/Salvage/SalvageSystem.Runner.cs` (rescue loop + `RescueDork`,
+  `GetDeadLoserDestinations`, `TendToDork`, `TryTeleportToStrap`, `AbortIfWiped`, `AbortNow`,
+  `UpdateSsdGoobers`), `SalvageExpeditionComponent` (`NextAutoAbortCheck`, `InitialSsdGoobers`,
+  `Aborted`), `_NF/procedural/expeditions.ftl` (`salvage-expedition-abort-wipe`),
+  `Resources/Audio/_CS/ExpedReturnToBed.ogg` (+ attributions). Markers are `// Palmtree/Coyote`.
+- **Core patch - `HasHadMind`**: Coyote's field (`MindContainerComponent.HasHadMind`, set in
+  `MindSystem.TransferTo`, commit `102b623d04e`) is not upstream; it is backported so ghosted
+  corpses (mind detached) still count as player bodies for the rescue and abort scans. The
+  `Access(typeof(SharedMindSystem))` attribute was dropped from the component so other types may
+  write it (same as Coyote; the analyzer rejects foreign writes otherwise).
+- **Adaptations**: `TendToDork` uses Coyote's original damage (alive 150 Slash/150 Heat/100
+  Poison, crit 50/50/25, dead untouched) instead of Wayfarer's harsher always-damage random roll;
+  the #1066 borg guard and the `FireStacksAdjustment = -1000` sign fix are applied; the deathrattle
+  "insistent med implants" retrigger was skipped (Wayfarer deprecated it); the rescue scan uses
+  `HasHadMind` (Coyote final) rather than Wayfarer's `HasMind`, so ghosted bodies are recovered too.
+- **`AdminGhostComponent` (Coyote, `Content.Shared/_CS`)**: ported as a pure marker (Coyote commit
+  `88772ac83f2`; it is not upstream) and added to the `AdminObserver` prototype, so systems can
+  identify admin ghosts instead of relying on `GhostComponent.CanGhostInteract`. The abort scan
+  uses it exactly like Coyote; existing systems are untouched.
+- **SSD return**: `SalvageSystem.OnPlayerAttached` (global `PlayerAttachedEvent`) removes a
+  reconnecting player from `InitialSsdGoobers`, so a player who was SSD at arrival and comes back
+  mid-expedition counts as active crew again (the expedition keeps going; the wipe abort no longer
+  triggers just because the other crewmember died).
+- **Expedition deathrattle wording + FTL arrival retrigger (Palmtree)**: `RattleOnTriggerComponent`
+  gained `MessagesOnExpedition` (used while the target is on a `SalvageExpeditionComponent` map,
+  where coordinates are useless - "has died on an expedition") and `RetryMessages` (the "STILL
+  dead/critical" variants). `RattleOnTriggerSystem` sends through a shared `SendRattleMessage`
+  helper and handles `ImplantRelayEvent<RetriggerRattleEvent>`; `SharedSubdermalImplantSystem.Relays.cs`
+  relays the new `_PS` event. `SalvageSystem.RescueDork` marks recovered bodies with
+  `ExpedRecoveredBodyComponent` (`Content.Server/_PS/Salvage/Components`) and
+  `SalvageSystem.RetriggerRecoveredRattles` (called from `OnFTLCompleted`) removes the marker and
+  raises the retrigger for bodies on the arriving shuttle, so medics get the real coordinates.
+  Locale: `Resources/Locale/en-US/_PS/salvage.ftl`.
+- Verified with scratch integration tests (mind tracking, abort logic, aghost exclusion, SSD
+  rejoin, reduced rescue damage, rescue teleport/buckle); removed afterwards per convention.
+  In-game retest still worthwhile.

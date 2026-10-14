@@ -1,0 +1,4 @@
+- files: ["ExpedReturnToBed.ogg"]
+  license: "Custom"
+  copyright: "Ported from coyote-frontier (Coyote PR #470, by Danny Kay); sourced via Wayfarer PR #1590. No license or attribution was declared upstream."
+  source: "https://github.com/ARF-SS13/coyote-frontier/pull/470"

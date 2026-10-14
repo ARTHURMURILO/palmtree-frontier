@@ -7,7 +7,7 @@ namespace Content.Shared.Mind.Components;
 /// This component indicates that this entity may have mind, which is simply an entity with a <see cref="MindComponent"/>.
 /// The mind entity is not actually stored in a "container", but is simply stored in nullspace.
 /// </summary>
-[RegisterComponent, Access(typeof(SharedMindSystem)), NetworkedComponent, AutoGenerateComponentState]
+[RegisterComponent, NetworkedComponent, AutoGenerateComponentState] // Palmtree/Coyote: dropped Access(typeof(SharedMindSystem)) for ever-mind tracking
 public sealed partial class MindContainerComponent : Component
 {
     /// <summary>
@@ -28,6 +28,16 @@ public sealed partial class MindContainerComponent : Component
     [ViewVariables(VVAccess.ReadWrite)]
     [DataField("showExamineInfo"), AutoNetworkedField]
     public bool ShowExamineInfo { get; set; }
+
+    // Palmtree/Coyote: ever-mind tracking (Coyote commit 102b623d04e)
+    /// <summary>
+    ///     Whether this entity has ever had a mind. Used to tell player-owned bodies (including
+    ///     ghosted corpses) apart from loot, e.g. for expedition body recovery.
+    /// </summary>
+    [ViewVariables(VVAccess.ReadWrite)]
+    [DataField, AutoNetworkedField]
+    public bool HasHadMind = false;
+    // End Palmtree/Coyote
 
     /// <summary>
     ///     Whether the mind will be put on a ghost after this component is shutdown.

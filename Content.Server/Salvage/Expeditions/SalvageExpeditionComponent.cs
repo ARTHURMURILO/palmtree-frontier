@@ -61,4 +61,24 @@ public sealed partial class SalvageExpeditionComponent : SharedSalvageExpedition
     // [DataField]
     // public ResolvedSoundSpecifier SelectedSong;
     // End Frontier: moved to Shared
+
+    // Palmtree/Coyote: expedition auto-recovery
+    /// <summary>
+    /// Next time to check whether everyone worth caring about is dead and the expedition should abort.
+    /// </summary>
+    [ViewVariables(VVAccess.ReadWrite), DataField]
+    public TimeSpan NextAutoAbortCheck = TimeSpan.Zero;
+
+    /// <summary>
+    /// The goobers on this expedition who were SSD on arrival.
+    /// </summary>
+    [ViewVariables(VVAccess.ReadWrite), DataField]
+    public HashSet<EntityUid> InitialSsdGoobers = new();
+
+    /// <summary>
+    /// Whether the expedition has been force-aborted by the auto-recovery logic.
+    /// </summary>
+    [ViewVariables(VVAccess.ReadWrite), DataField]
+    public bool Aborted = false;
+    // End Palmtree/Coyote
 }

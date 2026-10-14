@@ -53,6 +53,12 @@ default (`rules: []` in upstream presets).
 - Contractor loadout groups are extended with `_PS` (concealment implanter), `_CS` (Bayou clothes,
   leather satchel), `_DEN` (foot protectors, clicker) loadouts.
 - `_PS` lobby backgrounds/music are separate from `_NF/lobbyscreens.yml`.
+- Shuttle console extras (`_NF/Shuttles`, plus core `Shuttles` patches): inertia dampening, service
+  flags, target tracking, and the Palmtree/Coyote radar proximity alert (`.ai/PORTING.md` §20).
+- Expedition auto-recovery (Palmtree/Coyote): dead or left-behind bodies are returned to the
+  shuttle when it departs and wiped expeditions abort early (`.ai/PORTING.md` §21). Deathrattles
+  say "on an expedition" while on the map and re-broadcast with the real coordinates once the
+  shuttle lands.
 - No `_NF` core logic was changed by the port except loadout group lists (the garbage collection port
   below is a deliberate exception).
 

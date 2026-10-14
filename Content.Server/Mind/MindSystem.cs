@@ -185,6 +185,7 @@ public sealed class MindSystem : SharedMindSystem
         if (entity != null)
         {
             component = EnsureComp<MindContainerComponent>(entity.Value);
+            component.HasHadMind = true; // Palmtree/Coyote: ever-mind tracking
 
             if (component.HasMind)
                 _ghosts.OnGhostAttempt(component.Mind.Value, false);
@@ -214,6 +215,7 @@ public sealed class MindSystem : SharedMindSystem
 
             entity = Spawn(GameTicker.ObserverPrototypeName, position);
             component = EnsureComp<MindContainerComponent>(entity.Value);
+            component.HasHadMind = true; // Palmtree/Coyote: ever-mind tracking
             var ghostComponent = Comp<GhostComponent>(entity.Value);
             _ghosts.SetCanReturnToBody((entity.Value, ghostComponent), false);
             _ghosts.SetCanReturnFromCryo(ghostComponent, mind.UserId != null ? _cryo.HasCryosleepingBody(mind.UserId.Value) : false); // Frontier
@@ -223,6 +225,7 @@ public sealed class MindSystem : SharedMindSystem
         if (TryComp(oldEntity, out MindContainerComponent? oldContainer))
         {
             oldContainer.Mind = null;
+            oldContainer.HasHadMind = true; // Palmtree/Coyote: ever-mind tracking
             mind.OwnedEntity = null;
             Entity<MindComponent> mindEnt = (mindId, mind);
             Entity<MindContainerComponent> containerEnt = (oldEntity.Value, oldContainer);

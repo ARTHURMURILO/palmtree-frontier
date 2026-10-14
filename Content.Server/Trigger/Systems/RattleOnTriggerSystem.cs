@@ -1,8 +1,11 @@
 using Content.Server.Radio.EntitySystems;
 using Content.Server.Pinpointer;
+using Content.Server.Salvage.Expeditions; // Palmtree
+using Content.Shared.Implants; // Palmtree
 using Content.Shared.Mobs.Components;
 using Content.Shared.Trigger;
 using Content.Shared.Trigger.Components.Effects;
+using Content.Shared._PS.Implants; // Palmtree
 using Robust.Shared.Prototypes;
 using Robust.Shared.Utility;
 using Robust.Server.GameObjects; // Frontier
@@ -24,6 +27,7 @@ public sealed class RattleOnTriggerSystem : EntitySystem
         base.Initialize();
 
         SubscribeLocalEvent<RattleOnTriggerComponent, TriggerEvent>(OnTrigger);
+        SubscribeLocalEvent<RattleOnTriggerComponent, ImplantRelayEvent<RetriggerRattleEvent>>(OnRetriggerRelay); // Palmtree
     }
 
     private void OnTrigger(Entity<RattleOnTriggerComponent> ent, ref TriggerEvent args)
@@ -41,9 +45,32 @@ public sealed class RattleOnTriggerSystem : EntitySystem
 
         args.Handled = true;
 
-        if (!ent.Comp.Messages.TryGetValue(mobstate.CurrentState, out var messageId))
+        // Palmtree: expedition deaths have no useful map coordinates for anyone listening.
+        var targetXform = Transform(target.Value);
+        var onExpedition = targetXform.MapUid is { } mapUid && HasComp<SalvageExpeditionComponent>(mapUid);
+        var messages = onExpedition ? ent.Comp.MessagesOnExpedition : ent.Comp.Messages;
+
+        if (!messages.TryGetValue(mobstate.CurrentState, out var messageId))
             return;
 
+        SendRattleMessage(ent, target.Value, messageId);
+    }
+
+    // Palmtree: re-broadcast the rattle once a body recovered from an expedition arrives back on
+    // the main map, so medics get usable coordinates.
+    private void OnRetriggerRelay(Entity<RattleOnTriggerComponent> ent, ref ImplantRelayEvent<RetriggerRattleEvent> args)
+    {
+        if (!TryComp<MobStateComponent>(args.ImplantedEntity, out var mobstate))
+            return;
+
+        if (!ent.Comp.RetryMessages.TryGetValue(mobstate.CurrentState, out var messageId))
+            return;
+
+        SendRattleMessage(ent, args.ImplantedEntity, messageId);
+    }
+
+    private void SendRattleMessage(Entity<RattleOnTriggerComponent> ent, EntityUid target, LocId messageId)
+    {
         // Frontier: more specific species, grid and coordinate messages
 
         // // Gets the location of the user
@@ -51,7 +78,7 @@ public sealed class RattleOnTriggerSystem : EntitySystem
         // var message = Loc.GetString(messageId, ("user", target.Value), ("position", posText));
 
         // Gets location of the implant
-        var pos = _transform.GetMapCoordinates(target.Value);
+        var pos = _transform.GetMapCoordinates(target);
         var x = (int)pos.X;
         var y = (int)pos.Y;
         var posText = $"({x}, {y})";
@@ -62,10 +89,10 @@ public sealed class RattleOnTriggerSystem : EntitySystem
 
         // Frontier: Gets species of the implant user
         var speciesText = $"";
-        if (TryComp<HumanoidAppearanceComponent>(target.Value, out var species))
+        if (TryComp<HumanoidAppearanceComponent>(target, out var species))
             speciesText = $" ({species!.Species})";
 
-        var message = Loc.GetString(messageId, ("user", target.Value), ("specie", speciesText), ("grid", stationText!), ("position", posText));
+        var message = Loc.GetString(messageId, ("user", target), ("specie", speciesText), ("grid", stationText!), ("position", posText));
         // End Frontier
 
         // Sends a message to the radio channel specified by the implant

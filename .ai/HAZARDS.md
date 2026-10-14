@@ -342,3 +342,27 @@ value line.
   - M1919 belt tiers are `mag-0` = empty belt, `mag-1..4` = 20/40/60/80 rounds (`M38closed0/20/40/
     60/80`); `base`/`bolt-open` are `M38closed-empty`/`M38open-empty`.
 
+
+## 21. Expedition auto-recovery / ever-mind tracking (2026-10)
+
+- **`HasHadMind` is Coyote-only.** `MindContainerComponent.HasHadMind` was backported from Coyote
+  (commit `102b623d04e`) for expedition body recovery; it is **not** upstream Wizden/Frontier. It is
+  set in `MindSystem.TransferTo` on attach, detach and ghost creation.
+- **The `Access` analyzer blocks foreign writes.** The component's
+  `[Access(typeof(SharedMindSystem))]` attribute had to be dropped (Coyote did the same); with it,
+  any write to `HasHadMind` from another system or from tests fails the build with `RA0002`
+  ("Tried to perform a 'Write' ... despite only having 'Read' access"). Removing `Access` lets every
+  assembly write the component's fields - keep that in mind when adding more fields to it.
+- **`FireStacksAdjustment` is negative.** `ExtinguishEvent.FireStacksAdjustment` documents "should
+  be a negative number"; Wayfarer's port still had the old `+1000` bug, fixed here to `-1000`.
+- **`AdminGhostComponent` is Coyote-only** (ported as a `Content.Shared/_CS` marker and added to
+  the `AdminObserver` prototype). New systems that need to identify admin ghosts should use it
+  rather than `GhostComponent.CanGhostInteract` (a general ghost flag); existing `CanGhostInteract`
+  behaviour is unchanged.
+- **`PlayerAttachedEvent` is raised directed + broadcast.** A global `SubscribeLocalEvent<
+  PlayerAttachedEvent>` handler only fires when the event is raised with `broadcast: true` (the
+  engine's own attach path does this); raising it directed-only in tests silently skips global
+  subscribers.
+- **Event-bus subscriptions are locked at runtime.** Scratch integration tests cannot
+  `SubscribeLocalEvent`; assert via components or invoke private handlers by reflection instead.
+  `RemCompDeferred` also needs a tick (`RunTicksSync`) before the component is gone.
