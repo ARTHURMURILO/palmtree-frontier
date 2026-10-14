@@ -823,3 +823,38 @@ Entries:
   time: '2026-10-13T21:50:26.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/94932542f26116c159ce18b5b3230e6256c40671
+- author: TheLife
+  changes:
+    - type: Add
+      message: >-
+        Added a Dock All button to the shuttle console that attempts to dock
+        every free docking port.
+  id: 90052
+  time: '2026-10-14T00:57:06.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/2d2a7067cacbd6c2ba15d46600e390637234878a
+- author: TheLife
+  changes:
+    - type: Add
+      message: >-
+        Shuttle consoles now have a proximity alert toggle with an adjustable
+        radius that beeps when another ship or contact gets close.
+  id: 90053
+  time: '2026-10-14T00:57:06.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/28900cf613ef8fd7d131a96b50d824ac4229f94f
+- author: TheLife
+  changes:
+    - type: Fix
+      message: >-
+        Dying or being left behind on an expedition no longer deletes you
+        forever — bodies are recovered to the shuttle when it departs, and wiped
+        expeditions abort early to recover them.
+    - type: Tweak
+      message: >-
+        Expedition deathrattles now report "on an expedition" instead of useless
+        coordinates, and re-report with real coordinates once the shuttle lands.
+  id: 90054
+  time: '2026-10-14T00:57:06.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/566a43a3f9675da346a0b0c5f1bd48c52b768d27
