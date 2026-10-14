@@ -16,8 +16,12 @@ namespace Content.Client.Shuttles.UI
         public event Action<NetEntity?, ServiceFlags>? OnServiceFlagsChanged;
         public event Action<NetEntity?, Vector2>? OnSetTargetCoordinates;
         public event Action<NetEntity?, bool>? OnSetHideTarget;
+        public event Action<NetEntity?, bool>? OnSetProximityAlert; // Palmtree/Coyote
+        public event Action<NetEntity?, float>? OnSetProximityAlertRadius; // Palmtree/Coyote
 
         private bool _targetCoordsModified = false;
+        private bool _updatingProximityAlertToggle = false; // Palmtree/Coyote
+        private bool _updatingProximityAlertRadius = false; // Palmtree/Coyote
 
         private void NfInitialize()
         {
@@ -46,7 +50,46 @@ namespace Content.Client.Shuttles.UI
             TargetY.OnTextChanged += _ => _targetCoordsModified = true;
             TargetSet.OnPressed += _ => SetTargetCoords();
             TargetShow.OnPressed += _ => SetHideTarget(!TargetShow.Pressed);
+
+            // Palmtree/Coyote: radar proximity alert
+            ProximityAlertToggle.OnToggled += OnProximityAlertChanged;
+            ProximityAlertRadiusValue.GetChild(0).GetChild(1).Margin = new Thickness(8, 0, 0, 0);
+            ProximityAlertRadiusValue.OnValueChanged += OnProximityAlertRadiusChanged;
         }
+
+        // Palmtree/Coyote: radar proximity alert
+        private void OnProximityAlertChanged(BaseButton.ButtonToggledEventArgs args)
+        {
+            if (_updatingProximityAlertToggle)
+                return;
+
+            NavRadar.ProximityAlertEnabled = args.Pressed;
+            SetProximityRadiusUiLocked(args.Pressed);
+            _entManager.TryGetNetEntity(_shuttleEntity, out var shuttle);
+            OnSetProximityAlert?.Invoke(shuttle, args.Pressed);
+        }
+
+        private void SetProximityRadiusUiLocked(bool locked)
+        {
+            if (ProximityAlertRadiusValue.GetChild(0).GetChild(0) is Slider slider)
+                slider.Disabled = locked;
+
+            if (ProximityAlertRadiusValue.GetChild(0).GetChild(1) is SpinBox spinBox)
+            {
+                spinBox.LineEditDisabled = locked;
+                spinBox.SetButtonDisabled(locked);
+            }
+        }
+
+        private void OnProximityAlertRadiusChanged(int value)
+        {
+            if (_updatingProximityAlertRadius)
+                return;
+
+            _entManager.TryGetNetEntity(_shuttleEntity, out var shuttle);
+            OnSetProximityAlertRadius?.Invoke(shuttle, value);
+        }
+        // End Palmtree/Coyote
 
         private void SetDampenerMode(InertiaDampeningMode mode)
         {
@@ -87,6 +130,18 @@ namespace Content.Client.Shuttles.UI
                     TargetY.Text = 0.0f.ToString("F1");
                 }
             }
+
+            // Palmtree/Coyote: radar proximity alert
+            _updatingProximityAlertToggle = true;
+            ProximityAlertToggle.Pressed = state.ProximityAlertEnabled;
+            _updatingProximityAlertToggle = false;
+            NavRadar.ProximityAlertEnabled = state.ProximityAlertEnabled;
+            SetProximityRadiusUiLocked(state.ProximityAlertEnabled);
+
+            _updatingProximityAlertRadius = true;
+            ProximityAlertRadiusValue.Value = (int) state.ProximityAlertRadius;
+            _updatingProximityAlertRadius = false;
+            // End Palmtree/Coyote
         }
 
         private void OnRangeFilterChanged(int value)

@@ -13,6 +13,8 @@ namespace Content.Client.Shuttles.UI
         public event Action<NetEntity?, ServiceFlags>? OnServiceFlagsChanged;
         public event Action<NetEntity?, Vector2>? OnSetTargetCoordinates;
         public event Action<NetEntity?, bool>? OnSetHideTarget;
+        public event Action<NetEntity?, bool>? OnSetProximityAlert; // Palmtree/Coyote
+        public event Action<NetEntity?, float>? OnSetProximityAlertRadius; // Palmtree/Coyote
 
         private void NfInitialize()
         {
@@ -32,6 +34,16 @@ namespace Content.Client.Shuttles.UI
             {
                 OnSetHideTarget?.Invoke(entity, hide);
             };
+            // Palmtree/Coyote: radar proximity alert
+            NavContainer.OnSetProximityAlert += (entity, enabled) =>
+            {
+                OnSetProximityAlert?.Invoke(entity, enabled);
+            };
+            NavContainer.OnSetProximityAlertRadius += (entity, radius) =>
+            {
+                OnSetProximityAlertRadius?.Invoke(entity, radius);
+            };
+            // End Palmtree/Coyote
         }
 
     }

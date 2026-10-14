@@ -41,6 +41,26 @@ namespace Content.Server.Shuttles.Components
 
         [DataField]
         public InertiaDampeningMode DampeningMode = InertiaDampeningMode.Dampen;
+
+        // Palmtree/Coyote: radar proximity alert state
+        [DataField]
+        public bool ProximityAlertEnabled = false;
+
+        [DataField]
+        public float ProximityAlertRadius = 128f;
+
+        [ViewVariables]
+        public TimeSpan NextProximityAlert = TimeSpan.Zero;
+
+        [ViewVariables]
+        public TimeSpan NextProximityScan = TimeSpan.Zero;
+
+        [ViewVariables]
+        public bool HasProximityContact = false;
+
+        [ViewVariables]
+        public float CachedNearestProximityDistance = float.MaxValue;
+        // End Palmtree/Coyote
         // End Frontier
     }
 }

@@ -30,3 +30,25 @@ public sealed class SetHideTargetRequest : BoundUserInterfaceMessage
 {
     public bool Hidden { get; set; }
 }
+
+// Palmtree/Coyote: radar proximity alerts
+/// <summary>
+/// Raised on the client when it wishes to toggle radar proximity alerts.
+/// </summary>
+[Serializable, NetSerializable]
+public sealed class SetProximityAlertRequest : BoundUserInterfaceMessage
+{
+    public NetEntity? ShuttleEntityUid { get; set; }
+    public bool Enabled { get; set; }
+}
+
+/// <summary>
+/// Raised on the client when it wishes to set radar proximity alert scan radius.
+/// </summary>
+[Serializable, NetSerializable]
+public sealed class SetProximityAlertRadiusRequest : BoundUserInterfaceMessage
+{
+    public NetEntity? ShuttleEntityUid { get; set; }
+    public float Radius { get; set; }
+}
+// End Palmtree/Coyote

@@ -1,0 +1,4 @@
+- files: ["beep_series1.ogg", "short_beep2.ogg"]
+  license: "CC-BY-NC-SA-3.0"
+  copyright: "Computer SFX set from Monolith Station (credited upstream to NSV-13); ported from coyote-frontier (Coyote PR #1004, Wayfarer PR #108)"
+  source: "https://github.com/Monolith-Station/Monolith/commit/e307713ceec0ce45231b7972a0e38a19d8de6787"

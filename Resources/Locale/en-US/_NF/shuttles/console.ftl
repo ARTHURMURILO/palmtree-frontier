@@ -29,3 +29,6 @@ shuttle-console-target-name = Target
 shuttle-console-map-track = ⌖
 
 shuttle-console-undock-all = Undock All
+
+shuttle-console-proximity-alert = Proximity Alert
+shuttle-console-proximity-alert-radius = Proximity Radius (m)

@@ -17,6 +17,8 @@ namespace Content.Client.Shuttles.BUI
             _window.OnServiceFlagsChanged += OnServiceFlagsChanged;
             _window.OnSetTargetCoordinates += OnSetTargetCoordinates;
             _window.OnSetHideTarget += OnSetHideTarget;
+            _window.OnSetProximityAlert += OnSetProximityAlert; // Palmtree/Coyote
+            _window.OnSetProximityAlertRadius += OnSetProximityAlertRadius; // Palmtree/Coyote
             _window.RequestTrackEntity += OnTrackEntity;
         }
         private void OnInertiaDampeningModeChanged(NetEntity? entityUid, InertiaDampeningMode mode)
@@ -54,6 +56,26 @@ namespace Content.Client.Shuttles.BUI
                 Hidden = hide
             });
         }
+
+        // Palmtree/Coyote: radar proximity alert
+        private void OnSetProximityAlert(NetEntity? entityUid, bool enabled)
+        {
+            SendMessage(new SetProximityAlertRequest
+            {
+                ShuttleEntityUid = entityUid,
+                Enabled = enabled,
+            });
+        }
+
+        private void OnSetProximityAlertRadius(NetEntity? entityUid, float radius)
+        {
+            SendMessage(new SetProximityAlertRadiusRequest
+            {
+                ShuttleEntityUid = entityUid,
+                Radius = radius,
+            });
+        }
+        // End Palmtree/Coyote
 
         private void OnTrackEntity(NetEntity? entityUid, NetEntity trackEntity)
         {

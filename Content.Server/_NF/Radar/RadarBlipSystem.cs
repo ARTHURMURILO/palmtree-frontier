@@ -1,9 +1,12 @@
 using System.Numerics;
+using Content.Server.Shuttles.Components; // Palmtree/Coyote: radar proximity alerts
 using Content.Shared._Goobstation.Vehicles;
 using Content.Shared._NF.Radar;
 using Content.Shared.GameTicking;
 using Content.Shared.Movement.Components;
 using Content.Shared.Shuttles.Components;
+using Robust.Shared.Map; // Palmtree/Coyote: radar proximity alerts
+using Robust.Shared.Map.Components; // Palmtree/Coyote: radar proximity alerts
 using Robust.Shared.Network;
 using Robust.Shared.Timing;
 
@@ -17,6 +20,12 @@ namespace Content.Server._NF.Radar;
 /// </remarks>
 public sealed partial class RadarBlipSystem : SharedRadarBlipSystem
 {
+    // Palmtree/Coyote: cached shuttle contacts for radar proximity alerts
+    private readonly record struct ShuttleGridContact(EntityUid GridUid, MapId MapId, Vector2 Position, float Radius);
+    private readonly List<ShuttleGridContact> _cachedShuttleContacts = new();
+    private uint _cachedShuttleContactTick = uint.MaxValue;
+    // End Palmtree/Coyote
+
     [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly SharedTransformSystem _xform = default!;
 
@@ -63,7 +72,143 @@ public sealed partial class RadarBlipSystem : SharedRadarBlipSystem
     public void OnRoundRestart(RoundRestartCleanupEvent ev)
     {
         _nextBlipRequestPerUser.Clear();
+        _cachedShuttleContacts.Clear(); // Palmtree/Coyote: radar proximity alerts
+        _cachedShuttleContactTick = uint.MaxValue; // Palmtree/Coyote: radar proximity alerts
     }
+
+    // Palmtree/Coyote: radar proximity alerts
+    private void RefreshShuttleContactCacheIfNeeded()
+    {
+        var curTick = _timing.CurTick.Value;
+        if (_cachedShuttleContactTick == curTick)
+            return;
+
+        _cachedShuttleContactTick = curTick;
+        _cachedShuttleContacts.Clear();
+
+        var shuttleQuery = EntityQueryEnumerator<ShuttleComponent, MapGridComponent, TransformComponent>();
+        while (shuttleQuery.MoveNext(out var shuttleGridUid, out var shuttle, out var shuttleGrid, out var shuttleXform))
+        {
+            if (!shuttle.Enabled)
+                continue;
+
+            var shuttlePosition = _xform.GetWorldPosition(shuttleGridUid);
+            var shuttleAabb = shuttleGrid.LocalAABB;
+            var shuttleRadius = MathF.Max(shuttleAabb.Width, shuttleAabb.Height) * 0.5f;
+            _cachedShuttleContacts.Add(new ShuttleGridContact(shuttleGridUid, shuttleXform.MapID, shuttlePosition, shuttleRadius));
+        }
+    }
+
+    /// <summary>
+    /// Gets the nearest valid radar contact distance for a console within a given scan range.
+    /// Contacts on the same grid as the console are ignored.
+    /// </summary>
+    public bool TryGetNearestContactDistance(Entity<RadarConsoleComponent> ent, float scanRange, out float nearestDistance)
+    {
+        nearestDistance = float.MaxValue;
+
+        if (!TryComp(ent, out TransformComponent? radarXform))
+            return false;
+
+        var radarPosition = _xform.GetWorldPosition(ent);
+        var radarGrid = radarXform.GridUid;
+        var radarMapId = radarXform.MapID;
+        var radarRange = MathF.Min(scanRange, MaxBlipRenderDistance);
+        var radarRangeSquared = radarRange * radarRange;
+
+        if (radarRange <= 0f)
+            return false;
+
+        var found = false;
+        var seenContactGrids = new HashSet<EntityUid>();
+        var blipQuery = EntityQueryEnumerator<RadarBlipComponent, TransformComponent>();
+
+        while (blipQuery.MoveNext(out var blipUid, out var blip, out var blipXform))
+        {
+            if (!blip.Enabled || blipXform.MapID != radarMapId)
+                continue;
+
+            var blipGrid = blipXform.GridUid;
+            if (blip.RequireNoGrid && blipGrid != null)
+                continue;
+
+            if (!blip.VisibleFromOtherGrids && blipGrid != radarGrid)
+                continue;
+
+            if (blipGrid != null && blipGrid == radarGrid)
+                continue;
+
+            if (blipGrid is { } seenGridUid)
+                seenContactGrids.Add(seenGridUid);
+
+            var blipPosition = _xform.GetWorldPosition(blipUid);
+            var blipOffset = blipPosition - radarPosition;
+            var centerDistanceSquared = blipOffset.LengthSquared();
+
+            // For grid-mounted contacts, measure to the contact grid's hull instead of the console point.
+            // This makes proximity alerts start when the grid enters the scan circle.
+            var contactDistance = 0f;
+            if (blipGrid is { } contactGridUid && TryComp<MapGridComponent>(contactGridUid, out var contactGrid))
+            {
+                var aabb = contactGrid.LocalAABB;
+                var gridRadius = MathF.Max(aabb.Width, aabb.Height) * 0.5f;
+                var maxCenterDistance = radarRange + gridRadius;
+                var maxCenterDistanceSquared = maxCenterDistance * maxCenterDistance;
+                if (centerDistanceSquared > maxCenterDistanceSquared)
+                    continue;
+
+                var centerDistance = MathF.Sqrt(centerDistanceSquared);
+                contactDistance = MathF.Max(0f, centerDistance - gridRadius);
+            }
+            else
+            {
+                if (centerDistanceSquared > radarRangeSquared)
+                    continue;
+
+                contactDistance = MathF.Sqrt(centerDistanceSquared);
+            }
+
+            if (contactDistance > radarRange)
+                continue;
+
+            nearestDistance = MathF.Min(nearestDistance, contactDistance);
+            found = true;
+        }
+
+        // Some inactive shuttle grids do not currently have active radar blips.
+        // Include shuttle grids directly so proximity alerts still trigger on hull entry.
+        RefreshShuttleContactCacheIfNeeded();
+        foreach (var shuttleContact in _cachedShuttleContacts)
+        {
+            if (shuttleContact.MapId != radarMapId)
+                continue;
+
+            if (radarGrid == shuttleContact.GridUid)
+                continue;
+
+            if (seenContactGrids.Contains(shuttleContact.GridUid))
+                continue;
+
+            var shuttleOffset = shuttleContact.Position - radarPosition;
+            var shuttleCenterDistanceSquared = shuttleOffset.LengthSquared();
+            var maxShuttleCenterDistance = radarRange + shuttleContact.Radius;
+            var maxShuttleCenterDistanceSquared = maxShuttleCenterDistance * maxShuttleCenterDistance;
+            if (shuttleCenterDistanceSquared > maxShuttleCenterDistanceSquared)
+                continue;
+
+            var shuttleCenterDistance = MathF.Sqrt(shuttleCenterDistanceSquared);
+            var shuttleContactDistance = MathF.Max(0f, shuttleCenterDistance - shuttleContact.Radius);
+
+            if (shuttleContactDistance > radarRange)
+                continue;
+
+            nearestDistance = MathF.Min(nearestDistance, shuttleContactDistance);
+            found = true;
+        }
+
+        return found;
+    }
+    // End Palmtree/Coyote
 
     /// <summary>
     /// Assembles a list of radar blips visible to the given radar console.

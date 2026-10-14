@@ -44,6 +44,11 @@ public sealed partial class ShuttleNavControl
     public InertiaDampeningMode DampeningMode { get; set; }
     public ServiceFlags ServiceFlags { get; set; } = ServiceFlags.None;
 
+    // Palmtree/Coyote: radar proximity alert
+    public bool ProximityAlertEnabled { get; set; } = false;
+    public float ProximityAlertRadius { get; set; } = 128f;
+    // End Palmtree/Coyote
+
     /// <summary>
     /// Updates the radar UI with the latest navigation state and sets additional NF-specific state.
     /// </summary>
@@ -56,6 +61,8 @@ public sealed partial class ShuttleNavControl
         Target = state.Target;
         TargetEntity = state.TargetEntity;
         HideTarget = state.HideTarget;
+        ProximityAlertEnabled = state.ProximityAlertEnabled; // Palmtree/Coyote
+        ProximityAlertRadius = state.ProximityAlertRadius; // Palmtree/Coyote
 
         if (!EntManager.GetCoordinates(state.Coordinates).HasValue ||
             !EntManager.TryGetComponent(EntManager.GetCoordinates(state.Coordinates).GetValueOrDefault().EntityId, out TransformComponent? transform) ||

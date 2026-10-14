@@ -60,6 +60,18 @@ public sealed class NavInterfaceState
     /// Frontier: whether or not to show the target coords
     /// </summary>
     public bool HideTarget = true;
+
+    // Palmtree/Coyote: radar proximity alert state
+    /// <summary>
+    /// Whether proximity alert sounds are enabled for this console.
+    /// </summary>
+    public bool ProximityAlertEnabled = false;
+
+    /// <summary>
+    /// Radar proximity alert scan radius for this console.
+    /// </summary>
+    public float ProximityAlertRadius = 128f;
+    // End Palmtree/Coyote
     // End Frontier fields
     public NavInterfaceState(
         float maxRange,
@@ -70,7 +82,9 @@ public sealed class NavInterfaceState
         ServiceFlags serviceFlags, // Frontier
         Vector2? target, // Frontier
         NetEntity? targetEntity, // Frontier
-        bool hideTarget) // Frontier
+        bool hideTarget, // Frontier
+        bool proximityAlertEnabled, // Palmtree/Coyote
+        float proximityAlertRadius) // Palmtree/Coyote
     {
         MaxRange = maxRange;
         Coordinates = coordinates;
@@ -81,6 +95,8 @@ public sealed class NavInterfaceState
         Target = target; // Frontier
         TargetEntity = targetEntity; // Frontier
         HideTarget = hideTarget; // Frontier
+        ProximityAlertEnabled = proximityAlertEnabled; // Palmtree/Coyote
+        ProximityAlertRadius = proximityAlertRadius; // Palmtree/Coyote
     }
 }
 

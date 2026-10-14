@@ -150,6 +150,16 @@ public sealed partial class ShuttleNavControl : BaseShuttleControl
         DrawBacking(handle);
         DrawCircles(handle);
 
+        // Palmtree/Coyote: radar proximity alert
+        if (ProximityAlertEnabled && ProximityAlertRadius > 0f)
+        {
+            var proximityOrigin = ScalePosition(-new Vector2(Offset.X, -Offset.Y));
+            var scaledRadius = MinimapScale * ProximityAlertRadius;
+            var proximityColor = Color.LightBlue.WithAlpha(0.45f);
+            handle.DrawCircle(proximityOrigin, scaledRadius, proximityColor, false);
+        }
+        // End Palmtree/Coyote
+
         // No data
         if (_coordinates == null || _rotation == null)
         {

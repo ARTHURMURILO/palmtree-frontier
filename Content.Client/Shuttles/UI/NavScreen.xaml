@@ -108,6 +108,25 @@
             </controls:BoxContainer>
             <!-- End Frontier - Inertia dampener controls-->
 
+            <!-- Palmtree/Coyote: radar proximity alert -->
+            <controls:Button Name="ProximityAlertToggle"
+                             Text="{controls:Loc 'shuttle-console-proximity-alert'}"
+                             TextAlign="Center"
+                             ToggleMode="True"
+                             HorizontalExpand="True"
+                             Margin="0 0 0 3"/>
+
+            <controls:BoxContainer Orientation="Vertical" HorizontalExpand="True" Name="ProximityAlertRadiusBox">
+                <controls:Label Text="{controls:Loc 'shuttle-console-proximity-alert-radius'}"/>
+                <controls:SliderIntInput Name="ProximityAlertRadiusValue"
+                                         Access="Public"
+                                         MinValue="1"
+                                         MaxValue="300"
+                                         Value="128"
+                                         HorizontalExpand="True"/>
+            </controls:BoxContainer>
+            <!-- End Palmtree/Coyote -->
+
             <!-- Frontier - settable target -->
             <controls:BoxContainer Orientation="Vertical" HorizontalExpand="True" Name="TargetCoordsBox">
                 <controls:Label Text="{controls:Loc 'shuttle-console-target'}"/>
