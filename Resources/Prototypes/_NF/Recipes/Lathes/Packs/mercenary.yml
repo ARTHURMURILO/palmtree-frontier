@@ -108,6 +108,11 @@
   - ClothingOuterCoatBHTrench
   - ClothingOuterHardsuitMercenary
   - ClothingOuterHardsuitPrivateSecurity
+  # Palmtree/Mono: armor plates
+  - ArmorPlateBlunt_Slash
+  - ArmorPlatePierce
+  - ArmorPlateHeat
+  - ArmorPlateSpeed
   - ClothingShoesBootsMagSecurity
   - ClothingShoesBootsMagMercenary
   - PinpointerUniversalNF

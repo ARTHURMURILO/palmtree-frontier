@@ -1,5 +1,6 @@
 using Content.Server.Power.Components;
 using Content.Server.Power.EntitySystems;
+using Content.Shared._PS.Audio; // Palmtree
 using Content.Shared.Audio.Jukebox;
 using Content.Shared.Power;
 using Robust.Server.GameObjects;
@@ -34,6 +35,7 @@ public sealed class JukeboxSystem : SharedJukeboxSystem
         SubscribeLocalEvent<JukeboxComponent, JukeboxRepeatMessage>(OnJukeboxRepeatMessage); // wizden#42210
         SubscribeLocalEvent<JukeboxComponent, JukeboxShuffleMessage>(OnJukeboxShuffleMessage); // wizden#42210
         SubscribeLocalEvent<JukeboxComponent, JukeboxSetTimeMessage>(OnJukeboxSetTime);
+        SubscribeLocalEvent<JukeboxComponent, JukeboxSkipMessage>(OnJukeboxSkip); // Palmtree
         SubscribeLocalEvent<JukeboxComponent, ComponentInit>(OnComponentInit);
         SubscribeLocalEvent<JukeboxComponent, ComponentShutdown>(OnComponentShutdown);
 
@@ -136,6 +138,23 @@ public sealed class JukeboxSystem : SharedJukeboxSystem
     {
         Audio.SetState(entity.Comp.AudioStream, AudioState.Stopped);
         Dirty(entity);
+    }
+
+    // Palmtree: the Skip button. Deleting the current stream is the same path a track takes when it
+    // finishes on its own, so OnAudioShutdown advances the queue. With nothing queued, clear the
+    // selection first so the jukebox goes idle instead of holding (or repeat-requeueing) the song.
+    private void OnJukeboxSkip(Entity<JukeboxComponent> entity, ref JukeboxSkipMessage args)
+    {
+        if (entity.Comp.AudioStream is not { } stream)
+            return;
+
+        if (entity.Comp.Queue.Count == 0)
+        {
+            entity.Comp.SelectedSongId = null;
+            Dirty(entity);
+        }
+
+        Audio.Stop(stream);
     }
 
     private void OnJukeboxRepeatMessage(Entity<JukeboxComponent> entity, ref JukeboxRepeatMessage args)

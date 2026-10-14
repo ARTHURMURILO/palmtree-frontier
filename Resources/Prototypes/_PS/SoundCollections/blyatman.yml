@@ -1,0 +1,7 @@
+# Palmtree: ambient hum for the B.L.Y.A.T.M.A.N. portable generator.
+- type: soundCollection
+  id: BlyatmanGeneratorHum
+  files:
+    - /Audio/_PS/Machines/blyatman/blyatman1.ogg
+    - /Audio/_PS/Machines/blyatman/blyatman2.ogg
+    - /Audio/_PS/Machines/blyatman/blyatman3.ogg

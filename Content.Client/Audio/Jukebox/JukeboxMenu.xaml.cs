@@ -31,6 +31,7 @@ public sealed partial class JukeboxMenu : FancyWindow
     /// </summary>
     public event Action<bool>? OnPlayPressed;
     public event Action? OnStopPressed;
+    public event Action? OnSkipPressed; // Palmtree
 
     public event Action<bool>? OnRepeatToggled; // wizden#42210
     public event Action<bool>? OnShuffleToggled; // wizden#42210
@@ -64,6 +65,12 @@ public sealed partial class JukeboxMenu : FancyWindow
         StopButton.OnPressed += args =>
         {
             OnStopPressed?.Invoke();
+        };
+
+        // Palmtree: skip the song that is currently playing.
+        SkipButton.OnPressed += args =>
+        {
+            OnSkipPressed?.Invoke();
         };
 
         RepeatButton.OnToggled += args => // wizden#42210

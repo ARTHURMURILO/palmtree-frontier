@@ -1,3 +1,4 @@
+using System.Numerics;
 using Robust.Shared.GameStates;
 
 namespace Content.Shared._PS.Organs;
@@ -9,6 +10,9 @@ namespace Content.Shared._PS.Organs;
 [RegisterComponent, NetworkedComponent, AutoGenerateComponentState]
 public sealed partial class DrippingCumComponent : Component
 {
+    /// <summary>Maximum amount of semen a mob can hold. Anything past this is lost.</summary>
+    public const double MaxCapacity = 1000;
+
     /// <summary>Semen units still stored inside the mob.</summary>
     [DataField, AutoNetworkedField]
     public double Amount;
@@ -18,4 +22,13 @@ public sealed partial class DrippingCumComponent : Component
 
     /// <summary>Server-only: next drip tick.</summary>
     public TimeSpan NextDrip;
+
+    /// <summary>
+    /// Server-only: set when the mob moved or performed an interaction since the last drip. A drip
+    /// consumes it, so an idle mob never drips.
+    /// </summary>
+    public bool Ready;
+
+    /// <summary>Server-only: grid-local position at the last drip check, used to notice movement.</summary>
+    public Vector2 LastPosition;
 }

@@ -59,6 +59,42 @@ default (`rules: []` in upstream presets).
   shuttle when it departs and wiped expeditions abort early (`.ai/PORTING.md` §21). Deathrattles
   say "on an expedition" while on the map and re-broadcast with the real coordinates once the
   shuttle lands.
+- **NFSD vault gating (Palmtree, 2026-10):** the two vault bluespace events
+  (`BluespaceVaultError`, `BluespaceVaultSmallError`) only roll while an NFSD officer is on duty,
+  and trespassing on the spawned vault grid flags the character as wanted.
+  - `EventManagerSystem.CanRun` uses **Coyote's any-of semantics** for
+    `StationEventComponent.RequiredJobs`: Frontier's original loop demanded *every* listed job
+    (`return false` on the first unsatisfied one), Coyote flipped it to `jobsOk = true; break;` on
+    the first satisfied one, so an event can gate on a department without needing its whole
+    roster. Palmtree ports that flip, so `requiredJobs` with several entries means "at least one
+    of these jobs is filled". The only other user in the tree is `BluespaceCacheError`
+    (`Sheriff: 1`), where both semantics are identical - keep the divergence in mind when copying
+    upstream events that list several jobs. Unlike Coyote (which passes `includeAfk: true`),
+    Palmtree keeps Frontier's `includeAfk: false`, so an SSD/AFK officer does not count.
+  - Both vault events list the NFSD jobs under `requiredJobs` (Sheriff, Deputy, Bailiff,
+    Brigmedic, NFDetective, PublicAffairsLiaison, SeniorOfficer, plus Cadet, which Coyote omits),
+    so a single on-duty NFSD character is enough for the event to be picked; otherwise `CanRun`
+    fails and the event never spawns. Coyote's list is identical apart from Cadet and its longer
+    `reoccurrenceDelay`/`rewardAccounts`, which were not ported.
+  - `NfsdVaultTrespassComponent` (`Content.Shared/_PS/Security`) is added to the vault grid through
+    the `BluespaceGridSpawnGroup.addComponents` list in `nf_bluespace_grids_events.yml`.
+    `NfsdVaultTrespassSystem` sweeps every half second, and any humanoid standing on a marked grid
+    whose **record job** is not in an exempt department (`Security` = NFSD, plus `Command`) is
+    flagged wanted with the reason `Trespass - Vault`. Sweeping the characters (not the grid's
+    children) also catches mobs buckled to furniture or inside containers.
+  - `WantedStatusSystem` (`Content.Server/_PS/Security`) wraps the sector-wide criminal records:
+    it resolves a character's `StationRecordKey` through their ID card (falling back to a lookup by
+    identity name) and reads/sets `SecurityStatus.Wanted` with `CriminalRecordsSystem.OverwriteStatus`
+    so the wanted list and the wanted icon update like a manual record edit.
+  - Tests: `Content.IntegrationTests/Tests/_PS/NfsdVaultTrespassTest.cs`.
+- **Black market ATMs (Palmtree, 2026-10):** regular ATMs refuse wanted criminals;
+  `BankATMComponent.BlackMarket` (`// Palmtree` field, set on
+  `ComputerBlackMarketBankATM`/`ComputerWallmountBlackMarketBankATM`) marks the machines that serve
+  everyone. `BankSystem` cancels `ActivatableUIOpenAttemptEvent` and bails out of the
+  withdraw/deposit handlers for a **non-black-market** ATM when `WantedStatusSystem.IsWanted(user)`
+  is true, so law-abiding characters keep using regular ATMs while criminals have to find a black
+  market one. Locale: `bank-atm-menu-refuses-wanted`. Test:
+  `Content.IntegrationTests/Tests/_PS/BlackMarketAtmTest.cs`.
 - No `_NF` core logic was changed by the port except loadout group lists (the garbage collection port
   below is a deliberate exception).
 
@@ -97,3 +133,27 @@ additional loot protection.
 
 - Which NF systems are actually active under the live config.
 - Balance/reachability of ported `_PS` weapons and Bayou clothing.
+
+## Tiered thrusters (2026-10)
+
+Coyote's thruster set (`.ai/PORTING.md` §22) lives in
+`Resources/Prototypes/_NF/Entities/Structures/Shuttles/thrusters_but_cooler.yml`: six thrusters with
+their own machine boards, lathe recipes and tags, unlocked by `NFShuttlecraftThrust` (slow pair) and
+`NFShuttlecraftThrustSmall` (fast four) and printable from the `NFEngineeringBoards` lathe pack and
+the `NFBlueprintsEngineering` blueprint pack. The base `Thruster`/`SmallThruster` were renamed to the
+SpacePutt Mule/Mini naming, and the small thruster/gyroscope fixtures use
+`MidImpassable | LowImpassable` instead of `MachineLayer` (coyote PR #656). `ThrusterComponent`
+needs no code changes: `BaseThrust` feeds the shuttle's max speed and `ThrustPerPartLevel` the
+acceleration, both already Frontier fields. Test: `Tests/_NF/TieredThrusterTest.cs`.
+
+## Armor plates (2026-10)
+
+Monolith's insertable armor plates (`.ai/PORTING.md` §23) live in `Resources/Prototypes/_Mono` and
+`Content.Shared/_Mono/ArmorPlate`: the standard armor vest (`ClothingOuterArmorBasic`) and every
+hardsuit (`ClothingOuterHardsuitBase`) have an `ArmorPlateHolder` storage slot; inserting a plate
+(ballistic / trauma / diffusion / speed) makes it the active plate, absorbing damage at the cost of
+plate durability and wearer stamina. Plates are researched through `UniversalArmorPlatesT1/T2`
+(`NFArsenalMercenary`, positions 3,45 and 5,45), printed from the `ArmorNF` lathe category
+(`NFMercenaryArchetypeStatic` pack) and available as blueprints (`NFBlueprintsMercenary`).
+Monolith materials that do not exist here were substituted (Plastitanium -> Plasteel, Copper ->
+Silver, Iridite -> Diamond). Test: `Tests/_Mono/ArmorPlateTest.cs`.

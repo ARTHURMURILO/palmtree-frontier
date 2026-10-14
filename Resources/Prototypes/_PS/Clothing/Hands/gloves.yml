@@ -1,0 +1,13 @@
+# Palmtree: admin-only meme gloves (the maintainer's roundly admin upload, now a proper prototype).
+- type: entity
+  name: gloves of the red star
+  parent: ClothingHandsGlovesNorthStar
+  id: ClothingHandsGlovesRedStar
+  suffix: Admeme
+  components:
+    - type: AddAccentClothing
+      accent: RussianAccent
+    - type: Sprite
+      sprite: Clothing/Hands/Gloves/Boxing/boxingred.rsi
+    - type: Clothing
+      sprite: Clothing/Hands/Gloves/Boxing/boxingred.rsi

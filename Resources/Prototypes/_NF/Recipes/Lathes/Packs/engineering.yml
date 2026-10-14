@@ -87,6 +87,13 @@
   id: NFEngineeringBoards
   recipes:
   - PortableGeneratorDKJrMachineCircuitboard
+  # Palmtree/Coyote: tiered thruster set.
+  - SlowWeakThrusterMachineCircuitboard
+  - SlowStrongThrusterMachineCircuitboard
+  - FastWeakThrusterMachineCircuitboard
+  - FastStrongThrusterMachineCircuitboard
+  - FasterWeakThrusterMachineCircuitboard
+  - FasterStrongThrusterMachineCircuitboard
 
 - type: latheRecipePack
   id: NFEngineeringBoardsCircuitImprinter

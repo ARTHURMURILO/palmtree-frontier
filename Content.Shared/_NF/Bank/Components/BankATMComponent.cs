@@ -30,4 +30,11 @@ public sealed partial class BankATMComponent : Component
     [DataField]
     public SoundSpecifier ConfirmSound =
         new SoundPathSpecifier("/Audio/Effects/Cargo/ping.ogg");
+
+    /// <summary>
+    /// Palmtree: black market ATMs are the ones that do not care about a customer's criminal
+    /// record. Regular ATMs refuse wanted criminals.
+    /// </summary>
+    [DataField]
+    public bool BlackMarket;
 }

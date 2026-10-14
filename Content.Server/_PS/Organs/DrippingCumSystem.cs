@@ -1,6 +1,7 @@
 using System.Numerics;
 using Content.Server.Decals;
 using Content.Shared._PS.Organs;
+using Content.Shared.Decals;
 using Content.Shared.Humanoid;
 using Content.Shared.Inventory;
 using Robust.Shared.Map;
@@ -18,6 +19,9 @@ namespace Content.Server._PS.Organs;
 /// (<c>SemenPuddle1..4</c>) are reserved for actual ejaculation via <see cref="SpawnCumDecals"/>.
 /// Every drop is a new decal placed where the mob actually stands (with a little scatter), so the
 /// floor builds up a mess instead of one decal being upgraded. Decals are cleanable (space cleaner).
+/// A mob only starts dripping after it moved or performed an interaction (see
+/// <see cref="NotifyActivity"/>), and dripping pauses on a tile that already has too many drips on
+/// it. Pausing never consumes stored semen: it waits until the mob can drip again.
 /// </remarks>
 public sealed class DrippingCumSystem : EntitySystem
 {
@@ -44,6 +48,15 @@ public sealed class DrippingCumSystem : EntitySystem
     /// <summary>How far an ejaculation decal can scatter (a proper mess).</summary>
     private const float CumScatter = 0.35f;
 
+    /// <summary>Maximum number of drips allowed on a single tile before dripping pauses.</summary>
+    private const int MaxDripsPerTile = 5;
+
+    /// <summary>How far the mob has to move between drip checks for it to count as activity.</summary>
+    private const float MovementThreshold = 0.06f;
+
+    /// <summary>Semen inside a vagina above this amount overflows with a floor decal on each pulse.</summary>
+    public const double WombOverflowThreshold = 60;
+
     public override void Update(float frameTime)
     {
         base.Update(frameTime);
@@ -59,16 +72,86 @@ public sealed class DrippingCumSystem : EntitySystem
             comp.NextDrip = now + DripInterval;
 
             // Sandstorm pauses the drip while the groin is covered; this fork simplifies that to jumpsuits.
-            if (!_inventory.TryGetSlotEntity(uid, "jumpsuit", out _) && TryDrip(uid, comp))
-            {
-                comp.Amount -= 1;
-                comp.Dripped += 1;
-                Dirty(uid, comp);
-            }
+            if (_inventory.TryGetSlotEntity(uid, "jumpsuit", out _))
+                continue;
+
+            // Palmtree: stored semen only starts dripping once the mob moves or acts. Movement
+            // refreshes the flag on every check, so walking keeps the drip going; standing still
+            // consumes nothing (there is no idle dripping anymore).
+            CheckMovement(uid, comp);
+            if (!comp.Ready)
+                continue;
+
+            // Palmtree: a tile that is already full of drips pauses the drip instead of eating the
+            // stored semen, so it resumes when the mob moves (or the floor is cleaned).
+            if (CountDripsOnTile(uid) >= MaxDripsPerTile)
+                continue;
+
+            if (!TryDrip(uid, comp))
+                continue;
+
+            comp.Ready = false;
+            comp.Amount -= 1;
+            comp.Dripped += 1;
+            Dirty(uid, comp);
 
             if (comp.Amount <= 0)
                 RemCompDeferred<DrippingCumComponent>(uid);
         }
+    }
+
+    /// <summary>
+    /// Palmtree: marks the mob as active (it performed an interaction), which lets the drip run.
+    /// </summary>
+    public void NotifyActivity(EntityUid uid)
+    {
+        if (TryComp<DrippingCumComponent>(uid, out var comp))
+            comp.Ready = true;
+    }
+
+    /// <summary>
+    /// Palmtree: refreshes the activity flag when the mob moved since the last check.
+    /// </summary>
+    private void CheckMovement(EntityUid uid, DrippingCumComponent comp)
+    {
+        var position = Transform(uid).LocalPosition;
+        if ((position - comp.LastPosition).LengthSquared() > MovementThreshold * MovementThreshold)
+            comp.Ready = true;
+
+        comp.LastPosition = position;
+    }
+
+    /// <summary>
+    /// Palmtree: number of drip decals already on the tile the mob is standing on. Drips placed by
+    /// this system are centered on the mob's tile (the stored coordinate is the decal's bottom-left
+    /// corner), so a decal's tile is <c>floor(coordinate + 0.5)</c>.
+    /// </summary>
+    private int CountDripsOnTile(EntityUid uid)
+    {
+        var xform = Transform(uid);
+        if (xform.GridUid is not { } grid)
+            return 0;
+
+        var position = xform.LocalPosition;
+        var tileX = MathF.Floor(position.X);
+        var tileY = MathF.Floor(position.Y);
+
+        var count = 0;
+        foreach (var (_, decal) in _decals.GetDecalsInRange(grid, position, 1f, IsDripDecal))
+        {
+            if (MathF.Floor(decal.Coordinates.X + 0.5f) == tileX &&
+                MathF.Floor(decal.Coordinates.Y + 0.5f) == tileY)
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private static bool IsDripDecal(Decal decal)
+    {
+        return decal.Id.StartsWith("SemenDrip", StringComparison.Ordinal);
     }
 
     /// <summary>Drops one more droplet under the mob. Returns false when it cannot (e.g. in space).</summary>
@@ -140,11 +223,18 @@ public sealed class DrippingCumSystem : EntitySystem
             return;
 
         var comp = EnsureComp<DrippingCumComponent>(uid);
-        comp.Amount += amount;
+
+        // Palmtree: the reservoir holds at most 1000u (anything past that is wasted).
+        comp.Amount = Math.Min(comp.Amount + amount, DrippingCumComponent.MaxCapacity);
 
         // Slight randomness so multiple recipients don't drip in lockstep.
         if (comp.NextDrip == default)
+        {
             comp.NextDrip = _timing.CurTime + TimeSpan.FromSeconds(_random.NextDouble());
+
+            // Remember where the mob was filled so spawning there does not count as movement.
+            comp.LastPosition = Transform(uid).LocalPosition;
+        }
 
         Dirty(uid, comp);
     }

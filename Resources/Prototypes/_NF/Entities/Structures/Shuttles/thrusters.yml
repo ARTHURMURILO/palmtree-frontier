@@ -2,7 +2,9 @@
 - type: entity
   id: SmallThruster
   parent: Thruster
-  name: small thruster
+  # Palmtree/Coyote: named after coyote-frontier's thruster family.
+  name: SpacePutt Mini thruster
+  description: A minified version of the SpacePutt Mule thruster, for mini shuttles.
   components:
   - type: Thruster
     baseThrust: 33
@@ -37,7 +39,9 @@
         mask:
         - SmallMobMask #this is so they can go under plastic flaps
         layer:
-        - MachineLayer
+        # Palmtree/Coyote: thruster layers for damage consistency (coyote PR #656).
+        - MidImpassable
+        - LowImpassable
   - type: StaticPrice
     price: 100
   - type: Machine
@@ -82,7 +86,9 @@
         mask:
         - SmallMobMask #this is so they can go under plastic flaps
         layer:
-        - MachineLayer
+        # Palmtree/Coyote: thruster layers for damage consistency (coyote PR #656).
+        - MidImpassable
+        - LowImpassable
   - type: StaticPrice
     price: 100
   - type: Machine
@@ -216,9 +222,18 @@
 #region NFSD
 - type: entity
   id: ThrusterNfsd
-  parent: ThrusterSecurity
+  # Palmtree/Coyote: NFSD experimental thrusters - upgraded output, and anchored/tool-proof so they
+  # cannot be pulled off the ship or sabotaged with tools.
+  parent: [BaseStructureDisableAnchoring, BaseStructureDisableToolUse, ThrusterSecurity]
   suffix: NFSD
   components:
+  - type: Thruster #upgraded NFSD thrusters
+    baseThrust: 100
+    thrust: 190
+    thrustPerPartLevel: [ 247, 304, 361, 418 ]
+    damage:
+      types:
+        Heat: 40
   - type: Sprite
     sprite: _NF/Structures/Shuttles/thruster.rsi
     layers: &nfsdThrusterLayers

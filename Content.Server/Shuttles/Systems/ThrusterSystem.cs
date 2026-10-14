@@ -174,7 +174,7 @@ public sealed class ThrusterSystem : EntitySystem
 
     private void OnActivateThruster(EntityUid uid, ThrusterComponent component, ActivateInWorldEvent args)
     {
-        if (args.Handled || !args.Complex)
+        if (args.Handled || !args.Complex || !component.CanToggle) // Palmtree/Wizden: CanToggle guard.
             return;
 
         component.Enabled ^= true;

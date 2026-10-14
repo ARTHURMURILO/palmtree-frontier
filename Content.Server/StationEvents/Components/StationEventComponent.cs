@@ -129,6 +129,7 @@ public sealed partial class StationEventComponent : Component
 
     /// <summary>
     ///     Frontier: Require active job to run the event.
+    ///     Palmtree/Coyote: any one of the listed jobs is enough (Coyote's semantics), not all of them.
     /// </summary>
     [DataField]
     public Dictionary<ProtoId<JobPrototype>, int> RequiredJobs = new();

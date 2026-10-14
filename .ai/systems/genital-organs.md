@@ -120,6 +120,21 @@ queries).
   ever place the small droplet decals (`SemenDrip1..5`); the full cum decals are reserved for actual
   ejaculation. The receiver gets a private popup ("trickle" or "pool, held back by your clothes"
   while a jumpsuit is worn).
+- **Drip activity gate (Palmtree):** a filled mob does not drip on its own. The drip only runs after
+  the mob **moved** (its position changed since the last drip check) or **performed an interaction**
+  (`DrippingCumSystem.NotifyActivity`, called for both participants by `TryPerform`). A drip consumes
+  the flag, so an idle mob keeps every unit inside and walking keeps the drip going. `AddSemen`
+  records the mob's position, so spawning where they were filled does not count as movement.
+- **Tile limit (Palmtree):** dripping pauses while the mob's tile already has
+  `MaxDripsPerTile = 5` drip decals on it. The pause never consumes stored semen; it resumes when
+  the mob moves to a clear tile or the floor is cleaned. Decals are counted by the tile their center
+  falls in (the stored coordinate is the decal's bottom-left corner).
+- **Receive capacity (Palmtree):** the reservoir holds at most
+  `DrippingCumComponent.MaxCapacity = 1000` units; anything past that is lost.
+- **Womb overflow (Palmtree):** when a pulse is delivered into a vagina whose reservoir already
+  holds more than `DrippingCumSystem.WombOverflowThreshold = 60` units, a full cum decal is also
+  dropped on the floor to represent the overflow. The 30u is still added - overflow costs the
+  receiver nothing. Only the `vagina` cum target overflows (the anus does not).
 - **Multi-pulse climax:** `EmitClimax` splits the stored volume into 30u pulses, capped at 10 per
   climax (`InteractionPanelSystem.ClimaxPulseVolume`/`MaxClimaxPulses`), so 30u = one pulse and the
   300u maximum = ten. The first pulse fires immediately; the rest run from the server `Update` loop

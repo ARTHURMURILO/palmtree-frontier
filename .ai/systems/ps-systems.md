@@ -419,3 +419,76 @@ When a body is recovered from an expedition it is marked with `ExpedRecoveredBod
 get a "STILL dead/critical" message with real coordinates. While on the expedition map the rattle
 says "on an expedition" instead of useless coordinates. Locale:
 `Resources/Locale/en-US/_PS/salvage.ftl`.
+
+## Jukebox skip (2026-10)
+
+The jukebox menu gained a **Skip** button next to Play/Stop; it advances to the next queued track
+(or stops when the queue is empty) instead of only being able to queue something new.
+
+- Message: `Content.Shared/_PS/Audio/JukeboxSkipMessage.cs`; the handler lives in the core
+  `Content.Server/Audio/Jukebox/JukeboxSystem.cs` (`// Palmtree`) because `JukeboxComponent` is
+  `[Access(typeof(SharedJukeboxSystem))]` and a `_PS` system cannot write `SelectedSongId`.
+- Behaviour: stops the current audio stream (`Audio.Stop` queues the stream entity for deletion) -
+  the same path a track takes when it finishes on its own, so the `JukeboxMusicComponent` shutdown
+  handler advances the queue. With an empty queue the selection is cleared first, so the jukebox
+  goes idle instead of holding the song (or repeat-requeueing it). Do **not** clear
+  `JukeboxComponent.AudioStream` before the deletion runs, or the shutdown handler will not
+  recognise the stream and the next song never starts.
+- Client: `SkipButton` in `Content.Client/Audio/Jukebox/JukeboxMenu.xaml` + event in
+  `JukeboxMenu.xaml.cs`, wired to the message in `JukeboxBoundUserInterface.cs` (all `// Palmtree`).
+- Locale: `jukebox-menu-buttonskip` in `Resources/Locale/en-US/_PS/jukebox.ftl`.
+
+## Theobromine intolerance trait (2026-10)
+
+Theobromine (chocolate/coffee/tea) used to poison any species whose organs carry the `Animal`
+metabolizer type. It is now an opt-in **trait**:
+
+- Trait: `Resources/Prototypes/_PS/Traits/traits.yml` (`TheobromineIntolerance`, Disabilities
+  category) adds `TheobromineIntoleranceComponent` (`Content.Shared/_PS/Traits`), which is also in
+  the clone whitelist (`Resources/Prototypes/Entities/Mobs/Player/clone.yml`).
+- Condition: `Content.Shared/_PS/EntityEffects/TheobromineIntolerance.cs` - a plain
+  `EntityEffectCondition` that checks for the marker component on the target; the reagent
+  (`Resources/Prototypes/Reagents/toxins.yml`, both the `HealthChange` and the `ChemVomit` effects)
+  uses `!type:TheobromineIntolerance` instead of `!type:OrganType type: Animal`.
+- Locale: `Resources/Locale/en-US/_PS/theobromine.ftl` (trait name/desc + guidebook line).
+
+## Character database export fix (2026-10)
+
+`exportcharacters` threw `ArgumentException: Path must be rooted` for every profile because
+`ExportCharactersCommand` built a *relative* `ResPath` (`new ResPath("exported_characters")`) and
+`IWritableDirProvider.CreateDir`/`OpenWriteText` require rooted paths
+(`WritableDirProvider.GetFullPath` asserts `path.IsRooted`). The command now roots the directory
+with `ResPath.FromRelativeSystemPath(directory).ToRootedPath()` and prints the physical path via
+`root.ToRelativePath()`.
+
+## Admin meme items (2026-10)
+
+The maintainer's roundly admin upload (`.ai/workspace/Upload.yml`) is now a proper prototype set.
+Everything is admin-only (no lathe, loot table, uplink or vending machine references them) and
+carries `suffix: Admeme` so it is easy to find in the spawn menu:
+
+- `PortableGeneratorBlyatman` (the purple cone light only lights while the generator runs, through
+  the `_PS` `GeneratorRunningLight` marker + `GeneratorRunningLightSystem`, which replaced the
+  original upload's `SlimPoweredLight`) -
+  `Resources/Prototypes/_PS/Entities/Structures/Power/Generation/portable_generator_blyatman.yml`.
+  JrPacman parent, 190 kW target power, burns Vodka through `ChemicalFuelGeneratorAdapter`, purple
+  rotating cone light and `BlyatmanGeneratorHum` ambience. The original upload's `clockstepConstant`
+  no longer exists on `FuelGeneratorComponent` and was dropped. Frontier's generator radiation code
+  (`GeneratorSystem.TryUpdateGeneratorRadiation`) only runs for generators that carry a
+  `RadiationSourceComponent`; portable generators (JrPacman and this one) do not, so the Blyatman
+  does **not** radiate (only the RTGs and the Bananium DK do). If it ever gets a `RadiationSource`,
+  `radiationIntensity * targetPower` would be 19 rad/s at its 190 kW target.
+- `MobDimitry` - `Resources/Prototypes/_PS/Entities/Mobs/NPCs/dimitry.yml`: vulpkanin body with a
+  Russian accent, the generator hum as ambience and pressure/step-trigger/flash immunity plus
+  insulation.
+- `DrinkBottleVodkaInfinite` - `.../Objects/Consumable/Drinks/vodka_infinite.yml`: bottomless vodka
+  through `SolutionRegeneration`.
+- `FoodKebabSkewerDeath` and `FoodPotatoInfinite` - `.../Objects/Consumable/Food/meme_food.yml`:
+  150 piercing kebab skewer ("pocket immovable rod") and a self-refilling radioactive potato.
+- `ClothingHandsGlovesRedStar` - `Resources/Prototypes/_PS/Clothing/Hands/gloves.yml`: north star
+  gloves with a Russian accent and boxing-red sprites.
+- Audio: `Resources/Audio/_PS/Machines/blyatman/blyatman{1,2,3}.ogg` with an `attributions.yml`
+  (custom, provided by the maintainer) and the `BlyatmanGeneratorHum` collection in
+  `Resources/Prototypes/_PS/SoundCollections/blyatman.yml`.
+- Test: `Content.IntegrationTests/Tests/_PS/AdmemePrototypesTest.cs` spawns every item and checks
+  that the collection's sound files exist.

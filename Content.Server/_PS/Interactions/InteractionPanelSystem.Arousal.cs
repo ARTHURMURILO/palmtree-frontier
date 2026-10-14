@@ -1,3 +1,4 @@
+using Content.Server._PS.Organs; // Palmtree: womb overflow decals
 using Content.Server.Chat.Systems;
 using Content.Shared._PS.Interactions;
 using Content.Shared._PS.Organs;
@@ -228,6 +229,12 @@ public sealed partial class InteractionPanelSystem
                 case "vagina":
                     if (!hasPartner || !_genitals.HasGenital(other, GenitalType.Vagina))
                         break;
+
+                    // Palmtree: a womb that already holds more than 60u overflows, so the floor
+                    // gets a full cum decal on every pulse. The 30u is still stored - overflow
+                    // never costs the receiver anything.
+                    if (_drip.GetSemen(other) > DrippingCumSystem.WombOverflowThreshold)
+                        _drip.SpawnCumDecals(other, amount);
 
                     _drip.AddSemen(other, amount);
                     SendCumMessage(uid, other, proto, hasPartner, "interaction-cum-inside");

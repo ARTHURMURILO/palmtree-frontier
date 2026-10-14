@@ -282,11 +282,21 @@ public sealed class EventManagerSystem : EntitySystem
         }
 
         // Frontier: require jobs to run event
+        // Palmtree/Coyote: Frontier's check demands *every* listed job; Coyote flipped it to "any one
+        // of the listed jobs is enough" so an event can gate on a department without needing its
+        // whole roster. Keep that in mind when copying upstream events that list several jobs.
+        var jobsOk = stationEvent.RequiredJobs.Count == 0;
         foreach (var (jobProtoId, numJobs) in stationEvent.RequiredJobs)
         {
             if (_jobs.GetNumberOfActiveRoles(jobProtoId, false) < numJobs)
-                return false;
+                continue;
+
+            jobsOk = true;
+            break;
         }
+
+        if (!jobsOk)
+            return false;
         // End Frontier
 
         if (_roundEnd.IsRoundEndRequested() && !stationEvent.OccursDuringRoundEnd)

@@ -381,6 +381,12 @@ public sealed partial class InteractionPanelSystem : EntitySystem
         if (applyCooldown)
             state.LastInteractionTime = now;
 
+        // Palmtree: moving or acting is what makes stored cum start to drip (both participants are
+        // active during an interaction, including the receiving one).
+        _drip.NotifyActivity(user);
+        if (target != user)
+            _drip.NotifyActivity(target);
+
         // Manual climax (SPLURT's Climax verb) and "Cum on them". The generic Climax action has no
         // cum target of its own and reuses the last interaction's target when the actor climaxes
         // during it, so a manual climax inside a partner still creampies and drips.
@@ -607,11 +613,6 @@ public sealed partial class InteractionPanelSystem : EntitySystem
 
     #region Auto repeat
 
-    /// <summary>How often open panels rebuild their state (lust, requirement checks, attributes).</summary>
-    private static readonly TimeSpan PanelRefreshInterval = TimeSpan.FromSeconds(1);
-
-    private TimeSpan _nextPanelRefresh;
-
     public override void Update(float frameTime)
     {
         base.Update(frameTime);
@@ -670,23 +671,6 @@ public sealed partial class InteractionPanelSystem : EntitySystem
                 state.ClimaxPulseFirst = false;
                 state.ClimaxPulseFemale = false;
             }
-
-            if (IsPanelOpen(uid, state))
-                UpdatePanelUi(uid, state);
-        }
-
-        // Panels previously only refreshed on interaction, so lust bars, "free mouth"/exposure
-        // attribute lines and availability went stale while open. Push a fresh state every second.
-        if (now < _nextPanelRefresh)
-            return;
-
-        _nextPanelRefresh = now + PanelRefreshInterval;
-
-        var panelQuery = EntityQueryEnumerator<InteractionStateComponent>();
-        while (panelQuery.MoveNext(out var uid, out var state))
-        {
-            if (state.Target is not { } target || Deleted(target))
-                continue;
 
             if (IsPanelOpen(uid, state))
                 UpdatePanelUi(uid, state);

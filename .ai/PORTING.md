@@ -617,3 +617,96 @@ about is dead aborts early and recovers the bodies.
 - Verified with scratch integration tests (mind tracking, abort logic, aghost exclusion, SSD
   rejoin, reduced rescue damage, rescue teleport/buckle); removed afterwards per convention.
   In-game retest still worthwhile.
+
+## 22. 2026-10 Tiered thruster set (Coyote)
+
+Six buyable/researchable thrusters that trade max speed (`baseThrust`), acceleration
+(`thrust`/`thrustPerPartLevel`) and power draw, ported from coyote-frontier's
+`_NF/Entities/Structures/Shuttles/thrusters_but_cooler.yml` (created by their "Danny Kay" commits,
+last touched by PR [#656](https://github.com/ARF-SS13/coyote-frontier/pull/656) "Update thruster
+layers"; the file is unchanged on their current master, so there is no newer version to take).
+
+- **Thrusters**: `SlowWeakThruster` (MicroPutt StationKeeper: 33 base / 22 thrust / 1 W),
+  `SlowStrongThruster` (MicroPutt TugMaster: 200 / 132 / 250 W), `FastWeakThruster` (TurboPutt
+  Kobold: 33 / 60 / 4 kW), `FastStrongThruster` (TurboPutt Dragon: 100 / 190 / 7.5 kW),
+  `FasterWeakThruster` (UltraPutt Vesper: 33 / 75 / 8.5 kW) and `FasterStrongThruster` (UltraPutt
+  Titan: 330 / 750 / 50 kW). Each carries `damage: Heat: 40` in its exhaust plume and the same
+  small/thruster sprites as the Frontier thrusters (`_NF/Structures/Shuttles/thruster.rsi`).
+- **Boards/recipes/tags**: each thruster has its own `*MachineCircuitboard` entity (`MachineBoard`
+  with a Capacitor requirement and stack requirements), a `latheRecipe` (Steel/Glass/Gold/Plasma/
+  Diamond depending on tier) and a `Tag` prototype - all in the same file, as in the source.
+- **Integration**: `NFShuttlecraftThrust` unlocks the slow pair and `NFShuttlecraftThrustSmall` the
+  fast four (`_NF/Research/techtree.yml`); all six are in the `NFEngineeringBoards` lathe pack and in
+  the `NFBlueprintsEngineering` blueprint pack (required by `TechnologyTreeTests`, which asserts that
+  every tech-unlocked recipe is blueprintable). Coyote's separate `CSEdisionEngineeringThrusterPack`
+  was skipped - this fork has no equivalent Edison lathe pack.
+- **Naming**: the base `Thruster` and Frontier's `SmallThruster` are renamed to "SpacePutt Mule" and
+  "SpacePutt Mini" thruster (with descriptions) so the family reads coherently; markers are
+  `# Palmtree/Coyote`.
+- **Layers**: coyote PR #656 ("thruster layers for damage consistency") moved the small thruster,
+  small gyroscope and the new tiers from `MachineLayer` to `MidImpassable | LowImpassable` (drops
+  `Opaque`/`BulletImpassable`, so bullets no longer stop on a thruster frame). Ported as-is; the big
+  `Thruster`, `ThrusterSecurity`/`GyroscopeSecurity` and the NFSD variants keep `MachineLayer`, as in
+  Coyote.
+- **Not ported**: Coyote's gyroscope numbers (`baseThrust` 250 / `powerLoad` 200) are *older* than
+  this fork's Frontier values (650 / 500 from Frontier "Small gyro buff" #4272); their
+  `ThrusterNfsd` "NFSD Experimental Thrusters" upgrade (100/190 + Heat damage + disable-anchoring/
+  tool-use parents, their commit `614764c5551`) is a separate feature and was left alone.
+- **Test**: `Content.IntegrationTests/Tests/_NF/TieredThrusterTest.cs` checks every thruster/board
+  pair, the lathe recipes, the blueprint pool and the two research unlocks.
+
+## 23. 2026-10 Armor plates (Monolith via Coyote) + thruster follow-ups
+
+**Armor plates** are Monolith's (`_Mono`) insertable plate system, taken from Monolith's current
+master rather than Coyote's older copy (Coyote's 6-plate set - durathread/ceramic/plasteel/
+plastitanium/plas-uranium/steel - was superseded upstream by 4 themed plates with a reworked
+stamina model; Monolith's live files were fetched from
+`Monolith-Station/Monolith` and diffed against Coyote's `_Mono` folder).
+
+- **C#** (`Content.Shared/_Mono/ArmorPlate/`): `ArmorPlateHolderComponent` (armor side: active
+  plate + speed/stamina stats), `ArmorPlateItemComponent` (`maxDurability` -1 = unbreakable,
+  `absorptionRatios`, `damageToPlate`, `staminaDamageMultipliers` with Raw/Absorbed/Amplified
+  sources), `ArmorPlateProtectedComponent` (marker on the wearer) and `SharedArmorPlateSystem`
+  (insert/remove/equip/unequip handling, `BeforeDamageChangedEvent` interception, examine verbs).
+  Adaptations: `StaminaSystem` -> this fork's `SharedStaminaSystem`; the
+  `args.OriginFlag != DamageableSystem.DamageOriginFlag.Explosion` check became
+  `args.Origin == null` (Monolith's origin flag is not upstream here); the unused `IGameTiming`
+  dependency was dropped.
+- **Core helper**: `InventorySystem.TryGetContainingEntity` was ported from Monolith's
+  `InventorySystem.Helpers.cs` (returns the entity wearing an equipped item) - it does not exist
+  upstream in this fork.
+- **Prototypes**: `_Mono/Entities/Clothing/base_plating.yml` (`ClothingArmorPlate` holder +
+  pre-filled variants) and `_Mono/Entities/Clothing/OuterClothing/Armor/armor_plates.yml`
+  (`ArmorPlateBlunt_Slash`, `ArmorPlatePierce`, `ArmorPlateHeat`, `ArmorPlateSpeed` +
+  `ArmorPlateRepairableBase`). Adaptation: Monolith repairs plates with their `Applicating` tool
+  quality (which this fork lacks), so the plates use the standard `Repairable` welding path.
+- **Where plates fit**: `ClothingOuterArmorBasic` and `ClothingOuterHardsuitBase` carry
+  `ClothingArmorPlate` (Monolith's two patches; Coyote also gave the abstract vest base and storage
+  outerwear the holder - not ported, to avoid stacking storage containers on every jacket).
+- **Acquisition**: lathe recipes in `_Mono/Recipes/Lathes/equipment.yml` (`ArmorNF` category) and
+  the two research nodes in `_Mono/Research/armor_plates.yml` (`UniversalArmorPlatesT1/T2`,
+  adapted to the `NFArsenalMercenary` discipline at positions (3,45)/(5,45), the same free cells
+  Coyote used). All four recipes are in the `NFMercenaryArchetypeStatic` lathe pack and the
+  `NFBlueprintsMercenary` blueprint pack (required by `TechnologyTreeTests`).
+  Material substitutions (Monolith materials this fork does not have): Plastitanium -> Plasteel,
+  Copper -> Silver, Iridite -> Diamond.
+- **Locale/assets**: `Resources/Locale/en-US/_Mono/armor-plate.ftl`,
+  `Resources/Locale/en-US/_Mono/research/armor_plates.ftl` and
+  `Resources/Textures/_Mono/Clothing/ArmorPlate/armor_plates.rsi` (CC-BY-SA-4.0, Onezero0/tonotom1
+  per its meta.json).
+- **Not ported**: Monolith's economy/arc-furnace recipes, trade crates, cargo products, loadout
+  entries, points of interest and their `RepairableComponent` change (a `Qualities` list + the
+  `Applicating` tool quality).
+- **Test**: `Content.IntegrationTests/Tests/_Mono/ArmorPlateTest.cs` (insert plate -> absorb ->
+  durability + stamina -> remove).
+
+**Thruster follow-ups (Coyote + Wizden):**
+
+- `ThrusterNfsd` now carries Coyote's "NFSD Experimental Thrusters" upgrade (their commit
+  `614764c5551`): parents `[BaseStructureDisableAnchoring, BaseStructureDisableToolUse,
+  ThrusterSecurity]` so it cannot be unanchored or pried, and a `Thruster` override with
+  `baseThrust: 100`, `thrust: 190`, `thrustPerPartLevel: [247, 304, 361, 418]` and `Heat: 40`
+  exhaust damage.
+- Wizden's `ThrusterComponent.CanToggle` (their #42201, "make xenoborg thrusters anti-easy
+  sabotage") is ported with the matching guard in `OnActivateThruster`, so a prototype can opt out
+  of hand toggling. Nothing sets it to false yet (this fork has no xenoborg thrusters).

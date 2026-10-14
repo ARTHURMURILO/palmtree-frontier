@@ -946,7 +946,8 @@
 - type: entity
   id: ThrusterMachineCircuitboard
   parent: BaseMachineCircuitboard
-  name: thruster machine board
+  # Palmtree/Coyote: named after coyote-frontier's thruster family.
+  name: SpacePutt Mule thruster machine board
   components:
   - type: Sprite
     state: supply

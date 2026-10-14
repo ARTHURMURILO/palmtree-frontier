@@ -144,6 +144,7 @@
   - type: BankATM
     taxAccounts:
       Frontier: 0.3 # The scandal!
+    blackMarket: true # Palmtree
 
 - type: entity
   suffix: Wallmount, BlackMarket
@@ -168,6 +169,7 @@
   - type: BankATM
     taxAccounts:
       Frontier: 0.3 # The scandal!
+    blackMarket: true # Palmtree
 
 - type: entity
   name: station administration console

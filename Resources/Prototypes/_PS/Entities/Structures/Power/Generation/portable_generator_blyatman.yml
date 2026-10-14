@@ -1,0 +1,43 @@
+# Palmtree: admin-only meme generator (the maintainer's roundly admin upload, now a proper prototype).
+# `clockstepConstant` from the original upload no longer exists on FuelGeneratorComponent, so it is
+# dropped here; everything else is kept as it was.
+- type: entity
+  name: B.L.Y.A.T.M.A.N. portable generator
+  description: |-
+    A small generator capable of powering the entirety of novosibirsk.
+    Runs off vodka and stalin's willpower.
+    Rated for all ages.
+  parent: PortableGeneratorJrPacman
+  id: PortableGeneratorBlyatman
+  suffix: Admeme
+  components:
+    - type: AmbientSound
+      range: 5
+      volume: -5
+      sound:
+        collection: BlyatmanGeneratorHum
+    - type: FuelGenerator
+      targetPower: 190000
+      minTargetPower: 2000
+      optimalPower: 190000
+      maxTargetPower: 260000
+      optimalBurnRate: 0.015
+    - type: ChemicalFuelGeneratorAdapter
+      solution: tank
+      reagents:
+        Vodka: 5
+    - type: PointLight
+      mask: /Textures/Effects/LightMasks/double_cone.png
+      color: "#7F00FF"
+      energy: 2
+      radius: 8
+      softness: 1
+      enabled: False
+    - type: RotatingLight
+    - type: ApcPowerReceiver
+      powerLoad: 1
+    # Palmtree: the purple cone light above only lights while the generator runs (replaces the
+    # original upload's SlimPoweredLight, which tied the light to APC power instead).
+    - type: GeneratorRunningLight
+    - type: ExtensionCableReceiver
+      receptionRange: 0

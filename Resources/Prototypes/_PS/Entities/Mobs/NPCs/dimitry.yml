@@ -1,0 +1,17 @@
+# Palmtree: admin-only meme mob (the maintainer's roundly admin upload, now a proper prototype).
+- type: entity
+  name: Dimitry Kalashnikov
+  parent: BaseMobVulpkanin
+  id: MobDimitry
+  suffix: Admeme
+  components:
+    - type: AmbientSound
+      range: 12
+      volume: 0
+      sound:
+        collection: BlyatmanGeneratorHum
+    - type: RussianAccent
+    - type: PressureImmunity
+    - type: ProtectedFromStepTriggers
+    - type: Insulated
+    - type: FlashImmunity

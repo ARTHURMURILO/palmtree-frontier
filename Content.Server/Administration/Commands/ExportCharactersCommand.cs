@@ -29,7 +29,9 @@ public sealed class ExportCharactersCommand : IConsoleCommand
     public async void Execute(IConsoleShell shell, string argStr, string[] args)
     {
         var directory = args.Length > 0 ? args[0] : "exported_characters";
-        var root = new ResPath(directory);
+        // Palmtree: IWritableDirProvider only accepts rooted ResPaths, and a relative argument
+        // like "exported_characters" threw "Path must be rooted" for every profile in the loop.
+        var root = ResPath.FromRelativeSystemPath(directory).ToRootedPath();
         var appearance = _entSys.GetEntitySystem<SharedHumanoidAppearanceSystem>();
 
         try
@@ -47,8 +49,8 @@ public sealed class ExportCharactersCommand : IConsoleCommand
 
             var userCount = profiles.Select(p => p.UserName).Distinct().Count();
             var physical = _res.UserData.RootDir is { } userDataRoot
-                ? Path.Combine(userDataRoot, directory)
-                : directory;
+                ? Path.Combine(userDataRoot, root.ToRelativePath().ToString())
+                : root.ToString();
             shell.WriteLine($"Exported {profiles.Count} character(s) for {userCount} player(s) to {physical}.");
         }
         catch (Exception e)

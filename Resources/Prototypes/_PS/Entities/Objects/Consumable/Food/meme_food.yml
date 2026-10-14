@@ -1,0 +1,50 @@
+# Palmtree: admin-only meme food (the maintainer's roundly admin upload, now proper prototypes).
+- type: entity
+  name: pocket immovable rod
+  parent: FoodKebabSkewer
+  id: FoodKebabSkewerDeath
+  suffix: Admeme
+  description: A thin rod of-- What the fuck?
+  components:
+    - type: DamageOtherOnHit
+      damage:
+        types:
+          Piercing: 150
+
+- type: entity
+  name: infinite potato
+  parent: FoodPotato
+  id: FoodPotatoInfinite
+  suffix: Admeme
+  components:
+    - type: FlavorProfile
+      flavors:
+        - potatoes
+    - type: SolutionContainerManager
+      solutions:
+        food:
+          maxVol: 200
+          reagents:
+            - ReagentId: Nutriment
+              Quantity: 5
+            - ReagentId: Vitamin
+              Quantity: 5
+            - ReagentId: Vodka
+              Quantity: 5
+    - type: SolutionRegeneration
+      solution: food
+      generated:
+        reagents:
+          - ReagentId: Vodka
+            Quantity: 50
+          - ReagentId: Vitamin
+            Quantity: 50
+          - ReagentId: Nutriment
+            Quantity: 50
+    - type: PointLight
+      color: "#A8E4A0"
+      energy: 3
+      radius: 1
+      softness: 1
+    - type: RadiationSource
+      intensity: 0.5

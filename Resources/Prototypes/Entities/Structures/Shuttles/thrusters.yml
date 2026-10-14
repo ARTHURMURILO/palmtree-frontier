@@ -52,7 +52,9 @@
 
 - type: entity
   id: Thruster
-  name: thruster
+  # Palmtree/Coyote: named after coyote-frontier's thruster family (the tiers live in _NF/.../thrusters_but_cooler.yml).
+  name: SpacePutt Mule thruster
+  description: An average basic stock space thruster, used to make shuttles go fast.
   parent: [ BaseThruster, ConstructibleMachine ]
   components:
   - type: Machine

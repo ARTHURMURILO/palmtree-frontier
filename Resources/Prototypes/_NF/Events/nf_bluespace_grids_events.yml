@@ -61,6 +61,17 @@
     duration: 1020
     maxDuration: 1350
     reoccurrenceDelay: 360 # 6 hours
+    # Palmtree/Coyote: the vault is an NFSD problem, so it only shows up while at least one NFSD
+    # job is filled (any one of these is enough, see EventManagerSystem.CanRun).
+    requiredJobs:
+      Sheriff: 1
+      Deputy: 1
+      Bailiff: 1
+      Brigmedic: 1
+      NFDetective: 1
+      PublicAffairsLiaison: 1
+      SeniorOfficer: 1
+      Cadet: 1
   - type: BluespaceErrorRule
     groups:
       grid: !type:GridSpawnGroup
@@ -80,6 +91,7 @@
         - type: PreventPilot
         - type: ForceAnchor
         - type: DeletionCensusExempt
+        - type: NfsdVaultTrespass # Palmtree: non-NFSD trespassers get flagged as wanted.
         paths:
         - /Maps/_NF/Bluespace/vault.yml
     rewardAccounts:
@@ -105,6 +117,17 @@
     duration: 590
     maxDuration: 780
     reoccurrenceDelay: 360 # 6 hours
+    # Palmtree/Coyote: the vault is an NFSD problem, so it only shows up while at least one NFSD
+    # job is filled (any one of these is enough, see EventManagerSystem.CanRun).
+    requiredJobs:
+      Sheriff: 1
+      Deputy: 1
+      Bailiff: 1
+      Brigmedic: 1
+      NFDetective: 1
+      PublicAffairsLiaison: 1
+      SeniorOfficer: 1
+      Cadet: 1
   - type: BluespaceErrorRule
     groups:
       grid: !type:GridSpawnGroup
@@ -124,6 +147,7 @@
         - type: PreventPilot
         - type: ForceAnchor
         - type: DeletionCensusExempt
+        - type: NfsdVaultTrespass # Palmtree: non-NFSD trespassers get flagged as wanted.
         paths:
         - /Maps/_NF/Bluespace/vaultsmall.yml
     rewardAccounts:

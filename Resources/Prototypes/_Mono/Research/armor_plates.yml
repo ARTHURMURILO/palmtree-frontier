@@ -1,0 +1,32 @@
+# Palmtree/Mono: armor plate research, ported from Monolith's Universal tree and adapted to the
+# Frontier disciplines and positions (same adaptation Coyote made: FactionUniversal -> NFArsenalMercenary,
+# their material prerequisites -> the closest NF arsenal nodes). The two free cells (3,45) and (5,45)
+# match coyote-frontier's placement.
+- type: technology
+  id: UniversalArmorPlatesT1
+  name: research-technology-universal-armorplates-1
+  entityIcon: ArmorPlateBlunt_Slash
+  discipline: NFArsenalMercenary
+  tier: 1
+  cost: 10000
+  recipeUnlocks:
+  - ArmorPlateBlunt_Slash
+  - ArmorPlatePierce
+  technologyPrerequisites:
+  - NFNonlethalAmmunition
+  position: 3, 45
+
+- type: technology
+  id: UniversalArmorPlatesT2
+  name: research-technology-universal-armorplates-2
+  entityIcon: ArmorPlateHeat
+  discipline: NFArsenalMercenary
+  tier: 2
+  cost: 15000
+  recipeUnlocks:
+  - ArmorPlateHeat
+  - ArmorPlateSpeed
+  technologyPrerequisites:
+  - UniversalArmorPlatesT1
+  - NFHardsuitsArmored
+  position: 5, 45

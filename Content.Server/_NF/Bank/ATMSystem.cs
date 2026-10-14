@@ -18,6 +18,7 @@ using Robust.Server.GameObjects;
 using Robust.Shared.Audio.Systems;
 using Robust.Shared.Containers;
 using Robust.Shared.Prototypes;
+using Content.Server._PS.Security; // Palmtree: wanted status checks
 
 namespace Content.Server._NF.Bank;
 
@@ -32,6 +33,7 @@ public sealed partial class BankSystem
     [Dependency] private readonly IAdminLogManager _adminLogger = default!;
     [Dependency] private readonly HandsSystem _hands = default!;
     [Dependency] private readonly TransformSystem _transform = default!;
+    [Dependency] private readonly WantedStatusSystem _wanted = default!; // Palmtree
 
     private void InitializeATM()
     {
@@ -40,11 +42,39 @@ public sealed partial class BankSystem
         SubscribeLocalEvent<BankATMComponent, BoundUIOpenedEvent>(OnATMUIOpen);
         SubscribeLocalEvent<BankATMComponent, EntInsertedIntoContainerMessage>(OnCashSlotChanged);
         SubscribeLocalEvent<BankATMComponent, EntRemovedFromContainerMessage>(OnCashSlotChanged);
+        SubscribeLocalEvent<BankATMComponent, ActivatableUIOpenAttemptEvent>(OnATMUIOpenAttempt); // Palmtree
+    }
+
+    // Palmtree: regular ATMs turn wanted criminals away; black market ATMs serve everyone.
+    private void OnATMUIOpenAttempt(EntityUid uid, BankATMComponent component, ActivatableUIOpenAttemptEvent args)
+    {
+        if (args.Cancelled || !IsWantedBlocked(uid, component, args.User))
+            return;
+
+        args.Cancel();
+    }
+
+    /// <summary>
+    /// Palmtree: true (and complains at the user) when a regular ATM is used by a wanted criminal.
+    /// Black market ATMs are never blocked.
+    /// </summary>
+    private bool IsWantedBlocked(EntityUid uid, BankATMComponent component, EntityUid user)
+    {
+        if (component.BlackMarket || !_wanted.IsWanted(user))
+            return false;
+
+        ConsolePopup(user, Loc.GetString("bank-atm-menu-refuses-wanted"));
+        PlayDenySound(uid, component);
+        return true;
     }
 
     private void OnWithdraw(EntityUid uid, BankATMComponent component, BankWithdrawMessage args)
     {
         if (args.Actor is not { Valid: true } player)
+            return;
+
+        // Palmtree: no regular ATM withdrawals for wanted criminals.
+        if (IsWantedBlocked(uid, component, player))
             return;
 
         // to keep the window stateful
@@ -98,6 +128,10 @@ public sealed partial class BankSystem
     private void OnDeposit(EntityUid uid, BankATMComponent component, BankDepositMessage args)
     {
         if (args.Actor is not { Valid: true } player)
+            return;
+
+        // Palmtree: no regular ATM deposits for wanted criminals.
+        if (IsWantedBlocked(uid, component, player))
             return;
 
         // gets the money inside a cashslot of an ATM.

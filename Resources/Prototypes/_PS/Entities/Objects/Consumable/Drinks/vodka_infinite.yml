@@ -1,0 +1,16 @@
+# Palmtree: admin-only meme drink (the maintainer's roundly admin upload, now a proper prototype).
+- type: entity
+  name: bottomless vodka bottle
+  description: |
+    This vodka bottle seems to not even have a bottom to it.
+    If you hold it upside down, vodka just pours out of it. Endlessly.
+  parent: DrinkBottleVodka
+  id: DrinkBottleVodkaInfinite
+  suffix: Admeme
+  components:
+    - type: SolutionRegeneration
+      solution: drink
+      generated:
+        reagents:
+          - ReagentId: Vodka
+            Quantity: 50

@@ -98,9 +98,11 @@ content are intentionally not ported.
    interactions (fail-safe against re-triggering). See `systems/genital-organs.md`.
 8. **Auto-repeat.** The server `Update` loop repeats the active interaction every `AutoPace`
    (Sandstorm's `interaction_speeds`: 4/2/1/0.8/0.5 s) without the 0.5 s cooldown, stopping on any
-   requirement failure, target deletion or range loss. The same loop also pushes a fresh panel state
-   to every open panel once per second, so lust bars, attribute lines and availability update over
-   time instead of only after an interaction.
+   requirement failure, target deletion or range loss. The panel state is pushed only when something
+   happens (performed interaction, climax pulse, message); the once-per-second refresh that used to
+   keep lust bars and attribute lines live was **reverted** because it rebuilt the window and reset
+   the controls the player was typing into. Reintroduce it only with a partial state update that
+   leaves inputs alone.
 9. **Favorites** are session-only (`InteractionStateComponent.Favorites`) because this fork has no
    profile storage for them.
 10. **Admin logs.** Every performed interaction (and every manual climax) is written to the admin

@@ -1416,6 +1416,9 @@
   recipeUnlocks:
   - ThrusterMachineCircuitboard
   - GyroscopeMachineCircuitboard
+  # Palmtree/Coyote: slow, efficient thruster pair.
+  - SlowWeakThrusterMachineCircuitboard
+  - SlowStrongThrusterMachineCircuitboard
   prerequisiteLineType: Diagonal
   technologyPrerequisites:
   - NFSpaceScanning
@@ -1431,6 +1434,11 @@
   recipeUnlocks:
   - SmallThrusterMachineCircuitboard
   - SmallGyroscopeMachineCircuitboard
+  # Palmtree/Coyote: fast thruster set.
+  - FastWeakThrusterMachineCircuitboard
+  - FastStrongThrusterMachineCircuitboard
+  - FasterWeakThrusterMachineCircuitboard
+  - FasterStrongThrusterMachineCircuitboard
   technologyPrerequisites:
   - NFShuttlecraftThrust
   position: 2, 32

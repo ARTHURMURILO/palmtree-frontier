@@ -15,6 +15,14 @@ namespace Content.Server.Shuttles.Components
     public sealed partial class ThrusterComponent : Component
     {
         /// <summary>
+        /// Whether the thruster can be toggled on or off via interaction.
+        /// Palmtree/Wizden: upstream field (Wizden #42201) so a prototype can opt out of hand
+        /// toggling; nothing in this fork sets it to false yet.
+        /// </summary>
+        [DataField]
+        public bool CanToggle = true;
+
+        /// <summary>
         /// Whether the thruster has been force to be enabled / disabled (e.g. VV, interaction, etc.)
         /// </summary>
         [DataField, ViewVariables(VVAccess.ReadWrite)]

@@ -1,3 +1,4 @@
+using Content.Shared._PS.Audio; // Palmtree
 using Content.Shared.Audio.Jukebox;
 using Robust.Client.Audio;
 using Robust.Client.UserInterface;
@@ -43,6 +44,13 @@ public sealed class JukeboxBoundUserInterface : BoundUserInterface
         {
             SendMessage(new JukeboxStopMessage());
         };
+
+        // Palmtree
+        _menu.OnSkipPressed += () =>
+        {
+            SendMessage(new JukeboxSkipMessage());
+        };
+        // End Palmtree
 
         // wizden#42210
         _menu.OnRepeatToggled += args =>

@@ -13,6 +13,11 @@ Observed failure: `string.Create(IFormatProvider, ref DefaultInterpolatedStringH
 (`All: True`) are allowed; most `string` members are individually whitelisted.
 Whitelist lives in `RobustToolbox/Robust.Shared/ContentPack/Sandbox.yml`.
 
+Also blocked: **collection expressions targeting `List<T>`** (`List<X> Foo = ["a", "b"];`). The
+compiler lowers non-empty list collection expressions to `CollectionsMarshal.SetCount`, which the
+sandbox rejects (`Sandbox violation: Access to method not allowed: ...CollectionsMarshal.SetCount`).
+Empty `[]` and array targets (`X[]`) are fine; use `new() { "a", "b" }` for lists.
+
 To verify locally without a display:
 `dotnet run --project Content.Client -c Debug --no-build -- --headless` → look for
 `Content.Shared: Verified IL` / `Content.Client: Verified IL`; the process then dies on OpenGL,
@@ -366,3 +371,28 @@ value line.
 - **Event-bus subscriptions are locked at runtime.** Scratch integration tests cannot
   `SubscribeLocalEvent`; assert via components or invoke private handlers by reflection instead.
   `RemCompDeferred` also needs a tick (`RunTicksSync`) before the component is gone.
+
+## 22. Paths, drip state and record lookups (2026-10)
+
+- **`IWritableDirProvider` only accepts rooted `ResPath`s.** `WritableDirProvider.GetFullPath`
+  asserts `path.IsRooted` and throws `ArgumentException: Path must be rooted`; a relative path like
+  `new ResPath("exported_characters")` therefore kills any command that writes to `UserData` (this
+  is what broke `exportcharacters`). Build paths with
+  `ResPath.FromRelativeSystemPath(dir).ToRootedPath()` and print the physical location with
+  `root.ToRelativePath()`.
+- **`Identity.Name` follows the identity entity, not the metadata name.** Mob prototypes carry an
+  `IdentityComponent` whose `identity` entity is renamed on the *next* tick after an
+  `EntityRenamedEvent` (`IdentitySystem.Update`). Tests that rename a mob with
+  `MetaDataSystem.SetEntityName` and then immediately look it up by name (e.g. via
+  `WantedStatusSystem`) get `"identity"`; either run a tick first or give the mob its ID card.
+- **`DrippingCumComponent` has server-only runtime fields** (`Ready`, `LastPosition`) that are not
+  `DataField`s and are not replicated; only `Amount` is networked. The drip is gated on movement or
+  `NotifyActivity` (interactions), and pausing on a full tile never consumes stored semen - keep
+  that invariant when touching `DrippingCumSystem.Update`.
+- **Decal tiles are `floor(coordinates + 0.5)`.** `Decal.Coordinates` is the decal's bottom-left
+  corner; `DecalSystem.GetDecalsInRange(grid, position, range)` compares `position` against
+  `coordinates + (0.5, 0.5)`, so query at the mob's position and treat `+0.5` as the decal center.
+- **`JobTrackingComponent` has an `Access` attribute** (`SharedJobTrackingSystem`, `SharedGameTicker`);
+  foreign *writes* fail the build with `RA0002` (tests cannot set `Job`/`Active`). Read the job from
+  the character's general station record (`WantedStatusSystem.TryGetJob`) instead - the ID console
+  keeps `JobPrototype` in sync.

@@ -403,16 +403,17 @@
       effects:
       - !type:HealthChange
         conditions:
-        - !type:OrganType
-          type: Animal # Applying damage to the mobs with lower metabolism capabilities
+        # Palmtree: was OrganType Animal; the intolerance is now the opt-in Theobromine
+        # intolerance trait instead of something enforced by species.
+        - !type:TheobromineIntolerance
         damage:
           types:
             Poison: 0.3 # DeltaV - slightly reduced to account for slowed metabolism rate
       - !type:ChemVomit
         probability: 0.1 #Scaled for time, not metabolismrate. # DeltaV - Increased from .04 Vomit more when there is a lot of it
         conditions:
-          - !type:OrganType
-            type: Animal
+          # Palmtree: was OrganType Animal (see above).
+          - !type:TheobromineIntolerance
           - !type:ReagentThreshold # DeltaV - Readded this. No longer causes vomitting at the lightest whiff of coffee
             reagent: Theobromine
             min: 0.5

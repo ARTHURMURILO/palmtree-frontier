@@ -1,0 +1,47 @@
+# Palmtree/Mono: armor plate lathe recipes, ported from Monolith's _Mono/Recipes/Lathes/equipment.yml.
+# Material substitutions for this fork (Monolith materials we do not have):
+#   Plastitanium -> Plasteel, Copper -> Silver, Iridite -> Diamond.
+#Armor Plates
+- type: latheRecipe
+  id: ArmorPlateBlunt_Slash
+  categories:
+  - ArmorNF
+  result: ArmorPlateBlunt_Slash
+  completetime: 15
+  materials:
+    Plasteel: 1200
+    Durathread: 500
+    Plastic: 1200
+
+- type: latheRecipe
+  id: ArmorPlatePierce
+  categories:
+  - ArmorNF
+  result: ArmorPlatePierce
+  completetime: 15
+  materials:
+    Durathread: 500
+    Plastic: 500
+    Plasteel: 500
+
+- type: latheRecipe
+  id: ArmorPlateHeat
+  categories:
+  - ArmorNF
+  result: ArmorPlateHeat
+  completetime: 15
+  materials:
+    Silver: 600
+    Durathread: 500
+    Diamond: 50
+
+- type: latheRecipe
+  id: ArmorPlateSpeed
+  categories:
+  - ArmorNF
+  result: ArmorPlateSpeed
+  completetime: 15
+  materials:
+    Durathread: 1000
+    Brass: 1500
+    Bluespace: 100
