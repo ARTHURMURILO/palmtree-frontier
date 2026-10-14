@@ -1,6 +1,8 @@
 # Bluespace Dock + Ship Registrar (2026-10)
 
-**Status**: in progress (implementation on branch `ps-bluespace-dock`).
+**Status**: **implemented** (2026-10) on branch `ps-bluespace-dock`. Durable notes live in
+`.ai/systems/ps-systems.md` ("Bluespace Dock + Ship Registrar"); this file keeps the design record
+and the deviations from the plan.
 **Scope**: two new admin/SR consoles plus a live ship preview:
 
 1. **Bluespace Dock** (`ComputerBluespaceDock`): pay a configurable tax to store your docked,
@@ -36,6 +38,10 @@ We keep their **proven mechanics** and drop their storage model:
 - `MapLoaderSystem.TrySaveGrid(grid, path, options)` writes into `IResourceManager.UserData`
   (`MapLoaderSystem.cs` `Write()`), and loading checks `UserData` before content paths
   (`MapLoaderSystem.cs` `TryReadFile()`). So ships can be saved to and loaded from `UserData`.
+- Strip the deed and the station references (`StationMemberComponent`, `StationBoundObjectComponent`)
+  before saving: the station is mapped and the file cannot carry it, and invalid station uids make
+  the deserializer log errors and `MapInit` handlers (holopad rename) throw on load. Delete the
+  station and the grid only after the file is known-good.
 - `SerializationOptions { MissingEntityBehaviour = IncludeNullspace, ErrorOnOrphan = false }` keeps
   information-carrying nullspace entities; fall back to `Ignore` (drops dangling references) when
   that fails. Pre-steps that make the save clean: power down fuel generators + gravity generators,
@@ -65,7 +71,7 @@ We keep their **proven mechanics** and drop their storage model:
   registrar first).
 - **Retrieve placement**: `TryFTLDock` - dock if possible, otherwise spawn nearby (shipyard
   behaviour). Tax is charged only after a successful spawn.
-- **Console**: admin-spawn only (`suffix: Admeme`, no lathe/cargo/blueprint), indestructible,
+- **Console**: admin-spawn only (`suffix: Palmtree`, no lathe/cargo/blueprint), indestructible,
   un-pryable, requires power, single user UI, ID card slot.
 - **Code/assets**: `_PS`; the console sprite is a **copy** of the shipyard console states under
   `Resources/Textures/_PS/Structures/Machines/` (never point at `_NF`'s computers.rsi).

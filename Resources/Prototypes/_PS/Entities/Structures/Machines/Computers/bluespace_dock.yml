@@ -1,0 +1,48 @@
+# Palmtree: the Bluespace Dock console. Admin-spawn only, indestructible, un-pryable, no board.
+# The sprite is a copy of the shipyard console's states (Resources/Textures/_PS/Structures/Machines/
+# bluespace_dock.rsi) so changing one console's art never affects the other.
+- type: entity
+  id: ComputerBluespaceDock
+  parent: [BaseStructureComputer, BaseStructureIndestructible, BaseStructureDisableToolUse]
+  name: bluespace dock console
+  description: A bulky bluespace terminal that can store your docked ship in a pocket dimension and pull it back out later.
+  suffix: Palmtree
+  components:
+  - type: Sprite
+    netsync: false
+    noRot: true
+    sprite: _PS/Structures/Machines/bluespace_dock.rsi
+    layers:
+    - map: ["computerLayerBody"]
+      state: computer
+    - map: ["computerLayerKeyboard"]
+      state: generic_keyboard
+    - map: ["computerLayerScreen"]
+      state: shipyard
+    - map: ["computerLayerKeys"]
+      state: telesci_key
+  - type: BluespaceDockConsole
+    targetIdSlot:
+      name: id-card-console-target-id
+      ejectSound: /Audio/Machines/id_swipe.ogg
+      insertSound: /Audio/Weapons/Guns/MagIn/batrifle_magin.ogg
+      ejectOnBreak: false
+      swap: true
+      whitelist:
+        components:
+        - IdCard
+  - type: ActivatableUI
+    key: enum.BluespaceDockUiKey.Key
+    singleUser: true
+  - type: ActivatableUIRequiresPower
+  - type: UserInterface
+    interfaces:
+      enum.BluespaceDockUiKey.Key:
+        type: BluespaceDockConsoleBoundUserInterface
+  - type: ItemSlots
+  - type: ContainerContainer
+    containers:
+      board: !type:Container
+      BluespaceDock-targetId: !type:ContainerSlot
+  - type: Computer
+    board: Null

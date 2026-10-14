@@ -7,7 +7,9 @@ namespace Content.Shared._NF.Shipyard.Components;
 /// Tied to an ID card when a ship is purchased. 1 ship per captain.
 /// </summary>
 [RegisterComponent, NetworkedComponent, AutoGenerateComponentState]
-[Access(typeof(SharedShipyardSystem), typeof(SharedShuttleRecordsSystem))]
+// Palmtree: the bluespace dock (and later the ship registrar) create and edit deeds, so they are
+// allowed to write this component's fields too.
+[Access(typeof(SharedShipyardSystem), typeof(SharedShuttleRecordsSystem), typeof(Content.Shared._PS.BluespaceDock.SharedBluespaceDockSystem))]
 public sealed partial class ShuttleDeedComponent : Component
 {
     public const int MaxNameLength = 30;

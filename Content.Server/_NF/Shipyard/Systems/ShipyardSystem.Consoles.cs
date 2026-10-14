@@ -406,6 +406,13 @@ public sealed partial class ShipyardSystem : SharedShipyardSystem
             return;
         }
 
+        // Palmtree: TrySellShuttle refuses every sale while the shipyard's parking map does not
+        // exist, and the map is only created by a purchase or by the CVar handler (which does not
+        // run when the shipyard was disabled at round start). Selling a ship you arrived with used
+        // to answer "Ship is invalid and cannot be sold".
+        if (_configManager.GetCVar(NFCCVars.Shipyard))
+            SetupShipyardIfNeeded();
+
         var saleResult = TrySellShuttle(stationUid, shuttleUid, uid, out var bill);
         if (saleResult.Error != ShipyardSaleError.Success)
         {

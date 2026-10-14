@@ -1,0 +1,92 @@
+<controls:FancyWindow xmlns="https://spacestation14.io"
+                      xmlns:controls="clr-namespace:Content.Client.UserInterface.Controls"
+                      Title="{Loc 'ship-registrar-title'}"
+                      SetSize="760 600"
+                      MinSize="760 400">
+    <BoxContainer Orientation="Vertical" Margin="5 0 5 5">
+        <Label Name="WelcomeLabel"
+               Text="{Loc 'ship-registrar-insert-id'}"
+               HorizontalAlignment="Center"
+               Margin="0 4" />
+
+        <BoxContainer Orientation="Vertical" Name="Contents" VerticalExpand="True">
+            <BoxContainer Orientation="Horizontal" HorizontalExpand="True" Margin="0 0 0 4">
+                <Button Name="PrivilegedIdButton"
+                        Access="Public"
+                        HorizontalExpand="True"
+                        MinHeight="30" />
+                <Button Name="TargetIdButton"
+                        Access="Public"
+                        HorizontalExpand="True"
+                        MinHeight="30" />
+            </BoxContainer>
+
+            <BoxContainer Orientation="Horizontal" Margin="0 0 0 4">
+                <Label Text="{Loc 'ship-registrar-balance-label'}" StyleClasses="LabelKeyText" />
+                <Label Name="BalanceLabel" Text="" />
+                <Label Text="  |  " />
+                <Label Text="{Loc 'ship-registrar-fee-label'}" StyleClasses="LabelKeyText" />
+                <Label Name="FeeLabel" Text="" />
+            </BoxContainer>
+
+            <LineEdit Name="SearchBar"
+                      PlaceHolder="{Loc 'ship-registrar-search-placeholder'}"
+                      HorizontalExpand="True"
+                      Margin="0 0 0 4" />
+
+            <BoxContainer Orientation="Horizontal" HorizontalExpand="True" Margin="4 0 16 0">
+                <Label Text="{Loc 'ship-registrar-column-name'}"
+                       StyleClasses="LabelKeyText"
+                       HorizontalExpand="True"
+                       MinWidth="140" />
+                <Label Text="{Loc 'ship-registrar-column-size'}"
+                       StyleClasses="LabelKeyText"
+                       MinWidth="80" />
+                <Label Text="{Loc 'ship-registrar-column-value'}"
+                       StyleClasses="LabelKeyText"
+                       MinWidth="80" />
+                <Label Text="{Loc 'ship-registrar-column-options'}"
+                       StyleClasses="LabelKeyText"
+                       MinWidth="170"
+                       HorizontalAlignment="Right" />
+            </BoxContainer>
+
+            <ScrollContainer HorizontalExpand="True"
+                             VerticalExpand="True"
+                             HScrollEnabled="False"
+                             SizeFlagsStretchRatio="6">
+                <BoxContainer Name="GridsList"
+                              Orientation="Vertical"
+                              HorizontalExpand="True"
+                              VerticalExpand="True" />
+            </ScrollContainer>
+
+            <Label Name="SelectionLabel"
+                   Text="{Loc 'ship-registrar-no-selection'}"
+                   StyleClasses="LabelSubText"
+                   Margin="0 4 0 2" />
+
+            <Label Name="FullNamePreviewLabel"
+                   Text="{Loc 'ship-registrar-full-name-preview'}"
+                   StyleClasses="LabelSubText"
+                   Margin="0 0 0 2" />
+
+            <BoxContainer Orientation="Horizontal" HorizontalExpand="True" Margin="0 2 0 0">
+                <LineEdit Name="NameField"
+                          PlaceHolder="{Loc 'ship-registrar-name-placeholder'}"
+                          HorizontalExpand="True"
+                          MinHeight="30" />
+                <LineEdit Name="SuffixField"
+                          PlaceHolder="{Loc 'ship-registrar-suffix-placeholder'}"
+                          MinWidth="150"
+                          MinHeight="30" />
+                <controls:ConfirmButton Name="RegisterButton"
+                                        Text="{Loc 'ship-registrar-register'}"
+                                        ConfirmationText="{Loc 'ship-registrar-confirm'}"
+                                        Disabled="True"
+                                        MinWidth="180"
+                                        MinHeight="30" />
+            </BoxContainer>
+        </BoxContainer>
+    </BoxContainer>
+</controls:FancyWindow>

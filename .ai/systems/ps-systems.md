@@ -3,7 +3,8 @@
 ## Purpose
 
 `_PS` is Palmtree Station's own module: lobby presentation, the concealable-clothing backpack
-implant, and the server-specific weapon/grenade set ported from the old codebase.
+implant, the server-specific weapon/grenade set ported from the old codebase, and the ship
+persistence consoles (Bluespace Dock, Ship Registrar) with their ship preview.
 
 ## Locations
 
@@ -245,7 +246,9 @@ Upstream actions/implants/inventory/equipment visuals, `ContentAudioSystem`/lobb
 
 `HilbertHotelTest` covers room-map loading and the hotel lifecycle; `InteractionPanelTest` covers
 the interaction/organ plumbing; `SynthTest` covers synth physiology (reboot, pressure immunity,
-heat/shock/radiation, EMP lethality, built-in prying) and that bodies no longer rot. Everything
+heat/shock/radiation, EMP lethality, built-in prying) and that bodies no longer rot.
+`BluespaceDockTest` covers the dock registry/ship-file round trip and its self-heal sweep, and
+`ShipRegistrarTest` covers registration turning a docked grid into a civilian vessel. Everything
 else is validated by the build, the YAMLLinter and in-game checks — do not add a new test file per
 feature.
 
@@ -492,3 +495,181 @@ carries `suffix: Admeme` so it is easy to find in the spawn menu:
   `Resources/Prototypes/_PS/SoundCollections/blyatman.yml`.
 - Test: `Content.IntegrationTests/Tests/_PS/AdmemePrototypesTest.cs` spawns every item and checks
   that the collection's sound files exist.
+
+## Bluespace Dock + Ship Registrar (2026-10)
+
+Two admin/SR consoles that give player-built ships a persistence path, plus a live ship preview.
+
+### Bluespace Dock (`ComputerBluespaceDock`)
+
+| Piece | Path |
+|---|---|
+| Shared (component, UI key/state/messages, ID slot + deed helper) | `Content.Shared/_PS/BluespaceDock/` |
+| Server (registry, save/load, store/retrieve/sell flows) | `Content.Server/_PS/BluespaceDock/` |
+| Client (window + rows + BUI) | `Content.Client/_PS/BluespaceDock/` |
+| Prototype | `Resources/Prototypes/_PS/Entities/Structures/Machines/Computers/bluespace_dock.yml` |
+| Sprite (copy of the shipyard console states) | `Resources/Textures/_PS/Structures/Machines/bluespace_dock.rsi` |
+| Locale | `Resources/Locale/en-US/_PS/bluespace-dock.ftl` |
+
+- **Persistence**: `UserData/bluespace_dock/registry.yml` is the authoritative list of stored ships
+  (`BluespaceDockEntry`: ship id, file, owner ckey + character name, vessel prototype id, model,
+  full name, suffix, recorded value, timestamp); `UserData/bluespace_dock/<shipId>.yml` is the ship
+  payload written by `MapLoaderSystem.TrySaveGrid`. Ownership is per **character** (ckey *and* ID
+  card name must match), so another character of the same player does not see the ship. Both writes
+  happen synchronously at store time (`TrySaveGrid` and `SaveRegistry` write straight to `UserData`)
+  and the original grid is deleted only afterwards, so a crash cannot lose a stored ship and nothing
+  waits for a round end. The registry is cached per round, re-read on round restart, and
+  `PurgeMissingEntries()` drops entries whose
+  ship file has disappeared (self-heal, also runs on first load). Retrieval also drops an entry
+  whose file no longer parses as YAML (corrupt); a file that parses but fails to load is kept, since
+  that can be a transient content error.
+- **Store**: ID with a deed + live ship, docked to the console's station, no organics aboard
+  (`ShipyardSystem.FoundOrganics`), vessel group in `{Shipyard, Scrap, Expedition}` (NFSD/black
+  market/SR/unknown are refused — hand-built ships must be registered first), bank covers the
+  `nf14.bluespace_dock.store_tax` (10%) tax. Then: power down fuel/charge systems, undock,
+  `TrySaveShipFile` (IncludeNullspace, Ignore fallback, then re-read + YAML-parse the file), charge,
+  write the registry entry, strip the deed from the ID and delete the station + grid. If the save
+  fails, the stripped components are put back, the deed is reassigned, the ship is re-docked and
+  nothing is charged.
+- **Names**: a deed is stored split into a base name and a registration suffix (`ShipNameHelper` in
+  `Content.Shared/_PS/ShipRegistry`). `BluespaceDockEntry.Name` holds the base name and
+  `DisplayName` is rebuilt from the normalized parts on every store and retrieve, so the suffix
+  cannot accumulate ("Dove NX-674 NX-647") - the first version stored the full name as the base
+  name. The registrar shows a live full-name preview and never appends a suffix the name already
+  ends with.
+- **Docking is runtime state**: `DockingComponent.DockedWith`/`DockJointId` are `[DataField]`s, so
+  they *are* serialized. The dock clears them (and any orphan joint whose partner is gone) before
+  saving and again when loading, because a file that says the ship is docked makes the next dock
+  attempt reuse a joint id that is already taken ("the joint already existed for the connected
+  entity").
+- **Migration on load** (`CollectMissingPrototypes` + `TryWriteSanitizedShipFile`): an update can remove
+  an entity prototype a stored ship uses, and the engine's loader **refuses the whole file** over a
+  single missing prototype (`EntityDeserializer.ValidatePrototypes`), which would make the ship
+  undockable. Before loading, the dock scans the file, and when something it uses is gone it writes a
+  sanitized copy with those entities **and everything parented to them** (their contents) removed, loads
+  the copy and deletes it; the original is left untouched for recovery and a warning lists what was
+  dropped. Removed *components* and removed *fields* need no help (the deserializer logs and skips
+  them), and *renamed* or migration-listed prototypes are handled by the engine/content
+  (`MapMigrationSystem` fills `BeforeEntityReadEvent` globally, so it applies to ship files too). The
+  engine's own `DeletedPrototypes` hook is deliberately **not** used: it spawns those entities without
+  their prototype, which throws on components with required fields (`MeleeWeaponComponent.damage`, for
+  instance) and takes the whole load down.
+- **What a ship file may not contain**: `TrySaveShipFile` strips the deed and everything referencing
+  the ship's station (`StationMemberComponent`, `StationBoundObjectComponent`) *before* serializing —
+  the station is a mapped entity the file cannot carry, and stale references make the deserializer
+  log invalid-uid errors and make `MapInit` handlers throw (the holopad station-name rename calls
+  `Name()` on an invalid station). The deed is rebuilt from the registry on retrieval. `TryLoadShipFile`
+  strips the same components again for files written before this cleanup, wraps every `MapInit` in a
+  try/catch so one bad handler cannot fail a retrieval, and deletes the half-loaded grid and its map
+  if the load throws.
+- **Retrieve**: `nf14.bluespace_dock.retrieve_tax` (5%) of the *recorded* value, no other *live*
+  ship (one with a valid station) flying under the same name, file present; loads onto a new map, re-raises `MapInitEvent` for every
+  entity **except** powered lights/item slots/docking ports, recreates the `StandardFrontierVessel`
+  station + name, restores `ExtraShuttleInformationComponent.Vessel` when known, `TryFTLDock` to the
+  console's station (falls back to spawning nearby), adds `DeletionCensusExemptComponent` +
+  `LinkedLifecycleGridParentComponent`, writes the deed on the ship and the ID, then charges and
+  removes the registry entry (the file is kept).
+- **Sell**: the per-row `[SELL]` (`ConfirmButton`) pays `nf14.bluespace_dock.stored_sell_rate` (0.95)
+  of the recorded value and deletes file + entry; the bottom `[SELL]` sells the docked ship through
+  `ShipyardSystem.TrySellShuttle` exactly like a shipyard console (with the shipyard sell blockers
+  applied for the civilian key, and `SetupShipyardIfNeeded` first because `TrySellShuttle` refuses
+  every sale while the shipyard parking map does not exist).
+- **Console**: admin spawn only (`suffix: Palmtree`, indestructible, no board, `ActivatableUIRequiresPower`),
+  sprite is a copy of `_NF`'s shipyard states — do not point it at `_NF/Structures/Machines/computers.rsi`.
+- CVars (in `Content.Shared/_NF/CCVar/NFCCVars.cs`, marked Palmtree): `nf14.bluespace_dock.enabled`,
+  `.store_tax`, `.retrieve_tax`, `.stored_sell_rate`, `.max_ships` (0 = unlimited).
+
+### Admin tool: orphaned ships (`restoreorphanship`)
+
+`Content.Server/_PS/BluespaceDock/RestoreOrphanShipEui.cs` + `Content.Client/_PS/BluespaceDock/` (window
+`RestoreOrphanShipWindow`), opened by the `restoreorphanship` admin command (`AdminFlags.Admin`,
+`Content.Server/_PS/Commands/RestoreOrphanShipCommand.cs`). "Orphaned" means a ship file in
+`UserData/bluespace_dock/` that no registry entry points at (retrieval keeps the file on purpose, and
+a crash can leave files behind). The tool:
+
+- lists orphans with their save time (`BluespaceDockSystem.GetOrphanedFiles`, `TryDeleteOrphanedFile`,
+  `TryMoveFile`),
+- previews one with `TryLoadOrphanedFile`, which loads it onto a **paused** map and opens the normal
+  `ShipPreviewEui`; the grid and map are deleted when the preview window closes, when another file is
+  previewed, when the tool closes, or after one minute as a safety net (`ShipPreviewEui` takes an
+  optional `onClosed` callback for this),
+- restores one into a character's dock with `TryRestoreOrphanedFile`: it loads the file once for the
+  appraisal, model and vessel identity, moves the file back into the ship directory under a fresh id
+  and writes a registry entry (refusing when that character already has a ship with that name). The
+  owner is the player picked in the dropdown - the server resolves their character from the ID card
+  they carry (falling back to their mob's name), so there is no name to type - and the tool refuses
+  without a player. No automatic sweeping, moving or expiry exists any more - the tool is the only
+  thing that touches orphans.
+- **Identity without an ID** (`BluespaceDockSystem.GetCharacterName` / `PickCharacterName`): the
+  character name comes from the player's **profile** (`IServerPreferencesManager` ->
+  `SelectedCharacter`, the same source the bank keys per-character money on), then the inserted ID
+  card, then the mob's name. A lost, replaced or renamed ID therefore does not lock a character out
+  of their ships, and the admin restore needs no ID on the player's side at all. An ID card is still
+  required in the console slot, because the **deed** (Frontier's ship ownership document) is written
+  onto an ID and read from there by the shipyard and the dock - that is a Frontier mechanic, not the
+  dock's storage.
+- **Ownership matching** (`BluespaceDockSystem.EntryBelongsToCharacter`): a normal entry needs the
+  ckey *and* the character name to match, so another character of the same player does not see it. An
+  entry with an **empty ckey** (written before a player could be picked, or by hand) matches by
+  character name alone - that is the only way a name-keyed entry can ever be used, since an ID card
+  does not carry a ckey.
+
+### Ship Registrar (`ComputerShipRegistrar`)
+
+- `Content.Shared/_PS/ShipRegistry/`, `Content.Server/_PS/ShipRegistry/`,
+  `Content.Client/_PS/ShipRegistry/`, prototype
+  `Resources/Prototypes/_PS/Entities/Structures/Machines/Computers/ship_registrar.yml` (sprite copy
+  `Resources/Textures/_PS/Structures/Machines/ship_registrar.rsi`, the SR shipyard states).
+- Privileged slot = Station Representative's ID (the console's `AccessReader` requires
+  `HeadOfPersonnel`, which the SR has through `AllAccess`; admins bypass), target slot = the ship
+  owner's ID.
+- Lists every grid docked to the console's station that has no deed and no
+  `RegisteredVesselComponent` (`GetDockableGrids`), with name/size/value and a live `[PREVIEW]`.
+- Registration (`TryRegisterVessel`, all checks re-run server side) creates the
+  `StandardFrontierVessel` station, renames the grid (IFF/radar name), stamps
+  `RegisteredVesselComponent { Group = Shipyard, Model = "Custom" }`, writes the deed on the ship and
+  the owner's ID, adds a `ShuttleRecord` and the life-cycle components, and charges
+  `nf14.ship_registrar.fee` (default 0).
+- The dock's civilian check accepts registered ships through the marker (`TryGetVesselInfo`).
+- **Warp points**: registration (and retrieval) makes sure the ship has a named `WarpPointComponent`
+  (`BluespaceDockSystem.EnsureShipWarpPoint` / `FindShipWarpPoint`), the way shipyard ship files carry
+  one - a hand-built ship never had one (it did not come from a ship file), and a file's warp keeps
+  the name it was saved with. Hand-built ships get theirs at the grid's centre; `UseStationName` is
+  turned on so Frontier's station rename sync (`StationRenameWarpsSystems`) keeps the name in step
+  with the ship. That makes the ship reachable with the admin `warp` command and in the ghost warp
+  menu (which any player sees), exactly like shipyard ships.
+- **Radar / IFF**: registration (and retrieval, for files written before this) adds the player-shuttle
+  `IFFComponent` a shipyard vessel gets from `BaseVessel` (`SharedShuttleSystem.AddIFFFlag(grid,
+  IFFFlags.IsPlayerShuttle)` + `SetIFFColor(grid, Color.White)`). `ShuttleNavControl` only draws an
+  IFF label when the grid *has* an `IFFComponent`, so registered ships used to be anonymous contacts
+  on the mass scanner and radar even though their grid carries the deed name.
+- **Currency**: every amount the consoles print is formatted with
+  `BankSystemExtensions.ToIndependentString` (same number formatting as the bank) and the currency
+  name comes from the `bank-currency-display-spesos` locale message (Palmtree renamed the display to
+  "space roubles") - never a hardcoded currency word in `_PS` locale strings.
+
+### Ship preview
+
+`Content.Server/_PS/ShipRegistry/ShipPreviewEui.cs` + `Content.Client/_PS/ShipRegistry/ShipPreviewEui.cs`
+(+ `ShipPreviewWindow`/`ShipPreviewControl`) are the admin camera's mechanism without the admin
+powers: a hidden `ShipPreviewCamera` entity (visibility layer 8, `Eye`) is spawned at the ship's AABB
+centre, `SharedViewSubscriberSystem.AddViewSubscriber` force-sends it to the viewer, the client
+attaches the eye through `EyeLerpingSystem` and zooms with the mouse wheel (initial zoom fits the
+ship). EUIs resolve the camera entity on a later frame because EUI state arrives before the gamestate.
+
+### Notes / deviations from Coyote's drydock
+
+- Modelled on coyote-frontier's unfinished `_NF/Shipyard/Systems/BluespaceDrydockSystem.cs`, but
+  storage is a persistent file registry instead of a YAML string on an ID card/record (which was
+  round-scoped and one ship per ID), and there are no 3-second timer chains or `.Result` async
+  hacks: store/retrieve run synchronously in the message handler, like the shipyard's own purchase
+  path.
+- `Content.Shared/_NF/Shipyard/Components/ShuttleDeedComponent.cs` carries a Palmtree patch: its
+  `[Access]` list now also names `SharedBluespaceDockSystem`, which owns the `AssignDeed` helper both
+  consoles use to create deeds (the shared assembly cannot name the server systems directly).
+- Known follow-up (not in this batch): unnamed single-tile grids flood the object scanner/IFF with
+  "grid" entries.
+- Drive-by fix: `Content.Client/Shuttles/FtlArrivalOverlay.cs` clamps its tile enumeration to the
+  grid's `LocalAABB` (`// Palmtree`). `SharedMapSystem.TilesEnumerator.MoveNext` *recurses* once per
+  skipped empty tile (`ignoreEmpty` defaults to `true`), so a zoomed-out ghost looking at an FTL
+  arrival visualizer over a mostly empty grid used to stack-overflow the client.

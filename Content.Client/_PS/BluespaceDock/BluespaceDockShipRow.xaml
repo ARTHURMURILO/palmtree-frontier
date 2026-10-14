@@ -1,0 +1,32 @@
+<PanelContainer xmlns="https://spacestation14.io"
+                xmlns:gfx="clr-namespace:Robust.Client.Graphics;assembly=Robust.Client"
+                xmlns:controls="clr-namespace:Content.Client.UserInterface.Controls"
+                HorizontalExpand="True">
+    <BoxContainer Orientation="Horizontal"
+                  HorizontalExpand="True">
+        <Label Name="ShipName"
+            Access="Public"
+            HorizontalExpand="True"
+            MinWidth="120"
+            ClipText="True" />
+        <Label Name="ShipModel"
+            Access="Public"
+            HorizontalExpand="True"
+            MinWidth="100"
+            ClipText="True" />
+        <Button Name="UndockButton"
+            Access="Public"
+            Text="{Loc 'bluespace-dock-undock'}"
+            StyleClasses="LabelSubText"
+            MinWidth="90"
+            HorizontalAlignment="Right" />
+        <controls:ConfirmButton Name="SellButton"
+            Access="Public"
+            Text="{Loc 'bluespace-dock-sell'}"
+            ConfirmationText="{Loc 'bluespace-dock-confirm'}"
+            StyleClasses="LabelSubText"
+            MinWidth="90"
+            HorizontalAlignment="Right"
+            Margin="0 0 12 0" />
+    </BoxContainer>
+</PanelContainer>

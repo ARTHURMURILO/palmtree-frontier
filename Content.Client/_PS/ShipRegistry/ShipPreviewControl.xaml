@@ -1,0 +1,20 @@
+<Control
+    xmlns="https://spacestation14.io"
+    xmlns:viewport="clr-namespace:Content.Client.Viewport"
+    MouseFilter="Stop">
+    <PanelContainer StyleClasses="BackgroundDark">
+        <BoxContainer Orientation="Vertical">
+            <!-- Camera -->
+            <Control VerticalExpand="True" Name="CameraViewBox">
+                <viewport:ScalingViewport Name="CameraView"
+                                          MinSize="100 100"
+                                          MouseFilter="Ignore" />
+            </Control>
+            <Label Name="ZoomHintLabel"
+                   Text="{Loc 'ship-registrar-preview-zoom-hint'}"
+                   StyleClasses="LabelSubText"
+                   HorizontalAlignment="Center"
+                   Margin="0 4" />
+        </BoxContainer>
+    </PanelContainer>
+</Control>

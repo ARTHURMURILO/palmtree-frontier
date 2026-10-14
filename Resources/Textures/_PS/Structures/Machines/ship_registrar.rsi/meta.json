@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "license": "CC-BY-SA-3.0",
+  "copyright": "Copied from Frontier's _NF/Structures/Machines/computers.rsi for the Palmtree ship registrar console. contraband by gentlebutter, animated by whatston3; cargo_market, shuttle_records, solar_screen, station_atm by whatston3; computer_expedition, computer_scrap, scrap_keyboard, scrap_key by erhardsteinhauer, Centcomm variants by Herbtheon (Github/Discord), tech_key and transfer copied from wizden computers.rsi",
+  "size": {
+    "x": 32,
+    "y": 32
+  },
+  "states": [
+    {
+      "name": "generic_keyboard",
+      "directions": 4
+    },
+    {
+      "name": "computer_sr",
+      "directions": 4
+    },
+    {
+      "name": "shipyard_sr",
+      "directions": 4,
+      "delays": [
+        [
+          2,
+          0.3,
+          2,
+          0.3
+        ],
+        [
+          2,
+          0.3,
+          2,
+          0.3
+        ],
+        [
+          2,
+          0.3,
+          2,
+          0.3
+        ],
+        [
+          2,
+          0.3,
+          2,
+          0.3
+        ]
+      ]
+    },
+    {
+      "name": "telesci_key",
+      "directions": 4
+    }
+  ]
+}

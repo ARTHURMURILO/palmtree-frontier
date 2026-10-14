@@ -1,0 +1,75 @@
+# Palmtree: the Ship Registrar console. Admin-spawn only, indestructible, un-pryable, no board.
+# The privileged (Station Representative) ID slot uses the console's AccessReader; the target slot
+# takes the ship owner's ID. The sprite is a copy of the SR shipyard console's states.
+- type: entity
+  id: ComputerShipRegistrar
+  parent: [BaseStructureComputer, BaseStructureIndestructible, BaseStructureDisableToolUse]
+  name: ship registrar console
+  description: Registers a docked ship as a civilian vessel and issues its owner a deed.
+  suffix: Palmtree
+  components:
+  - type: Sprite
+    netsync: false
+    noRot: true
+    sprite: _PS/Structures/Machines/ship_registrar.rsi
+    layers:
+    - map: ["computerLayerBody"]
+      state: computer_sr
+    - map: ["computerLayerKeyboard"]
+      state: generic_keyboard
+    - map: ["computerLayerScreen"]
+      state: shipyard_sr
+    - map: ["computerLayerKeys"]
+      state: telesci_key
+  - type: ShipRegistrarConsole
+    privilegedIdSlot:
+      name: id-card-console-privileged-id
+      ejectSound: /Audio/Machines/id_swipe.ogg
+      insertSound: /Audio/Weapons/Guns/MagIn/batrifle_magin.ogg
+      ejectOnBreak: false
+      swap: true
+      whitelist:
+        components:
+        - IdCard
+    targetIdSlot:
+      name: id-card-console-target-id
+      ejectSound: /Audio/Machines/id_swipe.ogg
+      insertSound: /Audio/Weapons/Guns/MagIn/batrifle_magin.ogg
+      ejectOnBreak: false
+      swap: true
+      whitelist:
+        components:
+        - IdCard
+  - type: AccessReader
+    access: [["HeadOfPersonnel"]]
+  - type: ActivatableUI
+    key: enum.ShipRegistrarUiKey.Key
+    singleUser: true
+  - type: ActivatableUIRequiresPower
+  - type: UserInterface
+    interfaces:
+      enum.ShipRegistrarUiKey.Key:
+        type: ShipRegistrarConsoleBoundUserInterface
+  - type: ItemSlots
+  - type: ContainerContainer
+    containers:
+      board: !type:Container
+      ShipRegistrar-privilegedId: !type:ContainerSlot
+      ShipRegistrar-targetId: !type:ContainerSlot
+  - type: Computer
+    board: Null
+
+# Palmtree: camera entity for the Ship Registrar's live ship preview. Same trick as the admin
+# camera: the visibility layer keeps it from being networked to anyone else, and the preview EUI
+# adds a view subscriber for the player looking at it.
+- type: entity
+  id: ShipPreviewCamera
+  categories: [ HideSpawnMenu ]
+  name: ship preview camera
+  description: A camera used to show a ship preview.
+  components:
+  - type: Visibility
+    layer: 8
+  - type: Eye
+    drawFov: false
+    pvsScale: 0.8

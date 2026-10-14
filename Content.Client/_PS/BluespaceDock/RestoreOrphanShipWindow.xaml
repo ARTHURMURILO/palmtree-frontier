@@ -1,0 +1,68 @@
+<controls:FancyWindow xmlns="https://spacestation14.io"
+                      xmlns:controls="clr-namespace:Content.Client.UserInterface.Controls"
+                      Title="{Loc 'restore-orphan-title'}"
+                      SetSize="820 560"
+                      MinSize="820 400">
+    <BoxContainer Orientation="Vertical" Margin="5 0 5 5" VerticalExpand="True">
+        <BoxContainer Orientation="Horizontal" HorizontalExpand="True" VerticalExpand="True">
+            <BoxContainer Orientation="Vertical" HorizontalExpand="True" SizeFlagsStretchRatio="2" VerticalExpand="True">
+                <BoxContainer Orientation="Horizontal" HorizontalExpand="True" Margin="4 0 16 0">
+                    <Label Text="{Loc 'restore-orphan-column-file'}"
+                           StyleClasses="LabelKeyText"
+                           HorizontalExpand="True"
+                           MinWidth="200" />
+                    <Label Text="{Loc 'restore-orphan-column-modified'}"
+                           StyleClasses="LabelKeyText"
+                           MinWidth="110" />
+                    <Label Text="{Loc 'restore-orphan-column-options'}"
+                           StyleClasses="LabelKeyText"
+                           MinWidth="190"
+                           HorizontalAlignment="Right" />
+                </BoxContainer>
+
+                <ScrollContainer HorizontalExpand="True"
+                                 VerticalExpand="True"
+                                 HScrollEnabled="False">
+                    <BoxContainer Name="ShipsList"
+                                  Orientation="Vertical"
+                                  HorizontalExpand="True"
+                                  VerticalExpand="True" />
+                </ScrollContainer>
+            </BoxContainer>
+
+            <BoxContainer Orientation="Vertical" MinWidth="300" Margin="6 0 0 0">
+                <Label Text="{Loc 'restore-orphan-target'}" StyleClasses="LabelKeyText" />
+                <OptionButton Name="PlayerSelect"
+                              Access="Public"
+                              HorizontalExpand="True"
+                              Margin="0 0 0 2" />
+                <Label Name="OwnerHintLabel"
+                       Access="Public"
+                       Text="{Loc 'restore-orphan-target-hint'}"
+                       StyleClasses="LabelSubText"
+                       Margin="0 0 0 4" />
+
+                <LineEdit Name="ShipNameField"
+                          PlaceHolder="{Loc 'restore-orphan-name-placeholder'}"
+                          HorizontalExpand="True"
+                          Margin="0 0 0 4" />
+                <LineEdit Name="SuffixField"
+                          PlaceHolder="{Loc 'restore-orphan-suffix-placeholder'}"
+                          HorizontalExpand="True"
+                          Margin="0 0 0 4" />
+
+                <controls:ConfirmButton Name="RestoreButton"
+                                        Text="{Loc 'restore-orphan-restore'}"
+                                        ConfirmationText="{Loc 'restore-orphan-confirm'}"
+                                        Disabled="True"
+                                        HorizontalExpand="True"
+                                        MinHeight="32" />
+            </BoxContainer>
+        </BoxContainer>
+
+        <Label Name="StatusLabel"
+               Text=""
+               StyleClasses="LabelSubText"
+               Margin="4 4 4 0" />
+    </BoxContainer>
+</controls:FancyWindow>

@@ -18,4 +18,4 @@ Conventions:
 |---|---|
 | [`highroller-table.md`](highroller-table.md) — Buckshot Roulette table | Proposed / not implemented |
 | [`coyote-bayou-weapons.md`](coyote-bayou-weapons.md) — Coyote Bayou (BYOND) weapon port backlog | Proposed / not implemented |
-| [`bluespace-dock.md`](bluespace-dock.md) — Bluespace Dock, Ship Registrar and ship preview | In progress (`ps-bluespace-dock`) |
+| [`bluespace-dock.md`](bluespace-dock.md) — Bluespace Dock, Ship Registrar and ship preview | Implemented (2026-10) |

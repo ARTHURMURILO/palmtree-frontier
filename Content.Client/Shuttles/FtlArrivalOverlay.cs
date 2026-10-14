@@ -68,6 +68,14 @@ public sealed class FtlArrivalOverlay : Overlay
             args.WorldHandle.SetTransform(worldMatrix);
             var localAABB = invMatrix.TransformBox(args.WorldBounds);
 
+            // Palmtree: the tile enumerator recurses once per skipped (empty) tile, so a huge
+            // viewport - a zoomed-out ghost, for instance - over a mostly empty grid used to blow
+            // the stack. Clamp to the grid's own bounds first.
+            localAABB = localAABB.Intersect(mapGrid.LocalAABB);
+
+            if (localAABB.Width <= 0f || localAABB.Height <= 0f)
+                continue;
+
             var tilesEnumerator = _maps.GetLocalTilesEnumerator(grid, mapGrid, localAABB);
 
             while (tilesEnumerator.MoveNext(out var tile))

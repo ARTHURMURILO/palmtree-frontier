@@ -70,6 +70,38 @@ Notable in-place patches added by this port:
 - `Content.Client/Clothing/ClientClothingSystem.cs` — leg-style displacement override.
 - All species-restricted markings — `kindAllowance` added (915 markings across 39 files), so
   markings are shared across species kinds like Coyote did.
+- `Content.Shared/_NF/Shipyard/Components/ShuttleDeedComponent.cs` — its `[Access]` list also names
+  `SharedBluespaceDockSystem` (`// Palmtree`), the shared helper both ship consoles use to create
+  deeds. The analyzer blocks foreign writes to the component, and a *shared* component cannot name a
+  server-side system in the attribute, so the write helper lives in the shared system (2026-10).
+
+## 5a. `SharedMapSystem.TilesEnumerator` recurses per skipped tile
+
+`TilesEnumerator.MoveNext` ends with `return MoveNext(out tile)` for tiles it skips, and
+`GetLocalTilesEnumerator` defaults to `ignoreEmpty: true` — so enumerating a large area of an
+empty-ish grid costs **one stack frame per tile** and stack-overflows the process. Any overlay that
+enumerates tiles for a viewport-sized box must clamp it (`box.Intersect(grid.LocalAABB)`, see
+`Content.Client/Shuttles/FtlArrivalOverlay.cs`) or pass `ignoreEmpty: false`.
+
+## 5b. The XAML compile can be skipped after adding new `.xaml` files
+
+`CompileRobustXaml` (XamlIL, `RobustToolbox/MSBuild/XamlIL.targets`) runs `AfterCompile` with
+`Inputs="@(IntermediateAssembly);@(ReferencePathWithRefAssemblies)"` and
+`Outputs="$(IntermediateOutputPath)XAML/doot"` — **new `.xaml` files are not inputs**, so the target
+can skip and the window's compiled XAML never lands in the assembly. The `[GenerateTypedNameReferences]`
+fields still compile (they come from the source generator), so the build looks fine and the client
+crashes at runtime with `No precompiled XAML found for <Type>, make sure to specify Class or name
+your class the same as your .xaml`.
+
+- The failure is visible only as a bare `MSB3073: The command "... /t:CompileRobustXaml ..." exited
+  with code 1` in the build output — treat it as a real XAML error, never as a transient MSBuild
+  hiccup (the actual message is swallowed by the nested build).
+- To force a recompile: delete `Content.Client/obj/<Config>/XAML/doot` (and recreate the directory if
+  you also removed `obj/<Config>/XAML/`, which holds the task's `original.dll`/`references`).
+- To verify: `strings bin/Content.Client/Content.Client.dll | grep "<Namespace>.<Window>.xaml"` — the
+  compiled XAML is an embedded resource named `<type full name>.xaml`.
+- Common invalid XAML properties: `LineEdit` has **no** `MaxLength` (clamp in code instead); check
+  `RobustToolbox/Robust.Client/UserInterface/Controls/*.cs` before using an unfamiliar property.
 
 ## 5. Deliberate namespace collisions for partial classes
 

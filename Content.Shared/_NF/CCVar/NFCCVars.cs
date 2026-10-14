@@ -364,4 +364,44 @@ public sealed class NFCCVars
     /// </summary>
     public static readonly CVarDef<int> ConstructionMaxGhostsPerTile =
         CVarDef.Create("construction.max_ghosts_per_tile", 6, CVar.SERVER | CVar.REPLICATED | CVar.ARCHIVE);
+
+    /*
+     * Bluespace Dock (Palmtree)
+     */
+
+    /// <summary>
+    /// Whether the Bluespace Dock console accepts new operations.
+    /// </summary>
+    public static readonly CVarDef<bool> BluespaceDockEnabled =
+        CVarDef.Create("nf14.bluespace_dock.enabled", true, CVar.SERVER | CVar.REPLICATED);
+
+    /// <summary>
+    /// Fraction of a ship's appraised value charged to store it in the dock.
+    /// </summary>
+    public static readonly CVarDef<float> BluespaceDockStoreTax =
+        CVarDef.Create("nf14.bluespace_dock.store_tax", 0.10f, CVar.SERVER | CVar.REPLICATED);
+
+    /// <summary>
+    /// Fraction of a stored ship's recorded value charged to pull it back out.
+    /// </summary>
+    public static readonly CVarDef<float> BluespaceDockRetrieveTax =
+        CVarDef.Create("nf14.bluespace_dock.retrieve_tax", 0.05f, CVar.SERVER | CVar.REPLICATED);
+
+    /// <summary>
+    /// Fraction of a stored ship's recorded value paid out when selling it from the dock.
+    /// </summary>
+    public static readonly CVarDef<float> BluespaceDockStoredSellRate =
+        CVarDef.Create("nf14.bluespace_dock.stored_sell_rate", 0.95f, CVar.SERVER | CVar.REPLICATED);
+
+    /// <summary>
+    /// Maximum number of ships a character may keep in the dock (0 = unlimited).
+    /// </summary>
+    public static readonly CVarDef<int> BluespaceDockMaxShips =
+        CVarDef.Create("nf14.bluespace_dock.max_ships", 0, CVar.SERVER | CVar.REPLICATED);
+
+    /// <summary>
+    /// Registration fee charged by the ship registrar console (0 = free).
+    /// </summary>
+    public static readonly CVarDef<int> ShipRegistrarFee =
+        CVarDef.Create("nf14.ship_registrar.fee", 0, CVar.SERVER | CVar.REPLICATED);
 }
