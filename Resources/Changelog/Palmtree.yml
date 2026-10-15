@@ -977,3 +977,20 @@ Entries:
   time: '2026-10-15T13:40:44.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/817dc3da3f22f21b81657954b974f4a41c6dab6a
+- author: TheLife
+  changes:
+    - type: Add
+      message: >-
+        Added a one-time NSFW consent prompt in the lobby. The answer is saved
+        to your account and can only be changed by an administrator.
+    - type: Add
+      message: Added the nsfwtoggle <user> <true/false> admin command.
+    - type: Tweak
+      message: >-
+        Non-consenting players no longer see genitals, semen decals or the
+        interaction panel, and must answer the prompt before they can ready up
+        or late-join.
+  id: 90060
+  time: '2026-10-15T14:49:08.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/69522a8e3b314a6cc1653f9569f97aa4eb0e5546
