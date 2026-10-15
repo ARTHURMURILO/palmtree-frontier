@@ -1,5 +1,6 @@
-# Palmtree: the roomba — a craftable cleanbot variant that scrubs cleanable floor decals
-# (grime, crayon, semen drips and ejaculate) in addition to mopping reagent puddles.
+# Palmtree: the roomba — a craftable cleanbot variant that drives around like a real robot vacuum
+# (constant motion, bumping into walls and turning) and scrubs cleanable floor decals (grime, crayon,
+# semen drips and ejaculate) as it passes over them. Its brain is Content.Server/_PS/Roomba.
 - type: entity
   parent: MobCleanBot
   id: MobRoomba
@@ -9,12 +10,36 @@
   - type: Sprite
     sprite: _PS/Mobs/Silicon/Bots/roomba.rsi
     state: roomba
+    # SmallMobs so the roomba renders underneath tables it rolls under (like mice), instead of the
+    # BaseMob default of Mobs, which draws over furniture.
+    drawdepth: SmallMobs
   - type: Construction
     graph: Roomba
     node: bot
+  # RoombaSystem drives and cleans; the HTN task only keeps the NPC awake.
+  - type: Roomba
   - type: HTN
     rootTask:
-      task: RoombaCompound
+      task: RoombaIdleCompound
+  - type: MovementSpeedModifier
+    baseWalkSpeed: 1.6
+    baseSprintSpeed: 1.8
+  # Short delay so mopping puddles while driving does not lag behind.
+  - type: UseDelay
+    delay: 0.5
+  # Small enough to roll under tables and chairs like a mouse, and it never shoves mobs around
+  # (SharedRoombaSystem cancels the mob-collision target side for it).
+  - type: Fixtures
+    fixtures:
+      fix1:
+        shape:
+          !type:PhysShapeCircle
+            radius: 0.25
+        density: 50
+        mask:
+        - SmallMobMask
+        layer:
+        - SmallMobLayer
   - type: InteractionPopup
     interactSuccessString: petting-success-roomba
     interactFailureString: petting-failure-roomba

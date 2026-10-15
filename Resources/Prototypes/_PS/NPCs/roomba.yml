@@ -1,34 +1,18 @@
-# Palmtree: roomba behaviour. It scrubs cleanable decals first, then falls back to the cleanbot's
-# puddle mopping, then idles. Decal cleaning needs the grid to have a DecalGridComponent (same
-# requirement as the semen drip).
+# Palmtree: the roomba does not plan routes. RoombaSystem drives it like a real robot vacuum
+# (constant motion, bump-and-turn, never off the grid) and scrubs what it drives over. This
+# compound only keeps the NPC awake so the steering system runs; it never moves or cleans.
 - type: htnCompound
-  id: RoombaCompound
-  branches:
-    - tasks:
-        - !type:HTNCompoundTask
-          task: RoombaCleanDecalsCompound
-    - tasks:
-        - !type:HTNCompoundTask
-          task: BufferNearbyPuddlesCompound
-    - tasks:
-        - !type:HTNCompoundTask
-          task: IdleCompound
-
-# Finds the nearest cleanable decal, drives over it and scrubs it.
-- type: htnCompound
-  id: RoombaCleanDecalsCompound
+  id: RoombaIdleCompound
   branches:
     - tasks:
         - !type:HTNPrimitiveTask
-          operator: !type:FindCleanableDecalsOperator
-            radius: 7
+          operator: !type:RandomOperator
+            targetKey: IdleTime
+            minKey: MinimumIdleTime
+            maxKey: MaximumIdleTime
         - !type:HTNPrimitiveTask
-          operator: !type:MoveToOperator
-            pathfindInPlanning: true
-            removeKeyOnFinish: false
-            targetKey: TargetCoordinates
-            pathfindKey: TargetPathfind
-            rangeKey: MeleeRange
-        - !type:HTNPrimitiveTask
-          operator: !type:CleanDecalsOperator
-            keyCoordinates: TargetCoordinates
+          operator: !type:WaitOperator
+            key: IdleTime
+          preconditions:
+            - !type:KeyExistsPrecondition
+              key: IdleTime

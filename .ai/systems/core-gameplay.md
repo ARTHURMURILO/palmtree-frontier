@@ -33,13 +33,25 @@
 ## NPCs
 
 - `NPCSystem` + HTN tasks/operators; `_NF/NPC` adds Frontier NPCs for expeditions/pirates.
-- Palmtree **roomba** (`MobRoomba`, `_PS`): a cleanbot variant that also scrubs `Cleanable` floor
-  decals (semen drips/ejaculate, grime, crayon) via the server-only HTN operators
-  `FindCleanableDecalsOperator`/`CleanDecalsOperator` (`Content.Server/_PS/Roomba`), HTN in
-  `Resources/Prototypes/_PS/NPCs/roomba.yml`. Decals are not entities, so the branch cannot use the
-  regular utility query system; the operators scan `DecalSystem.GetDecalsIntersecting` directly and
-  share the cleanbot's water solution and `UseDelay`. Crafted in the utilities construction menu with
-  the cleanbot parts plus a mop.
+- Palmtree **roomba** (`MobRoomba`, `_PS`): a cleanbot variant that behaves like a real robot
+  vacuum instead of planning routes. `RoombaSystem` (`Content.Server/_PS/Roomba`) drives it through
+  `NPCSteeringSystem` direct moves: straight legs with a persistent heading, a bump-and-turn on
+  stalled progress (including the engine's own anti-stuck `NoPath`), and it never targets a tile
+  without solid floor — path samples plus a momentum margin keep it from rolling off the grid (its
+  `TransformComponent.GridTraversal` is disabled so the engine does not detach it, and a watchdog
+  rubber-bands it back if it still overshoots). Legs are picked in two passes: tiles first, then a
+  broadphase pass for hard-collidable **obstacles** (walls, machines) and **living mobs**, so it
+  steers around them; if everything ahead is blocked it takes the least bad option and bumps, which
+  is the roomba charm. Its fixtures use `SmallMobMask`/`SmallMobLayer` (like mice) and its sprite
+  `drawdepth: SmallMobs`, so it rolls **under tables and chairs** and renders beneath them too. Cleaning happens underfoot: every 0.45 tiles it scrubs `Cleanable`
+  decals around itself (cum drips/ejaculate, grime, crayon — the space cleaner set) and mops puddles
+  on its tile, using the cleanbot's own water tank (sound rate-limited). `RoombaComponent` is
+  **shared** and `SharedRoombaSystem` cancels `AttemptMobTargetCollideEvent` for it (the prone-mob
+  trick), so it never shoves mobs on either side — clients predict their own pushes. It also talks:
+  rare bump lines (25%, 6 s cooldown), very rare idle lines (90-240 s) and less rare comments when it
+  sees a character without a jumpsuit or outer clothing (`Resources/Locale/en-US/_PS/roomba.ftl`).
+  The entity's HTN is only a wait loop that keeps the NPC awake. Crafted in the utilities
+  construction menu with the cleanbot parts plus a mop.
 - `RandomHumanoidSpawner` markers self-delete on MapInit; for preset looks use static mobs with
   `HumanoidAppearance.initial`.
 

@@ -1073,3 +1073,23 @@ Entries:
         manageships, and the owner selector in the ship registrar console.
   id: 90064
   time: '2026-10-15T19:09:45.0000000+00:00'
+- author: TheLife
+  changes:
+    - type: Tweak
+      message: >-
+        The roomba now drives around like a real robot vacuum instead of plotting
+        a course - it bumps into walls, turns away, mutters to itself (and
+        complains when it bumps), and cleans the floor it rolls over. It still
+        never wanders off the grid into space.
+  id: 90065
+  time: '2026-10-15T20:07:34.0000000+00:00'
+- author: TheLife
+  changes:
+    - type: Tweak
+      message: >-
+        Roomba improvements: it no longer shoves mobs around, rolls under tables
+        and chairs like a mouse (and is drawn beneath them), steers around walls,
+        furniture and people instead of grinding into them, and no longer plays
+        its vacuum sound over and over on a dirty floor.
+  id: 90066
+  time: '2026-10-15T20:26:21.0000000+00:00'
