@@ -611,6 +611,8 @@ a crash can leave files behind). The tool:
   `ShipPreviewEui`; the grid and map are deleted when the preview window closes, when another file is
   previewed, when the tool closes, or after one minute as a safety net (`ShipPreviewEui` takes an
   optional `onClosed` callback for this),
+- can delete every orphan at once (`DeleteAllOrphanedFiles` behind the window's red-confirm DELETE ALL
+  button) - the registry and its entries are untouched,
 - restores one into a character's dock with `TryRestoreOrphanedFile`: it loads the file once for the
   appraisal, model and vessel identity, moves the file back into the ship directory under a fresh id
   and writes a registry entry (refusing when that character already has a ship with that name). The
@@ -631,6 +633,20 @@ a crash can leave files behind). The tool:
   entry with an **empty ckey** (written before a player could be picked, or by hand) matches by
   character name alone - that is the only way a name-keyed entry can ever be used, since an ID card
   does not carry a ckey.
+
+### Admin tools: player ships (`manageships`, `forcedock`)
+
+- `manageships` (`Content.Server/_PS/Commands/ManageShipsCommand.cs`, EUI `ManageShipsEui` + client
+  `ManageShipsWindow`) lists **player ships by deed** - not by connected player, so ships whose owner
+  is offline are included - in a dropdown (`BluespaceDockSystem.GetDeedShips`, with owner and docked
+  state), previews one with the live ship camera and deletes one (`TryDeleteShip`, which clears every
+  deed pointing at the grid).
+- `forcedock <ship name | grid uid> [owner]` (`ForceDockCommand`) stores a ship in the dock without
+  requiring it to be docked. Every other store check still runs (`FindStoreBlocker`, so "living things
+  aboard" and the civilian-vessel rule still apply) and failures are printed to the console. The owner
+  defaults to the deed owner; when the given name matches a player in the round their ckey is recorded
+  too, otherwise the entry is keyed by character name alone. No tax is charged. The store mechanics
+  live in `BluespaceDockSystem.TryStoreShip`, shared with the dock console's own store button.
 
 ### Ship Registrar (`ComputerShipRegistrar`)
 

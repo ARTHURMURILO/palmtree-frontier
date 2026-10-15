@@ -60,9 +60,19 @@
             </BoxContainer>
         </BoxContainer>
 
-        <Label Name="StatusLabel"
-               Text=""
-               StyleClasses="LabelSubText"
-               Margin="4 4 4 0" />
+        <BoxContainer Orientation="Horizontal" HorizontalExpand="True" Margin="4 4 4 0">
+            <Label Name="StatusLabel"
+                   Text=""
+                   StyleClasses="LabelSubText"
+                   HorizontalExpand="True"
+                   VerticalAlignment="Center" />
+            <controls:ConfirmButton Name="DeleteAllButton"
+                                    Access="Public"
+                                    Text="{Loc 'restore-orphan-delete-all'}"
+                                    ConfirmationText="{Loc 'restore-orphan-confirm'}"
+                                    StyleClasses="LabelSubText"
+                                    MinWidth="140"
+                                    MinHeight="28" />
+        </BoxContainer>
     </BoxContainer>
 </controls:FancyWindow>

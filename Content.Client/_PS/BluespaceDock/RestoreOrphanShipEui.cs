@@ -20,6 +20,7 @@ public sealed partial class RestoreOrphanShipEui : BaseEui
         _window.OnClose += () => SendMessage(new CloseEuiMessage());
         _window.OnPreview += file => SendMessage(new RestoreOrphanShipPreviewMessage(file));
         _window.OnDelete += file => SendMessage(new RestoreOrphanShipDeleteMessage(file));
+        _window.OnDeleteAll += () => SendMessage(new RestoreOrphanShipDeleteAllMessage());
         _window.OnRestore += (file, userId, shipName, suffix) =>
             SendMessage(new RestoreOrphanShipRestoreMessage(file, userId, shipName, suffix));
     }

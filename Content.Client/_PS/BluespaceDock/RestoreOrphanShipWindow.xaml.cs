@@ -17,6 +17,7 @@ public sealed partial class RestoreOrphanShipWindow : FancyWindow
 {
     public event Action<string>? OnPreview;
     public event Action<string>? OnDelete;
+    public event Action? OnDeleteAll;
     public event Action<string, string, string, string>? OnRestore;
 
     private RestoreOrphanShipEuiState? _state;
@@ -38,6 +39,8 @@ public sealed partial class RestoreOrphanShipWindow : FancyWindow
             UpdateOwnerHint(player.CharacterName);
             UpdateSelection();
         };
+
+        DeleteAllButton.OnPressed += _ => OnDeleteAll?.Invoke();
 
         RestoreButton.OnPressed += _ =>
         {

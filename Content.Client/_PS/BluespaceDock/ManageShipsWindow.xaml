@@ -1,0 +1,39 @@
+<controls:FancyWindow xmlns="https://spacestation14.io"
+                      xmlns:controls="clr-namespace:Content.Client.UserInterface.Controls"
+                      Title="{Loc 'manage-ships-title'}"
+                      SetSize="560 250"
+                      MinSize="560 220">
+    <BoxContainer Orientation="Vertical" Margin="5 0 5 5">
+        <Label Text="{Loc 'manage-ships-label'}" StyleClasses="LabelKeyText" />
+        <OptionButton Name="ShipSelect"
+                      Access="Public"
+                      HorizontalExpand="True"
+                      Margin="0 0 0 2" />
+        <Label Name="ShipHintLabel"
+               Access="Public"
+               Text="{Loc 'manage-ships-hint'}"
+               StyleClasses="LabelSubText"
+               Margin="0 0 0 4" />
+
+        <BoxContainer Orientation="Horizontal" HorizontalExpand="True">
+            <Button Name="PreviewButton"
+                    Access="Public"
+                    Text="{Loc 'manage-ships-preview'}"
+                    Disabled="True"
+                    HorizontalExpand="True"
+                    MinHeight="32" />
+            <controls:ConfirmButton Name="DeleteButton"
+                                    Access="Public"
+                                    Text="{Loc 'manage-ships-delete'}"
+                                    ConfirmationText="{Loc 'manage-ships-confirm'}"
+                                    Disabled="True"
+                                    HorizontalExpand="True"
+                                    MinHeight="32" />
+        </BoxContainer>
+
+        <Label Name="StatusLabel"
+               Text=""
+               StyleClasses="LabelSubText"
+               Margin="0 4 0 0" />
+    </BoxContainer>
+</controls:FancyWindow>

@@ -1,0 +1,12 @@
+manage-ships-title = PLAYER SHIPS
+manage-ships-label = Ship:
+manage-ships-hint = Pick a ship to inspect or delete.
+manage-ships-selected = Selected: {$name} (owned by {$owner})
+manage-ships-preview = PREVIEW
+manage-ships-delete = DELETE SHIP
+manage-ships-confirm = CONFIRM
+manage-ships-docked = docked
+manage-ships-undocked = undocked
+manage-ships-none = No player ships are in the world.
+manage-ships-deleted = Deleted {$name}.
+manage-ships-error-missing = That ship no longer exists.

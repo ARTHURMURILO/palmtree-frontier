@@ -76,6 +76,9 @@ public sealed partial class RestoreOrphanShipEui : BaseEui
             case RestoreOrphanShipDeleteMessage delete:
                 Delete(delete.File);
                 break;
+            case RestoreOrphanShipDeleteAllMessage:
+                DeleteAll();
+                break;
         }
     }
 
@@ -198,6 +201,15 @@ public sealed partial class RestoreOrphanShipEui : BaseEui
             ClearPreview();
 
         SetStatus(Loc.GetString("restore-orphan-deleted", ("file", file)), error: false);
+        StateDirty();
+    }
+
+    private void DeleteAll()
+    {
+        ClearPreview();
+
+        var deleted = _dock.DeleteAllOrphanedFiles();
+        SetStatus(Loc.GetString("restore-orphan-deleted-all", ("count", deleted)), error: false);
         StateDirty();
     }
 

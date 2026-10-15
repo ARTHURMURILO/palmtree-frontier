@@ -1,12 +1,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using Content.Server._PS.BluespaceDock;
+using Content.Server.Mind;
 using Content.Server.Station.Systems;
 using Content.Shared._NF.BindToStation;
 using Content.Shared._NF.Shipyard.Components;
 using Content.Shared._PS.BluespaceDock;
 using Content.Shared._PS.ShipRegistry;
 using Content.Shared._NF.Shipyard;
+using Content.Shared.Mind;
 using Content.Shared.Station;
 using NUnit.Framework;
 using Content.Shared.Storage;
@@ -660,6 +662,126 @@ public sealed class BluespaceDockTest
         await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));
         await server.WaitRunTicks(2);
         await server.WaitAssertion(() => server.System<SharedMapSystem>().DeleteMap(loadedMap));
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task AdminShipManagement()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var mapMan = server.ResolveDependency<IMapManager>();
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var sharedDock = server.System<SharedBluespaceDockSystem>();
+            dock.ReloadRegistry();
+
+            var grid = testMap.Grid.Owner;
+            sharedDock.AssignDeed(grid, grid, "Admin Test", "AT-1", "Tester");
+
+            // Listed as a player ship (that is what the admin manager shows).
+            Assert.That(dock.GetDeedShips().Any(s => s.Grid == grid && s.Name == "Admin Test AT-1" && s.Owner == "Tester"),
+                Is.True, "A grid with a deed must be listed as a player ship.");
+
+            // A civilian vessel (the registered marker) so the only thing that can block is a body.
+            entMan.AddComponent<RegisteredVesselComponent>(grid);
+
+            // The docking requirement is the only check the admin path skips.
+            Assert.That(dock.FindStoreBlocker(grid, requireDocked: true, stationGrid: null),
+                Is.EqualTo("bluespace-dock-error-not-docked"));
+            Assert.That(dock.FindStoreBlocker(grid, requireDocked: false, stationGrid: null), Is.Null);
+
+            // A character aboard blocks the store, forced or not (FoundOrganics looks for a mind).
+            var mindSystem = server.System<MindSystem>();
+            var mob = entMan.SpawnEntity("MobHuman", new EntityCoordinates(grid, new System.Numerics.Vector2(0.5f, 0.5f)));
+            var mind = mindSystem.CreateMind(null, "Test Organism");
+            mindSystem.TransferTo(mind, mob);
+
+            Assert.That(dock.FindStoreBlocker(grid, requireDocked: false, stationGrid: null),
+                Is.EqualTo("bluespace-dock-error-organic-aboard"),
+                "Living things aboard must block even the admin path.");
+
+            entMan.DeleteEntity(mob);
+            entMan.DeleteEntity(mind);
+            Assert.That(dock.FindStoreBlocker(grid, requireDocked: false, stationGrid: null), Is.Null);
+
+            // The store mechanics write an entry and delete the ship.
+            Assert.That(dock.TryStoreShip(grid, "ckey-admin", "Tester", 4242, payer: null, cost: 0, out var error),
+                Is.True, error);
+            Assert.That(entMan.IsQueuedForDeletion(grid), Is.True, "A stored ship is queued for deletion.");
+
+            var entry = dock.FindEntry("ckey-admin", "Tester", "Admin Test AT-1");
+            Assert.That(entry, Is.Not.Null, "The forced store must write a registry entry.");
+            Assert.That(entry!.Value, Is.EqualTo(4242));
+
+            // Deleting a player ship clears the deed from whatever held it.
+            var holderGrid = mapMan.CreateGridEntity(testMap.MapId).Owner;
+            var idCard = entMan.SpawnEntity("PassengerIDCard", new EntityCoordinates(holderGrid, new System.Numerics.Vector2(0.5f, 0.5f)));
+            var doomed = mapMan.CreateGridEntity(testMap.MapId).Owner;
+            sharedDock.AssignDeed(doomed, doomed, "Doomed", null, "Tester");
+            sharedDock.AssignDeed(idCard, doomed, "Doomed", null, "Tester");
+
+            Assert.That(dock.TryDeleteShip(doomed, out var deleteError), Is.True, deleteError);
+            Assert.That(entMan.IsQueuedForDeletion(doomed), Is.True, "The ship is queued for deletion.");
+            Assert.That(entMan.HasComponent<ShuttleDeedComponent>(idCard), Is.False,
+                "Deleting a ship must clear the deed from the ID that held it.");
+
+            // Clean up.
+            if (dock.Registry.Find(entry.ShipId) is { } stored)
+                dock.RemoveEntry(stored, deleteFile: true);
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task DeleteAllOrphanedFilesKeepsTheRegistry()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var res = server.ResolveDependency<Robust.Shared.ContentPack.IResourceManager>();
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            dock.ReloadRegistry();
+
+            // Two orphaned files and one that has an entry.
+            Assert.That(dock.TrySaveShipFile(testMap.Grid.Owner, BluespaceDockSystem.GetShipFilePath("orphan-a"), out _), Is.True);
+            Assert.That(dock.TrySaveShipFile(testMap.Grid.Owner, BluespaceDockSystem.GetShipFilePath("orphan-b"), out _), Is.True);
+
+            var kept = BluespaceDockSystem.GetShipFilePath("kept-a");
+            Assert.That(dock.TrySaveShipFile(testMap.Grid.Owner, kept, out _), Is.True);
+            dock.AddEntry(new BluespaceDockEntry
+            {
+                ShipId = "kept-a",
+                File = kept,
+                OwnerUserId = "ckey-test",
+                OwnerName = "Test Character",
+                Name = "Kept",
+                DisplayName = "Kept QT-003",
+                Value = 1,
+            });
+
+            Assert.That(dock.DeleteAllOrphanedFiles(), Is.GreaterThanOrEqualTo(2), "Both orphaned files must go.");
+
+            Assert.That(res.UserData.Exists(new ResPath($"{BluespaceDockSystem.ShipDirectory}/orphan-a.yml")), Is.False);
+            Assert.That(res.UserData.Exists(new ResPath($"{BluespaceDockSystem.ShipDirectory}/orphan-b.yml")), Is.False);
+            Assert.That(res.UserData.Exists(new ResPath($"{BluespaceDockSystem.ShipDirectory}/{kept}")), Is.True,
+                "A file with a registry entry must not be deleted.");
+            Assert.That(res.UserData.Exists(new ResPath(BluespaceDockSystem.RegistryPath)), Is.True,
+                "The registry file must survive a delete-all.");
+
+            // Clean up.
+            if (dock.Registry.Find("kept-a") is { } entry)
+                dock.RemoveEntry(entry, deleteFile: true);
+        });
 
         await pair.CleanReturnAsync();
     }

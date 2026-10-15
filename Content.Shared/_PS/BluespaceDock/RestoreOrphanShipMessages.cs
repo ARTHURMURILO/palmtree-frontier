@@ -40,3 +40,9 @@ public sealed class RestoreOrphanShipDeleteMessage(string file) : EuiMessageBase
 {
     public readonly string File = file;
 }
+
+/// <summary>
+/// Deletes every orphaned ship file.
+/// </summary>
+[Serializable, NetSerializable]
+public sealed class RestoreOrphanShipDeleteAllMessage : EuiMessageBase;

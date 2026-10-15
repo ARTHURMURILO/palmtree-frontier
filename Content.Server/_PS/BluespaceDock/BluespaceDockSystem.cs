@@ -375,6 +375,25 @@ public sealed class BluespaceDockSystem : EntitySystem
     }
 
     /// <summary>
+    /// Deletes every orphaned ship file (the registry and its entries are untouched).
+    /// </summary>
+    /// <returns>How many files were deleted.</returns>
+    public int DeleteAllOrphanedFiles()
+    {
+        var deleted = 0;
+        foreach (var orphan in GetOrphanedFiles())
+        {
+            if (TryDeleteOrphanedFile(orphan.Name))
+                deleted++;
+        }
+
+        if (deleted > 0)
+            _sawmill.Info($"Deleted {deleted} orphaned bluespace dock ship file(s)");
+
+        return deleted;
+    }
+
+    /// <summary>
     /// Restores an orphaned ship file into a character's dock: the file moves back into the ship
     /// directory under a fresh id and a registry entry is written for it, so the character can pull
     /// the ship out of any dock console. Returns a localization key in <paramref name="error"/> on
@@ -1453,40 +1472,13 @@ public sealed class BluespaceDockSystem : EntitySystem
             return;
         }
 
-        if (!_cfg.GetCVar(NFCCVars.BluespaceDockEnabled))
-        {
-            Deny(consoleUid, component, player, "bluespace-dock-error-disabled");
-            return;
-        }
+        EntityUid? stationGrid = null;
+        if (_station.GetOwningStation(consoleUid) is { Valid: true } station)
+            stationGrid = _station.GetLargestGrid(station);
 
-        if (_busyShips.Contains(shuttleUid))
+        if (FindStoreBlocker(shuttleUid, requireDocked: true, stationGrid) is { } blocker)
         {
-            Deny(consoleUid, component, player, "bluespace-dock-error-busy");
-            return;
-        }
-
-        if (_station.GetOwningStation(consoleUid) is not { Valid: true } station
-            || _station.GetLargestGrid(station) is not { } stationGrid)
-        {
-            Deny(consoleUid, component, player, "bluespace-dock-error-no-station");
-            return;
-        }
-
-        if (!IsDockedToGrid(shuttleUid, stationGrid))
-        {
-            Deny(consoleUid, component, player, "bluespace-dock-error-not-docked");
-            return;
-        }
-
-        if (FoundOrganics(shuttleUid) is not null)
-        {
-            Deny(consoleUid, component, player, "bluespace-dock-error-organic-aboard");
-            return;
-        }
-
-        if (!TryGetVesselInfo(shuttleUid, out var vesselInfo) || !IsAllowedGroup(vesselInfo.Group))
-        {
-            Deny(consoleUid, component, player, "bluespace-dock-error-not-civilian");
+            Deny(consoleUid, component, player, blocker);
             return;
         }
 
@@ -1497,47 +1489,118 @@ public sealed class BluespaceDockSystem : EntitySystem
             return;
         }
 
-        var value = (int) _pricing.AppraiseGrid(shuttleUid, null);
+        var value = AppraiseShip(shuttleUid);
         var cost = (int) (value * _cfg.GetCVar(NFCCVars.BluespaceDockStoreTax));
-        if (!_bank.TryGetBalance(player, out var balance) || balance < cost)
+        if (cost > 0 && (!_bank.TryGetBalance(player, out var balance) || balance < cost))
         {
             Deny(consoleUid, component, player, "bluespace-dock-error-insufficient-funds");
             return;
         }
 
+        var displayName = ShipyardSystem.GetFullName(deed);
+        if (!TryStoreShip(shuttleUid, userId, characterName, value, player, cost, out var error))
+        {
+            Deny(consoleUid, component, player, error ?? "bluespace-dock-error-save-failed");
+            return;
+        }
+
+        Popup(player, "bluespace-dock-stored", ("ship", displayName));
+        Announce(consoleUid, "bluespace-dock-announce-store", ("owner", characterName), ("vessel", displayName));
+        PlayConfirm(consoleUid, component);
+        _adminLogger.Add(LogType.Action, LogImpact.Medium,
+            $"{ToPrettyString(player):player} stored ship {displayName} ({value} value, {cost} tax) in the bluespace dock via {ToPrettyString(consoleUid)}");
+        RefreshState(consoleUid, player);
+    }
+
+    /// <summary>
+    /// The first thing stopping a ship from being stored, as a localization key (null when it can be
+    /// stored). <paramref name="requireDocked"/> is false for the admin force-dock command, which
+    /// skips the "docked to this station" requirement but nothing else.
+    /// </summary>
+    public string? FindStoreBlocker(EntityUid shuttleUid, bool requireDocked, EntityUid? stationGrid)
+    {
+        if (!Exists(shuttleUid) || !HasComp<ShuttleComponent>(shuttleUid))
+            return "bluespace-dock-error-no-ship";
+
+        if (!_cfg.GetCVar(NFCCVars.BluespaceDockEnabled))
+            return "bluespace-dock-error-disabled";
+
+        if (_busyShips.Contains(shuttleUid))
+            return "bluespace-dock-error-busy";
+
+        if (requireDocked && (stationGrid is not { } grid || !IsDockedToGrid(shuttleUid, grid)))
+            return "bluespace-dock-error-not-docked";
+
+        if (FoundOrganics(shuttleUid) is not null)
+            return "bluespace-dock-error-organic-aboard";
+
+        if (!TryGetVesselInfo(shuttleUid, out var vesselInfo) || !IsAllowedGroup(vesselInfo.Group))
+            return "bluespace-dock-error-not-civilian";
+
+        return null;
+    }
+
+    /// <summary>
+    /// What a ship is worth, as the dock records it.
+    /// </summary>
+    public int AppraiseShip(EntityUid shuttleUid)
+    {
+        return (int) _pricing.AppraiseGrid(shuttleUid, null);
+    }
+
+    /// <summary>
+    /// The store mechanics, shared by the dock console and the admin force-dock command: strip and
+    /// save the ship, optionally charge a payer, write the registry entry, clear any deed pointing at
+    /// it and delete the grid. Callers run the checks (<see cref="FindStoreBlocker"/>, ship limits,
+    /// affordability) first and handle their own feedback. Returns a localization key in
+    /// <paramref name="error"/> when nothing was stored.
+    /// </summary>
+    public bool TryStoreShip(EntityUid shuttleUid, string ownerUserId, string ownerName, int value,
+        EntityUid? payer, int cost, out string? error)
+    {
+        error = null;
+
+        if (!TryComp<ShuttleDeedComponent>(shuttleUid, out var deed))
+        {
+            error = "bluespace-dock-error-no-ship";
+            return false;
+        }
+
+        // The vessel identity lives on the ship's station, which the strip below removes: read it now.
+        var known = TryGetVesselInfo(shuttleUid, out var vesselInfo);
+
         _busyShips.Add(shuttleUid);
 
         try
         {
-            // Deed names are stored split (base name + suffix) and rebuilt on retrieval, and the
-            // base name is normalized: older entries stored the full name as the base name, which
-            // made the suffix accumulate on every store/retrieve cycle.
+            // Deed names are stored split (base name + suffix) and rebuilt on retrieval, and the base
+            // name is normalized: older entries stored the full name as the base name, which made the
+            // suffix accumulate on every store/retrieve cycle.
             var baseName = ShipNameHelper.GetBaseName(deed.ShuttleName ?? string.Empty, deed.ShuttleNameSuffix);
             var displayName = ShipNameHelper.BuildFullName(baseName, deed.ShuttleNameSuffix);
             var shipId = Guid.NewGuid().ToString("N");
             var fileName = GetShipFilePath(shipId);
 
-            // The ship's station is a mapped entity that the file cannot carry, so everything
-            // pointing at it (and the deed, which lives in the registry) is stripped before the
-            // save. The station itself survives until the file is known-good, which keeps a failed
-            // store recoverable.
+            // The ship's station is a mapped entity that the file cannot carry, so everything pointing
+            // at it (and the deed, which lives in the registry) is stripped before the save. The
+            // station itself survives until the file is known-good, which keeps a failed store
+            // recoverable.
             var shipStation = _station.GetOwningStation(shuttleUid);
             var stripped = new List<(EntityUid Ent, EntityUid Station, bool Member, bool Bound)>();
             UndockShuttle(shuttleUid);
 
-            if (!TrySaveShipFile(shuttleUid, fileName, out var error, stripped))
+            if (!TrySaveShipFile(shuttleUid, fileName, out error, stripped))
             {
                 RestoreStoreFailure(shuttleUid, shipStation, stripped, deed);
-                Deny(consoleUid, component, player, error ?? "bluespace-dock-error-save-failed");
-                return;
+                return false;
             }
 
-            if (!_bank.TryBankWithdraw(player, cost))
+            if (cost > 0 && payer is { } who && !_bank.TryBankWithdraw(who, cost))
             {
                 DeleteShipFile(fileName);
                 RestoreStoreFailure(shuttleUid, shipStation, stripped, deed);
-                Deny(consoleUid, component, player, "bluespace-dock-error-insufficient-funds");
-                return;
+                error = "bluespace-dock-error-insufficient-funds";
+                return false;
             }
 
             // The file is good: the ship and its station can go.
@@ -1548,10 +1611,10 @@ public sealed class BluespaceDockSystem : EntitySystem
             {
                 ShipId = shipId,
                 File = fileName,
-                OwnerUserId = userId,
-                OwnerName = characterName,
-                Vessel = vesselInfo.Vessel?.Id,
-                Model = vesselInfo.Model,
+                OwnerUserId = ownerUserId,
+                OwnerName = ownerName,
+                Vessel = known ? vesselInfo.Vessel?.Id : null,
+                Model = known ? vesselInfo.Model : "Custom",
                 Name = baseName,
                 DisplayName = displayName,
                 Suffix = deed.ShuttleNameSuffix,
@@ -1559,25 +1622,99 @@ public sealed class BluespaceDockSystem : EntitySystem
                 StoredAt = DateTime.UtcNow.ToString("O"),
             });
 
-            RemComp<ShuttleDeedComponent>(targetId);
+            // Any deed pointing at the ship goes with it (the owner may be offline, so this is not
+            // limited to one ID card).
+            ClearDeedsFor(shuttleUid);
             QueueDel(shuttleUid);
-
-            Popup(player, "bluespace-dock-stored", ("ship", displayName));
-            Announce(consoleUid, "bluespace-dock-announce-store", ("owner", characterName), ("vessel", displayName));
-            PlayConfirm(consoleUid, component);
-            _adminLogger.Add(LogType.Action, LogImpact.Medium,
-                $"{ToPrettyString(player):player} stored ship {displayName} ({value} value, {cost} tax) in the bluespace dock via {ToPrettyString(consoleUid)}");
-            RefreshState(consoleUid, player);
+            return true;
         }
         catch (Exception e)
         {
             _sawmill.Error($"Exception while storing ship {ToPrettyString(shuttleUid)}: {e}");
-            Deny(consoleUid, component, player, "bluespace-dock-error-save-failed");
+            error = "bluespace-dock-error-save-failed";
+            return false;
         }
         finally
         {
             _busyShips.Remove(shuttleUid);
         }
+    }
+
+    /// <summary>
+    /// Removes every deed that points at a grid.
+    /// </summary>
+    private void ClearDeedsFor(EntityUid grid)
+    {
+        var query = EntityQueryEnumerator<ShuttleDeedComponent>();
+        while (query.MoveNext(out var uid, out var deed))
+        {
+            if (deed.ShuttleUid == grid)
+                RemComp<ShuttleDeedComponent>(uid);
+        }
+    }
+
+    /// <summary>
+    /// A player ship in the world (one with a deed): its grid, full name, owner and whether it is
+    /// docked. Used by the admin ship manager, which has to work for offline owners too.
+    /// </summary>
+    public readonly record struct DeedShip(EntityUid Grid, string Name, string Owner, bool Docked);
+
+    /// <summary>
+    /// Every player ship in the world, with its deed.
+    /// </summary>
+    public List<DeedShip> GetDeedShips()
+    {
+        var ships = new List<DeedShip>();
+        var query = EntityQueryEnumerator<ShuttleDeedComponent, TransformComponent>();
+
+        while (query.MoveNext(out var uid, out var deed, out var xform))
+        {
+            if (xform.GridUid != uid)
+                continue;
+
+            var docked = false;
+            foreach (var dock in _docking.GetDocks(uid))
+            {
+                if (dock.Comp.DockedWith != null)
+                {
+                    docked = true;
+                    break;
+                }
+            }
+
+            ships.Add(new DeedShip(uid, ShipyardSystem.GetFullName(deed), deed.ShuttleOwner ?? string.Empty, docked));
+        }
+
+        return ships;
+    }
+
+    /// <summary>
+    /// Deletes a player ship and clears every deed pointing at it, so nothing is left referring to a
+    /// grid that no longer exists.
+    /// </summary>
+    public bool TryDeleteShip(EntityUid grid, out string? error)
+    {
+        error = null;
+
+        if (!Exists(grid))
+        {
+            error = "manage-ships-error-missing";
+            return false;
+        }
+
+        if (_busyShips.Contains(grid))
+        {
+            error = "bluespace-dock-error-busy";
+            return false;
+        }
+
+        ClearDeedsFor(grid);
+
+        if (_station.GetOwningStation(grid) is { Valid: true } station)
+            _station.DeleteStation(station);
+
+        QueueDel(grid);
+        return true;
     }
 
     /// <summary>
