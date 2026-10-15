@@ -947,3 +947,13 @@ Entries:
   time: '2026-10-15T04:24:07.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/2168964e0fc6ee72a7f5a7acdbbbf86c807efad4
+- author: TheLife
+  changes:
+    - type: Add
+      message: >-
+        The Bluespace Dock console now announces ship stores, retrievals and
+        sales on the Shortband radio channel, like the shipyard console.
+  id: 90058
+  time: '2026-10-15T04:53:44.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/917d59b0c6f736e16a45a54113ae6b57670a1601
