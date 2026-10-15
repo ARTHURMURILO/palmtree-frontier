@@ -1,0 +1,8 @@
+# Palmtree: craftable bots (construction menu entries).
+- type: construction
+  id: roomba
+  graph: Roomba
+  startNode: start
+  targetNode: bot
+  category: construction-category-utilities
+  objectType: Item

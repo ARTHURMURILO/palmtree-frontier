@@ -29,6 +29,10 @@ public sealed partial class ManageShipsWindow : FancyWindow
             if (_state == null || args.Id < 0 || args.Id >= _state.Ships.Count)
                 return;
 
+            // OptionButton does not move its own selection when an item is picked; do it so the
+            // label and the checkmark match the selected ship.
+            ShipSelect.SelectId(args.Id);
+
             Select(_state.Ships[args.Id]);
         };
 

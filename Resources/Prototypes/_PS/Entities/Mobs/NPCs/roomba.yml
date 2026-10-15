@@ -1,0 +1,20 @@
+# Palmtree: the roomba — a craftable cleanbot variant that scrubs cleanable floor decals
+# (grime, crayon, semen drips and ejaculate) in addition to mopping reagent puddles.
+- type: entity
+  parent: MobCleanBot
+  id: MobRoomba
+  name: roomba
+  description: A disc-shaped vacuum bot. The creep of automation, now upgraded to hunt down every stain on the floor.
+  components:
+  - type: Sprite
+    sprite: _PS/Mobs/Silicon/Bots/roomba.rsi
+    state: roomba
+  - type: Construction
+    graph: Roomba
+    node: bot
+  - type: HTN
+    rootTask:
+      task: RoombaCompound
+  - type: InteractionPopup
+    interactSuccessString: petting-success-roomba
+    interactFailureString: petting-failure-roomba

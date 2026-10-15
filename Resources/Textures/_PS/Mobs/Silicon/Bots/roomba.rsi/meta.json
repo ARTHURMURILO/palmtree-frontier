@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "size": {
+    "x": 32,
+    "y": 32
+  },
+  "license": "CC-BY-SA-3.0",
+  "copyright": "Ported from Project Fire (github.com/makura-games/project-fire, Resources/Textures/_Scp/Mobs/Silicon/Bots/roomba.rsi); based on battle_roomba.dmi from CEV-Eris (github.com/discordia-space/CEV-Eris), used by its cleanbot and Sojourn's roomba pet.",
+  "states": [
+    {
+      "name": "roomba",
+      "directions": 4
+    }
+  ]
+}

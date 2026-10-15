@@ -33,6 +33,13 @@
 ## NPCs
 
 - `NPCSystem` + HTN tasks/operators; `_NF/NPC` adds Frontier NPCs for expeditions/pirates.
+- Palmtree **roomba** (`MobRoomba`, `_PS`): a cleanbot variant that also scrubs `Cleanable` floor
+  decals (semen drips/ejaculate, grime, crayon) via the server-only HTN operators
+  `FindCleanableDecalsOperator`/`CleanDecalsOperator` (`Content.Server/_PS/Roomba`), HTN in
+  `Resources/Prototypes/_PS/NPCs/roomba.yml`. Decals are not entities, so the branch cannot use the
+  regular utility query system; the operators scan `DecalSystem.GetDecalsIntersecting` directly and
+  share the cleanbot's water solution and `UseDelay`. Crafted in the utilities construction menu with
+  the cleanbot parts plus a mop.
 - `RandomHumanoidSpawner` markers self-delete on MapInit; for preset looks use static mobs with
   `HumanoidAppearance.initial`.
 

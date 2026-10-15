@@ -1,0 +1,34 @@
+# Palmtree: roomba behaviour. It scrubs cleanable decals first, then falls back to the cleanbot's
+# puddle mopping, then idles. Decal cleaning needs the grid to have a DecalGridComponent (same
+# requirement as the semen drip).
+- type: htnCompound
+  id: RoombaCompound
+  branches:
+    - tasks:
+        - !type:HTNCompoundTask
+          task: RoombaCleanDecalsCompound
+    - tasks:
+        - !type:HTNCompoundTask
+          task: BufferNearbyPuddlesCompound
+    - tasks:
+        - !type:HTNCompoundTask
+          task: IdleCompound
+
+# Finds the nearest cleanable decal, drives over it and scrubs it.
+- type: htnCompound
+  id: RoombaCleanDecalsCompound
+  branches:
+    - tasks:
+        - !type:HTNPrimitiveTask
+          operator: !type:FindCleanableDecalsOperator
+            radius: 7
+        - !type:HTNPrimitiveTask
+          operator: !type:MoveToOperator
+            pathfindInPlanning: true
+            removeKeyOnFinish: false
+            targetKey: TargetCoordinates
+            pathfindKey: TargetPathfind
+            rangeKey: MeleeRange
+        - !type:HTNPrimitiveTask
+          operator: !type:CleanDecalsOperator
+            keyCoordinates: TargetCoordinates

@@ -55,6 +55,10 @@ public sealed partial class ShipRegistrarConsoleMenu : FancyWindow
             if (_state == null || args.Id < 0 || args.Id >= _state.Owners.Count)
                 return;
 
+            // OptionButton does not move its own selection when an item is picked; do it so the
+            // label and the checkmark match the selected owner.
+            OwnerSelect.SelectId(args.Id);
+
             var owner = _state.Owners[args.Id];
             _selectedUserId = owner.UserId;
             UpdateOwnerHint(owner.CharacterName);

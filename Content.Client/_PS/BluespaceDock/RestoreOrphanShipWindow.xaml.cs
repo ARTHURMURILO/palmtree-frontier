@@ -34,6 +34,11 @@ public sealed partial class RestoreOrphanShipWindow : FancyWindow
             if (_state == null || args.Id < 0 || args.Id >= _state.Players.Count)
                 return;
 
+            // OptionButton does not move its own selection when an item is picked: without this the
+            // label and the checkmark keep showing the first player while a different target is
+            // actually stored below.
+            PlayerSelect.SelectId(args.Id);
+
             var player = _state.Players[args.Id];
             _selectedUserId = player.UserId;
             UpdateOwnerHint(player.CharacterName);

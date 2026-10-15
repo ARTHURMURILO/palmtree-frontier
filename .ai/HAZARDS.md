@@ -240,7 +240,8 @@ value line.
     for format tweaks, but migration drift tests must stay green).
   - The semen drip uses `DecalPrototype`s (`SemenDrip*`/`SemenPuddle*`) via `DecalSystem`, not
     reagent puddles. It needs a grid with `DecalGridComponent` (no decals in space) and the decals
-    are only removable while `Cleanable` (space cleaner's `CleanDecalsReaction`). Drips only place
+    are only removable while `Cleanable` (space cleaner's `CleanDecalsReaction`, or the `_PS`
+    roomba's `CleanDecalsOperator`). Drips only place
     `SemenDrip*`; `SpawnCumDecals` places `SemenPuddle*`. Decals are placed at the mob's position
     with scatter and each drop is a **new** decal (no upgrading/replacing); scattered positions that
     land on space fall back to the mob's exact position. `GetDecalsInRange` compares against

@@ -114,7 +114,7 @@ queries).
 | Drip | `Content.Shared/_PS/Organs/DrippingCumComponent.cs`, `Content.Server/_PS/Organs/DrippingCumSystem.cs` | stores units; 1 u/s into **droplet** decals (`SemenDrip1..5` only), pausing while a jumpsuit is worn |
 | Ejaculation decals | `DrippingCumSystem.SpawnCumDecals` | drops `SemenPuddle1..4` scaled by `SemenVolume`; each climax adds a new decal (never replaces) |
 | Decal sprites/prototypes | `Resources/Textures/_PS/Effects/decals/semen.rsi` (ported from SPLURT `effects.dmi`), `Resources/Prototypes/_PS/Decals/semen.yml` | cleanable with space cleaner; no reagent puddles |
-| Washing | — | decals are removed by space cleaner (`CleanDecalsReaction`); the character overlay feature was removed |
+| Washing | — | decals are removed by space cleaner (`CleanDecalsReaction`) or by the Palmtree roomba's decal-scrubbing HTN operators (`Content.Server/_PS/Roomba`); the character overlay feature was removed |
 
 - Internal climaxes (`cumTarget: vagina`/`anus`) store the penis organ's `SemenVolume` in the
   partner's drip reservoir; `vagina` and `anus` both drip (receiver with no jumpsuit). Drips only

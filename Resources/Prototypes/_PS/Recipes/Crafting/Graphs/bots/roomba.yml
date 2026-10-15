@@ -1,0 +1,35 @@
+# Palmtree: roomba construction. Same bot basics as the cleanbot (bucket, proximity sensor, borg
+# arm) plus a mop, which is what lets it scrub cleanable decals off the floor.
+- type: constructionGraph
+  id: Roomba
+  start: start
+  graph:
+  - node: start
+    edges:
+    - to: bot
+      steps:
+      - tag: Bucket
+        icon:
+          sprite: Objects/Tools/bucket.rsi
+          state: icon
+        name: construction-graph-tag-bucket
+      - tag: ProximitySensor
+        icon:
+          sprite: Objects/Misc/proximity_sensor.rsi
+          state: icon
+        name: construction-graph-tag-proximity-sensor
+        doAfter: 2
+      - tag: BorgArm
+        icon:
+          sprite: Mobs/Silicon/drone.rsi
+          state: l_hand
+        name: construction-graph-tag-borg-arm
+        doAfter: 2
+      - tag: Mop
+        icon:
+          sprite: Objects/Specific/Janitorial/mop.rsi
+          state: mop
+        name: construction-graph-tag-mop
+        doAfter: 2
+  - node: bot
+    entity: MobRoomba
