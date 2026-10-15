@@ -8,6 +8,12 @@
   abstract: true
   components:
   - type: Food
+  # IngestionSystem creates this on init for anything edible; declare it so spawning does not modify
+  # the prototype data (PrototypeSaveTest).
+  - type: SolutionContainerManager
+    solutions:
+      food:
+        maxVol: 0
   - type: Tag
     tags:
     - FoodSnack

@@ -33,14 +33,17 @@ public sealed class BlipCartridgeSystem : EntitySystem
     public override void Initialize()
     {
         base.Initialize();
-        SubscribeLocalEvent<BlipCartridgeComponent, ComponentInit>(OnComponentInit);
+        // Palmtree: MapInit, not ComponentInit - spawning the cartridge on an un-initialized map (or
+        // loading one) must not modify component data (PrototypeSaveTest). MapInit runs on real
+        // spawns and after loading, so the blip still gets its preset data.
+        SubscribeLocalEvent<BlipCartridgeComponent, MapInitEvent>(OnMapInit);
         SubscribeLocalEvent<BlipCartridgeComponent, CartridgeAddedEvent>(OnCartridgeAdded);
         SubscribeLocalEvent<BlipCartridgeComponent, CartridgeRemovedEvent>(OnCartridgeRemoved);
         SubscribeLocalEvent<BlipCartridgeComponent, GetVerbsEvent<Verb>>(GetVerbs);
         // SubscribeLocalEvent<BlipCartridgeComponent, RadarBlipEvent>(UpdateBlipData); // todo, make it flash in crit
     }
 
-    private void OnComponentInit(Entity<BlipCartridgeComponent> ent, ref ComponentInit args)
+    private void OnMapInit(Entity<BlipCartridgeComponent> ent, ref MapInitEvent args)
     {
         // Load the initial data from the cartridge component to the blip component
         EnsureComp<RadarBlipComponent>(ent.Owner);

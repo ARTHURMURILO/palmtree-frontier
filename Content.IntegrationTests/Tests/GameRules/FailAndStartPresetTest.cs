@@ -1,4 +1,5 @@
 #nullable enable
+using Content.Client.Lobby; // Palmtree: NSFW consent
 using Content.Server.GameTicking;
 using Content.Server.GameTicking.Presets;
 using Content.Shared.CCVar;
@@ -97,6 +98,11 @@ public sealed class FailAndStartPresetTest
         Assert.That(!entMan.EntityExists(player));
 
         // Ready up and start nukeops
+        // Palmtree: the lobby NSFW consent prompt has to be answered before a player can ready up.
+        var clientPreferences = client.ResolveDependency<IClientPreferencesManager>();
+        await client.WaitPost(() => clientPreferences.UpdateNsfwConsent(true));
+        await pair.RunTicksSync(5);
+
         await pair.WaitClientCommand("toggleready True");
         Assert.That(ticker.PlayerGameStatuses[client.User!.Value], Is.EqualTo(PlayerGameStatus.ReadyToPlay));
         await pair.WaitCommand("setgamepreset TestPreset 9999");

@@ -5,7 +5,8 @@
 - type: entity
   id: OrganGenitalBase
   abstract: true
-  parent: BaseItem
+  # These are body parts, not items: they are spawned straight into an organ slot and never held,
+  # rendered or picked up, so they deliberately have no Item/sprite (see AllItemsHaveSpritesTest).
   components:
   - type: Organ
   - type: GenitalOrgan

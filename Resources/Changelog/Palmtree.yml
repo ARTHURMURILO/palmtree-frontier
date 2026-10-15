@@ -1093,3 +1093,12 @@ Entries:
         its vacuum sound over and over on a dirty floor.
   id: 90066
   time: '2026-10-15T20:26:21.0000000+00:00'
+- author: TheLife
+  changes:
+    - type: Fix
+      message: >-
+        Flash grenade rounds are visible again - the round prototype now
+        inherits the flash grenade's sprite and appearance instead of being a
+        sprite-less item.
+  id: 90067
+  time: '2026-10-15T21:33:31.0000000+00:00'

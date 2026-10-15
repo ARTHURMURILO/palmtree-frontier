@@ -1,6 +1,6 @@
 
 - type: entity
-  parent: NFBaseGrenade40mm
+  parent: [ NFBaseGrenade40mm, GrenadeFlash ]
   id: PalmGrenadeFlash
   name: Flash grenade round
   components:

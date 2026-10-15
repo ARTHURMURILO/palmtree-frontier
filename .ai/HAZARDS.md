@@ -440,3 +440,35 @@ value line.
   foreign *writes* fail the build with `RA0002` (tests cannot set `Job`/`Active`). Read the job from
   the character's general station record (`WantedStatusSystem.TryGetJob`) instead - the ID console
   keeps `JobPrototype` in sync.
+
+## 23. Spawn-time component changes and the full-suite tests (2026-10)
+
+The fork's CI (`build-test-debug.yml`) runs the **entire** `Content.IntegrationTests` suite with
+`NUnit.MapWarningTo=Failed`; the local pipeline in the skill only runs `_PS|EntityTest|CharacterCreationTest`,
+so these fail only in CI:
+
+- **`PrototypeSaveTest.UninitializedSaveTest`** spawns every map-savable prototype on an
+  uninitialized map and fails if `ComponentInit` changed any serialized component data. The codebase
+  convention: **declare what init creates in the prototype** (e.g. a `ContainerContainer` entry for
+  `ToggleableClothing`/`Storage`, a `SolutionContainerManager` for edible items), or move the
+  data-modifying handler to `MapInitEvent` (which does not run for uninitialized maps). Container
+  mappings **replace** parent mappings on inheritance - re-declare parent containers when overriding
+  (`ClothingOuterHardsuitBase` must repeat `storagebase` from `ClothingArmorPlate`). Fixed families:
+  hardsuit/EVA `storagebase`, wrapped lollipop `food` solution, `_CS` PDA blip cartridge
+  (`BlipCartridgeSystem` now inits on `MapInit`).
+- **`ItemSpriteTest.AllItemsHaveSpritesTest`** requires every non-abstract prototype with
+  `ItemComponent` to have a sprite. Body-part entities that are never held should not inherit
+  `BaseItem` (the `_PS` genital organs); real items need a sprite or a visual parent
+  (`PalmGrenadeFlash` was missing `GrenadeFlash`).
+- **`GuideEntryPrototypeTests.ValidatePrototypeContents`** parses every guidebook entry; the
+  Chemicals page embeds every reagent/reaction and legitimately exceeds the client's 25k per-frame
+  style update limit, so the test raises the `ui` sawmill level while it runs (the warning is a
+  client perf signal, not a content error).
+- **`FailAndStartPresetTest`** readies up; the Palmtree NSFW consent gate blocks `toggleready` until
+  the prompt is answered, so the test answers it via `IClientPreferencesManager.UpdateNsfwConsent`
+  first.
+- **`RSI Validator` / `RGA schema validator`** (separate workflows) allow only the CC/CC0 set
+  (RSI: no `Custom`; attributions: `Custom` is allowed if the copyright describes the license, and
+  `source` may be `"NA"`). Run them locally:
+  `python RobustToolbox/Schemas/validate_rsis.py Resources/` and yamale with
+  `RobustToolbox/Schemas/rga.yml` + `rga_validators.py`.

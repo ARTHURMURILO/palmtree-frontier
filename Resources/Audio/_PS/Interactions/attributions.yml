@@ -1,4 +1,4 @@
 - files: ["bang1.ogg", "bang2.ogg", "bang3.ogg", "bj1.ogg", "bj2.ogg", "bj3.ogg", "bj4.ogg", "bj5.ogg", "bj6.ogg", "bj7.ogg", "bj8.ogg", "bj9.ogg", "bj10.ogg", "bj11.ogg", "champ1.ogg", "champ2.ogg", "champ_fingering.ogg", "final_f1.ogg", "final_f2.ogg", "final_f3.ogg", "final_m1.ogg", "final_m2.ogg", "final_m3.ogg", "final_m4.ogg", "final_m5.ogg", "hug.ogg", "kiss1.ogg", "kiss2.ogg", "kiss3.ogg", "kiss4.ogg", "kiss5.ogg", "moan_f1.ogg", "moan_f2.ogg", "moan_f3.ogg", "moan_f4.ogg", "moan_f5.ogg", "moan_f6.ogg", "moan_f7.ogg", "moan_m1.ogg", "moan_m2.ogg", "moan_m3.ogg", "oral1.ogg", "oral2.ogg", "slap.ogg", "squelch1.ogg", "squelch2.ogg", "squelch3.ogg"]
-  license: "GPL-3.0"
-  copyright: "Ported from Sandstorm-Station-13 (xTheLifex fork), modular_sand/sound/interactions and sound/weapons/slap.ogg"
+  license: "Custom"
+  copyright: "Ported from Sandstorm-Station-13 (xTheLifex fork), modular_sand/sound/interactions and sound/weapons/slap.ogg; the source repository publishes its assets under GPL-3.0."
   source: "https://github.com/xTheLifex/Sandstorm-Station-13"

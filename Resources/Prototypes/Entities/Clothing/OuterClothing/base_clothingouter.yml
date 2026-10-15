@@ -135,6 +135,8 @@
   - type: ContainerContainer
     containers:
       toggleable-clothing: !type:ContainerSlot {}
+      storagebase: !type:Container
+        ents: []
   - type: GroupExamine
   - type: Tag
     tags:
