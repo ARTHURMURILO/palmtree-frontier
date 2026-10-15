@@ -403,6 +403,33 @@ namespace Content.Server.Ghost
                 if (_mobState.IsAlive(attached) || _mobState.IsCritical(attached))
                     yield return new GhostWarp(GetNetEntity(attached), playerInfo, false);
             }
+
+            // Palmtree: characters who disconnected (SSD) keep their mob in the round but have no
+            // session, so the loop above never lists them. Their mind still remembers whose it was, so
+            // walk the minds instead and include the ones with no session behind them.
+            var ssdQuery = EntityQueryEnumerator<MindContainerComponent, MetaDataComponent>();
+            while (ssdQuery.MoveNext(out var uid, out var mindContainer, out var meta))
+            {
+                if (uid == except || mindContainer.Mind is not { } mind)
+                    continue;
+
+                if (!TryComp<MindComponent>(mind, out var mindComp) || mindComp.UserId is not { } userId)
+                    continue;
+
+                // Still connected: the loop above already lists them.
+                if (_player.TryGetSessionById(userId, out _))
+                    continue;
+
+                if (!_mobState.IsAlive(uid) && !_mobState.IsCritical(uid))
+                    continue;
+
+                var jobName = _jobs.MindTryGetJobName(mind);
+                var info = string.IsNullOrEmpty(jobName)
+                    ? $"{meta.EntityName} (SSD)"
+                    : $"{meta.EntityName} ({jobName}, SSD)";
+
+                yield return new GhostWarp(GetNetEntity(uid), info, false);
+            }
         }
 
         #endregion

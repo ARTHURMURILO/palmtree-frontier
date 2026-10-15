@@ -70,6 +70,10 @@ Notable in-place patches added by this port:
 - `Content.Client/Clothing/ClientClothingSystem.cs` — leg-style displacement override.
 - All species-restricted markings — `kindAllowance` added (915 markings across 39 files), so
   markings are shared across species kinds like Coyote did.
+- `Content.Server/Ghost/GhostSystem.cs` — `GetPlayerWarps` also lists disconnected (SSD) characters
+  (`// Palmtree`): the ghost warp menu is built from `IPlayerManager.Sessions`, so a character whose
+  mob stays in the round after a disconnect never appeared. Minds with a `MindComponent.UserId` and no
+  session behind them are now included while their mob is alive or critical.
 - `Content.Shared/_NF/Shipyard/Components/ShuttleDeedComponent.cs` — its `[Access]` list also names
   `SharedBluespaceDockSystem` (`// Palmtree`), the shared helper both ship consoles use to create
   deeds. The analyzer blocks foreign writes to the component, and a *shared* component cannot name a
