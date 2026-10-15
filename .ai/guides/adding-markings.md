@@ -31,7 +31,8 @@ Checklist:
 
 `kindAllowance` lets a marking be used by species that share a `kind` with it, even when
 `speciesRestriction` lists other species. Species kinds currently in use: `BasicHumanlike`,
-`BasicFurry`, `BasicRobot`, `VoxLike`, `Resomi`.
+`BasicFurry`, `BasicRobot`, `VoxLike`. Some files also list `Resomi`/`Avali` in `kindAllowance`;
+no species carries those kinds, so those entries are inert.
 
 Rules:
 

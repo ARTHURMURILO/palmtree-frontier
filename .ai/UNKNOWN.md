@@ -10,7 +10,6 @@ Questions that could not be answered confidently from the working tree. Treat th
 2. **Live server topology.** Whether the Palmtree network is multi-server and how it connects is not
    in-repo.
 3. **Postgres in production?** SQLite is the code default; no evidence either way in-repo.
-4. **`identifier.sqlite`** (0 bytes, tracked): origin and intended use unknown; referenced nowhere.
 
 ## Ported-content behavior
 
@@ -24,12 +23,13 @@ Questions that could not be answered confidently from the working tree. Treat th
    `ModifyUndies` relies on the per-marking `otherCanToggleVisible` opt-in.
 7. **Traits.** 46 BodyType/Horny/Scent trait ids from character exports are not ported and are
    silently dropped on import. Whether they will be added later is unknown.
-8. **Size system.** Character `height`/`width` are ignored. Whether the size manipulation system
-   will be ported is unknown.
+8. **Size system.** Character `height`/`width` are first-class (profile, DB, editor sliders, client
+   `sprite.Scale`). Whether the Coyote size *manipulation* system will be ported is unknown.
 9. **Marking visibility persistence.** `Marking.Visible` is session-only; genital markings reset to
     hidden after respawn/relog. Whether this should persist is undecided.
-10. **`RenderOverClothing` and directional marking offsets** exist in the old Floof system but were
-    not ported (no current content uses them). Whether future content needs them is unknown.
+10. **`RenderOverClothing`** is ported and required by the organ renderer (`NeverHidden` organs set
+    it; `HumanoidAppearanceSystem` consumes it). Directional marking offsets (`MarkingOffsetFront`,
+    ...) remain unported. Whether future content needs them is unknown.
 11. **Digitigrade displacement coverage.** Leg displacement was ported (`LegDisplacementPrototype` +
     `HumanoidAppearanceComponent.LegDisplacements`), but clothing coverage is partial (same maps as
     Coyote); whether every outfit looks right on digitigrade legs is untested in-game.

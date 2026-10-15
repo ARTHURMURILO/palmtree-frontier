@@ -57,6 +57,9 @@
   - type: ProjectileBatteryAmmoProvider
     proto: PSBulletTaserSuper
     fireCost: 200
+  # Palmtree: admin-spawn only, so it is worth nothing.
+  - type: StaticPrice
+    price: 0
 
 - type: entity
   name: tesla gun

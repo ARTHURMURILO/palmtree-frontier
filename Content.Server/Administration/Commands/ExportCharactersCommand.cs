@@ -66,6 +66,11 @@ public sealed class ExportCharactersCommand : IConsoleCommand
     {
         var invalid = Path.GetInvalidFileNameChars();
         var cleaned = new string(name.Where(c => !invalid.Contains(c)).ToArray()).Trim();
+
+        // On Linux only '/' and NUL are invalid, so '.' and '..' would otherwise walk up a level.
+        if (cleaned is "." or "..")
+            cleaned = string.Empty;
+
         return string.IsNullOrEmpty(cleaned) ? "unknown" : cleaned.ToLowerInvariant();
     }
 }

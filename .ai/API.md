@@ -37,7 +37,7 @@
 | Symbol | Location | Purpose |
 |---|---|---|
 | `BankSystem` | `Content.Server/_NF/Bank/BankSystem.cs` | Player bank accounts, ATM, transfers |
-| `ShipyardSystem` | `Content.Server/_NF/Shipyard/ShipyardSystem*.cs` | Ship purchase/sale, consoles, records |
+| `ShipyardSystem` | `Content.Server/_NF/Shipyard/Systems/ShipyardSystem*.cs` | Ship purchase/sale, consoles, records |
 | `ShuttleRecordsSystem` | `Content.Server/_NF/ShuttleRecords/*` | Shuttle ownership/records |
 | `MarketSystem` | `Content.Server/_NF/Market/*` | Market consoles/pricing |
 | `CryoSleepSystem` | `Content.Server/_NF/CryoSleep/*` | Cryo storage/despawn |
@@ -54,6 +54,13 @@
 | `ServerConcealableClothingSystem` | `Content.Server/_PS/Clothing/ServerConcealableClothingSystem.cs` | Implant insert/remove category tracking |
 | `ClientConcealableClothingSystem` | `Content.Client/_PS/Clothing/ClientConcealableClothingSystem.cs` | Removes equipment visual layers when concealed |
 | `ConcealableClothing*Component` | `Content.Shared/_PS/Clothing/Components/*` | Data for clothing, implant category, user categories |
+| `BluespaceDockSystem` | `Content.Server/_PS/BluespaceDock/` | Store/retrieve/sell player ships, registry file, admin ship tools, ship preview |
+| `ShipRegistrarSystem` | `Content.Server/_PS/ShipRegistry/` | Register docked player-built ships (deed, records, IFF, marker) |
+| `HilbertHotelSystem` | `Content.Server/_PS/HilbertHotel/` | Runtime hotel rooms: check-in, sweeps, locks, guest lists |
+| `InteractionPanelSystem` | `Content.Server/_PS/Interactions/` (+ `Arousal`, `Ui` partials) | Data-driven social/lewd interactions, arousal, climax, ERP emotes |
+| `GenitalOrganSystem` | `Content.Shared/_PS/Organs/` | Organ-based genitals: profile settings, render markings, visibility rules, drip |
+| `SynthEmpSystem` / `DeadStartupButtonSystem` | `Content.Server/_PS/Synth/` | Synth EMP lethality and the reboot mechanic |
+| `DeletionCensusSystem` | `Content.Server/_NF/GC/Systems/DeletionCensusSystem.cs` | Palmtree garbage collection (deep-space junk culling, touched/value protection) |
 | Lobby rotation | `Content.Server/GameTicking/GameTicker.LobbyBackground.cs` | 30s background rotation + status broadcast |
 | Lobby crossfade | `Content.Client/Lobby/LobbyState.cs` | `_currentBg`/`_nextBg` smoothstep fade |
 

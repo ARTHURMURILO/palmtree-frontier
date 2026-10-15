@@ -68,8 +68,9 @@ Notable in-place patches added by this port:
   were deleted in the same tick (Frontier's grid-immunity check used `Transform()` and threw on
   them) (`// Palmtree`).
 - `Content.Client/Clothing/ClientClothingSystem.cs` — leg-style displacement override.
-- All species-restricted markings — `kindAllowance` added (915 markings across 39 files), so
-  markings are shared across species kinds like Coyote did.
+- All species-restricted markings — `kindAllowance` added (3,050 occurrences across 84 files as of
+  2026-10; recount with `grep -rl kindAllowance Resources/Prototypes | wc -l`), so markings are
+  shared across species kinds like Coyote did.
 - `Content.Server/Ghost/GhostSystem.cs` — `GetPlayerWarps` also lists disconnected (SSD) characters
   (`// Palmtree`): the ghost warp menu is built from `IPlayerManager.Sessions`, so a character whose
   mob stays in the round after a disconnect never appeared. Minds with a `MindComponent.UserId` and no
@@ -288,7 +289,6 @@ value line.
 
 ## 17. Stray repository artifacts
 
-- `identifier.sqlite` — 0-byte tracked file at repo root, referenced nowhere.
 - `Resources/manifest.yml` window title/logo may not match Palmtree branding.
 
 ## 18. Runtime-loaded maps and server popups (Hilbert's Hotel / SS13 port findings)
@@ -315,6 +315,9 @@ value line.
   prefers user data over `Resources` ("Reading map user data instead of content"). Copy saved files
   back and delete stale user-data copies.
 - **Rotating a `noRot` entity in a map file** triggers a load-time `DebugAssertException`.
+- **Preview maps may be paused; gameplay maps must not.** The Bluespace Dock's orphan-ship preview
+  calls `MapSystem.SetPaused(mapId, true)` on a throwaway map with no player bodies (safe); never do
+  this to a map a character can stand on (see the hotel rule above).
 - Full method and SS13 concept mapping: `.ai/guides/porting-from-ss13.md`.
 
 ## 19. Fork port batch hazards (2026-10)
@@ -347,10 +350,11 @@ value line.
   World art lives in `icons/fallout/objects/guns/{ballistic,bar,ammo}.dmi` and
   `modular_coyote/icons/objects/{automatic,mgs,rifles}.dmi` (the `gen_guns.py` port script is not
   in this repo). Parse sheet states with `state = "([^"]+)"\s*\n\s*dirs = (\d+)...`.
-- **The port cropped instead of scaling.** `bar.dmi` is 40x32, the `.rsi` frame is 32x32, so the
-  generator chopped the barrel off (BAR "kinda broken"). When a source is wider than the frame,
-  resize the `.rsi` `size` (and pad the 32x32 inhand/equipped cells symmetrically so the center - and
-  the held position - does not shift).
+- **The port cropped instead of scaling.** `bar.dmi` is 40x32 and the `.rsi` frame is 32x32, so an
+  early generator pass chopped the barrel off. This was later fixed by resizing `BAR.rsi` to 40x32
+  (the `meta.json` now says 40x32). When a source is wider than the frame, resize the `.rsi` `size`
+  (and pad the 32x32 inhand/equipped cells symmetrically so the center - and the held position -
+  does not shift).
 - **`MagazineVisuals` mapping**: `base`/`bolt-open` must use the *magazine-less* states, the
   `mag-N` overlay uses the *with-magazine* states, and `zeroVisible: false` unless `mag-0` really
   draws an empty magazine. A child prototype can add `- type: MagazineVisuals` with its own

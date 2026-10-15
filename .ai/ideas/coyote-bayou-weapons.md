@@ -2,10 +2,10 @@
 
 | | |
 |---|---|
-| **Status** | Proposed — not implemented (backlog / reference list) |
+| **Status** | Partially implemented (2026-10) — 29 ballistic guns + 11 calibers are live in `Resources/Prototypes/_CS/Entities/Objects/Weapons/Guns/Fallout/`; the energy set remains a backlog |
 | **Scope** | Port backlog of Fallout-themed guns from the `coyote-bayou` BYOND checkout into this repo (proposed `_CS` prefix, see §5) |
-| **Touched areas** | `Resources/Prototypes/_CS/Entities/Objects/Weapons/Guns/Fallout/*`, `Resources/Textures/_CS/Objects/Weapons/Guns/*`, `Resources/Audio/_CS/Weapons/Fallout/*` (all to be created), `.ai/PORTING.md`, `.ai/file_paths.md` |
-| **Source** | `BYOND/coyote-bayou` — Fallout-themed SS13 codebase ("Fox": Citadel -> Desert Rose -> Fortuna -> The Wasteland -> Sunset Wasteland -> Fox). Not yet listed in `.ai/file_paths.md` |
+| **Touched areas** | `Resources/Prototypes/_CS/Entities/Objects/Weapons/Guns/Fallout/*`, `Resources/Textures/_CS/Objects/Weapons/Guns/*`, `Resources/Audio/_CS/Weapons/Fallout/*`, `.ai/PORTING.md`, `.ai/file_paths.md` |
+| **Source** | `BYOND/coyote-bayou` — Fallout-themed SS13 codebase ("Fox": Citadel -> Desert Rose -> Fortuna -> The Wasteland -> Sunset Wasteland -> Fox). Listed in `.ai/file_paths.md` |
 | **Research anchors** | `code/modules/projectiles/guns/**`, `modular_coyote/code/modules/znuguns/**`, `modular_sand/**`, `modular_citadel/**` |
 
 This file parks the full scan of the coyote-bayou gun catalogue: **480 guns we do not have** (after removing templates, debug/test/toy/magic entries and the overlap we already cover), grouped by category. The maintainer judged the list too large to port in one go; §5 sketches the port plan and the decisions needed before any implementation starts.

@@ -58,6 +58,12 @@ public sealed class HilbertHotelSystem : EntitySystem
     [Dependency] private readonly GameTicker _gameTicker = default!;
 
     private readonly Dictionary<int, HilbertHotelRoom> _rooms = new();
+
+    /// <summary>
+    /// When each terminal may next create a room (see <c>HilbertHotelTeleporterComponent.CreateCooldown</c>).
+    /// </summary>
+    private readonly Dictionary<EntityUid, TimeSpan> _nextRoomCreation = new();
+
     private TimeSpan _nextSweep;
 
     public override void Initialize()
@@ -155,9 +161,20 @@ public sealed class HilbertHotelSystem : EntitySystem
             return true;
         }
 
-        if (_rooms.Count >= teleporterComp.MaxRooms)
+        // The limit is per terminal, not global: each terminal keeps its own pick of rooms, and a
+        // low cap on one terminal must not throttle check-ins at another.
+        if (CountRoomsFor(teleporter) >= teleporterComp.MaxRooms)
         {
             _popup.PopupEntity(Loc.GetString("hilbert-hotel-error-full"), user, user);
+            return false;
+        }
+
+        // Rate-limit creation so delete/recreate cycles cannot spam map loads (0 disables it).
+        var now = _timing.CurTime;
+        if (teleporterComp.CreateCooldown > TimeSpan.Zero &&
+            _nextRoomCreation.TryGetValue(teleporter, out var nextCreate) && now < nextCreate)
+        {
+            _popup.PopupEntity(Loc.GetString("hilbert-hotel-error-cooldown"), user, user);
             return false;
         }
 
@@ -177,6 +194,9 @@ public sealed class HilbertHotelSystem : EntitySystem
             _popup.PopupEntity(Loc.GetString("hilbert-hotel-error-no-templates"), user, user);
             return false;
         }
+
+        if (teleporterComp.CreateCooldown > TimeSpan.Zero)
+            _nextRoomCreation[teleporter] = now + teleporterComp.CreateCooldown;
 
         return TryCreateRoom(teleporter, teleporterComp, user, userId, code, template);
     }
@@ -241,6 +261,7 @@ public sealed class HilbertHotelSystem : EntitySystem
         var room = new HilbertHotelRoom
         {
             Code = code,
+            Origin = teleporter,
             MapId = mapId,
             MapUid = mapUid,
             TemplateId = template.ID,
@@ -396,7 +417,7 @@ public sealed class HilbertHotelSystem : EntitySystem
         }
 
         state.Rooms.Sort((a, b) => a.Code.CompareTo(b.Code));
-        state.RoomCount = _rooms.Count;
+        state.RoomCount = CountRoomsFor(teleporter);
         state.MaxRooms = TryComp<HilbertHotelTeleporterComponent>(teleporter, out var comp) ? comp.MaxRooms : 0;
         return state;
     }
@@ -552,6 +573,21 @@ public sealed class HilbertHotelSystem : EntitySystem
     public int GetRoomCount()
     {
         return _rooms.Count;
+    }
+
+    /// <summary>
+    /// The number of rooms created from a given check-in terminal (the per-terminal limit basis).
+    /// </summary>
+    private int CountRoomsFor(EntityUid teleporter)
+    {
+        var count = 0;
+        foreach (var room in _rooms.Values)
+        {
+            if (room.Origin == teleporter)
+                count++;
+        }
+
+        return count;
     }
 
     /// <summary>
@@ -831,6 +867,7 @@ public sealed class HilbertHotelSystem : EntitySystem
     private void OnRoundRestartCleanup(RoundRestartCleanupEvent ev)
     {
         _rooms.Clear();
+        _nextRoomCreation.Clear();
         _nextSweep = TimeSpan.Zero;
     }
 

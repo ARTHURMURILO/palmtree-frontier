@@ -14,8 +14,9 @@
   - type: HitscanBatteryAmmoProvider
     proto: PSXrayLaserCaspian
     fireCost: 5
+  # Palmtree: admin-spawn only, so it is worth nothing and cannot inject money into the economy.
   - type: StaticPrice
-    price: 90000
+    price: 0
 
 - type: entity
   id: NFWeaponEnergyPistolN1984Pulse
@@ -45,6 +46,9 @@
   - type: HitscanBatteryAmmoProvider
     proto: NFPulse
     fireCost: 50
+  # Palmtree: admin-spawn only, so it is worth nothing.
+  - type: StaticPrice
+    price: 0
 
 - type: entity
   name: phaser
@@ -62,8 +66,9 @@
   - type: HitscanBatteryAmmoProvider
     proto: PhaserLethal
     fireCost: 5
+  # Palmtree: admin-spawn only, so it is worth nothing and cannot inject money into the economy.
   - type: StaticPrice
-    price: 92500
+    price: 0
 
 - type: entity
   id: PSWeaponEnergyHealgun
@@ -88,3 +93,6 @@
   - type: HitscanBatteryAmmoProvider
     proto: HealBeam
     fireCost: 80
+  # Palmtree: admin-spawn only, so it is worth nothing.
+  - type: StaticPrice
+    price: 0

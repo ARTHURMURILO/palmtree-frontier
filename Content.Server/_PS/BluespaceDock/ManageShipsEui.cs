@@ -1,6 +1,8 @@
 using Content.Server._PS.ShipRegistry;
+using Content.Server.Administration.Managers;
 using Content.Server.EUI;
 using Content.Shared._PS.BluespaceDock;
+using Content.Shared.Administration;
 using Content.Shared.Eui;
 
 namespace Content.Server._PS.BluespaceDock;
@@ -13,6 +15,7 @@ namespace Content.Server._PS.BluespaceDock;
 public sealed partial class ManageShipsEui : BaseEui
 {
     [Dependency] private readonly EuiManager _eui = default!;
+    [Dependency] private readonly IAdminManager _admin = default!;
     [Dependency] private readonly IEntityManager _entityManager = default!;
 
     private readonly BluespaceDockSystem _dock = default!;
@@ -35,6 +38,11 @@ public sealed partial class ManageShipsEui : BaseEui
     public override void HandleMessage(EuiMessageBase msg)
     {
         base.HandleMessage(msg);
+
+        // The command that opens this tool checks the flag; re-check so a client cannot keep using
+        // an already-open window after losing admin.
+        if (!_admin.HasAdminFlag(Player, AdminFlags.Admin))
+            return;
 
         switch (msg)
         {

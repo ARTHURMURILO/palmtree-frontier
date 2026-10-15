@@ -37,7 +37,7 @@ Recommended contents:
 - A **`HilbertHotelRoomController`** console. If missing, the system spawns one
   next to the landing point.
 - Any furniture/props you want. Everything on the map is deleted with the room
-  once it has been empty for 10 minutes, so don't put round-critical items in.
+  once it has been empty for 5 minutes, so don't put round-critical items in.
 
 Do **not** rely on a `BecomesStation` component: runtime map loads do not create
 stations, but keeping rooms station-free avoids confusing map tooling.
@@ -151,7 +151,7 @@ dotnet test Content.IntegrationTests/Content.IntegrationTests.csproj \
    you lock the room from its `HilbertHotelRoomController`, only you (and
    trusted guests) may enter. Unchecking "List this room publicly" hides it from
    other players' terminals.
-5. Use the `HilbertHotelExit` door to leave. The room stays loaded for 10
+5. Use the `HilbertHotelExit` door to leave. The room stays loaded for 5
    minutes after the last guest leaves, then is deleted.
 6. A player may only own one room at a time. The controller's "Delete room"
    button (or the Delete button next to your room in the terminal's listing)
@@ -169,4 +169,6 @@ dotnet test Content.IntegrationTests/Content.IntegrationTests.csproj \
   The debug station map (`/Maps/Test/dev_map.yml`) is registered as
   `DebugStationHotelRoom` for testing this fallback.
 - Room maps can be large, but every active room costs memory; the terminal's
-  `MaxRooms` data field caps how many rooms can exist at once.
+  `MaxRooms` data field caps how many rooms that terminal may create (the limit
+  is per terminal, not global). Creating rooms has a 5-second cooldown per
+  terminal so delete/recreate cycles cannot spam map loads.

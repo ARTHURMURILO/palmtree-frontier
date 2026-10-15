@@ -15,6 +15,12 @@ public sealed class HilbertHotelRoom
     public int Code;
 
     /// <summary>
+    /// The terminal this room was checked in at. The room limit is per terminal, so this is what
+    /// <c>MaxRooms</c> counts.
+    /// </summary>
+    public EntityUid Origin;
+
+    /// <summary>
     /// Map holding the room. The map is deleted when the reservation expires.
     /// </summary>
     public MapId MapId;

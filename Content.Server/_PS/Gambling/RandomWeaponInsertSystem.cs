@@ -10,6 +10,7 @@ using Content.Shared.Weapons.Ranged.Components;
 using Content.Shared.Weapons.Ranged.Events;
 using Content.Shared.Weapons.Ranged.Systems;
 using Content.Shared.Whitelist;
+using Robust.Shared.GameObjects;
 using Robust.Shared.Random;
 using Robust.Shared.Timing;
 
@@ -53,9 +54,15 @@ public sealed class RandomWeaponInsertSystem : EntitySystem
         base.Initialize();
         SubscribeLocalEvent<BallisticAmmoProviderComponent, GetVerbsEvent<AlternativeVerb>>(OnGetVerbs);
         SubscribeLocalEvent<GunComponent, EntityTerminatingEvent>(OnGunTerminating);
+        SubscribeLocalEvent<GunComponent, ComponentShutdown>(OnGunShutdown);
     }
 
     private void OnGunTerminating(EntityUid uid, GunComponent comp, ref EntityTerminatingEvent args)
+    {
+        _nextSelfShot.Remove(uid);
+    }
+
+    private void OnGunShutdown(EntityUid uid, GunComponent comp, ComponentShutdown args)
     {
         _nextSelfShot.Remove(uid);
     }
@@ -133,6 +140,15 @@ public sealed class RandomWeaponInsertSystem : EntitySystem
         var userXform = Transform(user);
 
         var ammo = new List<(EntityUid?, IShootable)>();
+
+        // Honour clumsy fumbles and anything else gating a normal shot before taking a shell, like
+        // the vanilla firing path does: a cancelled shot must not consume the shell (the handlers
+        // do not need the ammo list).
+        var beforeShot = new SelfBeforeGunShotEvent(user, (gunUid, gun), ammo);
+        RaiseLocalEvent(user, beforeShot);
+        if (beforeShot.Cancelled)
+            return;
+
         RaiseLocalEvent(gunUid, new TakeAmmoEvent(1, ammo, userXform.Coordinates, user, willBeFired: true));
         if (ammo.Count == 0)
             return;
@@ -143,12 +159,6 @@ public sealed class RandomWeaponInsertSystem : EntitySystem
         var shellName = shellUid is { } shell
             ? Name(shell)
             : Loc.GetString("ammo-shoot-self-unknown-shell");
-
-        // Honour clumsy fumbles and anything else gating a normal shot.
-        var beforeShot = new SelfBeforeGunShotEvent(user, (gunUid, gun), ammo);
-        RaiseLocalEvent(user, beforeShot);
-        if (beforeShot.Cancelled)
-            return;
 
         // The projectile spawns inside the user and the user is its victim, not its shooter, so it
         // registers the point-blank hit on the first physics step. The aim offset keeps the shot

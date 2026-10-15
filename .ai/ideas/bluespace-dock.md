@@ -1,6 +1,6 @@
 # Bluespace Dock + Ship Registrar (2026-10)
 
-**Status**: **implemented** (2026-10) on branch `ps-bluespace-dock`. Durable notes live in
+**Status**: **implemented** (2026-10) on `master` (merged from the `ps-bluespace-dock` work). Durable notes live in
 `.ai/systems/ps-systems.md` ("Bluespace Dock + Ship Registrar"); this file keeps the design record
 and the deviations from the plan.
 **Scope**: two new admin/SR consoles plus a live ship preview:

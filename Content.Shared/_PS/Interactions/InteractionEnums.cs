@@ -75,10 +75,9 @@ public enum InteractionRequirements : uint
 }
 
 /// <summary>
-/// Genital kinds supported by the interaction system. SS14 has no genital organs yet;
-/// these are currently resolved from <see cref="Content.Shared.Humanoid.Markings.Marking"/>s
-/// by <see cref="GenitalSystem"/> so that a future organ-based implementation can replace
-/// the lookup without touching interaction logic.
+/// Genital kinds supported by the interaction system. Resolved from spawned
+/// <see cref="Content.Shared._PS.Organs.GenitalOrganComponent"/> organs (which replaced the old
+/// marking-based genitals), so the interaction logic does not touch the lookup itself.
 /// </summary>
 [Serializable, NetSerializable]
 public enum GenitalType : byte

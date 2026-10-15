@@ -30,11 +30,11 @@ It runs on the **RobustToolbox** engine, vendored as a git submodule. The engine
 | Engine | RobustToolbox v267.3.0, submodule at `RobustToolbox/` |
 | Build system | MSBuild via `dotnet`, solution `SpaceStation14.sln` |
 | Configurations | `Debug`, `DebugOpt`, `Release`, `Tools` |
-| Content C# files (excl. obj/bin) | ~8,041 |
-| Prototype YAML files | ~3,777 under `Resources/Prototypes` |
-| Tests | ~457 `[Test]` methods |
-| Fork prototype prefixes | `_AS`, `_CD`, `_CS`, `_DEN`, `_DV`, `_EE`, `_EstacaoPirata`, `_Floof`, `_Goobstation`, `_Impstation`, `_NF`, `_PS`, `_RMC14`, `_Starlight`, `_StarLight`, `_White` |
-| Fork code prefixes | `_Corvax`, `_DV`, `_Emberfall`, `_EstacaoPirata`, `_Goobstation`, `_Harmony`, `_NC`, `_NF`, `_RMC14`, `_PS`, `_Floof`, `_EE`, `_CD` |
+| Content C# files (excl. obj/bin) | ~8,276 (recount: `find Content* -name '*.cs' -not -path '*/obj/*' -not -path '*/bin/*' \| wc -l`) |
+| Prototype YAML files | ~3,968 under `Resources/Prototypes` |
+| Tests | ~509 `[Test]` methods (222 files) |
+| Fork prototype prefixes | `_AS`, `_CD`, `_CS`, `_DEN`, `_DV`, `_EE`, `_EstacaoPirata`, `_Floof`, `_Funkystation`, `_Goobstation`, `_HL`, `_Impstation`, `_Mono`, `_NF`, `_PS`, `_RMC14`, `_Starlight`, `_StarLight`, `_White` |
+| Fork code prefixes | `_Corvax`, `_CS`, `_DV`, `_Emberfall`, `_EstacaoPirata`, `_Goobstation`, `_Harmony`, `_Mono`, `_NC`, `_NF`, `_RMC14`, `_PS`, `_Floof`, `_EE`, `_CD` |
 | Working branch | `master` (port commits listed in `.ai/PORTING.md`; `ps-erp` merged and deleted) |
 
 ## Top-level layout
@@ -137,7 +137,6 @@ linter and it may report errors for categories that actually exist (or miss new 
 | `RobustToolbox/NetSerializer`, `Lidgren.Network`, `XamlX`, `Avalonia.Base`, `cefglue` | Vendored engine deps |
 | Source-generated code | Component network auto-states, serialization, XAML name fields, pause handling |
 | `bin/`, `obj/` | Build artifacts (not source) |
-| `identifier.sqlite` | 0-byte tracked file at repo root, referenced nowhere (hazard) |
 
 ## Tests / tooling quick map
 

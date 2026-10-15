@@ -27,37 +27,45 @@ public sealed class NsfwToggleCommand : IConsoleCommand
 
     public async void Execute(IConsoleShell shell, string argStr, string[] args)
     {
-        if (args.Length != 2)
+        try
         {
-            shell.WriteError(Loc.GetString("nsfwtoggle-command-usage", ("command", Command)));
-            return;
-        }
+            if (args.Length != 2)
+            {
+                shell.WriteError(Loc.GetString("nsfwtoggle-command-usage", ("command", Command)));
+                return;
+            }
 
-        if (!bool.TryParse(args[1], out var allowed))
+            if (!bool.TryParse(args[1], out var allowed))
+            {
+                shell.WriteError(Loc.GetString("nsfwtoggle-command-invalid-value", ("value", args[1])));
+                return;
+            }
+
+            if (!_playerManager.TryGetSessionByUsername(args[0], out var session))
+            {
+                shell.WriteError(Loc.GetString("nsfwtoggle-command-no-player", ("user", args[0])));
+                return;
+            }
+
+            var state = allowed ? NsfwConsentState.Allowed : NsfwConsentState.Denied;
+            if (!await _preferences.SetNsfwConsentAsync(session.UserId, state))
+            {
+                shell.WriteError(Loc.GetString("nsfwtoggle-command-not-loaded", ("user", session.Name)));
+                return;
+            }
+
+            _adminLogger.Add(LogType.AdminMessage, LogImpact.Medium,
+                $"{shell.Player?.Name ?? "Console"} set the NSFW consent of {session.Name} to {allowed}");
+
+            shell.WriteLine(Loc.GetString("nsfwtoggle-command-success",
+                ("user", session.Name),
+                ("state", Loc.GetString(allowed ? "nsfwtoggle-command-enabled" : "nsfwtoggle-command-disabled"))));
+        }
+        catch (Exception e)
         {
-            shell.WriteError(Loc.GetString("nsfwtoggle-command-invalid-value", ("value", args[1])));
-            return;
+            // This is an async void command: an exception escaping it would take the server down.
+            shell.WriteError($"nsfwtoggle failed: {e}");
         }
-
-        if (!_playerManager.TryGetSessionByUsername(args[0], out var session))
-        {
-            shell.WriteError(Loc.GetString("nsfwtoggle-command-no-player", ("user", args[0])));
-            return;
-        }
-
-        var state = allowed ? NsfwConsentState.Allowed : NsfwConsentState.Denied;
-        if (!await _preferences.SetNsfwConsentAsync(session.UserId, state))
-        {
-            shell.WriteError(Loc.GetString("nsfwtoggle-command-not-loaded", ("user", session.Name)));
-            return;
-        }
-
-        _adminLogger.Add(LogType.AdminMessage, LogImpact.Medium,
-            $"{shell.Player?.Name ?? "Console"} set the NSFW consent of {session.Name} to {allowed}");
-
-        shell.WriteLine(Loc.GetString("nsfwtoggle-command-success",
-            ("user", session.Name),
-            ("state", Loc.GetString(allowed ? "nsfwtoggle-command-enabled" : "nsfwtoggle-command-disabled"))));
     }
 
     public CompletionResult GetCompletion(IConsoleShell shell, string[] args)

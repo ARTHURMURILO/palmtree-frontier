@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Content.Server._PS.BluespaceDock;
 using Content.Server.Mind;
+using Content.Server.Shuttles.Components;
+using Content.Server.Shuttles.Systems;
 using Content.Server.Station.Systems;
 using Content.Shared._NF.BindToStation;
 using Content.Shared._NF.Shipyard.Components;
@@ -18,6 +20,7 @@ using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
+using Robust.Shared.Maths;
 using Robust.Shared.Utility;
 
 namespace Content.IntegrationTests.Tests._PS;
@@ -734,6 +737,81 @@ public sealed class BluespaceDockTest
             // Clean up.
             if (dock.Registry.Find(entry.ShipId) is { } stored)
                 dock.RemoveEntry(stored, deleteFile: true);
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task StoringAndDeletingAShipRescuesOccupants()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var mapMan = server.ResolveDependency<IMapManager>();
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var sharedDock = server.System<SharedBluespaceDockSystem>();
+            var docking = server.System<DockingSystem>();
+            var mapSystem = server.System<SharedMapSystem>();
+            var xformSystem = server.System<SharedTransformSystem>();
+            dock.ReloadRegistry();
+
+            // A civilian ship with a deed...
+            var ship = testMap.Grid.Owner;
+            sharedDock.AssignDeed(ship, ship, "Rescue Test", "RT-1", "Tester");
+            entMan.AddComponent<RegisteredVesselComponent>(ship);
+
+            // ...docked to a station grid, so evacuees are put down at the partner airlock.
+            var stationGrid = mapMan.CreateGridEntity(testMap.MapId).Owner;
+            xformSystem.SetLocalPosition(stationGrid, new System.Numerics.Vector2(10f, 0f));
+            mapSystem.SetTiles(stationGrid, entMan.GetComponent<MapGridComponent>(stationGrid),
+                new List<(Vector2i, Tile)> { (Vector2i.Zero, new Tile(1)) });
+
+            var stationDock = entMan.SpawnEntity("AirlockShuttle",
+                new EntityCoordinates(stationGrid, new System.Numerics.Vector2(0.5f, 0.5f)));
+            var shipDock = entMan.SpawnEntity("AirlockShuttle",
+                new EntityCoordinates(ship, new System.Numerics.Vector2(0.5f, 0.5f)));
+            docking.Dock(
+                (stationDock, entMan.GetComponent<DockingComponent>(stationDock)),
+                (shipDock, entMan.GetComponent<DockingComponent>(shipDock)));
+
+            // A ghost and a pet aboard: neither may be deleted (or saved into the ship file).
+            var ghost = entMan.SpawnEntity("MobObserver",
+                new EntityCoordinates(ship, new System.Numerics.Vector2(0.5f, 0.5f)));
+            var pet = entMan.SpawnEntity("MobMouse",
+                new EntityCoordinates(ship, new System.Numerics.Vector2(0.5f, 0.5f)));
+
+            Assert.That(dock.TryStoreShip(ship, "ckey-test", "Tester", 100, payer: null, cost: 0, out var error),
+                Is.True, error);
+
+            Assert.That(entMan.EntityExists(ghost), Is.True, "The ghost must not be deleted with the ship.");
+            Assert.That(entMan.EntityExists(pet), Is.True, "Living things must not be deleted with the ship.");
+            Assert.That(entMan.GetComponent<TransformComponent>(ghost).GridUid, Is.EqualTo(stationGrid),
+                "The ghost is moved to the grid the ship was docked to.");
+            Assert.That(entMan.GetComponent<TransformComponent>(pet).GridUid, Is.EqualTo(stationGrid),
+                "The pet is moved to the grid the ship was docked to.");
+
+            // Admin deletion rescues occupants too.
+            var doomed = mapMan.CreateGridEntity(testMap.MapId).Owner;
+            sharedDock.AssignDeed(doomed, doomed, "Doomed", null, "Tester");
+            var doomedPet = entMan.SpawnEntity("MobMouse",
+                new EntityCoordinates(doomed, new System.Numerics.Vector2(0.5f, 0.5f)));
+
+            Assert.That(dock.TryDeleteShip(doomed, out var deleteError), Is.True, deleteError);
+            Assert.That(entMan.EntityExists(doomedPet), Is.True,
+                "Deleting a ship must not delete living things on it.");
+
+            // Clean up the entry the store wrote.
+            if (dock.FindEntry("ckey-test", "Tester", "Rescue Test RT-1") is { } entry)
+                dock.RemoveEntry(entry, deleteFile: true);
+
+            entMan.DeleteEntity(ghost);
+            entMan.DeleteEntity(pet);
+            entMan.DeleteEntity(doomedPet);
         });
 
         await pair.CleanReturnAsync();

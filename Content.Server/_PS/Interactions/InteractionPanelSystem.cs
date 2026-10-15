@@ -104,6 +104,40 @@ public sealed partial class InteractionPanelSystem : EntitySystem
             .Bind(ContentKeyFunctions.InteractWithEntity,
                 new PointerInputCmdHandler(OnInteractWithEntity))
             .Register<InteractionPanelSystem>();
+
+        ValidatePrototypes();
+    }
+
+    /// <summary>
+    /// Content sanity check: unknown flag/requirement names used to be silently dropped, which
+    /// turned a content typo into a missing gate. Message pools must not be empty either, since the
+    /// panel picks from them at runtime.
+    /// </summary>
+    private void ValidatePrototypes()
+    {
+        foreach (var proto in _prototype.EnumeratePrototypes<InteractionPrototype>())
+        {
+            foreach (var name in proto.Flags)
+            {
+                if (!Enum.TryParse<InteractionFlags>(name, ignoreCase: true, out _))
+                    Log.Error($"Interaction '{proto.ID}' has unknown flag '{name}'; it is ignored at runtime.");
+            }
+
+            ValidateRequirementNames(proto.ID, proto.UserRequirements);
+            ValidateRequirementNames(proto.ID, proto.TargetRequirements);
+
+            if (proto.Messages.Count == 0)
+                Log.Error($"Interaction '{proto.ID}' has no messages; it cannot be performed.");
+        }
+    }
+
+    private void ValidateRequirementNames(string id, IEnumerable<string> names)
+    {
+        foreach (var name in names)
+        {
+            if (!Enum.TryParse<InteractionRequirements>(name, ignoreCase: true, out _))
+                Log.Error($"Interaction '{id}' has unknown requirement '{name}'; it is ignored at runtime.");
+        }
     }
 
     public override void Shutdown()
@@ -417,7 +451,8 @@ public sealed partial class InteractionPanelSystem : EntitySystem
         if (proto.ForceClimax && state.ClimaxPulsesLeft > 0)
             return false;
 
-        if (!CanPerform(proto, user, target, popup: !applyCooldown))
+        // Manual actions (applyCooldown) surface why they failed; auto-repeat stays quiet.
+        if (!CanPerform(proto, user, target, popup: applyCooldown))
             return false;
 
         var now = _timing.CurTime;
@@ -470,6 +505,13 @@ public sealed partial class InteractionPanelSystem : EntitySystem
         var pool = continuing && proto.ContinueMessages is { Count: > 0 }
             ? proto.ContinueMessages
             : proto.Messages;
+
+        if (pool.Count == 0)
+        {
+            // ValidatePrototypes logs this at startup; guard so a content mistake cannot throw here.
+            Log.Error($"Interaction '{proto.ID}' has no messages and cannot be performed.");
+            return false;
+        }
 
         var message = Loc.GetString(_random.Pick(pool), ("target", targetName));
 
@@ -805,7 +847,7 @@ public sealed partial class InteractionPanelSystem : EntitySystem
             ("message", colored));
 
         // Palmtree: an explicit range + line of sight instead of a PVS radius.
-        // AddPlayersByPvs only checks distance (net.max_update_range * multiplier, and the
+        // AddPlayersByPvs only checks distance (net.pvs_range * multiplier, and the
         // default 25 * 2f used to make these emotes readable 50 tiles away through walls);
         // InRangeUnOccluded raycasts for occluders, so walls block them like any interaction.
         var filter = Filter.Empty();

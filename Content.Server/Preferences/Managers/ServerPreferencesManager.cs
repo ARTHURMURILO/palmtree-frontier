@@ -219,20 +219,28 @@ namespace Content.Server.Preferences.Managers
         // not answered yet; afterwards only the nsfwtoggle console command can change the flag.
         private async void HandleUpdateNsfwConsentMessage(MsgUpdateNsfwConsent message)
         {
-            var userId = message.MsgChannel.UserId;
-            if (!_cachedPlayerPrefs.TryGetValue(userId, out var prefsData) || !prefsData.PrefsLoaded)
+            try
             {
-                _sawmill.Warning($"User {userId} tried to modify preferences before they loaded.");
-                return;
-            }
+                var userId = message.MsgChannel.UserId;
+                if (!_cachedPlayerPrefs.TryGetValue(userId, out var prefsData) || !prefsData.PrefsLoaded)
+                {
+                    _sawmill.Warning($"User {userId} tried to modify preferences before they loaded.");
+                    return;
+                }
 
-            if (prefsData.Prefs!.NsfwConsent != NsfwConsentState.Unanswered)
+                if (prefsData.Prefs!.NsfwConsent != NsfwConsentState.Unanswered)
+                {
+                    _sawmill.Warning($"User {userId} tried to answer the NSFW consent prompt more than once.");
+                    return;
+                }
+
+                await SetNsfwConsentAsync(userId, message.Allowed ? NsfwConsentState.Allowed : NsfwConsentState.Denied);
+            }
+            catch (Exception e)
             {
-                _sawmill.Warning($"User {userId} tried to answer the NSFW consent prompt more than once.");
-                return;
+                // This is an async void handler: an exception escaping it would take the server down.
+                _sawmill.Error($"Failed to store NSFW consent for {message.MsgChannel.UserId}: {e}");
             }
-
-            await SetNsfwConsentAsync(userId, message.Allowed ? NsfwConsentState.Allowed : NsfwConsentState.Denied);
         }
 
         /// <summary>
@@ -251,9 +259,20 @@ namespace Content.Server.Preferences.Managers
             var curPrefs = prefsData.Prefs!;
             prefsData.Prefs = new PlayerPreferences(curPrefs.Characters, curPrefs.SelectedCharacterIndex, curPrefs.AdminOOCColor, curPrefs.ConstructionFavorites, state);
 
-            var session = _playerManager.GetSessionById(userId);
+            // Non-throwing lookup: the player can disconnect between the checks above and here (or
+            // during the DB write), and this method is called from async void handlers.
+            if (!_playerManager.TryGetSessionById(userId, out var session))
+            {
+                _sawmill.Warning($"Tried to push the NSFW consent of user {userId} but they are no longer connected.");
+                return true;
+            }
+
             if (ShouldStorePrefs(session.Channel.AuthType))
                 await _db.SaveNsfwConsentAsync(userId, state);
+
+            // The player may also have disconnected while the write was awaited.
+            if (!_playerManager.TryGetSessionById(userId, out session))
+                return true;
 
             // Push the new value; ClientPreferencesManager mirrors it into the client-side
             // gate (render/UI) and the interaction panel reacts on its own.

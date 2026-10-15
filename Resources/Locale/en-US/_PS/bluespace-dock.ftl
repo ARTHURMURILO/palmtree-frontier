@@ -34,6 +34,7 @@ bluespace-dock-error-not-docked = The ship must be docked to this station.
 bluespace-dock-error-organic-aboard = All crew must disembark before storing the ship.
 bluespace-dock-error-not-civilian = Only civilian, scrap and expedition ships can be stored.
 bluespace-dock-error-insufficient-funds = You cannot afford that.
+bluespace-dock-error-bank-failed = Your bank account could not be reached.
 bluespace-dock-error-too-many-ships = You have stored as many ships as this dock allows.
 bluespace-dock-error-name-in-use = Another ship is already flying under that name.
 bluespace-dock-error-file-missing = That ship's file is missing; the dock entry was purged.

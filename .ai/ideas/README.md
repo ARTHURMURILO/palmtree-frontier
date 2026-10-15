@@ -16,6 +16,6 @@ Conventions:
 
 | Idea | Status |
 |---|---|
-| [`highroller-table.md`](highroller-table.md) — Buckshot Roulette table | Proposed / not implemented |
-| [`coyote-bayou-weapons.md`](coyote-bayou-weapons.md) — Coyote Bayou (BYOND) weapon port backlog | Proposed / not implemented |
-| [`bluespace-dock.md`](bluespace-dock.md) — Bluespace Dock, Ship Registrar and ship preview | Implemented (2026-10) |
+| [`highroller-table.md`](highroller-table.md) — Buckshot Roulette table | Proposed / not implemented (a shotgun-roulette POC exists in `_PS/Gambling`) |
+| [`coyote-bayou-weapons.md`](coyote-bayou-weapons.md) — Coyote Bayou (BYOND) weapon port backlog | Partially implemented (2026-10): 29 ballistic guns + 11 calibers are in (`_CS/.../Fallout/`); the energy set is not |
+| [`bluespace-dock.md`](bluespace-dock.md) — Bluespace Dock, Ship Registrar and ship preview | Implemented (2026-10) on `master` |

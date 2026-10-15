@@ -1,4 +1,6 @@
 # SS13 scanner gate (guns mode) port. Base detects any gun; variants narrow it down.
+# WIP / UNRELEASED: admin-spawn only for now. It is not mapped, not sold and not craftable yet;
+# do not wire it into maps, vendors or research until the feature is finished and playtested.
 # NOTE: FixturesComponent.Fixtures is [NeverPushInheritance], so the sensor fixture must be
 # declared in full - overriding a single field of an inherited fixture wipes shape/mask/layer.
 - type: entity

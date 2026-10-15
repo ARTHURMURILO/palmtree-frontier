@@ -99,13 +99,13 @@
 
 | Feature | Reason / status |
 |---|---|
-| Consent system (Floof UI/DB/toggles) | Maintainer decision: no consent system or DB migrations. `ModifyUndies` uses the per-marking `otherCanToggleVisible` opt-in instead (default off). See `systems/consent-and-erp.md` for how to add consent later. |
+| Consent system (Floof UI/DB/toggles) | The Floof system is not ported; instead the account-level **NSFW age gate** (one-time lobby prompt, `nsfwtoggle`, `NsfwConsent` DB column + migrations) was added in 2026-10, and `ModifyUndies` uses the per-marking `otherCanToggleVisible` opt-in (default off). See `systems/consent-and-erp.md`. |
 | Traits (`BodyType*`, `Horny*`, `Scent*`, 46 ids) | Tied to un-ported HornyQuirks/BodyType/Scent systems. Imports filter unknown traits out safely (`HumanoidCharacterProfile.EnsureValid`). |
 | Scent / aphrodisiac visibility | Explicitly excluded. `ScentSystem`, `AphroLacedVisibility`, smell traits absent. |
-| Size manipulation / height-width system | Excluded. Character saves' `height`/`width` fields are ignored on import. |
+| Size manipulation / height-width system | The Coyote size manipulator is excluded, but character height/width **are** first-class now (profile → DB → networked → client scale; editor sliders, commit `ed5b2fc511`). |
 | Vore | Not ported. |
 | RPI economy, Needs, Healing bank, Space janitor, etc. (`_CS`) | Not ported; not requested. |
-| IPC species | Replaced by the Palmtree **Synth** species (`_PS`) — see `systems/ps-systems.md`. Old IPC content (Einstein Engines silicon stack, battery/radio/EMP) remains unported. |
+| IPC species | Replaced by the Palmtree **Synth** species (`_PS`) — see `systems/ps-systems.md`. Battery and radio/encryption remain unported; **EMP and the reboot mechanic are implemented** (deadly EMP pulses, `DeadStartupButton`). |
 | Kitsune species | **Does not exist in the old codebase.** It only appears inside marking allowlists. Nothing to port. |
 | Turrets, RCD, strobe lighting, shipyard cauterizer | Not requested / possibly stale systems. (Sandstorm interaction sounds/panel were later ported — see `systems/interaction-panel.md`.) |
 
@@ -148,7 +148,8 @@ system so players can look like any species and approximates IPC behavior: 1.5×
 IPC-like damage container/modifier set, silicon body parts/organs (IPC sprites, `Inorganic` parts),
 coolant blood, robot typing indicator, insulated temperature, heavy fixture density, no
 hunger/thirst, and mass-based pull slowdown. See `.ai/systems/ps-systems.md` for details and known
-differences (no battery, no radio/encryption, no EMP interactions).
+differences (no battery, no radio/encryption; EMP/ion pulses are deadly to synths and they are
+extremely radiation-sensitive).
 
 If a true silicon implementation is ever wanted, build it on the upstream/engine silicon & borg
 systems already in this repo (`Content.Server/Silicons`, `Content.Shared/Silicons`) instead of
@@ -506,10 +507,12 @@ Ported from `BYOND/coyote-bayou` under the `_CS` prefix, one file per class in
 - `_CS/Catalog/Fills/Items/weapon_cases_fallout.yml`: one `RareWeaponCase` per gun (30, including
   the Desert Eagle) with magazines/ammunition.
 - `_CS/Entities/Markers/Spawners/Random/weapon_tables_fallout.yml`: `TableDungeonLootWeaponsFallout`
-  (all Fallout ports) and `TableDungeonLootWeaponsPalmtreePrevious` (AKM, C-19r, Anaconda, pulse
-  rifle, energy revolver, Stechkin APS).
-- Nested into dungeon ranged T4 (weight 0.15) and T5 (weight 0.15) and into
-  `SalvageEquipmentLegendary` (asteroid salvage, weights 0.5/0.3).
+  (all Fallout ports) and `TableDungeonLootWeaponsPalmtree` (AKM, C-19r, Anaconda, pulse rifle,
+  energy revolver, Stechkin APS, Novalite C2).
+- Nested into dungeon ranged T4 (weight 0.5) and T5 (weight 0.5) and into
+  `SalvageEquipmentLegendary` (asteroid salvage, weights 0.5/0.3). 2026-10-15: the Fallout weight
+  was raised from 0.15 to 0.5 (≈3x more common per eligible roll; each individual case is still
+  rare, ~1/30 of that).
 
 ## 19. 2026-10 Balance + polish pass (CSS sounds, fire rates, per-gun damage)
 
@@ -524,12 +527,12 @@ Ported from `BYOND/coyote-bayou` under the `_CS` prefix, one file per class in
   `GenericVisualizer` for wielding. The marksman crossbow was missing `icon-string-drawn`
   (ERROR sprite when drawn); the state now exists and the crossbow spawns with a loaded
   `CrossbowBolt` (`ItemSlots.projectiles.startingItem`).
-- **CSS sound sets**: user-provided sounds copied into `Resources/Audio/Weapons/Guns/`
-  (`Gunshots/{ak47,aug,awp,m4a1,p90}.ogg` plus MagIn/MagOut/Bolt/Misc extras) and wired to
+- **CSS sound sets**: user-provided sounds live under `Resources/Audio/_PS/Weapons/Guns/`
+  (`Gunshots/{ak47,aug,awp,m4a1,p90}.ogg` plus MagIn/MagOut/Bolt/Misc extras) and are wired to
   `CSWeaponAssaultRifleAKM` (ak47), `CSWeaponRifleAUGA10` (aug), `NFWeaponRifleSniperHristov`
-  (awp), `NFWeaponRifleAssaultNovaliteC1` (m4a1) and `CSWeaponSubMachineGunP90` (p90) - gunshot,
-  magazine in/out and rack sounds (insert/rack for the Hristov's internal magazine). No gun
-  variants were created; the sounds simply replace the old ones.
+  (awp), `PSWeaponRifleAssaultNovaliteC2` (m4a1 - the C1 went back to stock) and
+  `CSWeaponSubMachineGunP90` (p90) - gunshot, magazine in/out and rack sounds (insert/rack for the
+  Hristov's internal magazine). No gun variants were created; the sounds simply replace the old ones.
 - **Fire rates**: ported LMGs x4 (BAR 10, M1919 13.2, RPD 6.68, DP-27 10), rifles x2 (M1 Garand 3,
   M1A1 6, SCAR-L 3.34, AUG 3.34, Mosin 1.6, SKS 4), SMGs x2.5 (Uzi/MP5/P90 8.25, American 180/PPSh
   12.5; P90 burst 10.75); previously added AKM 6.4, Novalite 6.4 and Hristov 1.6.
@@ -649,9 +652,10 @@ layers"; the file is unchanged on their current master, so there is no newer ver
   `Thruster`, `ThrusterSecurity`/`GyroscopeSecurity` and the NFSD variants keep `MachineLayer`, as in
   Coyote.
 - **Not ported**: Coyote's gyroscope numbers (`baseThrust` 250 / `powerLoad` 200) are *older* than
-  this fork's Frontier values (650 / 500 from Frontier "Small gyro buff" #4272); their
+  this fork's Frontier values (650 / 500 from Frontier "Small gyro buff" #4272). Their
   `ThrusterNfsd` "NFSD Experimental Thrusters" upgrade (100/190 + Heat damage + disable-anchoring/
-  tool-use parents, their commit `614764c5551`) is a separate feature and was left alone.
+  tool-use parents, their commit `614764c5551`) *was* ported later — see the thruster follow-up
+  section below.
 - **Test**: `Content.IntegrationTests/Tests/_NF/TieredThrusterTest.cs` checks every thruster/board
   pair, the lathe recipes, the blueprint pool and the two research unlocks.
 

@@ -36,7 +36,8 @@ Palmtree/Floof additions:
 
 **Remove** fields this repo does not support (the linter errors on them):
 `minHeight`, `defaultHeight`, `maxHeight`, `minWidth`, `defaultWidth`, `maxWidth`,
-`averageHeight`, `averageWidth`, `guideBookIcon`, `customName`.
+`averageHeight`, `averageWidth`, `guideBookIcon`. (`customName` **is** supported - it powers the
+editor's custom species-name field - so keep it when the source uses it.)
 
 ### Base sprites (`speciesBaseSprites`)
 

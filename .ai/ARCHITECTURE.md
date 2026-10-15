@@ -124,7 +124,9 @@ Modular forks are merged by folder/namespace prefix in all projects and `Resourc
 | Prefix | Origin | Significance here |
 |---|---|---|
 | `_NF` | New Frontier (parent) | Economy/bank, shipyard, sectors/POIs, salvage/expeditions, cryo, pirates, missions |
-| `_PS` | Palmtree | Lobby, concealable clothing, weapons, genital breasts |
+| `_PS` | Palmtree | Lobby, concealable clothing, weapons, Synth, Hilbert's Hotel, Bluespace Dock/Ship Registrar, interaction panel, genital organs |
+| `_Mono` | Monolith (via Frontier imports) | Armor plates, carried content |
+| `_Funkystation` | Funky Station (via Frontier imports) | Inherited content |
 | `_Floof` | Floofstation | Marking extensions, ModifyUndies |
 | `_CS` | Coyote | Anthromorph, undergarments, Bayou clothes, undergarments/undies locale |
 | `_DEN` | TheDen | Clicker, foot protectors, Ovinia |

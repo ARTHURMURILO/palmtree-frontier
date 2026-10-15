@@ -2,7 +2,8 @@
 
 > Ported from **Sandstorm-Station-13** (BYOND) `modular_sand/code/datums/interactions/` and
 > `tgui/packages/tgui/interfaces/MobInteraction/`. Scope: the "core tame" interaction set only;
-> lewd interactions are gated by a session consent toggle and resolved from genital markings.
+> lewd interactions are gated by a session consent toggle and resolved from genital **organs**
+> (they replaced the old genital markings; see `systems/genital-organs.md`).
 
 ## Purpose
 
@@ -19,7 +20,7 @@ content are intentionally not ported.
 | Enums/flags | `Content.Shared/_PS/Interactions/InteractionEnums.cs` |
 | Marker component | `Content.Shared/_PS/Interactions/InteractionPanelComponent.cs` |
 | UI key/state/messages | `Content.Shared/_PS/Interactions/InteractionUi.cs` |
-| Genital resolver (markings, future organs) | `Content.Shared/_PS/Interactions/GenitalSystem.cs` |
+| Genital resolver (organs) | `Content.Shared/_PS/Interactions/GenitalSystem.cs` |
 | Server system | `Content.Server/_PS/Interactions/InteractionPanelSystem*.cs` |
 | Server runtime state | `Content.Server/_PS/Interactions/InteractionStateComponent.cs` |
 | Client BUI/window | `Content.Client/_PS/Interactions/InteractionBoundUserInterface.cs`, `InteractionWindow.xaml(.cs)` |
@@ -128,7 +129,7 @@ content are intentionally not ported.
 The interaction panel measures range in **world tiles**. The engine's **PVS** (*Potentially
 Visible Set*) is per-client interest management, not line of sight:
 
-- `net.max_update_range` (CVar, default **25**) is the radius in which the server sends entities
+- `net.pvs_range` (CVar, default **25**) is the radius in which the server sends entities
   to a client. `Filter.AddPlayersByPvs(origin, multiplier)` is literally
   `AddInRange(origin, 25 * multiplier)` - it does **not** raycast, so **walls never block it**.
 - The port originally filtered lewd emotes with `AddPlayersByPvs(source, 2f)` = **50 tiles**,
@@ -183,7 +184,7 @@ in the same system. Full details: `systems/genital-organs.md`.
 - Lewd emotes must go through `SendErpEmote` (purple); the standard chat path strips markup. Both
   `SendErpEmote` and the lewd sound filter drop sessions attached to a `GhostComponent`, so
   observers (including admin ghosts) never receive ERP text or sounds. Do **not** filter these with
-  `Filter.AddPlayersByPvs` - it is a bare radius (`net.max_update_range` x multiplier) that ignores
+  `Filter.AddPlayersByPvs` - it is a bare radius (`net.pvs_range` x multiplier) that ignores
   walls; use `ErpEmoteRange` + `InRangeUnOccluded` (see "Range and visibility (PVS)").
 - The entity event bus allows **one subscription per (component, event) pair across all systems**.
   `MarkingVisibilityChangedEvent` is owned by `GenitalOrganSystem`; the client

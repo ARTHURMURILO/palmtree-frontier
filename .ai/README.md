@@ -47,7 +47,7 @@ Fork modules are folder/namespace prefixes:
 | Prefix | Origin | Used here for |
 |---|---|---|
 | `_NF` | Frontier Station (parent) | Economy/bank, shipyard, sectors, salvage, cryo, pirates |
-| `_PS` | Palmtree (this repo) | Lobby screens/music, concealable clothing backpack implant, weapons/grenades, genital breasts |
+| `_PS` | Palmtree (this repo) | Lobby screens/music, concealable clothing backpack implant, weapons/grenades, Synth species, Hilbert's Hotel, Bluespace Dock/Ship Registrar, interaction panel, genital organs |
 | `_Floof` | Floofstation | Marking system extensions, `ModifyUndies` (ERP toggle verbs) |
 | `_CS` | Coyote Sector | Anthromorph species, undergarments, Coyote Bayou clothes (incl. latex), undies locale |
 | `_HL` | HardLight (via Coyote) | Ported shower (prototype, construction, sprite, audio) |
@@ -97,7 +97,7 @@ Fork modules are folder/namespace prefixes:
 | `.ai/systems/hilbert-hotel.md` | Hilbert's Hotel: runtime room maps, room codes, locking, guest lists |
 | `.ai/systems/player-character-and-jobs.md` | Sessions, minds, profiles, species, jobs/loadouts, ghosts, antags |
 | `.ai/systems/consent-and-erp.md` | NSFW age gate (account flag, lobby prompt, `nsfwtoggle`, what it gates), ERP feature set, how to add full consent later |
-| `.ai/systems/interaction-panel.md` | Sandstorm interaction panel port: prototypes, marking-based genitals, session consent, lust/moans, UI, keybind |
+| `.ai/systems/interaction-panel.md` | Sandstorm interaction panel port: prototypes, organ-based genitals, session consent, lust/moans, UI, keybind |
 | `.ai/systems/genital-organs.md` | Organ-based genitals replacing genital markings: catalog, profile/DB, editor tab, cum overlay and semen drip |
 | `.ai/systems/game-ticker.md` | Round state machine, presets, rules, maps, spawn |
 | `.ai/systems/core-gameplay.md` | Interactions, body/damage, atmos, power, chemistry, construction, NPC, shuttles |
@@ -110,7 +110,7 @@ Fork modules are folder/namespace prefixes:
 | `.ai/guides/adding-hotel-rooms.md` | Adding Hilbert's Hotel room maps + archetype prototypes |
 | `.ai/guides/adding-dungeons.md` | Adding dungeon rooms, themes/room packs, `dungeonConfig` wiring and rare boss arenas |
 | `.ai/guides/changelogs.md` | Changelog YAML authoring + `:cl:` automation for this fork |
-| `.ai/ideas/README.md` | Proposed (unimplemented) feature designs, e.g. `highroller-table.md` (Buckshot Roulette) |
+| `.ai/ideas/README.md` | Feature designs: statuses range from unimplemented (`highroller-table.md`) to partially implemented (Fallout weapon backlog) and implemented (`bluespace-dock.md`) |
 
 ### Procedural guides
 
@@ -131,7 +131,7 @@ Fork modules are folder/namespace prefixes:
 - Persistence: `Content.Server/Database/ServerDbManager.cs` (`IServerDbManager`).
 - Client: `Content.Client/IoC/ClientContentIoC.cs`, `Content.Client/Entry/EntryPoint.cs`.
 - Shared: `Content.Shared/**/Shared*System.cs` bases.
-- Frontier: `_NF/Bank/BankSystem.cs`, `_NF/Shipyard/ShipyardSystem.cs`.
+- Frontier: `_NF/Bank/BankSystem.cs`, `_NF/Shipyard/Systems/ShipyardSystem.cs`.
 - Markings: `Content.Shared/Humanoid/Markings/MarkingManager.cs`, `MarkingPrototype.cs`,
   `Content.Client/Humanoid/HumanoidAppearanceSystem.cs`, `Content.Client/Humanoid/MarkingPicker.xaml.cs`.
 - Palmtree: `_PS/Clothing/SharedConcealableClothingSystem.cs`, `Content.Server/GameTicking/GameTicker.LobbyBackground.cs`,
@@ -200,8 +200,8 @@ Fork modules are folder/namespace prefixes:
 ## 9. Poorly understood areas (verify before relying)
 
 - Production config/topology (presets, auth mode, DB, multi-server list).
-- IPC silicon stack (IPC is replaced by the Synth species; battery/radio/EMP behavior is not
-  implemented — see `.ai/PORTING.md`).
+- IPC silicon stack (IPC is replaced by the Synth species; battery and radio/encryption behavior is
+  not implemented, and EMP/ion pulses are deliberately lethal — see `.ai/PORTING.md`).
 - Un-ported Coyote systems (consent, traits, scent, size, vore, RPI) — see `.ai/PORTING.md`.
 - Deep engine internals (PVS budgets, physics solver, handshake, sandbox whitelist coverage).
 - See `.ai/UNKNOWN.md` for the full list.

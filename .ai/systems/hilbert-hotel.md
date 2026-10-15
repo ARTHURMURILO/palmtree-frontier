@@ -61,7 +61,8 @@ room code:
    code exists, access is checked (`CanJoin`: owner always; `Open` anyone;
    `GuestsOnly` owner + trusted; `Locked` owner only) and the player is moved to
    the room's `Landing`. Otherwise a new room is created — but only if the player
-   does **not already own** a room (one room per player).
+   does **not already own** a room (one room per player), the **terminal itself**
+   is under its `MaxRooms` limit, and its 5-second creation cooldown has passed.
 2. **Creation** (`TryCreateRoom`): `MapLoaderSystem.TryLoadMap` loads the
    archetype map *paused and uninitialized*; the system runs
    `SharedMapSystem.InitializeMap` to fire map init and unpause. Landing is
@@ -155,7 +156,7 @@ SS14-native art.
 - **Never pause a room map.** Pausing also sets `EntityPaused` on the player's
   body; when an admin ghost returns to it the player can be left in a frozen
   map until (or beyond) the next occupancy sweep. Rooms stay live for their
-  10-minute grace period instead.
+  5-minute grace period instead.
 - Room maps must set `Gravity: enabled: true, inherent: true` on the grid,
   otherwise players float. `GravityComponent.Enabled` defaults to **false**.
 - Hotel rooms have no power grid. Machines that inherit `ApcPowerReceiver`

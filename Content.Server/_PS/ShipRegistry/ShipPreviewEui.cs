@@ -6,6 +6,7 @@ using Robust.Server.GameStates;
 using Robust.Shared.Map;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Timing;
+using System.Numerics;
 
 namespace Content.Server._PS.ShipRegistry;
 
@@ -50,7 +51,8 @@ public sealed partial class ShipPreviewEui : BaseEui
     {
         base.Opened();
 
-        _camera = CreateCamera(_target, Player);
+        var camera = CreateCamera(_target, Player);
+        _camera = camera.IsValid() ? camera : null;
         StateDirty();
     }
 
@@ -58,23 +60,34 @@ public sealed partial class ShipPreviewEui : BaseEui
     {
         base.Closed();
 
-        _entityManager.DeleteEntity(_camera);
+        _entityManager.QueueDeleteEntity(_camera);
         _onClosed?.Invoke();
     }
 
     public override EuiStateBase GetNewState()
     {
+        // The previewed grid (or the camera) can disappear while the window is open; report an
+        // empty state instead of throwing.
+        if (_camera is not { } camera || !_entityManager.EntityExists(_target))
+            return new ShipPreviewEuiState(NetEntity.Invalid, string.Empty, Vector2.Zero, _timing.CurTick);
+
         var name = _entityManager.GetComponent<MetaDataComponent>(_target).EntityName;
         var size = _physics.GetWorldAABB(_target).Size;
-        return new ShipPreviewEuiState(_entityManager.GetNetEntity(_camera!.Value), name, size, _timing.CurTick);
+        return new ShipPreviewEuiState(_entityManager.GetNetEntity(camera), name, size, _timing.CurTick);
     }
 
     private EntityUid CreateCamera(EntityUid target, Robust.Shared.Player.ICommonSession observer)
     {
+        if (!_entityManager.EntityExists(target))
+            return EntityUid.Invalid;
+
         // Center the camera on the ship rather than on the grid's origin.
         var aabb = _physics.GetWorldAABB(target);
         var mapId = _entityManager.GetComponent<TransformComponent>(target).MapID;
-        var mapUid = _map.GetMap(mapId);
+        var mapUid = _map.GetMapOrInvalid(mapId);
+        if (!mapUid.IsValid())
+            return EntityUid.Invalid;
+
         var camera = _entityManager.SpawnAttachedTo(CameraProtoId, new EntityCoordinates(mapUid, aabb.Center));
 
         // Allow the user to see entities near the camera and force-send the camera itself.

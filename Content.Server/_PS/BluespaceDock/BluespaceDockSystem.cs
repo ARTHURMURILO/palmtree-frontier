@@ -7,6 +7,7 @@ using Content.Shared._NF.Bank;
 using Content.Server._NF.ShuttleRecords;
 using Content.Server.Cargo.Systems;
 using Content.Server.Chat.Systems;
+using Content.Server.GameTicking;
 using Content.Server.StationEvents.Components;
 using Content.Server.StationRecords;
 using Content.Server.StationRecords.Systems;
@@ -34,6 +35,7 @@ using Content.Shared.Database;
 using Content.Shared.Chat;
 using Content.Shared.Forensics.Components;
 using Content.Shared.GameTicking;
+using Content.Shared.Ghost;
 using Content.Shared.Shuttles.Components;
 using Content.Shared.Station;
 using Content.Shared.Station.Components;
@@ -70,12 +72,11 @@ namespace Content.Server._PS.BluespaceDock;
 /// <c>UserData/bluespace_dock/</c> and lets them spawn it back out (or sell it) later.
 /// </summary>
 /// <remarks>
-/// The save/load mechanics are modelled on coyote-frontier's (unfinished) bluespace drydock
-/// (<c>_NF/Shipyard/Systems/BluespaceDrydockSystem.cs</c>): power the ship down, delete its station
-/// (stations are mapped entities, which <see cref="MissingEntityBehaviour.IncludeNullspace"/> would
-/// otherwise choke on), undock, then <see cref="MapLoaderSystem.TrySaveGrid"/> with
-/// IncludeNullspace and an Ignore fallback. Loading re-raises MapInit for the deserialized entities
-/// except lights, item slots and docking ports (which would duplicate their contents/joints).
+/// The save/load mechanics are modelled on coyote-frontier's (unfinished) bluespace drydock:
+/// power the ship down, delete its station (stations are mapped entities, which
+/// <see cref="MissingEntityBehaviour.IncludeNullspace"/> would otherwise choke on), undock, then
+/// <see cref="MapLoaderSystem.TrySaveGrid"/> with IncludeNullspace and an Ignore fallback. Loading
+/// goes through the engine's own map loader, which initializes entities itself.
 ///
 /// Unlike the drydock this is synchronous (like the shipyard's own purchase path), keeps its data in
 /// a persistent registry file instead of an ID card, and charges configurable taxes.
@@ -108,6 +109,8 @@ public sealed class BluespaceDockSystem : EntitySystem
     [Dependency] private readonly StationSystem _station = default!;
     [Dependency] private readonly SharedBluespaceDockSystem _dock = default!;
     [Dependency] private readonly ChatSystem _chat = default!;
+    [Dependency] private readonly SharedContainerSystem _containers = default!;
+    [Dependency] private readonly GameTicker _gameTicker = default!;
     [Dependency] private readonly UserInterfaceSystem _ui = default!;
 
     /// <summary>Name of the registry file. It lives next to the ship files, so anything that walks
@@ -404,14 +407,32 @@ public sealed class BluespaceDockSystem : EntitySystem
     {
         error = null;
 
-        if (fileName == RegistryFileName || Registry.FindByFile(fileName) != null)
+        // Only files the orphan list actually offers may be restored: this rejects the registry
+        // file, registered files, directories and anything else in the folder.
+        var isOffered = false;
+        foreach (var orphan in GetOrphanedFiles())
+        {
+            if (orphan.Name != fileName)
+                continue;
+
+            isOffered = true;
+            break;
+        }
+
+        if (!isOffered)
         {
             error = "restore-orphan-error-not-orphaned";
             return false;
         }
 
-        baseName = baseName.Trim();
-        suffix = string.IsNullOrWhiteSpace(suffix) ? null : suffix.Trim();
+        baseName = baseName.Trim().Replace('\n', ' ').Replace('\r', ' ');
+        suffix = string.IsNullOrWhiteSpace(suffix) ? null : suffix.Trim().Replace('\n', ' ').Replace('\r', ' ');
+
+        if (baseName.Length > ShipRegistrarConsoleComponent.MaxNameLength)
+            baseName = baseName[..ShipRegistrarConsoleComponent.MaxNameLength];
+
+        if (suffix is { Length: > ShipRegistrarConsoleComponent.MaxSuffixLength })
+            suffix = suffix[..ShipRegistrarConsoleComponent.MaxSuffixLength];
 
         if (baseName.Length == 0)
         {
@@ -1217,55 +1238,33 @@ public sealed class BluespaceDockSystem : EntitySystem
         {
             hasActiveShip = true;
             activeShipName = ShipyardSystem.GetFullName(deed);
-            activeShipValue = (int) _pricing.AppraiseGrid(shuttleUid, null);
+            activeShipValue = AppraiseShip(shuttleUid);
             storeCost = (int) (activeShipValue * _cfg.GetCVar(NFCCVars.BluespaceDockStoreTax));
 
-            canStore = true;
             canSellActive = true;
 
-            if (!_cfg.GetCVar(NFCCVars.BluespaceDockEnabled))
-            {
-                canStore = false;
-                storeBlocked = "bluespace-dock-error-disabled";
-            }
-            else if (_busyShips.Contains(shuttleUid))
-            {
-                canStore = false;
-                storeBlocked = "bluespace-dock-error-busy";
-            }
-            else if (_station.GetOwningStation(consoleUid) is not { Valid: true } station
-                     || _station.GetLargestGrid(station) is not { } stationGrid
-                     || !IsDockedToGrid(shuttleUid, stationGrid))
-            {
-                canStore = false;
-                storeBlocked = "bluespace-dock-error-not-docked";
-            }
-            else if (FoundOrganics(shuttleUid) is { } organic)
-            {
-                canStore = false;
-                storeBlocked = "bluespace-dock-error-organic-aboard";
-                _ = organic;
-            }
-            else if (!TryGetVesselInfo(shuttleUid, out var vesselInfo) || !IsAllowedGroup(vesselInfo.Group))
-            {
-                canStore = false;
-                storeBlocked = "bluespace-dock-error-not-civilian";
-            }
-            else if (balance < storeCost)
-            {
-                canStore = false;
+            // Run the same rule ladder the store action runs, so the button state cannot drift from
+            // what the server will actually accept.
+            var stationGrid = _station.GetOwningStation(consoleUid) is { Valid: true } owningStation
+                ? _station.GetLargestGrid(owningStation)
+                : null;
+
+            storeBlocked = FindStoreBlocker(shuttleUid, requireDocked: true, stationGrid);
+
+            if (storeBlocked is null && balance < storeCost)
                 storeBlocked = "bluespace-dock-error-insufficient-funds";
-            }
-            else
+
+            if (storeBlocked is null)
             {
                 var maxShips = _cfg.GetCVar(NFCCVars.BluespaceDockMaxShips);
                 if (maxShips > 0 && TryGetCharacter(actor, targetId, out var userId, out var characterName)
                     && CountStoredShips(userId, characterName) >= maxShips)
                 {
-                    canStore = false;
                     storeBlocked = "bluespace-dock-error-too-many-ships";
                 }
             }
+
+            canStore = storeBlocked is null;
         }
 
         if (hasId && TryGetCharacter(actor, targetId, out var userId2, out var characterName2))
@@ -1445,6 +1444,68 @@ public sealed class BluespaceDockSystem : EntitySystem
             _shuttle.TryFTLDock(shuttleUid, shuttleComp, stationGrid);
     }
 
+    /// <summary>
+    /// Moves every ghost and mob off a grid before it is stored or deleted, so passengers (pets
+    /// included), corpses and onlookers are never swallowed by the grid's deletion or saved into
+    /// the ship file. Mobs inside containers (a pet in a crate, for instance) are taken out of
+    /// them first. Returns how many entities were moved.
+    /// </summary>
+    public int EvacuateGrid(EntityUid grid)
+    {
+        var entities = new HashSet<EntityUid>();
+        GetEntitiesOnGrid(grid, entities);
+
+        var destination = GetEvacuationPoint(grid);
+        var moved = 0;
+
+        foreach (var uid in entities)
+        {
+            if (!Exists(uid))
+                continue;
+
+            if (!HasComp<GhostComponent>(uid) && !HasComp<MobStateComponent>(uid))
+                continue;
+
+            // A contained mob must be pulled out first, or it would stay inside a container that is
+            // deleted (or saved) with the ship.
+            if (_containers.TryGetContainingContainer((uid, null, null), out var container))
+            {
+                if (!_containers.Remove((uid, null, null), container, force: true))
+                {
+                    _sawmill.Warning($"Bluespace dock: could not take {ToPrettyString(uid)} out of its container while evacuating a grid");
+                    continue;
+                }
+            }
+
+            _transform.SetMapCoordinates(uid, destination);
+            moved++;
+        }
+
+        return moved;
+    }
+
+    /// <summary>
+    /// Where a grid's occupants are moved before it is deleted: on the grid the ship is docked to
+    /// (by the airlock it is attached to), or the default map (the station) when it is not docked
+    /// anywhere.
+    /// </summary>
+    private MapCoordinates GetEvacuationPoint(EntityUid grid)
+    {
+        foreach (var dock in _docking.GetDocks(grid))
+        {
+            if (dock.Comp.DockedWith is not { Valid: true } partner || !Exists(partner))
+                continue;
+
+            // Never "evacuate" onto the same grid (a self-dock would still be deleted).
+            if (Transform(partner).GridUid == grid)
+                continue;
+
+            return _transform.GetMapCoordinates(partner);
+        }
+
+        return new MapCoordinates(Vector2.Zero, _gameTicker.DefaultMap);
+    }
+
     #endregion Ship state helpers
 
     #region Store
@@ -1573,6 +1634,10 @@ public sealed class BluespaceDockSystem : EntitySystem
 
         try
         {
+            // Anything alive (or dead but revivable) gets off the ship first: neither the saved file
+            // nor the grid deletion may swallow passengers or onlookers.
+            EvacuateGrid(shuttleUid);
+
             // Deed names are stored split (base name + suffix) and rebuilt on retrieval, and the base
             // name is normalized: older entries stored the full name as the base name, which made the
             // suffix accumulate on every store/retrieve cycle.
@@ -1708,6 +1773,9 @@ public sealed class BluespaceDockSystem : EntitySystem
             return false;
         }
 
+        // Rescue ghosts, passengers and pets before the grid (and everything on it) is deleted.
+        EvacuateGrid(grid);
+
         ClearDeedsFor(grid);
 
         if (_station.GetOwningStation(grid) is { Valid: true } station)
@@ -1810,8 +1878,28 @@ public sealed class BluespaceDockSystem : EntitySystem
             return;
         }
 
+        // The ship now exists in the world. Reserve its grid so no other operation can touch it, and
+        // consume the registry entry on any failure past this point: leaving the entry behind while
+        // a live copy exists would let the player retrieve the same ship twice.
+        _busyShips.Add(grid);
+
         try
         {
+            // Take the tax before the ship is handed over. Without a successful withdrawal the
+            // player would either get a free ship or be left with a loaded grid that has no owner.
+            if (cost > 0 && !_bank.TryBankWithdraw(player, cost))
+            {
+                // Delete the freshly loaded grid (and its map) again, or it would sit docked with
+                // no deed while the entry is still listed.
+                var loadedMapId = Transform(grid).MapID;
+                QueueDel(grid);
+                if (_map.MapExists(loadedMapId))
+                    _map.DeleteMap(loadedMapId);
+
+                Deny(consoleUid, component, player, "bluespace-dock-error-bank-failed");
+                return;
+            }
+
             // Give the ship its station and identity back. Older entries have no base name (and may
             // carry a doubled full name), so it is derived and the names are rebuilt from it.
             var baseName = string.IsNullOrEmpty(entry.Name)
@@ -1896,7 +1984,6 @@ public sealed class BluespaceDockSystem : EntitySystem
                 purchasePrice: (uint) Math.Max(entry.Value, 0),
                 vesselPrototypeId: entry.Vessel ?? "Custom"));
 
-            _bank.TryBankWithdraw(player, cost);
             RemoveEntry(entry, deleteFile: false);
 
             Popup(player, "bluespace-dock-retrieved", ("ship", displayName));
@@ -1908,10 +1995,15 @@ public sealed class BluespaceDockSystem : EntitySystem
         catch (Exception e)
         {
             _sawmill.Error($"Exception while retrieving ship {entry.ShipId}: {e}");
+
+            // The ship (or part of it) is already in the world and the tax is paid; consume the
+            // entry so a retry cannot materialize a second copy.
+            RemoveEntry(entry, deleteFile: false);
             Deny(consoleUid, component, player, "bluespace-dock-error-load-failed");
         }
         finally
         {
+            _busyShips.Remove(grid);
             RefreshState(consoleUid, player);
         }
     }
@@ -1955,7 +2047,14 @@ public sealed class BluespaceDockSystem : EntitySystem
         }
 
         var payout = (int) (entry.Value * _cfg.GetCVar(NFCCVars.BluespaceDockStoredSellRate));
-        _bank.TryBankDeposit(player, payout);
+        if (!_bank.TryBankDeposit(player, payout))
+        {
+            // Nothing was paid out and the entry is untouched, so the sale simply does not happen.
+            Deny(consoleUid, component, player, "bluespace-dock-error-bank-failed");
+            RefreshState(consoleUid, player);
+            return;
+        }
+
         RemoveEntry(entry, deleteFile: true);
 
         Popup(player, "bluespace-dock-sold-stored", ("ship", entry.DisplayName), ("amount", BankSystemExtensions.ToIndependentString(payout)));
@@ -1996,6 +2095,18 @@ public sealed class BluespaceDockSystem : EntitySystem
             return;
         }
 
+        // A sale cannot be undone once the shipyard takes the ship, so make sure there is somewhere
+        // for the payout to go before starting it.
+        if (!_bank.TryGetBalance(player, out _))
+        {
+            Deny(consoleUid, component, player, "bluespace-dock-error-bank-failed");
+            return;
+        }
+
+        // The shipyard deletes the sold ship; get its occupants off first so pets, corpses and
+        // onlookers are not destroyed along with it.
+        EvacuateGrid(shuttleUid);
+
         // TrySellShuttle refuses every sale while the shipyard's parking map is not set up (it is
         // only created by a purchase or by the CVar handler, which does not run when the shipyard
         // was disabled at round start), so make sure it exists first.
@@ -2020,7 +2131,14 @@ public sealed class BluespaceDockSystem : EntitySystem
         _shuttleRecords.TrySetSaleTime(netEntity);
 
         var payout = (int) (bill * _cfg.GetCVar(NFCCVars.BluespaceDockStoredSellRate));
-        _bank.TryBankDeposit(player, payout);
+        if (!_bank.TryBankDeposit(player, payout))
+        {
+            // The shipyard already took the ship; the payout cannot be undone, so record the loss
+            // loudly for the admins.
+            _sawmill.Error($"Bluespace dock: the shipyard sold {ShipyardSystem.GetFullName(deed)} for {payout} " +
+                           $"but the deposit to {ToPrettyString(player)} failed");
+        }
+
         RemComp<ShuttleDeedComponent>(targetId);
 
         var name = ShipyardSystem.GetFullName(deed);

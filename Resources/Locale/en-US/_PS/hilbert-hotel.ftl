@@ -65,6 +65,7 @@ hilbert-hotel-error-invalid-code = That is not a valid room code.
 hilbert-hotel-error-locked = That room is locked.
 hilbert-hotel-error-guests-only = That room only admits the owner's trusted guests.
 hilbert-hotel-error-full = This terminal cannot support any more rooms right now.
+hilbert-hotel-error-cooldown = Please wait a moment before creating another room.
 hilbert-hotel-error-no-templates = No room styles are configured.
 hilbert-hotel-error-load-failed = The room failed to materialize. Contact the concierge.
 hilbert-hotel-error-not-owner = Only the room's owner may do that.

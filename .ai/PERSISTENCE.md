@@ -54,8 +54,8 @@ markingId@#rrggbb,...@m3@cCustom Name               # Palmtree: + toggle flags (
   YAML (`ForkId`, `Version`, `Profile`).
 - Import: `FromStream` reads YAML → `SerializationManager.Read<HumanoidProfileExport>` →
   `profile.EnsureValid(session, collection)`.
-- Unknown fields (old Floof marking fields, `height`/`width`, consent blocks) are ignored by the
-  serializer.
+- Unknown fields (old Floof marking fields, consent blocks) are ignored by the serializer;
+  `height`/`width` are supported fields.
 - Unknown prototypes (traits/markings/loadouts) are filtered out by `EnsureValid`/`EnsureSpecies`,
   not errors. This is why the port had to ensure ids existed rather than relying on import failure.
 

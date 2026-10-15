@@ -62,8 +62,10 @@ How it works:
 
 ## Weapons / grenades / hitscan
 
-- `Resources/Prototypes/_PS/Entities/Objects/Weapons/Guns/Battery/battery_guns.yml` — Svalinn Caspian,
-  pulse N1984, phaser, medical gun.
+- `Resources/Prototypes/_PS/Entities/Objects/Weapons/Guns/Battery/battery_guns.yml` — Svalinn 770
+  (prototype id stays `NFWeaponEnergyPistolLaserSvalinnCaspian`), pulse N1984, phaser, medical gun.
+  All four are admin-spawn only and are declared with `StaticPrice: 0` so spawning them cannot
+  inject money into the economy.
 - `.../Guns/Launchers/launchers.yml` — China Lake flashbang variants.
 - `.../Guns/Projectiles/projectiles.yml`, `.../Guns/Ammunition/explosives.yml`,
   `.../Guns/Ammunition/Projectiles/hitscan.yml` (defines `PSXrayLaserCaspian`, `PhaserLethal`,
@@ -211,10 +213,10 @@ Properties:
   unaffected. A forced pry can also force an open bolted door shut (the door safety check still
   refuses to close on someone standing in the doorway). Welded doors and `canPry: false` doors
   (e.g. blast doors) still stop them. No item needed. Hand-prying also plays the pry sound.
-- **Silicon parts**: the Synth body uses `_EE/Mobs/Species/IPC/parts.rsi` sprites (robot limbs/head),
-  `Inorganic` damage container on parts, and synthetic organs (`OrganSynthEyes`, `OrganSynthPump`,
-  `OrganSynthBrain`, plus unused `OrganSynthTongue`/`OrganSynthEars`). Base sprites default to the
-  robot look; species-adaptor markings replace them.
+- **Silicon parts**: the Synth body uses `Resources/Textures/_EE/Mobs/Species/IPC/parts.rsi` sprites
+  (robot limbs/head), `Inorganic` damage container on parts, and synthetic organs (`OrganSynthEyes`,
+  `OrganSynthPump`, `OrganSynthBrain`, plus unused `OrganSynthTongue`/`OrganSynthEars`). Base
+  sprites default to the robot look; species-adaptor markings replace them.
 - **No breathing**: `SynthComponent` marks the mob and `RespiratorSystem.Update` skips it, so synths
   do not gasp or suffocate despite having no lungs.
 - **Digitigrade**: Synth base sprites carry `altSprites` to the `DigilegSynthliz*` markings; the
@@ -466,7 +468,7 @@ with `ResPath.FromRelativeSystemPath(directory).ToRootedPath()` and prints the p
 
 ## Admin meme items (2026-10)
 
-The maintainer's roundly admin upload (`.ai/workspace/Upload.yml`) is now a proper prototype set.
+The maintainer's roundly admin upload (kept in the local, untracked `.ai/workspace/Upload.yml`) is now a proper prototype set.
 Everything is admin-only (no lathe, loot table, uplink or vending machine references them) and
 carries `suffix: Admeme` so it is easy to find in the spawn menu:
 
@@ -526,11 +528,17 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
 - **Store**: ID with a deed + live ship, docked to the console's station, no organics aboard
   (`ShipyardSystem.FoundOrganics`), vessel group in `{Shipyard, Scrap, Expedition}` (NFSD/black
   market/SR/unknown are refused — hand-built ships must be registered first), bank covers the
-  `nf14.bluespace_dock.store_tax` (10%) tax. Then: undock,
+  `nf14.bluespace_dock.store_tax` (10%) tax. Then: **evacuate** (see below), undock,
   `TrySaveShipFile` (IncludeNullspace, Ignore fallback, then re-read + YAML-parse the file), charge,
   write the registry entry, strip the deed from the ID and delete the station + grid. If the save
   fails, the stripped components are put back, the deed is reassigned, the ship is re-docked and
   nothing is charged.
+- **Evacuation (`EvacuateGrid`, 2026-10-15)**: before a ship is stored, admin-deleted or sold, every
+  ghost and mob on it (pets, corpses, even a live player the checks missed) is moved to the grid the
+  ship is docked to (at the partner airlock) or the default map when it is not docked; mobs inside
+  containers are taken out first. Nothing alive is saved into the ship file or deleted with the grid.
+  The shipyard's own sale path only preserved ghosts (`preserveOnSale`), so pets used to be destroyed
+  by a sale.
 - **Names**: a deed is stored split into a base name and a registration suffix (`ShipNameHelper` in
   `Content.Shared/_PS/ShipRegistry`). `BluespaceDockEntry.Name` holds the base name and
   `DisplayName` is rebuilt from the normalized parts on every store and retrieve, so the suffix
@@ -571,17 +579,19 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
   the ship's station (`StationMemberComponent`, `StationBoundObjectComponent`) *before* serializing —
   the station is a mapped entity the file cannot carry, and stale references make the deserializer
   log invalid-uid errors and make `MapInit` handlers throw (the holopad station-name rename calls
-  `Name()` on an invalid station). The deed is rebuilt from the registry on retrieval. `TryLoadShipFile`
-  strips the same components again for files written before this cleanup, wraps every `MapInit` in a
-  try/catch so one bad handler cannot fail a retrieval, and deletes the half-loaded grid and its map
-  if the load throws.
+  `Name()` on an invalid station). The deed is rebuilt from the registry on retrieval.
+  `TryLoadShipFile` strips the same components again for files written before this cleanup and
+  deletes the half-loaded grid and its map if the load throws.
 - **Retrieve**: `nf14.bluespace_dock.retrieve_tax` (5%) of the *recorded* value, no other *live*
-  ship (one with a valid station) flying under the same name, file present; loads onto a new map, re-raises `MapInitEvent` for every
-  entity **except** powered lights/item slots/docking ports, recreates the `StandardFrontierVessel`
-  station + name, restores `ExtraShuttleInformationComponent.Vessel` when known, `TryFTLDock` to the
-  console's station (falls back to spawning nearby), adds `DeletionCensusExemptComponent` +
-  `LinkedLifecycleGridParentComponent`, writes the deed on the ship and the ID, then charges and
-  removes the registry entry (the file is kept).
+  ship (one with a valid station) flying under the same name, file present; loads onto a new map
+  (the engine initializes it), recreates the `StandardFrontierVessel` station + name, restores
+  `ExtraShuttleInformationComponent.Vessel` when known, `TryFTLDock` to the console's station, adds
+  `DeletionCensusExemptComponent` + `LinkedLifecycleGridParentComponent`, writes the deed on the
+  ship and the ID, then removes the registry entry (the file is kept).
+  **Hardening (2026-10-15):** the tax is withdrawn *before* the ship is handed over (a failed
+  withdrawal deletes the freshly loaded grid again), the loaded grid joins `_busyShips` for the
+  duration, and any exception after the load consumes the entry - so a retry can never materialize
+  a second copy of the same ship.
 - **Sell**: the per-row `[SELL]` (`ConfirmButton`) pays `nf14.bluespace_dock.stored_sell_rate` (0.95)
   of the recorded value and deletes file + entry; the bottom `[SELL]` sells the docked ship through
   `ShipyardSystem.TrySellShuttle` exactly like a shipyard console (with the shipyard sell blockers
@@ -646,7 +656,9 @@ a crash can leave files behind). The tool:
   aboard" and the civilian-vessel rule still apply) and failures are printed to the console. The owner
   defaults to the deed owner; when the given name matches a player in the round their ckey is recorded
   too, otherwise the entry is keyed by character name alone. No tax is charged. The store mechanics
-  live in `BluespaceDockSystem.TryStoreShip`, shared with the dock console's own store button.
+  live in `BluespaceDockSystem.TryStoreShip`, shared with the dock console's own store button, and
+  both go through `EvacuateGrid` first (ghosts, pets and corpses are moved off, never deleted with
+  the grid).
 
 ### Ship Registrar (`ComputerShipRegistrar`)
 
@@ -693,6 +705,10 @@ powers: a hidden `ShipPreviewCamera` entity (visibility layer 8, `Eye`) is spawn
 centre, `SharedViewSubscriberSystem.AddViewSubscriber` force-sends it to the viewer, the client
 attaches the eye through `EyeLerpingSystem` and zooms with the mouse wheel (initial zoom fits the
 ship). EUIs resolve the camera entity on a later frame because EUI state arrives before the gamestate.
+**Hardening (2026-10-15):** the registrar's preview message only accepts grids that
+`GetDockableGrids` would offer (docked to the console's station, unregistered, a `MapGridComponent`),
+opening a preview replaces any existing one for that session (no camera accumulation), and both
+`ShipPreviewEui` and `GetNewState` handle a deleted target or camera without throwing.
 
 ### Notes / deviations from Coyote's drydock
 
@@ -710,3 +726,22 @@ ship). EUIs resolve the camera entity on a later frame because EUI state arrives
   grid's `LocalAABB` (`// Palmtree`). `SharedMapSystem.TilesEnumerator.MoveNext` *recurses* once per
   skipped empty tile (`ignoreEmpty` defaults to `true`), so a zoomed-out ghost looking at an FTL
   arrival visualizer over a mostly empty grid used to stack-overflow the client.
+
+## 2026-10 misc additions (walkman, UI sounds, editor QoL, RTG radiation)
+
+Small features that did not get their own section yet:
+
+- **Walkman** (`Resources/Prototypes/_PS/Entities/Objects/Fun/walkman.yml`, commit `a3f80ab4f4`): a
+  pocketable MIDI synthesiser instrument; also spawns rarely in the random instrument spawner.
+- **Vote sounds** (commit `241ea1bc6c`): custom votes play `vote_started`/`vote_yes`/`vote_no`/
+  success/failure cues from `Resources/Audio/_PS/Voting/` (client `VoteManager`).
+- **UI open/close sounds** (commit `2f307becc5`): panel open/close clicks from
+  `Resources/Audio/_PS/UserInterface/` are wired to the interaction/hotel/BUI windows.
+- **Exact-value inputs** (commit `8563de9647`): the interaction panel's multiplier sliders have
+  numeric input boxes next to them (`InteractionWindow.xaml`).
+- **Copy/Paste colors** (commit `b18d315d5e`): every character-editor and marking color picker uses
+  `ColorSelectorWithClipboard` (copy/paste buttons under the swatch).
+- **Lobby in debug builds** (commit `4070dd3b69`): `Resources/ConfigPresets/Build/debug.toml` enables
+  the lobby so it can be exercised locally.
+- **RTG radiation** (commit `4d990c2942`): RTGs carry a small `RadiationSourceComponent` and emit
+  radiation while running (portable fuel generators still do not).

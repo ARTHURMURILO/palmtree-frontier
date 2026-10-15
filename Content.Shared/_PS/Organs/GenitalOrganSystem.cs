@@ -226,7 +226,14 @@ public sealed class GenitalOrganSystem : EntitySystem
                 continue;
             }
 
-            var spawned = Spawn(GetOrganEntity(type), Transform(torso.Id).Coordinates);
+            var organProto = GetOrganEntity(type);
+            if (!_prototype.HasIndex<EntityPrototype>(organProto))
+            {
+                Log.Error($"Genital organ prototype '{organProto}' does not exist; {type} is skipped for {ToPrettyString(torso.Id)}.");
+                continue;
+            }
+
+            var spawned = Spawn(organProto, Transform(torso.Id).Coordinates);
             var comp = EnsureComp<GenitalOrganComponent>(spawned);
             comp.GenitalType = type;
             comp.OrganPrototype = data.Prototype;

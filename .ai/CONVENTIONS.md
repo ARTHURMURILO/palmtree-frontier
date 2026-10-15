@@ -58,7 +58,7 @@
   adding members.
 - `Content.Shared/Humanoid/Markings/MarkingManager.cs` and `MarkingsSet.cs` both contain
   species-filtering logic; keep them in sync (kind-aware check).
-- `Resources/manifest.yml` metadata and `identifier.sqlite` are stale artifacts.
+- `Resources/manifest.yml` metadata is a stale artifact (window title/logo).
 
 ## Commits and changelogs
 

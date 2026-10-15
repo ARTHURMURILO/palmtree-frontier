@@ -70,7 +70,7 @@ public sealed class DeletionCensusSystem : EntitySystem
     private int _censusMaxValue = 3000; // Palmtree: entities worth more than this are never culled.
     private int _censusGridMaxValue = 30000; // Palmtree: grids worth more than this are never culled.
     private bool _touchedImmune = true; // Palmtree: entities players picked up are never culled.
-    private int _touchedDuration = 60; // Palmtree: seconds of protection after a picked-up entity is dropped.
+    private int _touchedDuration = 60; // Palmtree: seconds of protection after a picked-up entity is dropped (<= 0 means forever).
     private bool _ignoreLoadedChunks; // Palmtree: debug - cull regardless of chunk loading.
 
     public override void Initialize()

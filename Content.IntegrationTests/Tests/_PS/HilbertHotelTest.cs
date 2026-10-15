@@ -142,7 +142,12 @@ public sealed class HilbertHotelTest
             Assert.That(hotel.TryDeleteRoomByOwner(human, 222), Is.True);
             Assert.That(hotel.GetRoomCount(), Is.EqualTo(0));
 
-            // With the old room gone, a new one can be created again.
+            // An immediate delete/recreate cycle is refused by the terminal's creation cooldown...
+            Assert.That(hotel.TryCheckIn(teleporter, human, 333, "CozyHotelRoom"), Is.False,
+                "The creation cooldown should refuse an immediate recreate.");
+
+            // ...and with the cooldown out of the way, a new room can be created again.
+            entMan.GetComponent<HilbertHotelTeleporterComponent>(teleporter).CreateCooldown = TimeSpan.Zero;
             Assert.That(hotel.TryCheckIn(teleporter, human, 333, "CozyHotelRoom"), Is.True);
             Assert.That(hotel.TryDeleteRoomByOwner(human, 333), Is.True);
         });

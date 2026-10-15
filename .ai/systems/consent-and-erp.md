@@ -86,7 +86,7 @@ The old Coyote checkout (see `.ai/file_paths.md`) has the complete Floof consent
 | Show/hide verbs for undergarments (and any marking the player opts in) | `Content.Server/_Floof/ModifyUndies/*` | Per-marking opt-in (`canToggleVisible` default off except undergarments, `otherCanToggleVisible` default off), 1s do-after, `marking-toggle-*` locale |
 | Marking visibility state | `SharedHumanoidAppearanceSystem.SetMarkingVisibility` | Flips `Marking.Visible`; session-only |
 | Interaction panel (Sandstorm port) | `Content.{Shared,Server,Client}/_PS/Interactions/*`, `Resources/Prototypes/_PS/Interactions/`, `Resources/Audio/_PS/Interactions/` | Verb + Ctrl+Shift-click; kiss/hug/fuck/blowjob etc. gated on the account age gate + a session consent toggle (default on), organ-based genitals (see `systems/genital-organs.md`), lust/moans/climax, semen volume + drip + washable cum overlay; no pregnancy/refractory — see `systems/interaction-panel.md` |
-| Genital organs + cum | `Content.{Shared,Server,Client}/_PS/Organs/*`, `Resources/Prototypes/_PS/Organs/`, `Resources/Prototypes/_PS/Reagents/semen.yml`, `Resources/Textures/_PS/Effects/cum.rsi` | Character-creation organ picks (penis/vagina/balls/breasts/butt/belly + semen volume) persisted in the profile; SPLURT cum overlay and Sandstorm-style drip; wash with water/space cleaner |
+| Genital organs + cum | `Content.Shared/_PS/Organs/*`, `Content.Server/_PS/Organs/*`, `Resources/Prototypes/_PS/Organs/`, `Resources/Prototypes/_PS/Reagents/semen.yml`, `Resources/Textures/_PS/Effects/cum.rsi` | Character-creation organ picks (penis/vagina/balls/breasts/butt/belly + semen volume) persisted in the profile; SPLURT cum overlay and Sandstorm-style drip; wash with water/space cleaner |
 | Undergarment/over-garment marking library | `undergarments.yml`, `underovergarments.yml` | 218 + 67 markings, Floof sprites |
 | Genital-under-clothing ordering | `Content.Client/Humanoid/HumanoidAppearanceSystem.ApplyMarking` | Clamps below `jumpsuit`/`outerClothing` |
 | Digitigrade legs / base markings / kind sharing | see `systems/marking-and-appearance.md` | General customization, used heavily by ERP characters |
@@ -101,7 +101,7 @@ The old Coyote checkout (see `.ai/file_paths.md`) has the complete Floof consent
 | Scent / sniff | `_CS/SniffAndSmell` | Explicitly excluded |
 | Aphrodisiac visibility | `_CS/AphroLacedVisibility`, `ServerAphrodisiacChecker` | Explicitly excluded |
 | Horny examine quirks + BodyType traits | `_CS/HornyQuirks`, `body_type_traits.yml`, `Traits.yml` | Not ported (46 trait ids dropped on import) |
-| Size manipulation | `_CS/Body/Systems/Size*` | Not ported; character `height`/`width` fields ignored |
+| Size manipulation | `_CS/Body/Systems/Size*` | Not ported; character `height`/`width` are supported through the profile/editor/client scale instead |
 | RPI economy | `_CS/RolePlayIncentiveServer` | Not ported |
 
 ## Examine pipeline (where ERP text used to land)

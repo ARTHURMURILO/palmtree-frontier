@@ -90,8 +90,10 @@ characters).
 - `onlyWhitelisted` species (e.g. some forks) require either `speciesRestriction` or
   `kindAllowance` to be present.
 - This repo adds `kindAllowance: [BasicHumanlike, BasicFurry, BasicRobot, VoxLike]` to **all**
-  species-restricted markings (915 across 39 files), mirroring Coyote: any species with a matching
-  kind can wear them. New species-restricted markings should include it.
+  species-restricted markings (3,050 occurrences across 84 files as of 2026-10), mirroring Coyote:
+  any species with a matching kind can wear them. New species-restricted markings should include it.
+  Some files also list `Resomi`/`Avali` in `kindAllowance`; no species carries those kinds, so those
+  entries are inert.
 
 ## Digitigrade legs & clothing displacement
 
@@ -232,11 +234,13 @@ in the `height`/`width` profile DB columns (`HeightWidth` migration, default 1).
   `GenitalOrganSystem` adds forced, non-toggleable render markings on the `Genital` layer from the
   organ catalog. See `systems/genital-organs.md`.
 - Core library: `Resources/Prototypes/Entities/Mobs/Customization/Markings/genitals.yml` (379),
-  `butts_and_bellies.yml` (19); Palmtree breasts `_PS/.../genitals.yml` (18).
+  `butts_and_bellies.yml` (19); Palmtree breasts `_PS/.../genitals.yml` (36: 18 base + 18
+  Skintoned variants).
 - Sprites: `Resources/Textures/Mobs/Customization/Markings/Genital/{balls,belly,breasts,butt,cocks,vagina}.rsi`
   and `Resources/Textures/_PS/Mobs/Customization/Markings/Genital/breasts.rsi`.
-- `RenderOverClothing` was **not** ported (no prototypes use it); genital sprites are clamped below
-  jumpsuit/outer clothing, which is also the organ exposure rule (no jumpsuit = exposed).
+- `RenderOverClothing` **is** ported (`Marking.cs`) and set by `NeverHidden` organs; ordinary genital
+  sprites are clamped below jumpsuit/outer clothing, which is also the organ exposure rule (no
+  jumpsuit = exposed).
 
 ## Dependencies
 
@@ -252,4 +256,5 @@ system, `DoAfter`, actions/verbs (ModifyUndies), `MarkingColoring`.
 ## Unknowns
 
 - Whether marking visibility should persist across sessions (currently session-only).
-- Whether `RenderOverClothing`/directional marking offsets should be ported for future content.
+- Whether directional marking offsets should be ported for future content (`RenderOverClothing`
+  is already ported and used by organs).

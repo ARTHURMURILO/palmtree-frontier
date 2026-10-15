@@ -35,8 +35,9 @@ Prototype; int Size; GenitalVisibility Visibility; Color? Color; Color? DetailCo
 float Scale; float Glow; float DetailGlow }` per organ (at most one per type) plus `SemenVolume`
 (1-300, default 30; the editor labels it "Fluid per climax" and it applies to female climaxes too).
 Persisted as a compact string via `ToDbString`/`FromDbString` in a plain text column, e.g.
-`Penis:PenisHuman:3:NeverHidden:#f2c9a0:-:0.25,-0.5:1.5:0.5,0;Vagina:VaginaHuman:1:HiddenByJumpsuit;semen=42`
-(older 3/4-part entries parse as `HiddenByJumpsuit`/skin colors; `-` means "follow skin"/default; the
+`Penis:PenisHuman:3:NeverHidden:#f2c9a0:-:0.25,-0.5:1.5:0.5,0;Vagina:VaginaHuman:1:HiddenByUnderwear;semen=42`
+(older 3/4-part entries parse as `HiddenByUnderwear`, the current default, with skin colors; `-`
+means "follow skin"/default; the
 7th/8th/9th segments are the optional `offsetX,offsetY`, `scale` and `glow,detailGlow`). Offset,
 scale and glow are applied to the organ's render marking via
 `Marking.SetOffset`/`SetScale`/`SetGlow`, so organs can be transformed like markings. Organ color
@@ -95,8 +96,8 @@ queries).
    | Rule | Exposed when | Sprite |
    |---|---|---|
    | Always hidden | never | not drawn |
-   | Hidden by underwear | no visible relevant undergarment marking and no jumpsuit | under clothing/undergarments |
-   | Hidden by jumpsuit (default) | no jumpsuit | under clothing |
+   | Hidden by underwear (default) | no visible relevant undergarment marking and no jumpsuit | under clothing/undergarments |
+   | Hidden by jumpsuit | no jumpsuit | under clothing |
    | Never hidden | always | drawn above outer clothing (`Marking.RenderOverClothing`) |
 
    Undergarments are the fork's undergarment markings (`UndergarmentTop` for breasts,

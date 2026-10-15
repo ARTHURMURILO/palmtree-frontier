@@ -41,6 +41,7 @@ using Robust.Shared.Network;
 using Robust.Shared.Maths;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Physics.Systems;
+using Robust.Shared.Player;
 using Robust.Shared.Timing;
 
 namespace Content.Server._PS.ShipRegistry;
@@ -50,7 +51,7 @@ namespace Content.Server._PS.ShipRegistry;
 /// civilian vessel: it gets a station, a deed (on the ship and on the owner's ID), a shuttle
 /// record, an IFF name and a <see cref="RegisteredVesselComponent"/>, which is what the Bluespace
 /// Dock's civilian check accepts. Requires the Station Representative's ID in the privileged slot
-/// (admins bypass) and the owner's ID in the target slot.
+/// (admins bypass); the owner is picked from the console's owner dropdown.
 /// </summary>
 public sealed class ShipRegistrarSystem : EntitySystem
 {
@@ -83,6 +84,12 @@ public sealed class ShipRegistrarSystem : EntitySystem
     /// Station prototype registered ships use (the same one shipyard ships get).
     /// </summary>
     public const string RegisteredStationPrototype = "StandardFrontierVessel";
+
+    /// <summary>
+    /// Preview windows currently open, per session. Opening a new preview closes the old one, so a
+    /// client cannot accumulate live cameras by spamming the message.
+    /// </summary>
+    private readonly Dictionary<ICommonSession, ShipPreviewEui> _openPreviews = new();
 
     public override void Initialize()
     {
@@ -463,7 +470,8 @@ public sealed class ShipRegistrarSystem : EntitySystem
         if (args.Actor is not { Valid: true } player)
             return;
 
-        if (!TryGetEntity(args.Grid, out var gridUid) || gridUid is not { } grid)
+        if (!TryGetEntity(args.Grid, out var gridUid) || gridUid is not { } grid
+            || !HasComp<MapGridComponent>(grid))
         {
             Deny(consoleUid, component, player, "ship-registrar-error-no-grid");
             return;
@@ -472,7 +480,32 @@ public sealed class ShipRegistrarSystem : EntitySystem
         if (!_player.TryGetSessionByEntity(player, out var session))
             return;
 
-        _eui.OpenEui(new ShipPreviewEui(grid), session);
+        // Only grids the registrar itself offers may be previewed: docked to this console's station
+        // and not registered yet. Without this check any player at a registrar could open a live
+        // camera on an arbitrary grid in the world.
+        var offered = false;
+        var netGrid = GetNetEntity(grid);
+        foreach (var entry in GetDockableGrids(consoleUid))
+        {
+            if (entry.Grid != netGrid)
+                continue;
+
+            offered = true;
+            break;
+        }
+
+        if (!offered)
+        {
+            Deny(consoleUid, component, player, "ship-registrar-error-no-grid");
+            return;
+        }
+
+        if (_openPreviews.Remove(session, out var existing))
+            _eui.CloseEui(existing);
+
+        var preview = new ShipPreviewEui(grid, onClosed: () => _openPreviews.Remove(session));
+        _openPreviews[session] = preview;
+        _eui.OpenEui(preview, session);
     }
 
     #endregion Preview
