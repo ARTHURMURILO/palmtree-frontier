@@ -6,6 +6,7 @@ using Content.Server._PS.ShipRegistry;
 using Content.Server.Shuttles.Components;
 using Content.Server.Shuttles.Systems;
 using Content.Server.Station.Systems;
+using Content.Shared.Access.Components;
 using Content.Shared._NF.Shipyard.Components;
 using Content.Shared._PS.ShipRegistry;
 using Content.Shared.Shuttles.Components;
@@ -82,7 +83,8 @@ public sealed class ShipRegistrarTest
 
             // Register it.
             Assert.That(
-                registrar.TryRegisterVessel(console, stationGrid, targetId, shipGrid, "Test Ship", "TS-001", out var error),
+                registrar.TryRegisterVessel(console, stationGrid, shipGrid, "ckey-test", "Test Character",
+                    targetId, null, "Test Ship", "TS-001", out var error),
                 Is.True,
                 $"Registration failed: {error}");
 
@@ -94,6 +96,12 @@ public sealed class ShipRegistrarTest
             Assert.That(deed.ShuttleUid, Is.EqualTo(shipGrid));
             Assert.That(deed.ShuttleName, Is.EqualTo("Test Ship"));
             Assert.That(deed.ShuttleNameSuffix, Is.EqualTo("TS-001"));
+            Assert.That(deed.ShuttleOwner, Is.EqualTo("Test Character"));
+
+            // The owner gets the console's access levels, like a shipyard purchase does.
+            Assert.That(entMan.TryGetComponent<AccessComponent>(targetId, out var ownerAccess), Is.True);
+            Assert.That(ownerAccess!.Tags.Contains("Captain"), Is.True,
+                "The ship's owner must get the Captain access tag.");
 
             // Civilian marker and its own station.
             var registered = entMan.GetComponent<RegisteredVesselComponent>(shipGrid);

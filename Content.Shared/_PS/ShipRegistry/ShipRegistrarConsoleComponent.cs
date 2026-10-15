@@ -1,6 +1,8 @@
+using Content.Shared.Access;
 using Content.Shared.Containers.ItemSlots;
 using Robust.Shared.Audio;
 using Robust.Shared.GameStates;
+using Robust.Shared.Prototypes;
 using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom;
 
 namespace Content.Shared._PS.ShipRegistry;
@@ -16,7 +18,6 @@ namespace Content.Shared._PS.ShipRegistry;
 public sealed partial class ShipRegistrarConsoleComponent : Component
 {
     public static string PrivilegedIdCardSlotId = "ShipRegistrar-privilegedId";
-    public static string TargetIdCardSlotId = "ShipRegistrar-targetId";
 
     /// <summary>Maximum length of a registered ship's name.</summary>
     public const int MaxNameLength = 32;
@@ -27,8 +28,12 @@ public sealed partial class ShipRegistrarConsoleComponent : Component
     [DataField]
     public ItemSlot PrivilegedIdSlot = new();
 
+    /// <summary>
+    /// Access levels added to the owner's ID when their ship is registered, exactly like a shipyard
+    /// console grants on a purchase.
+    /// </summary>
     [DataField]
-    public ItemSlot TargetIdSlot = new();
+    public List<ProtoId<AccessLevelPrototype>> NewAccessLevels = new() { "Captain" };
 
     [DataField]
     public SoundSpecifier ErrorSound =

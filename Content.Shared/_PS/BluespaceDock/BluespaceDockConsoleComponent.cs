@@ -1,3 +1,4 @@
+using Content.Shared.Access;
 using Content.Shared.Containers.ItemSlots;
 using Content.Shared.Radio;
 using Robust.Shared.Audio;
@@ -19,6 +20,13 @@ public sealed partial class BluespaceDockConsoleComponent : Component
 
     [DataField]
     public ItemSlot TargetIdSlot = new();
+
+    /// <summary>
+    /// Access levels added to the owner's ID when they retrieve a ship, exactly like a shipyard
+    /// console grants on a purchase.
+    /// </summary>
+    [DataField]
+    public List<ProtoId<AccessLevelPrototype>> NewAccessLevels = new() { "Captain" };
 
     /// <summary>
     /// Radio channel the dock announces stores, retrievals and sales on. Defaults to the same channel

@@ -14,11 +14,8 @@ public sealed class ShipRegistrarUiState : BoundUserInterfaceState
     /// <summary>Name on the privileged ID card.</summary>
     public string? PrivilegedIdName;
 
-    /// <summary>Whether the target (ship owner) ID card is inserted.</summary>
-    public bool HasTargetId;
-
-    /// <summary>Name on the target ID card.</summary>
-    public string? TargetIdName;
+    /// <summary>Players the ship can be registered to (picked from a dropdown).</summary>
+    public List<ShipOwnerOption> Owners = new();
 
     /// <summary>Bank balance of the player using the console.</summary>
     public int Balance;
@@ -32,16 +29,14 @@ public sealed class ShipRegistrarUiState : BoundUserInterfaceState
     public ShipRegistrarUiState(
         bool hasPrivilegedId,
         string? privilegedIdName,
-        bool hasTargetId,
-        string? targetIdName,
+        List<ShipOwnerOption> owners,
         int balance,
         int fee,
         List<ShipRegistrarGridUi> grids)
     {
         HasPrivilegedId = hasPrivilegedId;
         PrivilegedIdName = privilegedIdName;
-        HasTargetId = hasTargetId;
-        TargetIdName = targetIdName;
+        Owners = owners;
         Balance = balance;
         Fee = fee;
         Grids = grids;

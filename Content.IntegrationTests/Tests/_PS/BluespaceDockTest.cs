@@ -9,6 +9,8 @@ using Content.Shared._PS.ShipRegistry;
 using Content.Shared._NF.Shipyard;
 using Content.Shared.Station;
 using NUnit.Framework;
+using Content.Shared.Storage;
+using Robust.Server.Containers;
 using Robust.Shared.ContentPack;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
@@ -580,6 +582,77 @@ public sealed class BluespaceDockTest
             {
                 Assert.That(reader.ReadToEnd(), Is.EqualTo(legacy), "The original ship file must be left untouched.");
             }
+
+            dock.DeleteShipFile(file);
+        });
+
+        await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));
+        await server.WaitRunTicks(2);
+        await server.WaitAssertion(() => server.System<SharedMapSystem>().DeleteMap(loadedMap));
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task ShipFilesKeepContainerContents()
+    {
+        // A toolbox's contents used to be lost or duplicated on retrieval: the dock re-raised MapInit
+        // on top of the engine's own initialization, so storage filled its prototype contents again.
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var containers = server.System<ContainerSystem>();
+
+        EntityUid loadedGrid = default;
+        MapId loadedMap = default;
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var grid = testMap.Grid.Owner;
+
+            var toolbox = entMan.SpawnEntity("ToolboxMechanicalFilled", new EntityCoordinates(grid, new System.Numerics.Vector2(0.5f, 0.5f)));
+            var duck = entMan.SpawnEntity("ToyRubberDuck", new EntityCoordinates(grid, new System.Numerics.Vector2(0.5f, 0.5f)));
+
+            Assert.That(containers.TryGetContainer(toolbox, StorageComponent.ContainerId, out var storage), Is.True,
+                "sanity: the toolbox has storage");
+            Assert.That(containers.Insert(duck, storage!), Is.True, "sanity: the duck fits in the toolbox");
+
+            var before = storage!.ContainedEntities.Count;
+            Assert.That(before, Is.GreaterThan(0), "sanity: the toolbox has contents");
+
+            var file = BluespaceDockSystem.GetShipFilePath("contents");
+            Assert.That(dock.TrySaveShipFile(grid, file, out var error), Is.True, error);
+            Assert.That(dock.TryLoadShipFile(file, out var loaded), Is.True);
+
+            loadedGrid = loaded!.Value;
+            loadedMap = entMan.GetComponent<TransformComponent>(loadedGrid).MapID;
+
+            var found = false;
+            var query = entMan.EntityQueryEnumerator<StorageComponent, TransformComponent>();
+            while (query.MoveNext(out var uid, out _, out var xform))
+            {
+                if (xform.GridUid != loadedGrid)
+                    continue;
+
+                found = true;
+                Assert.That(containers.TryGetContainer(uid, StorageComponent.ContainerId, out var loadedStorage), Is.True);
+
+                Assert.That(loadedStorage!.ContainedEntities.Count, Is.EqualTo(before),
+                    "A container must come back with exactly what it was saved with - nothing lost, nothing duplicated.");
+
+                var ducks = 0;
+                foreach (var contained in loadedStorage.ContainedEntities)
+                {
+                    if (entMan.GetComponent<MetaDataComponent>(contained).EntityPrototype?.ID == "ToyRubberDuck")
+                        ducks++;
+                }
+
+                Assert.That(ducks, Is.EqualTo(1), "The item put in the toolbox must still be in it.");
+            }
+
+            Assert.That(found, Is.True, "The loaded ship must still have its toolbox.");
 
             dock.DeleteShipFile(file);
         });

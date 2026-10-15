@@ -4,7 +4,11 @@ using Content.Server._PS.BluespaceDock;
 using Content.Server._NF.GC.Components;
 using Content.Server._NF.ShuttleRecords;
 using Content.Server.StationEvents.Components;
+using Content.Server.StationRecords.Systems;
+using Content.Server.StationRecords;
+using Content.Server.Preferences.Managers;
 using Content.Server.Administration.Logs;
+using Content.Server.Access.Systems;
 using Content.Server.Administration.Managers;
 using Content.Server.Cargo.Systems;
 using Content.Server.EUI;
@@ -21,8 +25,10 @@ using Content.Shared.Access.Components;
 using Content.Shared.Administration;
 using Content.Shared.Access.Systems;
 using Content.Shared.Database;
+using Content.Shared.Forensics.Components;
 using Content.Shared.Station;
 using Content.Shared.Shuttles.Components;
+using Content.Shared.Preferences;
 using Content.Shared.Station.Components;
 using Content.Shared.UserInterface;
 using Robust.Server.GameObjects;
@@ -31,6 +37,7 @@ using Robust.Shared.Audio.Systems;
 using Robust.Shared.Configuration;
 using Robust.Shared.Containers;
 using Robust.Shared.Map;
+using Robust.Shared.Network;
 using Robust.Shared.Maths;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Physics.Systems;
@@ -48,6 +55,7 @@ namespace Content.Server._PS.ShipRegistry;
 public sealed class ShipRegistrarSystem : EntitySystem
 {
     [Dependency] private readonly AccessReaderSystem _accessReader = default!;
+    [Dependency] private readonly AccessSystem _accessSystem = default!;
     [Dependency] private readonly IAdminLogManager _adminLogger = default!;
     [Dependency] private readonly IAdminManager _admin = default!;
     [Dependency] private readonly BankSystem _bank = default!;
@@ -59,8 +67,11 @@ public sealed class ShipRegistrarSystem : EntitySystem
     [Dependency] private readonly SharedBluespaceDockSystem _dock = default!;
     [Dependency] private readonly SharedPhysicsSystem _physics = default!;
     [Dependency] private readonly IPlayerManager _player = default!;
+    [Dependency] private readonly IServerPreferencesManager _prefs = default!;
     [Dependency] private readonly PopupSystem _popup = default!;
     [Dependency] private readonly PricingSystem _pricing = default!;
+    [Dependency] private readonly SharedIdCardSystem _idCards = default!;
+    [Dependency] private readonly StationRecordsSystem _records = default!;
     [Dependency] private readonly ShuttleRecordsSystem _shuttleRecords = default!;
     [Dependency] private readonly ShuttleSystem _shuttle = default!;
     [Dependency] private readonly BluespaceDockSystem _dockSystem = default!;
@@ -93,7 +104,7 @@ public sealed class ShipRegistrarSystem : EntitySystem
 
     private void OnItemSlotChanged(EntityUid uid, ShipRegistrarConsoleComponent component, ContainerModifiedMessage args)
     {
-        if (args.Container.ID != component.PrivilegedIdSlot.ID && args.Container.ID != component.TargetIdSlot.ID)
+        if (args.Container.ID != component.PrivilegedIdSlot.ID)
             return;
 
         if (!TryComp<ActivatableUIComponent>(uid, out var uiComp) || uiComp.Key is null)
@@ -114,14 +125,10 @@ public sealed class ShipRegistrarSystem : EntitySystem
         var component = Comp<ShipRegistrarConsoleComponent>(consoleUid);
 
         var privilegedId = component.PrivilegedIdSlot.ContainerSlot?.ContainedEntity;
-        var targetId = component.TargetIdSlot.ContainerSlot?.ContainedEntity;
 
         string? privilegedName = null;
-        string? targetName = null;
         if (privilegedId is { Valid: true } && TryComp<IdCardComponent>(privilegedId, out var privilegedCard))
             privilegedName = privilegedCard.FullName;
-        if (targetId is { Valid: true } && TryComp<IdCardComponent>(targetId, out var targetCard))
-            targetName = targetCard.FullName;
 
         _bank.TryGetBalance(actor, out var balance);
 
@@ -130,11 +137,31 @@ public sealed class ShipRegistrarSystem : EntitySystem
         _ui.SetUiState(consoleUid, ShipRegistrarUiKey.Key, new ShipRegistrarUiState(
             privilegedId is { Valid: true },
             privilegedName,
-            targetId is { Valid: true },
-            targetName,
+            GetOwnerOptions(),
             balance,
             _cfg.GetCVar(NFCCVars.ShipRegistrarFee),
             grids));
+    }
+
+    /// <summary>
+    /// Players a ship can be registered to, with the character name ownership is keyed on (their
+    /// profile, falling back to the ID card they carry).
+    /// </summary>
+    public List<ShipOwnerOption> GetOwnerOptions()
+    {
+        var owners = new List<ShipOwnerOption>();
+
+        foreach (var session in _player.Sessions)
+        {
+            string? idName = null;
+            if (session.AttachedEntity is { } mob && _idCards.TryFindIdCard(mob, out var idCard))
+                idName = idCard.Comp.FullName;
+
+            owners.Add(new ShipOwnerOption(session.UserId.ToString(),
+                _dockSystem.GetCharacterName(session.UserId, idName, session.AttachedEntity)));
+        }
+
+        return owners;
     }
 
     /// <summary>
@@ -203,9 +230,9 @@ public sealed class ShipRegistrarSystem : EntitySystem
             return;
         }
 
-        if (component.TargetIdSlot.ContainerSlot?.ContainedEntity is not { Valid: true } targetId)
+        if (!TryResolveOwner(args.OwnerUserId, out var ownerUserId, out var ownerName, out var ownerProfile, out var ownerId))
         {
-            Deny(consoleUid, component, player, "ship-registrar-error-target-id");
+            Deny(consoleUid, component, player, "ship-registrar-error-owner");
             return;
         }
 
@@ -216,7 +243,8 @@ public sealed class ShipRegistrarSystem : EntitySystem
             return;
         }
 
-        if (!TryRegisterVessel(consoleUid, player, targetId, grid, args.Name, args.Suffix, out var error))
+        if (!TryRegisterVessel(consoleUid, player, grid, ownerUserId, ownerName, ownerId, ownerProfile,
+                args.Name, args.Suffix, out var error))
         {
             Deny(consoleUid, component, player, error ?? "ship-registrar-error-unknown");
             RefreshState(consoleUid, player);
@@ -232,14 +260,55 @@ public sealed class ShipRegistrarSystem : EntitySystem
     }
 
     /// <summary>
+    /// Resolves the player a ship is registered to: their ckey, the character name ownership is keyed
+    /// on (their profile), their profile and the ID card they are carrying (which takes the deed).
+    /// </summary>
+    private bool TryResolveOwner(string userId, out string ownerUserId, out string ownerName,
+        out HumanoidCharacterProfile? profile, out EntityUid ownerId)
+    {
+        ownerUserId = userId;
+        ownerName = string.Empty;
+        profile = null;
+        ownerId = EntityUid.Invalid;
+
+        if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var guid)
+            || !_player.TryGetSessionById(new NetUserId(guid), out var session))
+        {
+            return false;
+        }
+
+        string? idName = null;
+        if (session.AttachedEntity is { } mob && _idCards.TryFindIdCard(mob, out var idCard))
+        {
+            idName = idCard.Comp.FullName;
+            ownerId = idCard.Owner;
+        }
+
+        ownerName = _dockSystem.GetCharacterName(session.UserId, idName, session.AttachedEntity);
+        if (ownerName.Length == 0 || ownerId == EntityUid.Invalid)
+            return false;
+
+        if (_prefs.TryGetCachedPreferences(session.UserId, out var prefs)
+            && prefs.SelectedCharacter is HumanoidCharacterProfile selected)
+        {
+            profile = selected;
+        }
+
+        return true;
+    }
+
+    /// <summary>
     /// Registers a grid as a civilian vessel. All checks are done here (the UI is only a hint), and
     /// the fee is charged only after the ship has been set up.
     /// </summary>
     public bool TryRegisterVessel(
         EntityUid consoleUid,
         EntityUid actor,
-        EntityUid targetId,
         EntityUid grid,
+        string ownerUserId,
+        string ownerName,
+        EntityUid ownerId,
+        HumanoidCharacterProfile? ownerProfile,
         string name,
         string suffix,
         out string? error)
@@ -255,9 +324,9 @@ public sealed class ShipRegistrarSystem : EntitySystem
             return false;
         }
 
-        if (!TryComp<IdCardComponent>(targetId, out var targetCard))
+        if (!Exists(ownerId))
         {
-            error = "ship-registrar-error-target-id";
+            error = "ship-registrar-error-owner";
             return false;
         }
 
@@ -296,7 +365,6 @@ public sealed class ShipRegistrarSystem : EntitySystem
         }
 
         var fullName = ShipNameHelper.BuildFullName(name, suffix);
-        var ownerName = targetCard.FullName ?? string.Empty;
 
         // Station first: InitializeNewStation also stamps the grid's station membership.
         var config = new StationConfig { StationPrototype = RegisteredStationPrototype };
@@ -316,7 +384,28 @@ public sealed class ShipRegistrarSystem : EntitySystem
 
         // Deed on the ship and on the owner's ID.
         _dock.AssignDeed(grid, grid, name, suffix, ownerName);
-        _dock.AssignDeed(targetId, grid, name, suffix, ownerName);
+        _dock.AssignDeed(ownerId, grid, name, suffix, ownerName);
+
+        // The owner is the ship's captain: write them a crew record on the ship's station and add
+        // this console's access levels to their ID, exactly like a shipyard purchase does.
+        if (ownerProfile != null && TryComp<StationRecordsComponent>(shipStation, out var shipRecords))
+        {
+            TryComp<FingerprintComponent>(ownerId, out var ownerFingerprint);
+            TryComp<DnaComponent>(ownerId, out var ownerDna);
+
+            _records.CreateGeneralRecord(shipStation, ownerId, ownerProfile.Name, ownerProfile.Age,
+                ownerProfile.Species, ownerProfile.Gender, "Captain", ownerFingerprint?.Fingerprint,
+                ownerDna?.DNA, ownerProfile, shipRecords);
+            _records.Synchronize(shipStation);
+        }
+
+        if (TryComp<ShipRegistrarConsoleComponent>(consoleUid, out var consoleComp)
+            && TryComp<AccessComponent>(ownerId, out var access))
+        {
+            var tags = access.Tags.ToList();
+            tags.AddRange(consoleComp.NewAccessLevels);
+            _accessSystem.TrySetTags(ownerId, tags, access);
+        }
 
         // A warp point, like shipyard ships carry in their files: it makes the ship reachable with
         // `warp` and in the ghost warp menu, and its name follows the ship's.

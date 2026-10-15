@@ -2,6 +2,7 @@ using Content.Server._PS.BluespaceDock;
 using Content.Server._PS.ShipRegistry;
 using Content.Server.EUI;
 using Content.Shared._PS.BluespaceDock;
+using Content.Shared._PS.ShipRegistry;
 using Content.Shared.Access.Systems;
 using Content.Shared.Eui;
 using Robust.Server.Player;
@@ -87,10 +88,10 @@ public sealed partial class RestoreOrphanShipEui : BaseEui
             ships.Add(new OrphanShipEntry(orphan.Name, modified));
         }
 
-        var players = new List<OrphanShipPlayer>();
+        var players = new List<ShipOwnerOption>();
         foreach (var session in _player.Sessions)
         {
-            players.Add(new OrphanShipPlayer(session.UserId.ToString(), GetCharacterName(session)));
+            players.Add(new ShipOwnerOption(session.UserId.ToString(), GetCharacterName(session)));
         }
 
         return new RestoreOrphanShipEuiState(ships, players, _status, _statusIsError);

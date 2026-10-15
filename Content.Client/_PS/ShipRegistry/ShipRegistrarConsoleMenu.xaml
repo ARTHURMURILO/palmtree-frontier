@@ -15,10 +15,18 @@
                         Access="Public"
                         HorizontalExpand="True"
                         MinHeight="30" />
-                <Button Name="TargetIdButton"
-                        Access="Public"
-                        HorizontalExpand="True"
-                        MinHeight="30" />
+            </BoxContainer>
+
+            <BoxContainer Orientation="Vertical" HorizontalExpand="True" Margin="0 0 0 4">
+                <Label Text="{Loc 'ship-registrar-owner-label'}" StyleClasses="LabelKeyText" />
+                <OptionButton Name="OwnerSelect"
+                              Access="Public"
+                              HorizontalExpand="True"
+                              Margin="0 0 0 2" />
+                <Label Name="OwnerHintLabel"
+                       Access="Public"
+                       Text="{Loc 'ship-registrar-owner-hint'}"
+                       StyleClasses="LabelSubText" />
             </BoxContainer>
 
             <BoxContainer Orientation="Horizontal" Margin="0 0 0 4">

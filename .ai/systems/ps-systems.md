@@ -526,7 +526,7 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
 - **Store**: ID with a deed + live ship, docked to the console's station, no organics aboard
   (`ShipyardSystem.FoundOrganics`), vessel group in `{Shipyard, Scrap, Expedition}` (NFSD/black
   market/SR/unknown are refused — hand-built ships must be registered first), bank covers the
-  `nf14.bluespace_dock.store_tax` (10%) tax. Then: power down fuel/charge systems, undock,
+  `nf14.bluespace_dock.store_tax` (10%) tax. Then: undock,
   `TrySaveShipFile` (IncludeNullspace, Ignore fallback, then re-read + YAML-parse the file), charge,
   write the registry entry, strip the deed from the ID and delete the station + grid. If the save
   fails, the stripped components are put back, the deed is reassigned, the ship is re-docked and
@@ -554,6 +554,19 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
   engine's own `DeletedPrototypes` hook is deliberately **not** used: it spawns those entities without
   their prototype, which throws on components with required fields (`MeleeWeaponComponent.damage`, for
   instance) and takes the whole load down.
+- **Captain on retrieve**: retrieval writes the owner a `GeneralStationRecord` with the `Captain` job
+  on the ship's station (`StationRecordsSystem.CreateGeneralRecord`, mirroring a shipyard purchase)
+  and adds `BluespaceDockConsoleComponent.NewAccessLevels` (Captain by default) to their ID. Without
+  the record the ship came back with no crew at all - no captain, nothing on the manifest. The Ship
+  Registrar does the same at registration.
+- **No pre-save power-down, no MapInit re-raise** (both inherited from Coyote's drydock, both removed):
+  powering down fuel/charge systems wrote `on: false` / `switchedOn: false` into the file, so a
+  retrieved ship came back unpowered (its APC off, the bridge door refusing to open), and re-raising
+  MapInit on top of the engine's own initialization double-initializes components - storage fills its
+  prototype contents a second time (duplicating or refusing items) and item slots spawn their starting
+  items again. The engine already initializes loaded entities itself, in hierarchy order
+  (`EntityDeserializer.StartEntitiesInternal` walks parents first), which is what every map load and
+  the shipyard's own purchase path rely on.
 - **What a ship file may not contain**: `TrySaveShipFile` strips the deed and everything referencing
   the ship's station (`StationMemberComponent`, `StationBoundObjectComponent`) *before* serializing —
   the station is a mapped entity the file cannot carry, and stale references make the deserializer
@@ -626,8 +639,11 @@ a crash can leave files behind). The tool:
   `Resources/Prototypes/_PS/Entities/Structures/Machines/Computers/ship_registrar.yml` (sprite copy
   `Resources/Textures/_PS/Structures/Machines/ship_registrar.rsi`, the SR shipyard states).
 - Privileged slot = Station Representative's ID (the console's `AccessReader` requires
-  `HeadOfPersonnel`, which the SR has through `AllAccess`; admins bypass), target slot = the ship
-  owner's ID.
+  `HeadOfPersonnel`, which the SR has through `AllAccess`; admins bypass). The **owner is picked from
+  a dropdown of players** (`GetOwnerOptions`, keyed on their profile name like the dock) - there is
+  no second ID slot, and the owner has to be in the round holding their ID card, which takes the
+  deed. Registration also writes them a `GeneralStationRecord` with the `Captain` job on the ship's
+  station and adds `NewAccessLevels` (Captain) to their ID, exactly like a shipyard purchase.
 - Lists every grid docked to the console's station that has no deed and no
   `RegisteredVesselComponent` (`GetDockableGrids`), with name/size/value and a live `[PREVIEW]`.
 - Registration (`TryRegisterVessel`, all checks re-run server side) creates the

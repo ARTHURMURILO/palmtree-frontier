@@ -25,9 +25,8 @@ public sealed class ShipRegistrarConsoleBoundUserInterface : BoundUserInterface
 
         _menu.OnPrivilegedId += () =>
             SendMessage(new ItemSlotButtonPressedEvent(ShipRegistrarConsoleComponent.PrivilegedIdCardSlotId));
-        _menu.OnTargetId += () =>
-            SendMessage(new ItemSlotButtonPressedEvent(ShipRegistrarConsoleComponent.TargetIdCardSlotId));
-        _menu.OnRegister += (grid, name, suffix) => SendMessage(new ShipRegistrarRegisterMessage(grid, name, suffix));
+        _menu.OnRegister += (grid, ownerUserId, name, suffix) =>
+            SendMessage(new ShipRegistrarRegisterMessage(grid, ownerUserId, name, suffix));
         _menu.OnPreview += grid => SendMessage(new ShipRegistrarPreviewMessage(grid));
     }
 

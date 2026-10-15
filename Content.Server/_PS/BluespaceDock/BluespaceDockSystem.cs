@@ -8,15 +8,16 @@ using Content.Server._NF.ShuttleRecords;
 using Content.Server.Cargo.Systems;
 using Content.Server.Chat.Systems;
 using Content.Server.StationEvents.Components;
+using Content.Server.StationRecords;
+using Content.Server.StationRecords.Systems;
 using Content.Server._NF.Shipyard.Systems;
 using Content.Server._NF.Station.Components;
+using Content.Server.Access.Systems;
 using Content.Server.Administration.Logs;
 using Content.Server.Popups;
 using Content.Server.Radio.EntitySystems;
 using Content.Server.Preferences.Managers;
 using Content.Server.Power.Components;
-using Content.Server.Power.EntitySystems;
-using Content.Server.Power.Generator;
 using Content.Server.Shuttles.Components;
 using Content.Server.Shuttles.Systems;
 using Content.Server.Station.Systems;
@@ -31,14 +32,12 @@ using Content.Shared._PS.ShipRegistry;
 using Content.Shared.Access.Components;
 using Content.Shared.Database;
 using Content.Shared.Chat;
-using Content.Shared.Containers.ItemSlots;
+using Content.Shared.Forensics.Components;
 using Content.Shared.GameTicking;
-using Content.Shared.Light.Components;
 using Content.Shared.Shuttles.Components;
 using Content.Shared.Station;
 using Content.Shared.Station.Components;
 using Content.Shared.Mobs.Components;
-using Content.Shared.Power.Generator;
 using Content.Shared.Preferences;
 using Content.Shared.UserInterface;
 using Content.Shared.Warps;
@@ -91,21 +90,21 @@ public sealed class BluespaceDockSystem : EntitySystem
     [Dependency] private readonly IPrototypeManager _prototype = default!;
     [Dependency] private readonly IResourceManager _resource = default!;
     [Dependency] private readonly ISerializationManager _serialization = default!;
+    [Dependency] private readonly AccessSystem _accessSystem = default!;
     [Dependency] private readonly BankSystem _bank = default!;
     [Dependency] private readonly DockingSystem _docking = default!;
-    [Dependency] private readonly GeneratorSystem _generator = default!;
     [Dependency] private readonly MapLoaderSystem _mapLoader = default!;
     [Dependency] private readonly MapSystem _map = default!;
     [Dependency] private readonly MetaDataSystem _metaData = default!;
     [Dependency] private readonly PopupSystem _popup = default!;
     [Dependency] private readonly RadioSystem _radio = default!;
-    [Dependency] private readonly PowerChargeSystem _powerCharge = default!;
     [Dependency] private readonly PricingSystem _pricing = default!;
     [Dependency] private readonly ShuttleRecordsSystem _shuttleRecords = default!;
     [Dependency] private readonly ShuttleSystem _shuttle = default!;
     [Dependency] private readonly ShipyardSystem _shipyard = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
+    [Dependency] private readonly StationRecordsSystem _records = default!;
     [Dependency] private readonly StationSystem _station = default!;
     [Dependency] private readonly SharedBluespaceDockSystem _dock = default!;
     [Dependency] private readonly ChatSystem _chat = default!;
@@ -947,30 +946,12 @@ public sealed class BluespaceDockSystem : EntitySystem
                 }
             }
 
-            // Re-initialize the deserialized entities so components (destructible, device networks,
-            // power, etc.) hook back up. Lights, item slots and docking ports must be skipped or
-            // MapInit duplicates their bulbs/items/joints, and a single bad handler must not fail
-            // the whole retrieval.
-            foreach (var ent in entities)
-            {
-                if (HasComp<PoweredLightComponent>(ent)
-                    || HasComp<ItemSlotsComponent>(ent)
-                    || HasComp<DockingComponent>(ent))
-                {
-                    continue;
-                }
-
-                try
-                {
-                    var ev = new MapInitEvent();
-                    RaiseLocalEvent(ent, ev, broadcast: false);
-                }
-                catch (Exception e)
-                {
-                    _sawmill.Warning($"MapInit failed for {ToPrettyString(ent)} in ship file {relativePath}: {e}");
-                }
-            }
-
+            // No MapInit re-raise here: the engine already initializes loaded entities itself, in
+            // hierarchy order (EntityDeserializer.StartEntitiesInternal walks parents first), which is
+            // what every map load and the shipyard's own purchase rely on. Re-raising MapInit on top
+            // of that double-initializes components - storage fills its prototype contents a second
+            // time (duplicating tools, or failing with "No room!"), item slots spawn their starting
+            // items again, and so on.
             return true;
         }
         catch (Exception e)
@@ -1542,7 +1523,6 @@ public sealed class BluespaceDockSystem : EntitySystem
             // store recoverable.
             var shipStation = _station.GetOwningStation(shuttleUid);
             var stripped = new List<(EntityUid Ent, EntityUid Station, bool Member, bool Bound)>();
-            PowerDownShipSystems(shuttleUid);
             UndockShuttle(shuttleUid);
 
             if (!TrySaveShipFile(shuttleUid, fileName, out var error, stripped))
@@ -1744,6 +1724,30 @@ public sealed class BluespaceDockSystem : EntitySystem
             _dock.AssignDeed(grid, grid, baseName, entry.Suffix, entry.OwnerName);
             _dock.AssignDeed(targetId, grid, baseName, entry.Suffix, entry.OwnerName);
 
+            // The owner is the ship's captain: a shipyard purchase writes them a crew record on the
+            // ship's station and adds the console's access levels to their ID. Without the record the
+            // ship shows up with no crew at all (and no captain), so do the same here.
+            if (_player.TryGetSessionByEntity(player, out var ownerSession)
+                && _prefs.TryGetCachedPreferences(ownerSession.UserId, out var ownerPrefs)
+                && ownerPrefs.SelectedCharacter is HumanoidCharacterProfile ownerProfile
+                && TryComp<StationRecordsComponent>(shipStation, out var shipRecords))
+            {
+                TryComp<FingerprintComponent>(player, out var fingerprint);
+                TryComp<DnaComponent>(player, out var dna);
+
+                _records.CreateGeneralRecord(shipStation, targetId, ownerProfile.Name, ownerProfile.Age,
+                    ownerProfile.Species, ownerProfile.Gender, "Captain", fingerprint?.Fingerprint,
+                    dna?.DNA, ownerProfile, shipRecords);
+                _records.Synchronize(shipStation);
+            }
+
+            if (TryComp<AccessComponent>(targetId, out var access))
+            {
+                var tags = access.Tags.ToList();
+                tags.AddRange(component.NewAccessLevels);
+                _accessSystem.TrySetTags(targetId, tags, access);
+            }
+
             // The ship is a new entity, so give the records console a record for it again (the
             // purchase record points at the deleted original).
             _shuttleRecords.AddRecord(new ShuttleRecord(
@@ -1895,25 +1899,6 @@ public sealed class BluespaceDockSystem : EntitySystem
 
     #region Ship state helpers
 
-    private void PowerDownShipSystems(EntityUid gridUid)
-    {
-        var entities = new HashSet<EntityUid>();
-        GetEntitiesOnGrid(gridUid, entities);
-
-        foreach (var entity in entities)
-        {
-            if (TryComp<FuelGeneratorComponent>(entity, out var fuelGen) && fuelGen.On)
-                _generator.SetFuelGeneratorOn(entity, false, fuelGen);
-
-            if (TryComp<PowerChargeComponent>(entity, out var powerCharge)
-                && TryComp<ApcPowerReceiverComponent>(entity, out var powerReceiver)
-                && powerCharge.SwitchedOn)
-            {
-                _powerCharge.SetSwitchedOn(entity, powerCharge, false, powerReceiver);
-            }
-        }
-    }
-
     private void UndockShuttle(EntityUid shuttleUid)
     {
         foreach (var dock in _docking.GetDocks(shuttleUid))
@@ -1931,11 +1916,13 @@ public sealed class BluespaceDockSystem : EntitySystem
     }
 
     /// <summary>
-    /// Collects a grid and every entity parented under it.
+    /// Collects a grid and every entity under it: transform children and entities inside containers
+    /// (which are detached from the transform tree - a toolbox's contents, for instance).
     /// </summary>
     public void GetEntitiesOnGrid(EntityUid gridUid, HashSet<EntityUid> entities)
     {
         var xformQuery = GetEntityQuery<TransformComponent>();
+        var containerQuery = GetEntityQuery<ContainerManagerComponent>();
         var queue = new Queue<EntityUid>();
         queue.Enqueue(gridUid);
 
@@ -1945,13 +1932,24 @@ public sealed class BluespaceDockSystem : EntitySystem
             if (!entities.Add(current))
                 continue;
 
-            if (!xformQuery.TryGetComponent(current, out var xform))
-                continue;
-
-            var childEnumerator = xform.ChildEnumerator;
-            while (childEnumerator.MoveNext(out var child))
+            if (xformQuery.TryGetComponent(current, out var xform))
             {
-                queue.Enqueue(child);
+                var childEnumerator = xform.ChildEnumerator;
+                while (childEnumerator.MoveNext(out var child))
+                {
+                    queue.Enqueue(child);
+                }
+            }
+
+            if (containerQuery.TryGetComponent(current, out var containers))
+            {
+                foreach (var container in containers.Containers.Values)
+                {
+                    foreach (var contained in container.ContainedEntities)
+                    {
+                        queue.Enqueue(contained);
+                    }
+                }
             }
         }
     }

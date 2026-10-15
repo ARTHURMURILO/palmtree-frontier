@@ -21,12 +21,10 @@ public sealed class SharedShipRegistrarSystem : EntitySystem
     private void OnConsoleInit(EntityUid uid, ShipRegistrarConsoleComponent component, ComponentInit args)
     {
         _itemSlots.AddItemSlot(uid, ShipRegistrarConsoleComponent.PrivilegedIdCardSlotId, component.PrivilegedIdSlot);
-        _itemSlots.AddItemSlot(uid, ShipRegistrarConsoleComponent.TargetIdCardSlotId, component.TargetIdSlot);
     }
 
     private void OnConsoleRemove(EntityUid uid, ShipRegistrarConsoleComponent component, ComponentRemove args)
     {
         _itemSlots.RemoveItemSlot(uid, component.PrivilegedIdSlot);
-        _itemSlots.RemoveItemSlot(uid, component.TargetIdSlot);
     }
 }
