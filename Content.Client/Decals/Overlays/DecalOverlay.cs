@@ -1,4 +1,5 @@
 using System.Numerics;
+using Content.Client._PS.Consent; // Palmtree: NSFW age gate
 using Content.Shared.Decals;
 using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
@@ -15,7 +16,7 @@ namespace Content.Client.Decals.Overlays
         private readonly IEntityManager _entManager;
         private readonly IPrototypeManager _prototypeManager;
 
-        private readonly Dictionary<string, (Texture Texture, bool SnapCardinals)> _cachedTextures = new(64);
+        private readonly Dictionary<string, (Texture Texture, bool SnapCardinals, bool Nsfw)> _cachedTextures = new(64);
 
         private readonly List<(uint Id, Decal Decal)> _decals = new();
 
@@ -94,9 +95,14 @@ namespace Content.Client.Decals.Overlays
                         continue;
                     }
 
-                    cache = (_sprites.Frame0(decalProto.Sprite), decalProto.SnapCardinals);
+                    cache = (_sprites.Frame0(decalProto.Sprite), decalProto.SnapCardinals, decalProto.Nsfw);
                     _cachedTextures[decal.Id] = cache;
                 }
+
+                // Palmtree: NSFW age gate. Players who have not enabled NSFW content never see
+                // these decals (semen drips/puddles).
+                if (cache.Nsfw && !NsfwGate.Allowed)
+                    continue;
 
                 var cardinal = Angle.Zero;
 

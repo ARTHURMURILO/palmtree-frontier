@@ -1,5 +1,7 @@
 using System.Linq;
+using Content.Client._PS.Consent; // Palmtree
 using Content.Client.Administration.Managers;
+using Content.Shared._PS.Consent; // Palmtree
 using Content.Shared.Construction.Prototypes;
 using Content.Shared.Preferences;
 using Robust.Client;
@@ -43,6 +45,7 @@ namespace Content.Client.Lobby
             {
                 Settings = default!;
                 Preferences = default!;
+                NsfwGate.SetState(NsfwConsentState.Unanswered); // Palmtree
             }
         }
 
@@ -53,7 +56,7 @@ namespace Content.Client.Lobby
 
         public void SelectCharacter(int slot)
         {
-            Preferences = new PlayerPreferences(Preferences.Characters, slot, Preferences.AdminOOCColor, Preferences.ConstructionFavorites);
+            Preferences = new PlayerPreferences(Preferences.Characters, slot, Preferences.AdminOOCColor, Preferences.ConstructionFavorites, Preferences.NsfwConsent);
             var msg = new MsgSelectCharacter
             {
                 SelectedCharacterIndex = slot
@@ -66,7 +69,7 @@ namespace Content.Client.Lobby
             var collection = IoCManager.Instance!;
             profile.EnsureValid(_playerManager.LocalSession!, collection, _adminManager.IsActive()); // Palmtree: admins ignore playtime requirements
             var characters = new Dictionary<int, ICharacterProfile>(Preferences.Characters) {[slot] = profile};
-            Preferences = new PlayerPreferences(characters, Preferences.SelectedCharacterIndex, Preferences.AdminOOCColor, Preferences.ConstructionFavorites);
+            Preferences = new PlayerPreferences(characters, Preferences.SelectedCharacterIndex, Preferences.AdminOOCColor, Preferences.ConstructionFavorites, Preferences.NsfwConsent);
             var msg = new MsgUpdateCharacter
             {
                 Profile = profile,
@@ -89,7 +92,7 @@ namespace Content.Client.Lobby
 
             var l = lowest.Value;
             characters.Add(l, profile);
-            Preferences = new PlayerPreferences(characters, Preferences.SelectedCharacterIndex, Preferences.AdminOOCColor, Preferences.ConstructionFavorites);
+            Preferences = new PlayerPreferences(characters, Preferences.SelectedCharacterIndex, Preferences.AdminOOCColor, Preferences.ConstructionFavorites, Preferences.NsfwConsent);
 
             UpdateCharacter(profile, l);
         }
@@ -102,7 +105,7 @@ namespace Content.Client.Lobby
         public void DeleteCharacter(int slot)
         {
             var characters = Preferences.Characters.Where(p => p.Key != slot);
-            Preferences = new PlayerPreferences(characters, Preferences.SelectedCharacterIndex, Preferences.AdminOOCColor, Preferences.ConstructionFavorites);
+            Preferences = new PlayerPreferences(characters, Preferences.SelectedCharacterIndex, Preferences.AdminOOCColor, Preferences.ConstructionFavorites, Preferences.NsfwConsent);
             var msg = new MsgDeleteCharacter
             {
                 Slot = slot
@@ -112,10 +115,28 @@ namespace Content.Client.Lobby
 
         public void UpdateConstructionFavorites(List<ProtoId<ConstructionPrototype>> favorites)
         {
-            Preferences = new PlayerPreferences(Preferences.Characters, Preferences.SelectedCharacterIndex, Preferences.AdminOOCColor, favorites);
+            Preferences = new PlayerPreferences(Preferences.Characters, Preferences.SelectedCharacterIndex, Preferences.AdminOOCColor, favorites, Preferences.NsfwConsent);
             var msg = new MsgUpdateConstructionFavorites
             {
                 Favorites = favorites
+            };
+            _netManager.ClientSendMessage(msg);
+        }
+
+        /// <summary>
+        /// Palmtree: answers the one-time NSFW consent prompt. The server rejects this if the
+        /// account already answered; afterwards only the nsfwtoggle console command can change it.
+        /// The local gate updates immediately so the prompt closes and the UI unlocks.
+        /// </summary>
+        public void UpdateNsfwConsent(bool allowed)
+        {
+            var state = allowed ? NsfwConsentState.Allowed : NsfwConsentState.Denied;
+            Preferences = new PlayerPreferences(Preferences.Characters, Preferences.SelectedCharacterIndex, Preferences.AdminOOCColor, Preferences.ConstructionFavorites, state);
+            NsfwGate.SetState(state);
+
+            var msg = new MsgUpdateNsfwConsent
+            {
+                Allowed = allowed
             };
             _netManager.ClientSendMessage(msg);
         }
@@ -124,6 +145,7 @@ namespace Content.Client.Lobby
         {
             Preferences = message.Preferences;
             Settings = message.Settings;
+            NsfwGate.SetState(message.Preferences.NsfwConsent); // Palmtree
 
             OnServerDataLoaded?.Invoke();
         }

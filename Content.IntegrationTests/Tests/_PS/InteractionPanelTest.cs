@@ -6,6 +6,8 @@ using System.Text;
 using Content.Server._PS.Interactions;
 using Content.Server._PS.Organs;
 using Content.Server.Decals;
+using Content.Server.Preferences.Managers; // Palmtree: NSFW age gate
+using Content.Shared._PS.Consent; // Palmtree: NSFW age gate
 using Content.Shared._PS.Interactions;
 using Content.Shared._PS.Organs;
 using Content.Shared.Humanoid;
@@ -142,6 +144,110 @@ public sealed class InteractionPanelTest
             entMan.DeleteEntity(user);
             entMan.DeleteEntity(target);
         });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    /// Palmtree: the NSFW age gate. Accounts are treated as non-consenting until they answer the
+    /// consent prompt; only the account flag (not just the session toggle) decides. Non-sexual
+    /// entries (kissing) skip the account gate, and mobs without a session keep the legacy
+    /// behavior so NPCs are unaffected.
+    /// </summary>
+    [Test]
+    public async Task AgeGateGatesSexualInteractions()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings
+        {
+            DummyTicker = false,
+            Connected = true,
+            Dirty = true,
+        });
+
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var session = pair.Player;
+        Assert.That(session, Is.Not.Null, "No server session for the connected client.");
+
+        var prefs = server.ResolveDependency<IServerPreferencesManager>();
+        var playerMan = server.ResolveDependency<Robust.Server.Player.IPlayerManager>();
+
+        EntityUid actor = default;
+        EntityUid target = default;
+
+        await server.WaitAssertion(() =>
+        {
+            var appearance = server.System<SharedHumanoidAppearanceSystem>();
+
+            var actorSettings = new GenitalOrganSettings();
+            actorSettings.Set(GenitalType.Penis, new GenitalOrganData { Prototype = "PenisHuman", Size = 3 });
+
+            var targetSettings = new GenitalOrganSettings();
+            targetSettings.Set(GenitalType.Vagina, new GenitalOrganData { Prototype = "VaginaHuman", Size = 1 });
+
+            actor = entMan.SpawnEntity("MobHuman", testMap.GridCoords.Offset(new Vector2(0.5f, 0.5f)));
+            target = entMan.SpawnEntity("MobHuman", testMap.GridCoords.Offset(new Vector2(1f, 0f)));
+
+            appearance.LoadProfile(actor, HumanoidCharacterProfile.DefaultWithSpecies("Human").WithGenitals(actorSettings));
+            appearance.LoadProfile(target, HumanoidCharacterProfile.DefaultWithSpecies("Human").WithGenitals(targetSettings));
+        });
+
+        // The account flag gates the acting player: a fresh (unanswered) account cannot perform
+        // sexual interactions but can still perform non-sexual ones.
+        await server.WaitPost(() => playerMan.SetAttachedEntity(session!, actor));
+
+        await server.WaitAssertion(() =>
+        {
+            var interactions = server.System<InteractionPanelSystem>();
+            var prototype = server.ResolveDependency<IPrototypeManager>();
+            var fuck = prototype.Index<InteractionPrototype>("Fuck");
+            var kiss = prototype.Index<InteractionPrototype>("Kiss");
+
+            Assert.That(interactions.IsNsfwAllowed(actor), Is.False,
+                "An unanswered account must count as non-consenting.");
+            Assert.That(interactions.CanPerform(fuck, actor, target, false), Is.False,
+                "Sexual interactions must be blocked for a non-consenting actor.");
+            Assert.That(interactions.CanPerform(kiss, actor, target, false), Is.True,
+                "Non-sexual interactions are exempt from the account gate.");
+        });
+
+        // Answer the prompt (this is the path the console command takes), then the same
+        // interaction passes.
+        await server.WaitPost(() => prefs.SetNsfwConsentAsync(session!.UserId, NsfwConsentState.Allowed).Wait());
+
+        await server.WaitAssertion(() =>
+        {
+            var interactions = server.System<InteractionPanelSystem>();
+            var prototype = server.ResolveDependency<IPrototypeManager>();
+            var fuck = prototype.Index<InteractionPrototype>("Fuck");
+
+            Assert.That(interactions.IsNsfwAllowed(actor), Is.True);
+            Assert.That(interactions.CanPerform(fuck, actor, target, false), Is.True,
+                "A consenting actor may perform sexual interactions on a consenting target.");
+        });
+
+        // The flag also protects a non-consenting target.
+        await server.WaitPost(() => playerMan.SetAttachedEntity(session!, target));
+
+        await server.WaitPost(() => prefs.SetNsfwConsentAsync(session!.UserId, NsfwConsentState.Denied).Wait());
+
+        await server.WaitAssertion(() =>
+        {
+            var interactions = server.System<InteractionPanelSystem>();
+            var prototype = server.ResolveDependency<IPrototypeManager>();
+            var fuck = prototype.Index<InteractionPrototype>("Fuck");
+            var kiss = prototype.Index<InteractionPrototype>("Kiss");
+
+            Assert.That(interactions.IsNsfwAllowed(target), Is.False);
+            Assert.That(interactions.CanPerform(fuck, actor, target, false), Is.False,
+                "A non-consenting target must not be subjected to sexual interactions.");
+            Assert.That(interactions.CanPerform(kiss, actor, target, false), Is.True,
+                "Non-sexual interactions are exempt from the account gate.");
+        });
+
+        // Restore the fresh-account state for the pooled server.
+        await server.WaitPost(() => prefs.SetNsfwConsentAsync(session!.UserId, NsfwConsentState.Unanswered).Wait());
 
         await pair.CleanReturnAsync();
     }

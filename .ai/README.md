@@ -96,7 +96,7 @@ Fork modules are folder/namespace prefixes:
 | `.ai/systems/dungeons.md` | Procedural dungeons/salvage: `DungeonSystem`, dungeon configs/room packs/themes, expeditions and bluespace events |
 | `.ai/systems/hilbert-hotel.md` | Hilbert's Hotel: runtime room maps, room codes, locking, guest lists |
 | `.ai/systems/player-character-and-jobs.md` | Sessions, minds, profiles, species, jobs/loadouts, ghosts, antags |
-| `.ai/systems/consent-and-erp.md` | Consent status (not ported), ERP feature set, how to add consent later |
+| `.ai/systems/consent-and-erp.md` | NSFW age gate (account flag, lobby prompt, `nsfwtoggle`, what it gates), ERP feature set, how to add full consent later |
 | `.ai/systems/interaction-panel.md` | Sandstorm interaction panel port: prototypes, marking-based genitals, session consent, lust/moans, UI, keybind |
 | `.ai/systems/genital-organs.md` | Organ-based genitals replacing genital markings: catalog, profile/DB, editor tab, cum overlay and semen drip |
 | `.ai/systems/game-ticker.md` | Round state machine, presets, rules, maps, spawn |
@@ -176,7 +176,8 @@ Fork modules are folder/namespace prefixes:
 - Directed vs broadcast events: `RaiseLocalEvent<T>(msg)` does not reach component handlers.
 - Subscribe only in `Initialize()`; subscriptions lock after startup.
 - DB migrations are load-bearing; both SQLite and Postgres must be updated.
-- No consent system exists in this repo; `ModifyUndies` is gated per marking by
+- No per-toggle consent system exists in this repo (only the account-level NSFW age gate);
+  `ModifyUndies` is gated per marking by
   `canToggleVisible`/`otherCanToggleVisible` (see `systems/consent-and-erp.md`).
 
 ## 8. Before modifying common systems, search these

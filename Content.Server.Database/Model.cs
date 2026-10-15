@@ -393,6 +393,7 @@ namespace Content.Server.Database
         public int SelectedCharacterSlot { get; set; }
         public string AdminOOCColor { get; set; } = null!;
         public List<string> ConstructionFavorites { get; set; } = new();
+        public bool? NsfwConsent { get; set; } // Palmtree: NSFW age gate (null = unanswered)
         public List<Profile> Profiles { get; } = new();
     }
 

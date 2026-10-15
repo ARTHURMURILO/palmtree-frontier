@@ -2,6 +2,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using Content.Client.Administration.UI.CustomControls; // Palmtree: HSeparator
+using Content.Client._PS.Consent; // Palmtree: NSFW age gate
 using Content.Client._PS.UserInterface; // Palmtree: color clipboard
 using Content.Client.Humanoid;
 using Content.Client.Lobby.UI.Loadouts;
@@ -588,10 +589,18 @@ namespace Content.Client.Lobby.UI
         }
 
         /// <summary>
-        /// Palmtree: builds (once) and refreshes the genital organ tab.
+        /// Palmtree: builds (once) and refreshes the genital organ tab. The tab (and therefore all
+        /// organ editing) only exists while the account has NSFW content enabled; organs already
+        /// saved in a profile are left untouched and simply hidden.
         /// </summary>
         public void RefreshGenitals()
         {
+            if (!NsfwGate.Allowed)
+            {
+                RemoveGenitalsTab();
+                return;
+            }
+
             if (_genitalsTab == null)
             {
                 _genitalsTab = new BoxContainer
@@ -616,6 +625,38 @@ namespace Content.Client.Lobby.UI
             }
 
             UpdateGenitalControls();
+        }
+
+        /// <summary>
+        /// Palmtree: removes the genital organ tab (NSFW disabled). The tab page is the
+        /// ScrollContainer wrapping the organ box, always the last page in the TabContainer.
+        /// </summary>
+        private void RemoveGenitalsTab()
+        {
+            if (_genitalsTab == null)
+                return;
+
+            var page = (Control) _genitalsTab.Parent!;
+
+            // Move the selection off the page before removing it so the TabContainer's index
+            // bookkeeping stays valid.
+            if (TabContainer.CurrentTab == TabContainer.ChildCount - 1)
+                TabContainer.CurrentTab = 0;
+
+            TabContainer.RemoveChild(page);
+
+            // Reset the preview-only state so the dummy does not keep NSFW preview toggles on.
+            _showAroused = false;
+            _showUndergarments = true;
+            ApplyPreviewArousal();
+            ApplyPreviewUndergarmentVisibility();
+
+            _genitalsTab = null;
+            _semenVolumeSpin = null;
+            _showUndergarmentsButton = null;
+            _showArousedButton = null;
+            _updatingGenitals = false;
+            _genitalControls.Clear();
         }
 
         private void BuildGenitalControls()

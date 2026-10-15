@@ -1,4 +1,5 @@
 using System.Numerics;
+using Content.Client._PS.Consent; // Palmtree: NSFW age gate
 using Content.Client.DisplacementMap;
 using Content.Shared._CS; // Palmtree/Coyote: leg displacement
 using Content.Shared.CCVar;
@@ -31,6 +32,13 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
         SubscribeLocalEvent<HumanoidAppearanceComponent, AfterAutoHandleStateEvent>(OnHandleState);
         Subs.CVar(_configurationManager, CCVars.AccessibilityClientCensorNudity, OnCvarChanged, true);
         Subs.CVar(_configurationManager, CCVars.AccessibilityServerCensorNudity, OnCvarChanged, true);
+        NsfwGate.Changed += OnNsfwGateChanged; // Palmtree
+    }
+
+    public override void Shutdown()
+    {
+        NsfwGate.Changed -= OnNsfwGateChanged; // Palmtree
+        base.Shutdown();
     }
 
     private void OnHandleState(EntityUid uid, HumanoidAppearanceComponent component, ref AfterAutoHandleStateEvent args)
@@ -52,6 +60,18 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
     }
 
     private void OnCvarChanged(bool value)
+    {
+        RefreshAllHumanoids();
+    }
+
+    // Palmtree: the NSFW gate adds/removes genital sprite layers, so every humanoid sprite must be
+    // rebuilt when the player's consent state changes (lobby prompt answer or an admin flip).
+    private void OnNsfwGateChanged()
+    {
+        RefreshAllHumanoids();
+    }
+
+    private void RefreshAllHumanoids()
     {
         var humanoidQuery = AllEntityQuery<HumanoidAppearanceComponent, SpriteComponent>();
         while (humanoidQuery.MoveNext(out var uid, out var humanoidComp, out var spriteComp))
@@ -438,6 +458,11 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
         var humanoid = entity.Comp1;
         var sprite = entity.Comp2;
         var markingOffset = offset ?? Vector2.Zero;
+
+        // Palmtree: NSFW age gate. Genital sprites (organ render markings and the legacy genital
+        // marking art) are never drawn for players who have not enabled NSFW content.
+        if (markingPrototype.BodyPart == HumanoidVisualLayers.Genital && !NsfwGate.Allowed)
+            return;
 
         // Palmtree/Floof: map sprite states to colors so colorLinks can copy colors between sprites.
         var colorDict = new Dictionary<string, Color>();

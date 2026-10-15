@@ -72,7 +72,7 @@ GameTicker.StartRound ──► GamePreset prototype ──► GameRules ──�
 | Species YAML | Base sprite sets + mob sprite layers | Missing layer in either place silently disables markings |
 | Lobby | Server timer + client state + XAML | Three files must stay in sync |
 | Loadouts | `_NF` job groups + `_PS`/`_CS`/`_DEN` loadouts | A loadout is unreachable until added to a group |
-| ERP toggles | `_Floof` server + shared humanoid | No consent dependency in this repo |
+| ERP toggles | `_Floof` server + shared humanoid | `ModifyUndies` has no consent dependency; the NSFW age gate reads `IServerPreferencesManager` |
 | DB | `Model.cs` + two migration sets | Any model change requires both providers |
 
 ## External dependencies

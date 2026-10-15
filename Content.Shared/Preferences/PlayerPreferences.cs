@@ -1,3 +1,4 @@
+using Content.Shared._PS.Consent; // Palmtree
 using Content.Shared.Construction.Prototypes;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Serialization;
@@ -15,12 +16,13 @@ namespace Content.Shared.Preferences
     {
         private Dictionary<int, ICharacterProfile> _characters;
 
-        public PlayerPreferences(IEnumerable<KeyValuePair<int, ICharacterProfile>> characters, int selectedCharacterIndex, Color adminOOCColor, List<ProtoId<ConstructionPrototype>> constructionFavorites)
+        public PlayerPreferences(IEnumerable<KeyValuePair<int, ICharacterProfile>> characters, int selectedCharacterIndex, Color adminOOCColor, List<ProtoId<ConstructionPrototype>> constructionFavorites, NsfwConsentState nsfwConsent)
         {
             _characters = new Dictionary<int, ICharacterProfile>(characters);
             SelectedCharacterIndex = selectedCharacterIndex;
             AdminOOCColor = adminOOCColor;
             ConstructionFavorites = constructionFavorites;
+            NsfwConsent = nsfwConsent;
         }
 
         /// <summary>
@@ -49,6 +51,13 @@ namespace Content.Shared.Preferences
         ///    List of favorite items in the construction menu.
         /// </summary>
         public List<ProtoId<ConstructionPrototype>> ConstructionFavorites { get; set; } = [];
+
+        /// <summary>
+        ///     Palmtree: the account's NSFW age gate answer. Anything but <c>Allowed</c> hides all
+        ///     NSFW content from this player. Only the lobby prompt (once) and the
+        ///     <c>nsfwtoggle</c> console command can change it.
+        /// </summary>
+        public NsfwConsentState NsfwConsent { get; set; }
 
         public int IndexOfCharacter(ICharacterProfile profile)
         {

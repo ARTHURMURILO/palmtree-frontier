@@ -30,6 +30,7 @@ content are intentionally not ported.
 | Mobs | `InteractionPanel` + `enum.InteractionUiKey.Key` added to the organic humanoid `UserInterface` in `Resources/Prototypes/Entities/Mobs/Species/base.yml` |
 | Keybind | `InteractWithEntity` (`Content.Shared/Input/ContentKeyFunctions.cs`, `Content.Client/Input/ContentContexts.cs`, `Resources/keybinds.yml`, `KeyRebindTab`) |
 | Tests | `Content.IntegrationTests/Tests/_PS/InteractionPanelTest.cs` |
+| NSFW age gate | `Content.Shared/_PS/Consent/NsfwConsentState.cs`, `Content.Client/_PS/Consent/*`, `IServerPreferencesManager.SetNsfwConsentAsync` — see `systems/consent-and-erp.md` |
 
 ## How it works
 
@@ -58,10 +59,23 @@ content are intentionally not ported.
    - Both `Exposed` and `Unexposed` in one list means "any state, but must have the genital".
    - `InteractionFlags.UserIsTarget` marks self-only actions; `InteractionFlags.SelfOrOther`
      (used by the manual Climax) allows both self and other targets.
-4. **Consent.** `InteractionStateComponent.Consent` (session-only, default **on**) gates every
-   `InteractionType.Lewd` entry for both actor and target. Turning it off in the Preferences tab
-   blocks others (and yourself). Per-marking `OtherCanToggleVisible` remains the gate for others
-   revealing genitals. There is still no persisted consent system.
+4. **Consent.** Two layers:
+   - **Account NSFW age gate (Palmtree)**: every account starts non-consenting (unanswered). Until
+     the player answers the lobby prompt, `OpenPanel` refuses to open the panel (and the right-click
+     verb is not added), so the panel is all-or-nothing — there is no partial panel. The account
+     flag is also ANDed into `HasConsent`, so a non-consenting player can never be the *target* of a
+     sexual interaction either. Entities without a player session (NPCs, test mobs) keep the legacy
+     consenting behavior.
+   - **Session toggle**: `InteractionStateComponent.Consent` (session-only, default **on**) gates
+     every `InteractionType.Lewd` entry for both actor and target (including `nonSexual` ones).
+     Turning it off in the Preferences tab blocks others (and yourself). Per-marking
+     `OtherCanToggleVisible` remains the gate for others revealing genitals. There is still no
+     persisted per-toggle consent system beyond the account age gate.
+   - **Non-sexual entries**: `InteractionPrototype.NonSexual` (set on `Kiss`) skips the *account*
+     gate for emote/sound visibility and for the target check; the session toggle above still
+     applies. The panel lock for non-consenting actors is not bypassed.
+   - An admin flipping a player to non-consenting closes their open panel and stops auto-repeat from
+     the server `Update` loop.
 5. **Effects.** `TryPerform` sends an emote through `ChatSystem.TrySendInGameICMessage`
    (`InGameICChatType.Emote`, `ChatTransmitRange.Normal`) for normal interactions, or builds a
    purple-wrapped message (`#c060ff`) and sends it through `SendErpEmote` for lewd ones (the
@@ -121,14 +135,16 @@ Visible Set*) is per-client interest management, not line of sight:
   which let players read ERP emotes through walls from across the station. A stopgap lowered the
   multiplier to `0.12f` (~3 tiles). `SendErpEmote` now uses an explicit `ErpEmoteRange = 4f` on
   top of `ExamineSystemShared.InRangeUnOccluded` (same map + distance + occluder raycast - the
-  same check behind whispering and subtle chat), plus the existing "no ghosts" rule.
+  same check behind whispering and subtle chat), plus the existing "no ghosts" rule. Non-consenting
+  accounts (NSFW age gate) are dropped too, unless the interaction is `nonSexual`.
 - Performing interactions was already line-of-sight-checked: opening/using one goes through
   `SharedInteractionSystem.InRangeUnobstructed(user, target, range)` with `InteractionRange = 6f`,
   so an interaction cannot be started through a wall.
 - Lewd **sounds** (`SoundRange = 4f`) are distance-filtered but not wall-blocked - SS14 audio has
-  no occlusion (gunshots and speech are audible through walls too). Normal (non-lewd) interaction
-  emotes use the regular chat path (`ChatTransmitRange.Normal` -> `VoiceRange = 10`) and are
-  visible through walls like every other emote.
+  no occlusion (gunshots and speech are audible through walls too). Recipients are also filtered by
+  the per-listener `LewdSounds` toggle and the account NSFW age gate (non-`nonSexual` entries only).
+  Normal (non-lewd) interaction emotes use the regular chat path (`ChatTransmitRange.Normal` ->
+  `VoiceRange = 10`) and are visible through walls like every other emote.
 
 ## Content
 
@@ -173,6 +189,12 @@ in the same system. Full details: `systems/genital-organs.md`.
   `MarkingVisibilityChangedEvent` is owned by `GenitalOrganSystem`; the client
   `HumanoidAppearanceSystem` must not subscribe to it. Local preview refreshes go through
   `HumanoidAppearanceSystem.RefreshSprite`.
+- The NSFW age gate is **account-level and fail-closed**: `TryGetCachedPreferences` missing/not
+  loaded or any state other than `Allowed` blocks NSFW. Do not gate on the entity's session
+  consent alone, and keep the `nonSexual` exemption limited to tame entries (`Kiss`).
+- `IsNsfwAllowed(EntityUid)` requires an `ActorComponent` session; session-less mobs (NPCs, tests)
+  intentionally stay consenting. Any new sexual system must call the same helper rather than
+  reimplementing the lookup.
 
 ## Validation
 

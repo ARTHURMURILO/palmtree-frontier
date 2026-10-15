@@ -7,12 +7,12 @@
 
 | Area | Tables/columns | Notes |
 |---|---|---|
-| Preferences | `Preference` + `Profile` | Profile includes `Markings` (jsonb), nullable `VoiceBark` (Palmtree voice bark, `voice_bark` column), nullable `Genitals` (Palmtree genital organ selection string, `genitals` column, migration `GenitalOrgans`), `Height`/`Width` (`height`/`width` real columns, migration `HeightWidth`) and `LegStyle` (`leg_style` text column, migration `AddLegStyle`, default `Plantigrade`); `CharacterConsentFreetext` is **absent here** |
+| Preferences | `Preference` + `Profile` | Profile includes `Markings` (jsonb), nullable `VoiceBark` (Palmtree voice bark, `voice_bark` column), nullable `Genitals` (Palmtree genital organ selection string, `genitals` column, migration `GenitalOrgans`), `Height`/`Width` (`height`/`width` real columns, migration `HeightWidth`) and `LegStyle` (`leg_style` text column, migration `AddLegStyle`, default `Plantigrade`); `Preference.NsfwConsent` is a nullable bool (`nsfw_consent` column, migration `NsfwConsent`; null = age gate unanswered). `CharacterConsentFreetext` is **absent here** |
 | Admin | `Admin`, `AdminRank`, notes, bans, role bans | `LogType` numeric values are load-bearing |
 | Playtime | playtime/role time tracking | Frontier/job requirements |
 | Whitelist / Patreon | whitelist, patreon tiers | server config dependent |
 | Connection log | connection log entries | |
-| Consent | **does not exist in this repo** | would need new tables + migrations |
+| Consent | only `Preference.NsfwConsent` (account age gate) | the Floof consent tables do not exist in this repo |
 
 Markings are stored as a JSON array of strings in `Profile.Markings` (jsonb column). Each string is
 `Marking.ToString()`:
@@ -40,9 +40,11 @@ markingId@#rrggbb,...@m3@cCustom Name               # Palmtree: + toggle flags (
 - Migrations added by the port: `VoiceBark` (`voice_bark` text column) and `GenitalOrgans`
   (`genitals` text column; compact `Type:Prototype:Size;...;semen=N` string from
   `GenitalOrganSettings.ToDbString`), `HeightWidth` (`height`/`width` real columns, default 1 —
-  the generated migration was patched from default 0 so existing characters do not shrink) and
+  the generated migration was patched from default 0 so existing characters do not shrink),
   `AddLegStyle` (`leg_style` text column, default `Plantigrade` — patched from the generated empty
-  default; `ServerDbBase` falls back to `Plantigrade` for unparseable values).
+  default; `ServerDbBase` falls back to `Plantigrade` for unparseable values) and `NsfwConsent`
+  (`nsfw_consent` nullable bool on `preference`; null = age gate unanswered, so existing rows are
+  prompted once).
 - Migration IDs/order matter; don't renumber or hand-edit old migrations.
 - A drift test compares the model to migrations; keep it green.
 

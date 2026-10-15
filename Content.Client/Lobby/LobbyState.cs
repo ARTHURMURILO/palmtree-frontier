@@ -1,4 +1,5 @@
 using Content.Client._NF.LateJoin;
+using Content.Client._PS.Consent; // Palmtree: NSFW age gate
 using Content.Client.Audio;
 using Content.Client.Eui;
 using Content.Client.GameTicking.Managers;
@@ -30,9 +31,13 @@ namespace Content.Client.Lobby
         [Dependency] private readonly IGameTiming _gameTiming = default!;
         [Dependency] private readonly IVoteManager _voteManager = default!;
         [Dependency] private readonly ClientsidePlaytimeTrackingManager _playtimeTracking = default!;
+        [Dependency] private readonly IClientPreferencesManager _preferencesManager = default!; // Palmtree
 
         private ClientGameTicker _gameTicker = default!;
         private ContentAudioSystem _contentAudioSystem = default!;
+
+        // Palmtree - one-time NSFW consent prompt
+        private NsfwConsentOverlay? _nsfwConsentOverlay;
 
         protected override Type? LinkedScreenType { get; } = typeof(LobbyGui);
         public LobbyGui? Lobby;
@@ -77,6 +82,19 @@ namespace Content.Client.Lobby
 
             UpdateLobbyUi();
 
+            // Palmtree: one-time NSFW consent prompt. It covers the whole lobby screen and
+            // swallows all input until the player answers.
+            _nsfwConsentOverlay ??= new NsfwConsentOverlay();
+
+            if (_nsfwConsentOverlay.Parent != Lobby)
+            {
+                Lobby.AddChild(_nsfwConsentOverlay);
+                LayoutContainer.SetAnchorPreset(_nsfwConsentOverlay, LayoutContainer.LayoutPreset.Wide);
+            }
+
+            _nsfwConsentOverlay.UpdateVisibility();
+            _preferencesManager.OnServerDataLoaded += OnPreferencesDataLoaded;
+
             Lobby.CharacterPreview.CharacterSetupButton.OnPressed += OnSetupPressed;
             Lobby.ReadyButton.OnPressed += OnReadyPressed;
             Lobby.ReadyButton.OnToggled += OnReadyToggled;
@@ -96,6 +114,9 @@ namespace Content.Client.Lobby
             _contentAudioSystem.LobbySoundtrackChanged -= UpdateLobbySoundtrackInfo;
 
             _voteManager.ClearPopupContainer();
+
+            _preferencesManager.OnServerDataLoaded -= OnPreferencesDataLoaded; // Palmtree
+            _nsfwConsentOverlay?.Orphan(); // Palmtree
 
             Lobby!.CharacterPreview.CharacterSetupButton.OnPressed -= OnSetupPressed;
             Lobby!.ReadyButton.OnPressed -= OnReadyPressed;
@@ -212,6 +233,13 @@ namespace Content.Client.Lobby
         private void LobbyLateJoinStatusUpdated()
         {
             Lobby!.ReadyButton.Disabled = _gameTicker.DisallowedLateJoin;
+        }
+
+        // Palmtree: re-evaluate the consent prompt whenever the server pushes preferences
+        // (initial load, the player's answer, or an admin flipping the flag).
+        private void OnPreferencesDataLoaded()
+        {
+            _nsfwConsentOverlay?.UpdateVisibility();
         }
 
         private void UpdateLobbyUi()

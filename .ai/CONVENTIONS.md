@@ -30,7 +30,8 @@
   reorder existing code unless the feature requires it.
 - Marking prototypes are data; marking behavior changes go through `MarkingManager`/renderer, never
   through per-prototype C#.
-- ERP content is explicit and adult, but code should stay neutral: no consent system exists, and
+- ERP content is explicit and adult, but code should stay neutral: there is no per-toggle consent
+  system (only the account NSFW age gate), and
   `ModifyUndies` is gated by the per-marking `canToggleVisible`/`otherCanToggleVisible` opt-ins.
 
 ## Prototype conventions

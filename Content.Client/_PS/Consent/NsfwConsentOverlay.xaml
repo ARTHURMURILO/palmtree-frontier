@@ -1,0 +1,24 @@
+<PanelContainer xmlns="https://spacestation14.io"
+                xmlns:gfx="clr-namespace:Robust.Client.Graphics;assembly=Robust.Client"
+                MouseFilter="Stop">
+    <PanelContainer.PanelOverride>
+        <gfx:StyleBoxFlat BackgroundColor="#000000E6" />
+    </PanelContainer.PanelOverride>
+    <BoxContainer Orientation="Vertical" HorizontalExpand="True" VerticalExpand="True" Margin="30 30 30 20">
+        <Control VerticalExpand="True" />
+        <Label Name="TitleLabel"
+               StyleClasses="LabelHeadingBigger"
+               HorizontalAlignment="Center"
+               FontColorOverride="#FFFFFF" />
+        <RichTextLabel Name="BodyLabel"
+                       HorizontalAlignment="Center"
+                       MaxWidth="780"
+                       Margin="0 16 0 0" />
+        <Control VerticalExpand="True" />
+        <!-- Buttons: one above the other, centered at the bottom, below the text. -->
+        <BoxContainer Orientation="Vertical" HorizontalAlignment="Center" SeparationOverride="10" Margin="0 0 0 10">
+            <Button Name="AcceptButton" StyleClasses="ButtonBig" MinWidth="440" />
+            <Button Name="DeclineButton" StyleClasses="ButtonBig" MinWidth="440" />
+        </BoxContainer>
+    </BoxContainer>
+</PanelContainer>

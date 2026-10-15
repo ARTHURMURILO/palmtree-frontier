@@ -184,7 +184,8 @@ value line.
   have no flags segment, so non-undergarment markings become non-toggleable; undergarments are
   re-enabled by `MarkingsSet.ApplyDefaultTogglePermission`). Changing
   this format requires updating `Marking.ToString` **and** `Marking.ParseFromDbString`.
-- No consent tables exist; no migrations were added by the port.
+- No Floof consent tables exist; the only consent-related schema is `Preference.NsfwConsent`
+  (nullable bool, migration `NsfwConsent`) for the Palmtree age gate.
 
 ## 13. ERP/marking semantics
 
@@ -194,7 +195,8 @@ value line.
   via `SetMarkingVisibility`.
 - `ModifyUndies` has no consent gate: other players can toggle a marking only when its
   `otherCanToggleVisible` opt-in is set (default off). The old consent-gated behavior was
-  intentionally dropped.
+  intentionally dropped. The account NSFW age gate gates *rendering* (client-side `Genital` skip),
+  not these verbs.
 - Base markings (`Base*` categories) hide the species base layer via `HiddenBaseLayers`; the list is
   rebuilt on every `UpdateLayers` and must be recomputed before hiding.
 - Profile application: `SharedHumanoidAppearanceSystem.LoadProfile` must use the
@@ -209,7 +211,8 @@ value line.
   - Genital exposure follows the per-organ visibility rule (Always hidden / Hidden by underwear /
     Hidden by jumpsuit / Never hidden); the `Genital` marking flags are only used for rendering.
     Missing `InteractionStateComponent` means "consent on / hears lewd sounds" (defaults are the
-    absence of state).
+    absence of state). The account-level NSFW age gate is checked separately and fail-closed
+    (`InteractionPanelSystem.IsNsfwAllowed`); session-less mobs keep the legacy consenting default.
   - "Never hidden" sets `Marking.RenderOverClothing`, which the client uses to place the genital
     layer above `outerClothing`; "Always hidden" skips the render marking entirely. The `Genital`
     sprite layer must stay below `UndergarmentBottom` in species sprite maps or bottom underwear

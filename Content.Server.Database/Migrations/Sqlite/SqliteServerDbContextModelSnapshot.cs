@@ -754,6 +754,10 @@ namespace Content.Server.Database.Migrations.Sqlite
                         .HasColumnType("TEXT")
                         .HasColumnName("construction_favorites");
 
+                    b.Property<bool?>("NsfwConsent")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("nsfw_consent");
+
                     b.Property<int>("SelectedCharacterSlot")
                         .HasColumnType("INTEGER")
                         .HasColumnName("selected_character_slot");

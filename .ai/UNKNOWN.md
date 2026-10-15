@@ -18,9 +18,10 @@ Questions that could not be answered confidently from the working tree. Treat th
    marking system and approximates IPC stats without the Einstein Engines silicon stack. Whether a
    full silicon implementation (battery/radio/EMP) is ever wanted is unknown. See
    `.ai/systems/ps-systems.md` and `.ai/PORTING.md` §6.
-6. **Consent.** Whether/when the Floof consent system will be ported is undecided. Until then
-   `ModifyUndies` relies on the per-marking `otherCanToggleVisible` opt-in and no consent-gated
-   systems exist.
+6. **Consent.** Whether/when the Floof consent system will be ported is undecided. Until then the
+   account-level **NSFW age gate** (lobby prompt, `nsfwtoggle`, account column) gates genital
+   rendering, the editor tab, semen decals, the interaction panel and ERP emotes/sounds, while
+   `ModifyUndies` relies on the per-marking `otherCanToggleVisible` opt-in.
 7. **Traits.** 46 BodyType/Horny/Scent trait ids from character exports are not ported and are
    silently dropped on import. Whether they will be added later is unknown.
 8. **Size system.** Character `height`/`width` are ignored. Whether the size manipulation system

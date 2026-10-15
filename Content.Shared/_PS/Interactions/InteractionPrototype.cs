@@ -29,6 +29,15 @@ public sealed partial class InteractionPrototype : IPrototype
     [DataField("interactionType")]
     public InteractionType InteractionType { get; private set; } = InteractionType.Normal;
 
+    /// <summary>
+    /// Palmtree: marks a lewd interaction as non-sexual (e.g. kissing). Non-sexual entries skip
+    /// the NSFW age gate: non-consenting bystanders still receive the emote/sound and
+    /// non-consenting players can still be targeted by it. The voluntary per-session consent
+    /// toggle and the "no panel until the prompt is answered" rule still apply.
+    /// </summary>
+    [DataField]
+    public bool NonSexual { get; private set; }
+
     /// <summary>Interaction behavior flags (<see cref="InteractionFlags"/> names).</summary>
     [DataField]
     public List<string> Flags { get; private set; } = new();

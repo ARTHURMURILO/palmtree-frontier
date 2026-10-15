@@ -135,6 +135,7 @@
   id: Kiss
   name: interaction-kiss-name
   interactionType: Lewd
+  nonSexual: true # Palmtree: tame act; exempt from the NSFW age gate (still session-consent gated)
   flags:
     - Adjacent
     - OocConsent

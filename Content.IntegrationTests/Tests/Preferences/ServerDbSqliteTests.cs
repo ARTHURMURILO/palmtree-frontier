@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Content.Server.Database;
+using Content.Shared._PS.Consent; // Palmtree
 using Content.Shared._PS.Interactions; // Palmtree
 using Content.Shared._PS.Organs; // Palmtree
 using Content.Shared.GameTicking;
@@ -112,6 +113,30 @@ namespace Content.IntegrationTests.Tests.Preferences
             await db.InitPrefsAsync(username, originalProfile);
             var prefs = await db.GetPlayerPreferencesAsync(username);
             Assert.That(prefs.Characters.Single(p => p.Key == slot).Value.MemberwiseEquals(originalProfile));
+            await pair.CleanReturnAsync();
+        }
+
+        [Test]
+        public async Task TestNsfwConsentRoundTrip()
+        {
+            var pair = await PoolManager.GetServerClient();
+            var db = GetDb(pair.Server);
+            var username = NewUserId();
+
+            // Fresh accounts have never answered the age gate.
+            await db.InitPrefsAsync(username, new HumanoidCharacterProfile());
+            var prefs = await db.GetPlayerPreferencesAsync(username);
+            Assert.That(prefs.NsfwConsent, Is.EqualTo(NsfwConsentState.Unanswered));
+
+            // Both answers round-trip through the nullable column.
+            await db.SaveNsfwConsentAsync(username, NsfwConsentState.Allowed);
+            prefs = await db.GetPlayerPreferencesAsync(username);
+            Assert.That(prefs.NsfwConsent, Is.EqualTo(NsfwConsentState.Allowed));
+
+            await db.SaveNsfwConsentAsync(username, NsfwConsentState.Denied);
+            prefs = await db.GetPlayerPreferencesAsync(username);
+            Assert.That(prefs.NsfwConsent, Is.EqualTo(NsfwConsentState.Denied));
+
             await pair.CleanReturnAsync();
         }
 

@@ -78,5 +78,6 @@ independent of the marking layer.
 
 - On profile save/character switch: profile JSON (including markings) → `IServerDbManager` →
   `Profile` row (markings as jsonb string list).
-- Consent (if added later) would add account/character tables.
+- The NSFW age gate stores a single `Preference.NsfwConsent` column (account-level); adding the
+  full consent system later would add account/character tables.
 - Admin logs are DB-backed (`LogType` numeric values are load-bearing).

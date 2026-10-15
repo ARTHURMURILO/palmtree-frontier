@@ -35,6 +35,13 @@ namespace Content.Shared.Decals
         [DataField]
         public bool DefaultSnap = true;
 
+        /// <summary>
+        /// Palmtree: NSFW decal (e.g. semen). Only drawn for players who enabled NSFW content in
+        /// the consent prompt; everyone else must never see it.
+        /// </summary>
+        [DataField]
+        public bool Nsfw;
+
         [ParentDataField(typeof(AbstractPrototypeIdArraySerializer<DecalPrototype>))]
         public string[]? Parents { get; private set; }
 

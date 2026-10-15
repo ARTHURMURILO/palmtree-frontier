@@ -75,7 +75,8 @@ sanitized to `_`). Old strings remain valid and default to self-toggleable. Chan
   (`AddMarking` sets `Visible = false` for the category), toggled by `ModifyUndies`.
 - `ModifyUndiesSystem` adds verbs for **any** marking whose `CanToggleVisible` (owner) or
   `OtherCanToggleVisible` (others) is set. Defaults: owner off except undergarments (on), others off.
-  The per-marking opt-in is the consent gate for others (no consent system). It starts a 1s do-after,
+  The per-marking opt-in is the consent gate for others (the account NSFW age gate gates rendering,
+  not these verbs). It starts a 1s do-after,
   then `SharedHumanoidAppearanceSystem.SetMarkingVisibility` flips `Marking.Visible` and dirties.
   Verb and popup text uses `CustomName` when set.
 - Visibility is session state, not persisted; toggle settings are persisted in the DB string.
@@ -84,6 +85,10 @@ sanitized to `_`). Old strings remain valid and default to self-toggleable. Chan
 
 - `Content.{Shared,Server,Client}/_PS/Interactions/*`; prototypes `type: interaction` in
   `Resources/Prototypes/_PS/Interactions/interactions.yml`; sounds in `Resources/Audio/_PS/Interactions/`.
+- The **NSFW age gate** (account flag, lobby prompt, `nsfwtoggle`) gates the whole panel: no panel
+  until the player answers, no sexual interactions on non-consenting targets, and ERP emotes/sounds
+  skip non-consenting listeners. `InteractionPrototype.NonSexual` (only `Kiss`) is exempt from the
+  account gate; the session toggle still applies. Full details: `.ai/systems/consent-and-erp.md`.
 - Genital requirements read **organs** (`Content.Shared/_PS/Organs/*`); exposure is the jumpsuit rule.
   See `.ai/systems/genital-organs.md`.
 - Lewd interactions need both parties' session `InteractionStateComponent.Consent` (default on); the

@@ -35,6 +35,7 @@ interaction-genital-visibility = Visibility rule
 interaction-target-too-far = They are too far away.
 interaction-consent-self-disabled = You have lewd interactions turned off.
 interaction-consent-target-disabled = They don't want that.
+interaction-nsfw-disabled = You have not enabled NSFW content; the interaction panel is unavailable.
 
 interaction-require-user-mouth = You need a free mouth.
 interaction-require-target-mouth = They need a free mouth.

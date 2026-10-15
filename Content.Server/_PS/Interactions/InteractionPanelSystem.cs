@@ -3,6 +3,8 @@ using Content.Server._PS.Organs;
 using Content.Server.Administration.Logs;
 using Content.Server.Chat.Managers;
 using Content.Server.Chat.Systems;
+using Content.Server.Preferences.Managers; // Palmtree: NSFW age gate
+using Content.Shared._PS.Consent; // Palmtree: NSFW age gate
 using Content.Shared._PS.Interactions;
 using Content.Shared._PS.Organs;
 using Content.Shared.Chat;
@@ -51,6 +53,7 @@ public sealed partial class InteractionPanelSystem : EntitySystem
     [Dependency] private readonly GenitalOrganSystem _organs = default!;
     [Dependency] private readonly DrippingCumSystem _drip = default!;
     [Dependency] private readonly IAdminLogManager _adminLogger = default!; // Palmtree: interaction audit log
+    [Dependency] private readonly IServerPreferencesManager _preferences = default!; // Palmtree: NSFW age gate
 
     /// <summary>Verb category shown when right-clicking a character.</summary>
     public static readonly VerbCategory InteractCategory =
@@ -122,6 +125,10 @@ public sealed partial class InteractionPanelSystem : EntitySystem
         var target = args.Target;
         var user = args.User;
 
+        // Palmtree: no panel for players who have not enabled NSFW content.
+        if (!IsNsfwAllowed(user))
+            return;
+
         args.Verbs.Add(new Verb
         {
             Text = Loc.GetString("interaction-verb-open"),
@@ -155,6 +162,14 @@ public sealed partial class InteractionPanelSystem : EntitySystem
     {
         if (!HasComp<InteractionPanelComponent>(user) || !HasComp<InteractionPanelComponent>(target))
             return;
+
+        // Palmtree: the panel is unavailable until the player answers the NSFW consent prompt.
+        // There is deliberately no partial panel for non-consenting players.
+        if (!IsNsfwAllowed(user))
+        {
+            _popup.PopupEntity(Loc.GetString("interaction-nsfw-disabled"), user, user, PopupType.Medium);
+            return;
+        }
 
         if (user != target && !_interaction.InRangeUnobstructed(user, target, InteractionRange))
         {
@@ -206,14 +221,18 @@ public sealed partial class InteractionPanelSystem : EntitySystem
 
         if (proto.InteractionType == InteractionType.Lewd)
         {
-            if (!HasConsent(user))
+            // Palmtree: non-sexual lewd acts (kissing) skip the account-level NSFW age gate;
+            // the voluntary per-session toggle still applies to everyone.
+            var accountGate = !proto.NonSexual;
+
+            if (!HasConsent(user, accountGate))
             {
                 if (popup)
                     _popup.PopupEntity(Loc.GetString("interaction-consent-self-disabled"), user, user);
                 return false;
             }
 
-            if (!HasConsent(target))
+            if (!HasConsent(target, accountGate))
             {
                 if (popup)
                     _popup.PopupEntity(Loc.GetString("interaction-consent-target-disabled"), target, user);
@@ -230,10 +249,37 @@ public sealed partial class InteractionPanelSystem : EntitySystem
         return true;
     }
 
-    /// <summary>Session consent. Missing state means the default (enabled).</summary>
-    public bool HasConsent(EntityUid uid)
+    /// <summary>
+    /// Session consent (a missing state means the default, enabled). When
+    /// <paramref name="accountGate"/> is set, the account-level NSFW age gate is required too.
+    /// Entities without a player session (NPCs, test mobs) keep the legacy behavior.
+    /// </summary>
+    public bool HasConsent(EntityUid uid, bool accountGate = true)
     {
-        return !TryComp<InteractionStateComponent>(uid, out var state) || state.Consent;
+        if (TryComp<InteractionStateComponent>(uid, out var state) && !state.Consent)
+            return false;
+
+        return !accountGate || IsNsfwAllowed(uid);
+    }
+
+    /// <summary>Palmtree: whether the entity's player has enabled NSFW content (age gate).</summary>
+    public bool IsNsfwAllowed(EntityUid uid)
+    {
+        // Mobs without a session (NPCs, test mobs) keep the legacy behavior.
+        if (!_player.TryGetSessionByEntity(uid, out var session))
+            return true;
+
+        return IsNsfwAllowed(session);
+    }
+
+    /// <summary>
+    /// Palmtree: whether the session's account may see NSFW content. Fail-closed: unknown or
+    /// not-yet-loaded preferences count as not consenting.
+    /// </summary>
+    public bool IsNsfwAllowed(ICommonSession session)
+    {
+        return _preferences.TryGetCachedPreferences(session.UserId, out var prefs)
+               && prefs.NsfwConsent == NsfwConsentState.Allowed;
     }
 
     private bool CheckRequirements(InteractionRequirements requirements, EntityUid subject, EntityUid actor, bool popup, bool isTarget)
@@ -432,12 +478,12 @@ public sealed partial class InteractionPanelSystem : EntitySystem
         state.LastInteractionRepeat = now;
 
         if (proto.InteractionType == InteractionType.Lewd)
-            SendErpEmote(user, message);
+            SendErpEmote(user, message, proto.NonSexual);
         else
             _chat.TrySendInGameICMessage(user, message, InGameICChatType.Emote,
                 ChatTransmitRange.Normal, hideLog: false, ignoreActionBlocker: true);
 
-        PlayInteractionSound(user, proto.Sound, proto.Volume, proto.InteractionType == InteractionType.Lewd);
+        PlayInteractionSound(user, proto.Sound, proto.Volume, proto.InteractionType == InteractionType.Lewd, proto.NonSexual);
 
         ApplyInteractionArousal(user, target, proto);
 
@@ -565,7 +611,7 @@ public sealed partial class InteractionPanelSystem : EntitySystem
     /// out of lewd sounds (mobs without a session hear nothing, mirroring Sandstorm); normal
     /// interaction sounds use regular PVS.
     /// </summary>
-    private void PlayInteractionSound(EntityUid source, SoundSpecifier? sound, float volume, bool lewd)
+    private void PlayInteractionSound(EntityUid source, SoundSpecifier? sound, float volume, bool lewd, bool nonSexual = false)
     {
         if (sound == null)
             return;
@@ -587,6 +633,12 @@ public sealed partial class InteractionPanelSystem : EntitySystem
                 continue;
 
             if (TryComp<InteractionStateComponent>(listener, out var listenerState) && !listenerState.LewdSounds)
+                continue;
+
+            // Palmtree: NSFW age gate. Non-consenting players never receive sexual sounds;
+            // non-sexual entries (kissing) are exempt from the gate, but the per-listener
+            // LewdSounds preference above still applies to them.
+            if (!nonSexual && !IsNsfwAllowed(session))
                 continue;
 
             // Ghosts do not get to snoop on ERP sounds.
@@ -622,6 +674,16 @@ public sealed partial class InteractionPanelSystem : EntitySystem
 
         while (query.MoveNext(out var uid, out var state))
         {
+            // Palmtree: an admin may revoke NSFW consent while the panel is open or auto-repeat
+            // is running; close the panel and stop the repeat immediately.
+            if ((state.ActiveAutoInteraction != null || IsPanelOpen(uid, state)) && !IsNsfwAllowed(uid))
+            {
+                StopAutoRepeat(state);
+
+                if (_ui.IsUiOpen(uid, InteractionUiKey.Key))
+                    _ui.CloseUi(uid, InteractionUiKey.Key);
+            }
+
             if (state.ActiveAutoInteraction is not { } interactionId || state.AutoTarget is not { } target)
                 continue;
 
@@ -732,7 +794,7 @@ public sealed partial class InteractionPanelSystem : EntitySystem
     /// Sends an ERP emote in purple. Built manually because <c>TrySendInGameICMessage</c> strips
     /// markup from emote text; the chat tags themselves are otherwise supported.
     /// </summary>
-    private void SendErpEmote(EntityUid source, string message)
+    private void SendErpEmote(EntityUid source, string message, bool nonSexual = false)
     {
         var ent = Identity.Entity(source, EntityManager);
         var name = FormattedMessage.EscapeText(Name(ent));
@@ -754,6 +816,11 @@ public sealed partial class InteractionPanelSystem : EntitySystem
 
             // Ghosts do not get to snoop on ERP emotes.
             if (HasComp<GhostComponent>(attached))
+                continue;
+
+            // Palmtree: NSFW age gate. Non-consenting players never receive sexual ERP text;
+            // non-sexual entries (kissing) are exempt.
+            if (!nonSexual && !IsNsfwAllowed(session))
                 continue;
 
             if (!_examine.InRangeUnOccluded(source, attached, ErpEmoteRange))

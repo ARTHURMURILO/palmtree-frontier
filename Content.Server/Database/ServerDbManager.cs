@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Content.Server.Administration.Logs;
+using Content.Shared._PS.Consent; // Palmtree
 using Content.Shared.Administration.Logs;
 using Content.Shared.CCVar;
 using Content.Shared.Construction.Prototypes;
@@ -45,6 +46,9 @@ namespace Content.Server.Database
         Task SaveAdminOOCColorAsync(NetUserId userId, Color color);
 
         Task SaveConstructionFavoritesAsync(NetUserId userId, List<ProtoId<ConstructionPrototype>> constructionFavorites);
+
+        // Palmtree: NSFW age gate (null in the database = unanswered).
+        Task SaveNsfwConsentAsync(NetUserId userId, NsfwConsentState state);
 
         // Single method for two operations for transaction.
         Task DeleteSlotAndSetSelectedIndex(NetUserId userId, int deleteSlot, int newSlot);
@@ -502,6 +506,13 @@ namespace Content.Server.Database
         {
             DbWriteOpsMetric.Inc();
             return RunDbCommand(() => _db.SaveConstructionFavoritesAsync(userId, constructionFavorites));
+        }
+
+        // Palmtree: NSFW age gate.
+        public Task SaveNsfwConsentAsync(NetUserId userId, NsfwConsentState state)
+        {
+            DbWriteOpsMetric.Inc();
+            return RunDbCommand(() => _db.SaveNsfwConsentAsync(userId, state));
         }
 
         public Task<PlayerPreferences?> GetPlayerPreferencesAsync(NetUserId userId, CancellationToken cancel)

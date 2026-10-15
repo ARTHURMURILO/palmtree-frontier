@@ -801,6 +801,10 @@ namespace Content.Server.Database.Migrations.Postgres
                         .HasColumnType("text[]")
                         .HasColumnName("construction_favorites");
 
+                    b.Property<bool?>("NsfwConsent")
+                        .HasColumnType("boolean")
+                        .HasColumnName("nsfw_consent");
+
                     b.Property<int>("SelectedCharacterSlot")
                         .HasColumnType("integer")
                         .HasColumnName("selected_character_slot");

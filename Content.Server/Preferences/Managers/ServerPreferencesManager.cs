@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Content.Server.Administration.Managers;
 using Content.Server.Database;
+using Content.Shared._PS.Consent; // Palmtree
 using Content.Shared._NF.CCVar;
 using Content.Shared.CCVar;
 using Content.Shared.Construction.Prototypes;
@@ -49,6 +50,7 @@ namespace Content.Server.Preferences.Managers
             _netManager.RegisterNetMessage<MsgUpdateCharacter>(HandleUpdateCharacterMessage);
             _netManager.RegisterNetMessage<MsgDeleteCharacter>(HandleDeleteCharacterMessage);
             _netManager.RegisterNetMessage<MsgUpdateConstructionFavorites>(HandleUpdateConstructionFavoritesMessage);
+            _netManager.RegisterNetMessage<MsgUpdateNsfwConsent>(HandleUpdateNsfwConsentMessage); // Palmtree
             _sawmill = _log.GetSawmill("prefs");
         }
 
@@ -76,7 +78,7 @@ namespace Content.Server.Preferences.Managers
                 return;
             }
 
-            prefsData.Prefs = new PlayerPreferences(curPrefs.Characters, index, curPrefs.AdminOOCColor, curPrefs.ConstructionFavorites);
+            prefsData.Prefs = new PlayerPreferences(curPrefs.Characters, index, curPrefs.AdminOOCColor, curPrefs.ConstructionFavorites, curPrefs.NsfwConsent);
 
             if (ShouldStorePrefs(message.MsgChannel.AuthType))
             {
@@ -139,7 +141,7 @@ namespace Content.Server.Preferences.Managers
                 [slot] = profile
             };
 
-            prefsData.Prefs = new PlayerPreferences(profiles, slot, curPrefs.AdminOOCColor, curPrefs.ConstructionFavorites);
+            prefsData.Prefs = new PlayerPreferences(profiles, slot, curPrefs.AdminOOCColor, curPrefs.ConstructionFavorites, curPrefs.NsfwConsent);
 
             if (ShouldStorePrefs(session.Channel.AuthType))
                 await _db.SaveCharacterSlotAsync(userId, profile, slot);
@@ -154,7 +156,7 @@ namespace Content.Server.Preferences.Managers
             }
 
             var curPrefs = prefsData.Prefs!;
-            prefsData.Prefs = new PlayerPreferences(curPrefs.Characters, curPrefs.SelectedCharacterIndex, curPrefs.AdminOOCColor, favorites);
+            prefsData.Prefs = new PlayerPreferences(curPrefs.Characters, curPrefs.SelectedCharacterIndex, curPrefs.AdminOOCColor, favorites, curPrefs.NsfwConsent);
 
             var session = _playerManager.GetSessionById(userId);
             if (ShouldStorePrefs(session.Channel.AuthType))
@@ -198,7 +200,7 @@ namespace Content.Server.Preferences.Managers
             var arr = new Dictionary<int, ICharacterProfile>(curPrefs.Characters);
             arr.Remove(slot);
 
-            prefsData.Prefs = new PlayerPreferences(arr, nextSlot ?? curPrefs.SelectedCharacterIndex, curPrefs.AdminOOCColor, curPrefs.ConstructionFavorites);
+            prefsData.Prefs = new PlayerPreferences(arr, nextSlot ?? curPrefs.SelectedCharacterIndex, curPrefs.AdminOOCColor, curPrefs.ConstructionFavorites, curPrefs.NsfwConsent);
 
             if (ShouldStorePrefs(message.MsgChannel.AuthType))
             {
@@ -211,6 +213,61 @@ namespace Content.Server.Preferences.Managers
                     await _db.SaveCharacterSlotAsync(userId, null, slot);
                 }
             }
+        }
+
+        // Palmtree: the one-time NSFW consent prompt answer. Only accepted while the account has
+        // not answered yet; afterwards only the nsfwtoggle console command can change the flag.
+        private async void HandleUpdateNsfwConsentMessage(MsgUpdateNsfwConsent message)
+        {
+            var userId = message.MsgChannel.UserId;
+            if (!_cachedPlayerPrefs.TryGetValue(userId, out var prefsData) || !prefsData.PrefsLoaded)
+            {
+                _sawmill.Warning($"User {userId} tried to modify preferences before they loaded.");
+                return;
+            }
+
+            if (prefsData.Prefs!.NsfwConsent != NsfwConsentState.Unanswered)
+            {
+                _sawmill.Warning($"User {userId} tried to answer the NSFW consent prompt more than once.");
+                return;
+            }
+
+            await SetNsfwConsentAsync(userId, message.Allowed ? NsfwConsentState.Allowed : NsfwConsentState.Denied);
+        }
+
+        /// <summary>
+        /// Palmtree: sets a player's NSFW age gate answer, stores it, and pushes the updated
+        /// preferences to their client (if they are online) so all NSFW gates update at once.
+        /// </summary>
+        /// <returns>False if the player's preferences have not loaded yet (nothing was changed).</returns>
+        public async Task<bool> SetNsfwConsentAsync(NetUserId userId, NsfwConsentState state)
+        {
+            if (!_cachedPlayerPrefs.TryGetValue(userId, out var prefsData) || !prefsData.PrefsLoaded)
+            {
+                _sawmill.Error($"Tried to modify user {userId} preferences before they loaded.");
+                return false;
+            }
+
+            var curPrefs = prefsData.Prefs!;
+            prefsData.Prefs = new PlayerPreferences(curPrefs.Characters, curPrefs.SelectedCharacterIndex, curPrefs.AdminOOCColor, curPrefs.ConstructionFavorites, state);
+
+            var session = _playerManager.GetSessionById(userId);
+            if (ShouldStorePrefs(session.Channel.AuthType))
+                await _db.SaveNsfwConsentAsync(userId, state);
+
+            // Push the new value; ClientPreferencesManager mirrors it into the client-side
+            // gate (render/UI) and the interaction panel reacts on its own.
+            var msg = new MsgPreferencesAndSettings
+            {
+                Preferences = prefsData.Prefs,
+                Settings = new GameSettings
+                {
+                    MaxCharacterSlots = MaxCharacterSlots
+                }
+            };
+
+            _netManager.ServerSendMessage(msg, session.Channel);
+            return true;
         }
 
         private async void HandleUpdateConstructionFavoritesMessage(MsgUpdateConstructionFavorites message)
@@ -239,7 +296,7 @@ namespace Content.Server.Preferences.Managers
             }
 
             var curPrefs = prefsData.Prefs!;
-            prefsData.Prefs = new PlayerPreferences(curPrefs.Characters, curPrefs.SelectedCharacterIndex, curPrefs.AdminOOCColor, validatedList);
+            prefsData.Prefs = new PlayerPreferences(curPrefs.Characters, curPrefs.SelectedCharacterIndex, curPrefs.AdminOOCColor, validatedList, curPrefs.NsfwConsent);
 
             if (ShouldStorePrefs(message.MsgChannel.AuthType))
             {
@@ -258,7 +315,7 @@ namespace Content.Server.Preferences.Managers
                     PrefsLoaded = true,
                     Prefs = new PlayerPreferences(
                         new[] { new KeyValuePair<int, ICharacterProfile>(0, HumanoidCharacterProfile.Random()) },
-                        0, Color.Transparent, [])
+                        0, Color.Transparent, [], NsfwConsentState.Unanswered)
                 };
 
                 _cachedPlayerPrefs[session.UserId] = prefsData;
@@ -414,7 +471,7 @@ namespace Content.Server.Preferences.Managers
             return new PlayerPreferences(prefs.Characters.Select(p =>
             {
                 return new KeyValuePair<int, ICharacterProfile>(p.Key, p.Value.Validated(session, collection));
-            }), prefs.SelectedCharacterIndex, prefs.AdminOOCColor, prefs.ConstructionFavorites);
+            }), prefs.SelectedCharacterIndex, prefs.AdminOOCColor, prefs.ConstructionFavorites, prefs.NsfwConsent);
         }
 
         public IEnumerable<KeyValuePair<NetUserId, ICharacterProfile>> GetSelectedProfilesForPlayers(

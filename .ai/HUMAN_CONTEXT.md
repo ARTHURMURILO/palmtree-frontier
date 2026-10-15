@@ -29,8 +29,9 @@ We are in the middle of a migration: the old codebase lives in a separate checko
 * Missing species our characters use (Rodentia, Anthromorph, Tajaran) and the markings/loadouts
   referenced by exported character files
 
-Everything else (consent, scent, size manipulation, vore, RPI economy, needs, traits, IPC) is
-deliberately **not** ported at this time. See `.ai/PORTING.md`.
+Everything else (the full Floof consent system, scent, size manipulation, vore, RPI economy, needs, traits, IPC) is
+deliberately **not** ported at this time. (The account-level NSFW age gate *is* implemented — see
+`.ai/systems/consent-and-erp.md`.) See `.ai/PORTING.md`.
 
 Space Station 14 (SS14) is a remake of Space Station 13 (SS13).
 
@@ -123,5 +124,7 @@ system so players can look like any species while keeping IPC-like stats. If tru
 ever wanted, they should be built on the upstream silicon systems instead of the Einstein Engines
 stack.
 
-There is no consent system in this repository (yet). `ModifyUndies` is gated per marking: the owner
+The Floof per-toggle consent system is not ported. The account-level NSFW age gate (one-time lobby
+prompt, `nsfwtoggle`, what it gates) is documented in `.ai/systems/consent-and-erp.md`.
+`ModifyUndies` is gated per marking: the owner
 can toggle by default, other players only when the marking has `otherCanToggleVisible` (default off).

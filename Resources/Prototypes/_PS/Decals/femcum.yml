@@ -4,6 +4,7 @@
   id: FemPuddle1
   tags: ["semen"]
   defaultCleanable: true
+  nsfw: true # Palmtree: NSFW age gate
   sprite:
     sprite: _PS/Effects/decals/semen.rsi
     state: fem1
@@ -12,6 +13,7 @@
   id: FemPuddle2
   tags: ["semen"]
   defaultCleanable: true
+  nsfw: true # Palmtree: NSFW age gate
   sprite:
     sprite: _PS/Effects/decals/semen.rsi
     state: fem2
@@ -20,6 +22,7 @@
   id: FemPuddle3
   tags: ["semen"]
   defaultCleanable: true
+  nsfw: true # Palmtree: NSFW age gate
   sprite:
     sprite: _PS/Effects/decals/semen.rsi
     state: fem3
@@ -28,6 +31,7 @@
   id: FemPuddle4
   tags: ["semen"]
   defaultCleanable: true
+  nsfw: true # Palmtree: NSFW age gate
   sprite:
     sprite: _PS/Effects/decals/semen.rsi
     state: fem4

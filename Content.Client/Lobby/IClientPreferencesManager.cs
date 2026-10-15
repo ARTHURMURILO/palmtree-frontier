@@ -20,5 +20,6 @@ namespace Content.Client.Lobby
         void DeleteCharacter(ICharacterProfile profile);
         void DeleteCharacter(int slot);
         void UpdateConstructionFavorites(List<ProtoId<ConstructionPrototype>> favorites);
+        void UpdateNsfwConsent(bool allowed); // Palmtree
     }
 }

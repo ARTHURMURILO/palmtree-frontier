@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Content.Server.Administration.Logs;
 using Content.Server.Administration.Managers;
+using Content.Shared._PS.Consent; // Palmtree
 using Content.Shared._PS.Organs; // Palmtree
 using Content.Shared.Administration.Logs;
 using Content.Shared.Chat.Prototypes; // Palmtree/Coyote: hidden emote categories
@@ -74,7 +75,13 @@ namespace Content.Server.Database
             foreach (var favorite in prefs.ConstructionFavorites)
                 constructionFavorites.Add(new ProtoId<ConstructionPrototype>(favorite));
 
-            return new PlayerPreferences(profiles, prefs.SelectedCharacterSlot, Color.FromHex(prefs.AdminOOCColor), constructionFavorites);
+            return new PlayerPreferences(profiles, prefs.SelectedCharacterSlot, Color.FromHex(prefs.AdminOOCColor), constructionFavorites,
+                prefs.NsfwConsent switch
+                {
+                    true => NsfwConsentState.Allowed,
+                    false => NsfwConsentState.Denied,
+                    _ => NsfwConsentState.Unanswered,
+                }); // Palmtree: NSFW age gate
         }
 
         // Palmtree: bulk export of every saved character, grouped by player.
@@ -196,7 +203,24 @@ namespace Content.Server.Database
 
             await db.DbContext.SaveChangesAsync();
 
-            return new PlayerPreferences(new[] { new KeyValuePair<int, ICharacterProfile>(0, defaultProfile) }, 0, Color.FromHex(prefs.AdminOOCColor), []);
+            return new PlayerPreferences(new[] { new KeyValuePair<int, ICharacterProfile>(0, defaultProfile) }, 0, Color.FromHex(prefs.AdminOOCColor), [], NsfwConsentState.Unanswered);
+        }
+
+        // Palmtree: NSFW age gate. Written once by the lobby prompt and afterwards only by the
+        // nsfwtoggle console command.
+        public async Task SaveNsfwConsentAsync(NetUserId userId, NsfwConsentState state)
+        {
+            await using var db = await GetDb();
+            var prefs = await db.DbContext.Preference.SingleAsync(p => p.UserId == userId.UserId);
+
+            prefs.NsfwConsent = state switch
+            {
+                NsfwConsentState.Allowed => true,
+                NsfwConsentState.Denied => false,
+                _ => null,
+            };
+
+            await db.DbContext.SaveChangesAsync();
         }
 
         public async Task DeleteSlotAndSetSelectedIndex(NetUserId userId, int deleteSlot, int newSlot)

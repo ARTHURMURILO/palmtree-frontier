@@ -161,7 +161,8 @@ undershirts) so hiding a parent hides its sublayers.
   undergarments (which default on), and off for others; players opt in/out per marking in the
   editor. New markings get the default from `MarkingPrototype.AsMarking()`, and
   `MarkingsSet.EnsureValid`/`EnsureSpecies` normalize old saves (`ApplyDefaultTogglePermission`).
-- The per-marking opt-in doubles as consent for other players (no consent system exists).
+- The per-marking opt-in doubles as consent for other players (the account NSFW age gate only
+  gates genital *rendering* and the editor tab, not these verbs).
 - The verb starts a 1s do-after (`ModifyUndiesDoAfterEvent`), then calls
   `SharedHumanoidAppearanceSystem.SetMarkingVisibility`, which flips `Marking.Visible` and dirties
   the component (auto-networked `MarkingSet`). Visibility is session state, not persisted.

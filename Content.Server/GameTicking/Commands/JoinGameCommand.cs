@@ -1,5 +1,7 @@
 using Content.Server.Administration.Managers;
+using Content.Server.Preferences.Managers; // Palmtree
 using Content.Server.Station.Systems;
+using Content.Shared._PS.Consent; // Palmtree
 using Content.Shared.Administration;
 using Content.Shared.CCVar;
 using Content.Shared.GameTicking;
@@ -17,6 +19,7 @@ namespace Content.Server.GameTicking.Commands
         [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
         [Dependency] private readonly IAdminManager _adminManager = default!;
         [Dependency] private readonly IConfigurationManager _cfg = default!;
+        [Dependency] private readonly IServerPreferencesManager _preferences = default!; // Palmtree
 
         public string Command => "joingame";
         public string Description => "";
@@ -38,6 +41,15 @@ namespace Content.Server.GameTicking.Commands
 
             if (player == null)
             {
+                return;
+            }
+
+            // Palmtree: the lobby consent prompt must be answered before joining the round
+            // (toggleready already enforces this; late join goes through this command).
+            if (_preferences.TryGetCachedPreferences(player.UserId, out var prefs) &&
+                prefs.NsfwConsent == NsfwConsentState.Unanswered)
+            {
+                shell.WriteError(Loc.GetString("nsfw-consent-must-answer"));
                 return;
             }
 
