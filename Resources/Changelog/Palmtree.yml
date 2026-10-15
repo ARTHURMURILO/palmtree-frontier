@@ -937,3 +937,13 @@ Entries:
   time: '2026-10-15T04:10:53.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/0cffc7b53cede7433b7c18ebb89170f61ba89508
+- author: TheLife
+  changes:
+    - type: Add
+      message: >-
+        Ghosts can now warp to SSD characters (players who disconnected with
+        their body still in the round).
+  id: 90057
+  time: '2026-10-15T04:24:07.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/2168964e0fc6ee72a7f5a7acdbbbf86c807efad4
