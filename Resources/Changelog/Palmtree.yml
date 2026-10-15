@@ -994,3 +994,22 @@ Entries:
   time: '2026-10-15T14:49:08.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/69522a8e3b314a6cc1653f9569f97aa4eb0e5546
+- author: TheLife
+  changes:
+    - type: Add
+      message: >-
+        Admins can list and manage player ships with the manageships command -
+        preview or delete any ship, including ships whose owner is offline.
+    - type: Add
+      message: >-
+        Admins can force-store a ship in the Bluespace Dock with forcedock <ship
+        name | grid uid> [owner], skipping the docking requirement while keeping
+        every other check.
+    - type: Add
+      message: >-
+        The orphaned ship tool can delete every orphaned file at once with a
+        confirm step.
+  id: 90061
+  time: '2026-10-15T15:16:07.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/f8f152b48e2bd35684691faf8a26fecb4b472a5f
