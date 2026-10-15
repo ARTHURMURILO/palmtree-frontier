@@ -921,3 +921,19 @@ Entries:
   time: '2026-10-14T20:58:46.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/e5617cc2f301db228d1a5b046f80558b8096d7c4
+- author: TheLife
+  changes:
+    - type: Add
+      message: >-
+        Added the Bluespace Dock console: store your docked civilian ship in a
+        pocket dimension for a 10% tax, retrieve it for 5%, sell stored ships,
+        and browse everything your character has stored.
+    - type: Add
+      message: >-
+        Added the Ship Registrar console for the Station Representative:
+        register a docked player-built ship as a civilian vessel with a deed, a
+        custom name and a live camera preview.
+  id: 90056
+  time: '2026-10-15T04:10:53.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/0cffc7b53cede7433b7c18ebb89170f61ba89508
