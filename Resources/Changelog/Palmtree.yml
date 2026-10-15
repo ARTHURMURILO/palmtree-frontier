@@ -1013,3 +1013,44 @@ Entries:
   time: '2026-10-15T15:16:07.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/f8f152b48e2bd35684691faf8a26fecb4b472a5f
+- author: TheLife
+  changes:
+    - type: Fix
+      message: >-
+        Retrieving a ship from the Bluespace Dock can no longer duplicate it if
+        something goes wrong mid-retrieval, and a failed bank charge no longer
+        hands it over for free.
+    - type: Fix
+      message: >-
+        Selling a ship through the Bluespace Dock no longer deletes a stored
+        ship when the payout fails.
+    - type: Fix
+      message: >-
+        Storing, deleting or selling a ship no longer takes ghosts, pets or
+        bodies with it - anyone aboard is moved out first.
+    - type: Fix
+      message: >-
+        The Ship Registrar's ship preview now only works on docked, unregistered
+        ships, and opening a new preview closes the old one.
+    - type: Tweak
+      message: >-
+        Each hotel check-in terminal keeps its own room limit now, and creating
+        rooms has a short cooldown.
+    - type: Fix
+      message: >-
+        Failed interaction panel clicks now say why; auto-repeat no longer spams
+        popups.
+    - type: Fix
+      message: A clumsy fumble no longer consumes the shell with "Shoot self".
+    - type: Tweak
+      message: >-
+        Admin-only weapons (Svalinn 770, phaser and friends) are worth nothing,
+        so they cannot be sold for money.
+    - type: Tweak
+      message: >-
+        Fallout weapon cases are about three times more common in dungeon and
+        asteroid loot.
+  id: 90062
+  time: '2026-10-15T17:24:47.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/23f4590be2991f771c314f89ea317c98c61efa45
