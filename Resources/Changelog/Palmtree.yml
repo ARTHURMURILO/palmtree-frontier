@@ -957,3 +957,23 @@ Entries:
   time: '2026-10-15T04:53:44.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/917d59b0c6f736e16a45a54113ae6b57670a1601
+- author: TheLife
+  changes:
+    - type: Fix
+      message: >-
+        Retrieved ships come back powered (their APC and generator state are no
+        longer written as off), and containers keep exactly their contents - no
+        more duplicated or missing items.
+    - type: Fix
+      message: >-
+        A ship's owner now gets a Captain crew record on their ship and the
+        Captain access tag, both when retrieving from the Bluespace Dock and
+        when registering with the Ship Registrar.
+    - type: Tweak
+      message: >-
+        The Ship Registrar picks the ship's owner from a dropdown of players
+        instead of a second ID card slot.
+  id: 90059
+  time: '2026-10-15T13:40:44.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/817dc3da3f22f21b81657954b974f4a41c6dab6a
