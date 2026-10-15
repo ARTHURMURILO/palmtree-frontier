@@ -574,6 +574,11 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
   `ShipyardSystem.TrySellShuttle` exactly like a shipyard console (with the shipyard sell blockers
   applied for the civilian key, and `SetupShipyardIfNeeded` first because `TrySellShuttle` refuses
   every sale while the shipyard parking map does not exist).
+- **Announcements**: stores, retrievals and sales are announced on the console's radio channel
+  (`BluespaceDockConsoleComponent.AnnounceChannel`, default `Traffic` - the channel displayed as
+  Shortband, the same one the shipyard console uses) and spoken by the console locally, exactly like
+  the shipyard console's purchase/sale messages (`RadioSystem.SendRadioMessage` +
+  `ChatSystem.TrySendInGameICMessage`). Strings: `bluespace-dock-announce-{store,retrieve,sell}`.
 - **Console**: admin spawn only (`suffix: Palmtree`, indestructible, no board, `ActivatableUIRequiresPower`),
   sprite is a copy of `_NF`'s shipyard states — do not point it at `_NF/Structures/Machines/computers.rsi`.
 - CVars (in `Content.Shared/_NF/CCVar/NFCCVars.cs`, marked Palmtree): `nf14.bluespace_dock.enabled`,

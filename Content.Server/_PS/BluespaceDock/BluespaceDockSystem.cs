@@ -6,11 +6,13 @@ using Content.Server._NF.Bank;
 using Content.Shared._NF.Bank;
 using Content.Server._NF.ShuttleRecords;
 using Content.Server.Cargo.Systems;
+using Content.Server.Chat.Systems;
 using Content.Server.StationEvents.Components;
 using Content.Server._NF.Shipyard.Systems;
 using Content.Server._NF.Station.Components;
 using Content.Server.Administration.Logs;
 using Content.Server.Popups;
+using Content.Server.Radio.EntitySystems;
 using Content.Server.Preferences.Managers;
 using Content.Server.Power.Components;
 using Content.Server.Power.EntitySystems;
@@ -28,6 +30,7 @@ using Content.Shared._PS.BluespaceDock;
 using Content.Shared._PS.ShipRegistry;
 using Content.Shared.Access.Components;
 using Content.Shared.Database;
+using Content.Shared.Chat;
 using Content.Shared.Containers.ItemSlots;
 using Content.Shared.GameTicking;
 using Content.Shared.Light.Components;
@@ -95,6 +98,7 @@ public sealed class BluespaceDockSystem : EntitySystem
     [Dependency] private readonly MapSystem _map = default!;
     [Dependency] private readonly MetaDataSystem _metaData = default!;
     [Dependency] private readonly PopupSystem _popup = default!;
+    [Dependency] private readonly RadioSystem _radio = default!;
     [Dependency] private readonly PowerChargeSystem _powerCharge = default!;
     [Dependency] private readonly PricingSystem _pricing = default!;
     [Dependency] private readonly ShuttleRecordsSystem _shuttleRecords = default!;
@@ -104,6 +108,7 @@ public sealed class BluespaceDockSystem : EntitySystem
     [Dependency] private readonly SharedTransformSystem _transform = default!;
     [Dependency] private readonly StationSystem _station = default!;
     [Dependency] private readonly SharedBluespaceDockSystem _dock = default!;
+    [Dependency] private readonly ChatSystem _chat = default!;
     [Dependency] private readonly UserInterfaceSystem _ui = default!;
 
     /// <summary>Name of the registry file. It lives next to the ship files, so anything that walks
@@ -1578,6 +1583,7 @@ public sealed class BluespaceDockSystem : EntitySystem
             QueueDel(shuttleUid);
 
             Popup(player, "bluespace-dock-stored", ("ship", displayName));
+            Announce(consoleUid, "bluespace-dock-announce-store", ("owner", characterName), ("vessel", displayName));
             PlayConfirm(consoleUid, component);
             _adminLogger.Add(LogType.Action, LogImpact.Medium,
                 $"{ToPrettyString(player):player} stored ship {displayName} ({value} value, {cost} tax) in the bluespace dock via {ToPrettyString(consoleUid)}");
@@ -1753,6 +1759,7 @@ public sealed class BluespaceDockSystem : EntitySystem
             RemoveEntry(entry, deleteFile: false);
 
             Popup(player, "bluespace-dock-retrieved", ("ship", displayName));
+            Announce(consoleUid, "bluespace-dock-announce-retrieve", ("owner", entry.OwnerName), ("vessel", displayName));
             PlayConfirm(consoleUid, component);
             _adminLogger.Add(LogType.Action, LogImpact.Medium,
                 $"{ToPrettyString(player):player} retrieved ship {displayName} ({cost} tax) from the bluespace dock via {ToPrettyString(consoleUid)}");
@@ -1811,6 +1818,7 @@ public sealed class BluespaceDockSystem : EntitySystem
         RemoveEntry(entry, deleteFile: true);
 
         Popup(player, "bluespace-dock-sold-stored", ("ship", entry.DisplayName), ("amount", BankSystemExtensions.ToIndependentString(payout)));
+        Announce(consoleUid, "bluespace-dock-announce-sell", ("owner", entry.OwnerName), ("vessel", entry.DisplayName), ("player", player));
         PlayConfirm(consoleUid, component);
         _adminLogger.Add(LogType.Action, LogImpact.Medium,
             $"{ToPrettyString(player):player} sold stored ship {entry.DisplayName} for {payout} from the bluespace dock via {ToPrettyString(consoleUid)}");
@@ -1876,6 +1884,7 @@ public sealed class BluespaceDockSystem : EntitySystem
 
         var name = ShipyardSystem.GetFullName(deed);
         Popup(player, "bluespace-dock-sold-active", ("ship", name), ("amount", BankSystemExtensions.ToIndependentString(payout)));
+        Announce(consoleUid, "bluespace-dock-announce-sell", ("owner", deed.ShuttleOwner ?? string.Empty), ("vessel", name), ("player", player));
         PlayConfirm(consoleUid, component);
         _adminLogger.Add(LogType.Action, LogImpact.Medium,
             $"{ToPrettyString(player):player} sold ship {name} for {payout} via the bluespace dock {ToPrettyString(consoleUid)}");
@@ -1960,6 +1969,23 @@ public sealed class BluespaceDockSystem : EntitySystem
     private void Popup(EntityUid player, string messageKey, params (string, object)[] args)
     {
         _popup.PopupEntity(Loc.GetString(messageKey, args), player, player);
+    }
+
+    /// <summary>
+    /// Announces a dock action on the console's radio channel (Shortband by default, the same channel
+    /// the shipyard console uses) and has the console say it locally, exactly like the shipyard does
+    /// for a purchase or a sale.
+    /// </summary>
+    private void Announce(EntityUid consoleUid, string messageKey, params (string, object)[] args)
+    {
+        if (!TryComp<BluespaceDockConsoleComponent>(consoleUid, out var component))
+            return;
+
+        var text = Loc.GetString(messageKey, args);
+        var channel = _prototype.Index(component.AnnounceChannel);
+
+        _radio.SendRadioMessage(consoleUid, text, channel, consoleUid);
+        _chat.TrySendInGameICMessage(consoleUid, text, InGameICChatType.Speak, true);
     }
 
     private void PlayDeny(EntityUid consoleUid, BluespaceDockConsoleComponent component)

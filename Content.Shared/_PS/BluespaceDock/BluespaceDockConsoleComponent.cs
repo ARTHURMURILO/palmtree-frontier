@@ -1,6 +1,8 @@
 using Content.Shared.Containers.ItemSlots;
+using Content.Shared.Radio;
 using Robust.Shared.Audio;
 using Robust.Shared.GameStates;
+using Robust.Shared.Prototypes;
 using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom;
 
 namespace Content.Shared._PS.BluespaceDock;
@@ -17,6 +19,13 @@ public sealed partial class BluespaceDockConsoleComponent : Component
 
     [DataField]
     public ItemSlot TargetIdSlot = new();
+
+    /// <summary>
+    /// Radio channel the dock announces stores, retrievals and sales on. Defaults to the same channel
+    /// the shipyard console uses (the Shortband channel).
+    /// </summary>
+    [DataField]
+    public ProtoId<RadioChannelPrototype> AnnounceChannel = "Traffic";
 
     [DataField]
     public SoundSpecifier ErrorSound =
