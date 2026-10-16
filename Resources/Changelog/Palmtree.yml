@@ -1122,3 +1122,13 @@ Entries:
   time: '2026-10-16T01:22:50.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/3ccbc43001cf0f1e1f3db2f188a4048e3d8d9cd2
+- author: TheLife
+  changes:
+    - type: Add
+      message: >-
+        Added the super walkman, a pocketable synthesizer that plays every
+        instrument, percussion and full MIDI files like the super synthesizer.
+  id: 90069
+  time: '2026-10-16T11:59:25.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/78dd54db45c8728f26e649fb1543ad4b99eabf32
