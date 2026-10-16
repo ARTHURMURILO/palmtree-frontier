@@ -26,3 +26,24 @@
   - type: ActivatableUI
     # Keep the UI open (and the music playing) while the walkman is stored.
     inHandsOnly: false
+
+# Palmtree: the super synthesizer's capabilities in walkman form - percussion, MIDI
+# program changes and no client MIDI rate cap - but still pocketable. Admin-scope
+# like the super synthesizer; not wired into any loot or vendor table.
+- type: entity
+  parent: WalkmanInstrument
+  id: SuperWalkmanInstrument
+  name: super walkman
+  description: A walkman that fell into the wrong hands. Blasts every instrument and full MIDI files straight from your pocket.
+  suffix: Admeme
+  components:
+  - type: Sprite
+    layers:
+    - state: empty
+    - state: idle
+      map: ["tape"]
+      color: "#e6b3ff" # Palmtree: tinted tape so the super walkman reads at a glance
+  - type: Instrument
+    allowPercussion: true
+    allowProgramChange: true
+    respectMidiLimits: false

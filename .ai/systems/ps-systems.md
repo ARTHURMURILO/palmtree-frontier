@@ -733,6 +733,10 @@ Small features that did not get their own section yet:
 
 - **Walkman** (`Resources/Prototypes/_PS/Entities/Objects/Fun/walkman.yml`, commit `a3f80ab4f4`): a
   pocketable MIDI synthesiser instrument; also spawns rarely in the random instrument spawner.
+- **Super walkman** (same file, 2026-10): admin-only variant carrying the super synthesizer's
+  instrument flags (`allowPercussion`, `allowProgramChange`, `respectMidiLimits: false`) plus the
+  walkman's full General MIDI program list and pocketable UI; violet tape layer, no loot/vendor
+  wiring (mirrors `SuperSynthesizerInstrument`). Test: `Tests/_PS/WalkmanTest.cs`.
 - **Vote sounds** (commit `241ea1bc6c`): custom votes play `vote_started`/`vote_yes`/`vote_no`/
   success/failure cues from `Resources/Audio/_PS/Voting/` (client `VoteManager`).
 - **UI open/close sounds** (commit `2f307becc5`): panel open/close clicks from
