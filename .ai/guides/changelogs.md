@@ -50,6 +50,10 @@ changes" badge stays meaningful across the other files' id ranges. Tab title loc
    (the Palmtree range starts at 90001) and an ISO `time` in the format
    `2026-10-03T19:00:00.0000000+00:00`.
 5. Never add entries to `Changelog.yml`, `Frontier.yml`, `Maps.yml` or `Admin.yml`.
+6. **After a push, stop.** The append is asynchronous: do not poll or wait for the workflow runs
+   (`gh run list`, `gh run watch`, Actions API, "did the bot run yet?" checks). Report the push with
+   the `:cl:` block included and leave the result to the maintainer. Only append manually if the
+   automation is known to be down (step 4).
 
 ## Entry format
 

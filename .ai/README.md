@@ -10,6 +10,9 @@ Read this file first, then the document that matches your task.
 > commit message (`:cl:` on its own line, then `- add|remove|tweak|fix: message` lines). The commit
 > workflow appends it to `Resources/Changelog/Palmtree.yml`; details and fallbacks in
 > `.ai/guides/changelogs.md`. Never write entries into the upstream changelog files.
+> **After a push, do not poll or wait for the workflow runs** (`gh run list`, `gh run watch`, the
+> Actions API, "did the changelog bot run yet?") — the append and CI are asynchronous and are the
+> maintainer's to watch; report the push and stop.
 
 ## 1. What this project is
 

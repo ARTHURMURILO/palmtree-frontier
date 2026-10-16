@@ -28,6 +28,11 @@ targeted port of Coyote/Floof ERP + marking systems. The old base lives in a sep
    (`:cl:` on its own line, then `- add|remove|tweak|fix: message` lines). The commit workflow
    appends it to `Resources/Changelog/Palmtree.yml`; never write entries into the upstream changelog
    files. Details: `.ai/guides/changelogs.md`.
+7. **Never await CI/workflow runs after a push.** Once `git push` succeeds, report it and stop.
+   Do not poll or watch GitHub Actions (`gh run list`, `gh run watch`, `gh api .../actions/runs`,
+   waiting for the changelog bot, etc.) — the changelog append and CI are asynchronous and are the
+   maintainer's to watch. Checking the workflow status is not part of any task unless the maintainer
+   explicitly asks for it.
 
 ## Start here
 
