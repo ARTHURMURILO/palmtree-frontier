@@ -1102,3 +1102,23 @@ Entries:
         sprite-less item.
   id: 90067
   time: '2026-10-15T21:33:31.0000000+00:00'
+- author: TheLife
+  changes:
+    - type: Fix
+      message: Armor plates now fit into jackets, coats and the chameleon vest.
+    - type: Add
+      message: >-
+        Armor plates and most Palmtree items can now be recycled for materials
+        at the material reclaimer.
+    - type: Tweak
+      message: >-
+        Dressers can now hold large items, so they can still store coats that
+        carry armor plate pockets.
+    - type: Fix
+      message: >-
+        Vulpkanin and harpy sprites now show on the atmos and spationaut
+        hardsuit helmets.
+  id: 90068
+  time: '2026-10-16T01:22:50.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/3ccbc43001cf0f1e1f3db2f188a4048e3d8d9cd2
