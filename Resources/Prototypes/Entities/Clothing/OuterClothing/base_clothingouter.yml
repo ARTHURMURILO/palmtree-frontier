@@ -28,7 +28,7 @@
 
 - type: entity
   abstract: true
-  parent: ClothingOuterBase
+  parent: [ClothingOuterBase, ClothingArmorPlate] # Palmtree/Mono: storage outerwear (jackets, coats) can hold armor plates
   id: ClothingOuterStorageBase
   components:
   - type: Storage

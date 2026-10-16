@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Numerics;
 using Content.Shared._Mono.ArmorPlate;
 using Content.Shared.Armor;
@@ -5,11 +6,14 @@ using Content.Shared.Damage;
 using Content.Shared.Damage.Prototypes;
 using Content.Shared.Damage.Systems;
 using Content.Shared.Inventory;
+using Content.Shared.Materials;
+using Content.Shared.Storage;
 using Content.Shared.Storage.EntitySystems;
 using Robust.Shared.Containers;
 using NUnit.Framework;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
+using Robust.Shared.Maths;
 using Robust.Shared.Prototypes;
 
 namespace Content.IntegrationTests.Tests._Mono;
@@ -46,6 +50,37 @@ public sealed class ArmorPlateTest
             Assert.That(entMan.HasComponent<ArmorPlateHolderComponent>(hardsuit), Is.True,
                 "Hardsuits should hold armor plates.");
             entMan.DeleteEntity(hardsuit);
+
+            // Storage outerwear (jackets/coats) and the chameleon vest hold plates too.
+            var jacket = entMan.SpawnEntity("ClothingOuterCoatBomber", testMap.GridCoords);
+            Assert.That(entMan.HasComponent<ArmorPlateHolderComponent>(jacket), Is.True,
+                "Storage outerwear (jackets) should hold armor plates.");
+            // The plate holder must not replace the jacket's own pocket grid.
+            var jacketStorage = entMan.GetComponent<StorageComponent>(jacket);
+            Assert.That(jacketStorage.Grid, Is.EqualTo(new List<Box2i> { new(0, 0, 2, 1) }),
+                "Jackets keep their own storage grid.");
+            var jacketPlate = entMan.SpawnEntity("ArmorPlateBlunt_Slash", testMap.GridCoords);
+            Assert.That(storage.Insert(jacket, jacketPlate, out _), Is.True,
+                "Armor plates should fit in jacket storage.");
+            Assert.That(entMan.GetComponent<ArmorPlateHolderComponent>(jacket).ActivePlate, Is.EqualTo(jacketPlate),
+                "A plate in a jacket should become its active plate.");
+            entMan.DeleteEntity(jacketPlate);
+            entMan.DeleteEntity(jacket);
+            var chameleonVest = entMan.SpawnEntity("ClothingOuterChameleon", testMap.GridCoords);
+            Assert.That(entMan.HasComponent<ArmorPlateHolderComponent>(chameleonVest), Is.True,
+                "The chameleon vest should hold armor plates.");
+            entMan.DeleteEntity(chameleonVest);
+
+            // Plates are recyclable through the material reclaimer.
+            var protoManager = server.ResolveDependency<IPrototypeManager>();
+            foreach (var plateId in new[] { "ArmorPlateBlunt_Slash", "ArmorPlatePierce", "ArmorPlateHeat", "ArmorPlateSpeed" })
+            {
+                var plateProto = protoManager.Index<EntityPrototype>(plateId);
+                Assert.That(plateProto.TryGetComponent<PhysicalCompositionComponent>(out var composition, entMan.ComponentFactory), Is.True,
+                    $"{plateId} should have a material composition for the reclaimer.");
+                Assert.That(composition!.MaterialComposition.Count, Is.GreaterThan(0),
+                    $"{plateId} should return materials when recycled.");
+            }
             Assert.That(inventory.TryEquip(wearer, vest, "outerClothing", true, true), Is.True);
             Assert.That(entMan.HasComponent<ArmorPlateProtectedComponent>(wearer), Is.False,
                 "No plate installed yet, so the wearer is not plate-protected.");

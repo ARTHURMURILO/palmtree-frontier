@@ -149,11 +149,14 @@ acceleration, both already Frontier fields. Test: `Tests/_NF/TieredThrusterTest.
 ## Armor plates (2026-10)
 
 Monolith's insertable armor plates (`.ai/PORTING.md` §23) live in `Resources/Prototypes/_Mono` and
-`Content.Shared/_Mono/ArmorPlate`: the standard armor vest (`ClothingOuterArmorBasic`) and every
-hardsuit (`ClothingOuterHardsuitBase`) have an `ArmorPlateHolder` storage slot; inserting a plate
-(ballistic / trauma / diffusion / speed) makes it the active plate, absorbing damage at the cost of
-plate durability and wearer stamina. Plates are researched through `UniversalArmorPlatesT1/T2`
+`Content.Shared/_Mono/ArmorPlate`: the standard armor vest (`ClothingOuterArmorBasic`), every
+hardsuit (`ClothingOuterHardsuitBase`), every jacket/coat with storage (`ClothingOuterStorageBase`)
+and the chameleon vest (`ClothingOuterChameleon`) have an `ArmorPlateHolder` storage slot; inserting
+a plate (ballistic / trauma / diffusion / speed) makes it the active plate, absorbing damage at the
+cost of plate durability and wearer stamina. Plates are researched through `UniversalArmorPlatesT1/T2`
 (`NFArsenalMercenary`, positions 3,45 and 5,45), printed from the `ArmorNF` lathe category
-(`NFMercenaryArchetypeStatic` pack) and available as blueprints (`NFBlueprintsMercenary`).
-Monolith materials that do not exist here were substituted (Plastitanium -> Plasteel, Copper ->
-Silver, Iridite -> Diamond). Test: `Tests/_Mono/ArmorPlateTest.cs`.
+(`NFMercenaryArchetypeStatic` pack) and available as blueprints (`NFBlueprintsMercenary`). Each plate
+also carries a `PhysicalComposition` (materials from its own recipe) so the material reclaimer can
+recycle it. Monolith materials that do not exist here were substituted (Plastitanium -> Plasteel,
+Copper -> Silver, Iridite -> Diamond). Tests: `Tests/_Mono/ArmorPlateTest.cs` and the general
+`MaterialArbitrageTest`.

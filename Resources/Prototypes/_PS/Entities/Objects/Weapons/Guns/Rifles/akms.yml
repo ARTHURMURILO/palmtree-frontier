@@ -49,3 +49,8 @@
     steps: 1
     zeroVisible: true
   - type: Appearance
+  # Palmtree: recyclable - steel receiver and wooden furniture.
+  - type: PhysicalComposition
+    materialComposition:
+      Steel: 60
+      Wood: 150

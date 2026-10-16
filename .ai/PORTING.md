@@ -685,8 +685,19 @@ stamina model; Monolith's live files were fetched from
   `ArmorPlateRepairableBase`). Adaptation: Monolith repairs plates with their `Applicating` tool
   quality (which this fork lacks), so the plates use the standard `Repairable` welding path.
 - **Where plates fit**: `ClothingOuterArmorBasic` and `ClothingOuterHardsuitBase` carry
-  `ClothingArmorPlate` (Monolith's two patches; Coyote also gave the abstract vest base and storage
-  outerwear the holder - not ported, to avoid stacking storage containers on every jacket).
+  `ClothingArmorPlate` (Monolith's two patches). Since the 2026-10-15 follow-up the whole storage
+  outerwear tree also carries it (`ClothingOuterStorageBase` - jackets, coats, hoodies) plus the
+  chameleon vest (`ClothingOuterChameleon`), which is Coyote's `outerweararmor` change (coyote PR
+  #1059). Clothing inheritance is per-field, so jackets keep their own `Storage.grid` (3x2) and the
+  holder just adds the active-plate component; the chameleon vest's explicit `UserInterface` block
+  carries both the storage and chameleon UI keys.
+- **Recycling (2026-10-15)**: each plate carries a `PhysicalComposition` using materials from its
+  own recipe/description (trauma: plasteel/plastic/durathread; ballistic: plasteel/plastic/
+  durathread; diffusion: silver/diamond/durathread; speed: brass/bluespace/durathread), bounded
+  far below the lathe recipes so `MaterialArbitrageTest`'s produce >= recycle bound holds.
+  `ArmorPlateTest` asserts the holder on jackets and a composition on every plate. The fork-wide
+  item audit that came with this change (what was recyclable, what was made recyclable, what was
+  left and why) is `.ai/workspace/recycling-audit-2026-10-15.md`.
 - **Acquisition**: lathe recipes in `_Mono/Recipes/Lathes/equipment.yml` (`ArmorNF` category) and
   the two research nodes in `_Mono/Research/armor_plates.yml` (`UniversalArmorPlatesT1/T2`,
   adapted to the `NFArsenalMercenary` discipline at positions (3,45)/(5,45), the same free cells

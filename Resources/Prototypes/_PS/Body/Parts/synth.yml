@@ -9,6 +9,10 @@
     damageContainer: Inorganic
   - type: Sprite
     sprite: _EE/Mobs/Species/IPC/parts.rsi
+  # Palmtree: return materials like the cyborg/silicon parts do (Steel 25).
+  - type: PhysicalComposition
+    materialComposition:
+      Steel: 25
 
 - type: entity
   id: TorsoSynth

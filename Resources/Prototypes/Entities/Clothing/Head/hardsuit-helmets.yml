@@ -50,6 +50,13 @@
       - state: equipped-head-dog
       - state: equipped-head-unshaded-dog
         shader: unshaded
+      # Palmtree: dormant species states shipped in the RSI, wired up for snouted species.
+      head-vulpkanin:
+      - state: equipped-head-vulpkanin
+      - state: equipped-head-unshaded-vulpkanin
+        shader: unshaded
+      head-harpy:
+      - state: equipped-head-harpy
   - type: PointLight
     color: "#adffe6"
   - type: PressureProtection
@@ -164,6 +171,9 @@
       - state: equipped-head-dog
       - state: equipped-head-unshaded-dog
         shader: unshaded
+      # Palmtree: dormant species state shipped in the RSI, wired up for snouted species.
+      head-vulpkanin:
+      - state: equipped-head-vulpkanin
   # Frontier
   #- type: PointLight
   #  radius: 6

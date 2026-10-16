@@ -49,3 +49,8 @@
             - CSCartridge50AE
             - CSCartridge44
             - CSCartridge357
+  # Palmtree: recyclable - steel frame and polymer furniture.
+  - type: PhysicalComposition
+    materialComposition:
+      Steel: 40
+      Plastic: 20

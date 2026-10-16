@@ -5,3 +5,9 @@
   components:
   - type: Implanter
     implant: ClothingConcealmentImplantBackpack
+  # Palmtree: recyclable - steel injector, polymer parts and a glass ampoule.
+  - type: PhysicalComposition
+    materialComposition:
+      Steel: 30
+      Plastic: 20
+      Glass: 10

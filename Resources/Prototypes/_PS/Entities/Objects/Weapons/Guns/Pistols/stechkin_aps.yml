@@ -21,3 +21,8 @@
     sprite: _PS/Objects/Weapons/Guns/Pistols/stechkin_aps.rsi
   - type: Clothing
     sprite: _PS/Objects/Weapons/Guns/Pistols/stechkin_aps.rsi
+  # Palmtree: recyclable - steel frame and polymer furniture.
+  - type: PhysicalComposition
+    materialComposition:
+      Steel: 40
+      Plastic: 20

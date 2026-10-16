@@ -37,3 +37,10 @@
   - type: BatterySelfRecharger
     autoRecharge: true
     autoRechargeRate: 4
+  # Palmtree: recyclable - lathe recipe materials at a recovery rate.
+  - type: PhysicalComposition
+    materialComposition:
+      Steel: 60
+      Wood: 100
+      Gold: 10
+      Plasma: 20

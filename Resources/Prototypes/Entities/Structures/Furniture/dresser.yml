@@ -32,7 +32,7 @@
   - type: Storage
     grid:
     - 0,0,6,3
-    maxItemSize: Normal
+    maxItemSize: Large # Palmtree/Mono: jackets/coats carry Normal-max plate pockets, so they no longer fit a Normal-max dresser (coyote PR #1059 does the same)
   - type: ContainerContainer
     containers:
       storagebase: !type:Container

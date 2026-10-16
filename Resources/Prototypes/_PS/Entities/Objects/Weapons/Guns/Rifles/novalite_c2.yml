@@ -51,3 +51,9 @@
           - NFCartridgeRifle20
   - type: GunDamageMultiplier
     multiplier: 1.25
+  # Palmtree: recyclable - lathe recipe materials at a recovery rate.
+  - type: PhysicalComposition
+    materialComposition:
+      Steel: 100
+      Plasteel: 40
+      Plastic: 60

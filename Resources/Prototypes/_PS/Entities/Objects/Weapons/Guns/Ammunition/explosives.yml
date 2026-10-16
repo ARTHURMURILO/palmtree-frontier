@@ -11,3 +11,8 @@
     - NFCartridgeGrenade40mmFlash
   - type: CartridgeAmmo
     proto: BulletGrenadeFlashLoud
+  # Palmtree: recyclable - steel casing and polymer shell.
+  - type: PhysicalComposition
+    materialComposition:
+      Steel: 10
+      Plastic: 10

@@ -26,3 +26,8 @@
     containers:
       ballistic-ammo: !type:Container
         ents: []
+  # Palmtree: recyclable - heavy steel and plasteel barrel cluster.
+  - type: PhysicalComposition
+    materialComposition:
+      Steel: 150
+      Plasteel: 25

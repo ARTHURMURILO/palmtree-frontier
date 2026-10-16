@@ -1,5 +1,5 @@
 ﻿- type: entity
-  parent: [ClothingOuterBase, BaseChameleon]
+  parent: [ClothingOuterBase, BaseChameleon, ClothingArmorPlate] # Palmtree/Mono: armor plates fit the vest (Coyote outerweararmor)
   id: ClothingOuterChameleon
   name: vest
   description: A thick vest with a rubbery, water-resistant shell.
@@ -11,6 +11,12 @@
       sprite: Clothing/OuterClothing/Vests/vest.rsi
     - type: Clothing
       sprite: Clothing/OuterClothing/Vests/vest.rsi
+    - type: UserInterface # Palmtree/Mono: keep both the plate storage and the chameleon screen usable
+      interfaces:
+        enum.StorageUiKey.Key:
+          type: StorageBoundUserInterface
+        enum.ChameleonUiKey.Key:
+          type: ChameleonBoundUserInterface
     - type: ChameleonClothing
       slot: [outerClothing]
       default: ClothingOuterVest

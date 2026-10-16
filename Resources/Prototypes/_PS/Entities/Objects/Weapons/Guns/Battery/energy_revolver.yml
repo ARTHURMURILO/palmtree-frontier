@@ -64,3 +64,9 @@
   - type: BatterySelfRecharger
     autoRecharge: true
     autoRechargeRate: 30
+  # Palmtree: recyclable - steel frame, polymer furniture and a plasma cell.
+  - type: PhysicalComposition
+    materialComposition:
+      Steel: 30
+      Plastic: 20
+      Plasma: 10

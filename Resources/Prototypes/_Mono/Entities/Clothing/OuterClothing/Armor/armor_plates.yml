@@ -41,6 +41,13 @@
       Slash: 1
       Piercing: 0
       Heat: 0
+  # Palmtree: make the ported plates recyclable (Monolith's plates are immaterial). The yields sit
+  # far below the lathe recipes so MaterialArbitrageTest's produce >= recycle bound holds.
+  - type: PhysicalComposition
+    materialComposition:
+      Plasteel: 100 # plasteel shell
+      Plastic: 100 # crumpling foam-cell backing
+      Durathread: 40 # straps
   - type: Damageable
     damageContainer: Inorganic
   - type: Destructible
@@ -77,6 +84,12 @@
     absorptionRatios:
       Piercing: 1
       Heat: 0
+  # Palmtree: recyclable plate materials (see trauma plate note).
+  - type: PhysicalComposition
+    materialComposition:
+      Plasteel: 80 # homogenous plate slab
+      Plastic: 40 # mounting
+      Durathread: 40 # straps
   - type: Damageable
     damageContainer: Inorganic
   - type: Destructible
@@ -116,6 +129,12 @@
       Heat: 1
       Radiation: 0.5
       Shock: 0.5
+  # Palmtree: recyclable plate materials (see trauma plate note). Iridite -> Diamond substitution.
+  - type: PhysicalComposition
+    materialComposition:
+      Silver: 60 # copper heat diffusers -> Silver
+      Diamond: 3 # iridite shielding -> Diamond
+      Durathread: 40 # straps
   - type: Damageable
     damageContainer: Inorganic
   - type: Destructible
@@ -156,6 +175,12 @@
       Blunt: -0.1
       Slash: -0.1
       Piercing: -0.1
+  # Palmtree: recyclable plate materials (see trauma plate note).
+  - type: PhysicalComposition
+    materialComposition:
+      Brass: 150 # brass-bluespace alloy frame
+      Bluespace: 3 # bluespace crystal core
+      Durathread: 100 # straps
   - type: Damageable
     damageContainer: Inorganic
   - type: Destructible

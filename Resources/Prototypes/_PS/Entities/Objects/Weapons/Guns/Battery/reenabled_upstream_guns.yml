@@ -40,6 +40,11 @@
     steps: 5
     zeroVisible: true
   - type: Appearance
+  # Palmtree: recyclable - steel and polymer stun gun. (The ADMEME elite variant inherits this.)
+  - type: PhysicalComposition
+    materialComposition:
+      Steel: 20
+      Plastic: 20
 
 - type: entity
   name: elite taser
@@ -94,6 +99,11 @@
     steps: 5
     zeroVisible: true
   - type: Appearance
+  # Palmtree: recyclable - steel housing and plasma coils.
+  - type: PhysicalComposition
+    materialComposition:
+      Steel: 40
+      Plasma: 20
 
 - type: entity
   name: energy shotgun

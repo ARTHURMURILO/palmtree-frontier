@@ -5,6 +5,11 @@
   components:
   - type: BallisticAmmoProvider
     proto: PalmGrenadeFlash
+  # Palmtree: recyclable - steel launcher tube and polymer furniture. (The Admeme variant inherits this.)
+  - type: PhysicalComposition
+    materialComposition:
+      Steel: 60
+      Plastic: 30
 
 - type: entity
   parent: PalmWeaponLauncherChinaLakeFlashbang
