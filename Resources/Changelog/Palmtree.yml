@@ -1143,3 +1143,17 @@ Entries:
   time: '2026-10-17T01:00:33.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/b818eba2ee5ff94217b5fbd0a2453568047b6a6b
+- author: TheLife
+  changes:
+    - type: Fix
+      message: >-
+        Buttons, logic and shuttle cannons on a retrieved ship work again
+        instead of silently doing nothing.
+    - type: Fix
+      message: >-
+        Saved guns fire again, and A.P.E./emitter bolts travel instead of
+        freezing in place.
+  id: 90071
+  time: '2026-10-17T01:03:38.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/13e65853383ed3b9ed254e77e70e1091b760b301
