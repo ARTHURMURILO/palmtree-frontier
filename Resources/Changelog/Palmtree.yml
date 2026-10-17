@@ -1132,3 +1132,14 @@ Entries:
   time: '2026-10-16T11:59:25.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/78dd54db45c8728f26e649fb1543ad4b99eabf32
+- author: TheLife
+  changes:
+    - type: Add
+      message: >-
+        Admins can now place entities with an optional fractional offset from
+        the spawn entities window (set X/Y in the adminbus tab, then pick the
+        SnapgridCenterOffset mode in the Override dropdown).
+  id: 90070
+  time: '2026-10-17T01:00:33.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/b818eba2ee5ff94217b5fbd0a2453568047b6a6b
