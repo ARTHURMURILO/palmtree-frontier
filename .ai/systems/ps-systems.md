@@ -737,6 +737,13 @@ Small features that did not get their own section yet:
   instrument flags (`allowPercussion`, `allowProgramChange`, `respectMidiLimits: false`) plus the
   walkman's full General MIDI program list and pocketable UI; violet tape layer, no loot/vendor
   wiring (mirrors `SuperSynthesizerInstrument`). Test: `Tests/_PS/WalkmanTest.cs`.
+- **Admin placement offset** (2026-10): content-side `SnapgridCenterOffset` placement mode
+  (`Content.Client/_PS/Placement/Modes`, subclass of the engine's `SnapgridCenter`) adds the
+  `ps.placement.offset_x`/`_y` client CVars (in tiles, archived) on top of the tile-center snap, so
+  admins and mappers can place entities slightly off-center (like hand-placed shuttle buttons).
+  The adminbus tab has X/Y fields plus a Reset; the mode appears in every placement mode dropdown
+  (spawn menu Override and the map editor's entity selector). A zero offset behaves exactly like
+  `SnapgridCenter`. Test: `Tests/_PS/PlacementOffsetTest.cs`.
 - **Vote sounds** (commit `241ea1bc6c`): custom votes play `vote_started`/`vote_yes`/`vote_no`/
   success/failure cues from `Resources/Audio/_PS/Voting/` (client `VoteManager`).
 - **UI open/close sounds** (commit `2f307becc5`): panel open/close clicks from
