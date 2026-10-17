@@ -7,6 +7,9 @@ using Content.Shared._NF.Bank;
 using Content.Server._NF.ShuttleRecords;
 using Content.Server.Cargo.Systems;
 using Content.Server.Chat.Systems;
+using Content.Server.DeviceLinking.Components;
+using Content.Server.DeviceLinking.Systems;
+using Content.Server.DeviceNetwork.Systems;
 using Content.Server.GameTicking;
 using Content.Server.StationEvents.Components;
 using Content.Server.StationRecords;
@@ -22,6 +25,7 @@ using Content.Server.Power.Components;
 using Content.Server.Shuttles.Components;
 using Content.Server.Shuttles.Systems;
 using Content.Server.Station.Systems;
+using Content.Server.Weapons.Ranged.Systems;
 using Content.Shared._NF.BindToStation;
 using Content.Shared._NF.CCVar;
 using Content.Shared._NF.ShuttleRecords;
@@ -33,6 +37,8 @@ using Content.Shared._PS.ShipRegistry;
 using Content.Shared.Access.Components;
 using Content.Shared.Database;
 using Content.Shared.Chat;
+using Content.Shared.DeviceLinking;
+using Content.Shared.DeviceNetwork.Components;
 using Content.Shared.Forensics.Components;
 using Content.Shared.GameTicking;
 using Content.Shared.Ghost;
@@ -43,6 +49,7 @@ using Content.Shared.Mobs.Components;
 using Content.Shared.Preferences;
 using Content.Shared.UserInterface;
 using Content.Shared.Warps;
+using Content.Shared.Weapons.Ranged.Components;
 using Robust.Server.GameObjects;
 using Robust.Server.Player;
 using Robust.Shared.Audio.Systems;
@@ -110,6 +117,9 @@ public sealed class BluespaceDockSystem : EntitySystem
     [Dependency] private readonly SharedBluespaceDockSystem _dock = default!;
     [Dependency] private readonly ChatSystem _chat = default!;
     [Dependency] private readonly SharedContainerSystem _containers = default!;
+    [Dependency] private readonly DeviceLinkSystem _deviceLink = default!;
+    [Dependency] private readonly DeviceNetworkSystem _deviceNetwork = default!;
+    [Dependency] private readonly GunSystem _gunSystem = default!;
     [Dependency] private readonly GameTicker _gameTicker = default!;
     [Dependency] private readonly UserInterfaceSystem _ui = default!;
 
@@ -923,8 +933,9 @@ public sealed class BluespaceDockSystem : EntitySystem
     }
 
     /// <summary>
-    /// Loads a ship file from <c>UserData/bluespace_dock/</c> onto a fresh map and re-runs MapInit
-    /// for its entities (except lights, item slots and docking ports).
+    /// Loads a ship file from <c>UserData/bluespace_dock/</c> onto a fresh map and restores the
+    /// map-init registration the loader skips for live-saved grids (device network membership and
+    /// shuttle cannon signal ports; see <see cref="RestoreMapInitRegistration"/>).
     /// </summary>
     public bool TryLoadShipFile(string relativePath, out EntityUid? shuttleUid)
     {
@@ -985,6 +996,16 @@ public sealed class BluespaceDockSystem : EntitySystem
                     dock.DockJointId = null;
                 }
             }
+
+            // A stored ship is saved from a live grid, so every entity in the file carries
+            // `mapInit: true` and the engine deliberately **skips MapInitEvent** when loading them
+            // (it only bumps their life stage - that is what makes a re-loaded live save keep its
+            // container contents instead of re-running spawn-time fills). Registration work that
+            // normally happens in MapInit is therefore missing: devices are not on the device
+            // network (buttons and logic silently do nothing) and shuttle cannons never get their
+            // signal ports. Restore just that registration here - do NOT re-raise MapInit for the
+            // entities, or every storage/container fill re-runs and duplicates or spills items.
+            RestoreMapInitRegistration(shuttleUid.Value);
 
             // No MapInit re-raise here: the engine already initializes loaded entities itself, in
             // hierarchy order (EntityDeserializer.StartEntitiesInternal walks parents first), which is
@@ -1442,6 +1463,43 @@ public sealed class BluespaceDockSystem : EntitySystem
 
         if (_station.GetLargestGrid(stationUid) is { } stationGrid)
             _shuttle.TryFTLDock(shuttleUid, shuttleComp, stationGrid);
+    }
+
+    /// <summary>
+    /// Restores the map-init registration the loader skips for a stored ship's entities (see the
+    /// call in <see cref="TryLoadShipFile"/>): device network membership for every auto-connecting
+    /// device, the signal ports of shuttle cannons, and the modified gun values (fire rate,
+    /// projectile speed, angles) that MapInit computes for every <see cref="GunComponent"/>.
+    /// </summary>
+    public void RestoreMapInitRegistration(EntityUid grid)
+    {
+        var entities = new HashSet<EntityUid>();
+        GetEntitiesOnGrid(grid, entities);
+
+        foreach (var uid in entities)
+        {
+            if (!Exists(uid))
+                continue;
+
+            // DeviceNetworkSystem.OnMapInit: join the device network, unless the device was
+            // deliberately disconnected or is already on it.
+            if (TryComp<DeviceNetworkComponent>(uid, out var device)
+                && device.AutoConnect
+                && !_deviceNetwork.IsDeviceConnected(uid, device))
+            {
+                _deviceNetwork.ConnectDevice(uid, device);
+            }
+
+            // GunSignalControlSystem.OnInit: shuttle cannons get their signal sink ports here.
+            if (TryComp<GunSignalControlComponent>(uid, out var gunControl))
+                _deviceLink.EnsureSinkPorts(uid, gunControl.TriggerPort, gunControl.TogglePort, gunControl.OnPort, gunControl.OffPort);
+
+            // SharedGunSystem.OnMapInit: refresh the modified gun values (fire rate, projectile
+            // speed, angles, ...). They are computed in MapInit and are otherwise left at zero on a
+            // loaded gun, so saved guns cannot fire and emitter bolts spawn with no velocity.
+            if (TryComp<GunComponent>(uid, out var gun))
+                _gunSystem.RefreshModifiers((uid, gun));
+        }
     }
 
     /// <summary>

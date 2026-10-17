@@ -569,12 +569,24 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
   Registrar does the same at registration.
 - **No pre-save power-down, no MapInit re-raise** (both inherited from Coyote's drydock, both removed):
   powering down fuel/charge systems wrote `on: false` / `switchedOn: false` into the file, so a
-  retrieved ship came back unpowered (its APC off, the bridge door refusing to open), and re-raising
-  MapInit on top of the engine's own initialization double-initializes components - storage fills its
-  prototype contents a second time (duplicating or refusing items) and item slots spawn their starting
-  items again. The engine already initializes loaded entities itself, in hierarchy order
-  (`EntityDeserializer.StartEntitiesInternal` walks parents first), which is what every map load and
-  the shipyard's own purchase path rely on.
+  retrieved ship came back unpowered (its APC off, the bridge door refusing to open). Re-raising
+  `MapInitEvent` on top of the engine's own initialization is also wrong: a live save carries
+  `mapInit: true` on every entity, and the loader deliberately skips MapInit for those - forcing it
+  re-runs every spawn-time fill (`StorageFill`, `ContainerFill`, ...) and duplicates or spills the
+  contents a player already has in their bags/crates.
+- **`mapInit: true` skips MapInit on load (2026-10-16 fix)**: because the loader only bumps the life
+  stage for post-init entities, registration work that normally happens in MapInit never runs for a
+  retrieved ship. That silently broke **buttons and logic** (devices were never re-joined to the
+  device network), shuttle cannons (their sink ports were missing), and **guns/emitters**
+  (`GunComponent`'s modified values - fire rate, projectile speed, angles - are computed in
+  `SharedGunSystem.OnMapInit` via `RefreshModifiers`; without it a saved gun refuses to fire and
+  emitter/A.P.E. bolts spawn with zero velocity and "stay in place"). `TryLoadShipFile` now calls
+  `RestoreMapInitRegistration` after loading, which does *only* the registration: `ConnectDevice`
+  for every auto-connecting `DeviceNetworkComponent`, `EnsureSinkPorts` for
+  `GunSignalControlComponent` (cannons), and `RefreshModifiers` for every `GunComponent`. Do **not**
+  replace this with a blanket MapInit re-raise - inventories depend on it. Also note device network
+  packets are processed **one tick later** (`DeviceNetworkSystem.SwapQueues`), so a button's effect
+  is never visible in the same tick.
 - **What a ship file may not contain**: `TrySaveShipFile` strips the deed and everything referencing
   the ship's station (`StationMemberComponent`, `StationBoundObjectComponent`) *before* serializing —
   the station is a mapped entity the file cannot carry, and stale references make the deserializer

@@ -472,3 +472,30 @@ so these fail only in CI:
   `source` may be `"NA"`). Run them locally:
   `python RobustToolbox/Schemas/validate_rsis.py Resources/` and yamale with
   `RobustToolbox/Schemas/rga.yml` + `rga_validators.py`.
+
+## 24. Saving live grids: `mapInit: true` skips MapInit on load (2026-10-16)
+
+- A grid saved while it is **live** gets `mapInit: true` on every entity (`EntitySerializer` writes
+  it for `EntityLifeStage.MapInitialized`). On load, `EntityDeserializer` only bumps the life stage
+  for those entities - **`MapInitEvent` does not fire for any of them** (see
+  `EntityDeserializer.StartEntities/StartupEntity` and the `PostMapInit` handling). Official ship
+  files do not carry the flag, so they load as pre-init and get MapInit exactly once.
+- Consequence: anything normally registered/configured in MapInit is missing on a retrieved ship.
+  Known cases: `DeviceNetworkSystem` never joins `DeviceNetworkComponent`s (buttons, logic, doors,
+  cannons - all silently dead), `GunSignalControlSystem` never adds shuttle-cannon sink ports, and
+  `SharedGunSystem.OnMapInit` never runs `RefreshModifiers`, so `GunComponent`'s modified values
+  (fire rate, projectile speed, angles) stay at zero: **saved guns refuse to fire and emitter/
+  A.P.E. bolts spawn with no velocity and freeze in place**. The bluespace dock compensates with
+  `RestoreMapInitRegistration` in `BluespaceDockSystem` - extend that when a new
+  MapInit-registered ship system shows up.
+- **Never "fix" this by re-raising `MapInitEvent` on the loaded entities.** Live entities already
+  had their spawn-time init; running it again re-fires every `StorageFill`/`ContainerFill` and
+  duplicates (or spills) whatever players have in their containers. The bluespace dock test
+  `BluespaceDockDeviceLinkTest` locks in both halves: device links work after retrieval, and an
+  emptied-and-refilled toolbox keeps exactly its stored contents.
+- Device network packets are processed **one tick after** being queued
+  (`DeviceNetworkSystem.SwapQueues`), so tests (and any code that checks a signal's effect) must run
+  a tick between `InvokePort`/`SendSignal` and the assertion.
+- `SetTiles` with **diagonally adjacent** tiles splits the grid (`GridSplitEvent`): entities on the
+  split-off part end up on a new grid without the original's components (deed, brand). Test setups
+  must use orthogonally adjacent tiles.
