@@ -1157,3 +1157,14 @@ Entries:
   time: '2026-10-17T01:03:38.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/13e65853383ed3b9ed254e77e70e1091b760b301
+- author: TheLife
+  changes:
+    - type: Fix
+      message: >-
+        In-flight bullets and bolts are no longer saved with your ship - storing
+        it while shooting drops them instead of leaving them frozen on the
+        retrieved ship.
+  id: 90072
+  time: '2026-10-17T01:23:15.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/471077c893448d8fd7620635aaa5d7a8abac52be
