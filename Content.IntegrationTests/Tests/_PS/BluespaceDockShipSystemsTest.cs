@@ -188,14 +188,15 @@ public sealed class BluespaceDockShipSystemsTest
             Assert.That(GetTotalAmmo(entMan, preGun.Value), Is.EqualTo(6),
                 "Firing the gun before storing did not consume a round.");
 
-            // Drop the bullet the sanity shot spawned: its Weapon points at the gun, and the gun is
-            // about to be deleted with the ship (a live projectile would keep referencing it).
-            DeleteBulletsFrom(entMan, preGun.Value);
-
             Assert.That(
                 dock.TryStoreShip(shipGrid, userId.ToString(), characterName, 100, payer: null, cost: 0,
                     out var storeError),
                 Is.True, storeError);
+
+            // Storing a ship must not keep its in-flight projectiles: the sanity shot is gone (it
+            // is not in the saved file and is not left flying at the stored gun).
+            Assert.That(CountProjectilesByWeapon(entMan, preGun.Value), Is.EqualTo(0),
+                "Storing the ship did not drop its in-flight projectiles.");
 
             var entry = dock.FindEntry(userId.ToString(), characterName, "Diag Ship");
             Assert.That(entry, Is.Not.Null, "No registry entry after the store.");
@@ -243,7 +244,8 @@ public sealed class BluespaceDockShipSystemsTest
             Assert.That(docking.GetDocks(shipGrid).Any(d => d.Comp.DockedWith != null), Is.False,
                 "The ship should be undocked.");
 
-            foreach (var uid in FindOnGrid(entMan, dock, shipGrid))
+            var retrievedEntities = FindOnGrid(entMan, dock, shipGrid).ToList();
+            foreach (var uid in retrievedEntities)
             {
                 var proto = entMan.GetComponent<MetaDataComponent>(uid).EntityPrototype?.ID;
                 switch (proto)
@@ -267,6 +269,10 @@ public sealed class BluespaceDockShipSystemsTest
             Assert.That(foundLight, Is.Not.EqualTo(default(EntityUid)), "The retrieved ship has no light.");
             Assert.That(foundApe, Is.Not.EqualTo(default(EntityUid)), "The retrieved ship has no A.P.E.");
             Assert.That(foundEmitter, Is.Not.EqualTo(default(EntityUid)), "The retrieved ship has no emitter.");
+
+            // Mid-flight projectiles must never be saved: one would come back frozen in place.
+            Assert.That(retrievedEntities.Any(uid => entMan.HasComponent<ProjectileComponent>(uid)), Is.False,
+                "The retrieved ship contains projectiles that were saved with it.");
 
             var slots = entMan.GetComponent<ItemSlotsComponent>(foundGun);
             Assert.That(slots.Slots["gun_magazine"].ContainerSlot?.ContainedEntity, Is.Not.Null,
@@ -351,7 +357,7 @@ public sealed class BluespaceDockShipSystemsTest
                 "The retrieved gun did not fire (or consumed the wrong amount of ammo).");
 
             // Leave no bullet behind referencing a soon-to-be-deleted weapon.
-            DeleteBulletsFrom(entMan, foundGun);
+            server.System<BluespaceDockSystem>().DeleteProjectiles(shipGrid);
         });
 
         await pair.CleanReturnAsync();
@@ -385,18 +391,19 @@ public sealed class BluespaceDockShipSystemsTest
     }
 
     /// <summary>
-    /// Deletes projectiles fired by a gun. A projectile keeps EntityUid references to its weapon,
-    /// and deleting the weapon (with a ship, for instance) while a bullet is still flying makes
-    /// game state serialization for that bullet error out, so tests clean up after themselves.
+    /// Counts projectiles fired by a gun.
     /// </summary>
-    private static void DeleteBulletsFrom(IEntityManager entMan, EntityUid gun)
+    private static int CountProjectilesByWeapon(IEntityManager entMan, EntityUid gun)
     {
+        var count = 0;
         var query = entMan.EntityQueryEnumerator<ProjectileComponent>();
-        while (query.MoveNext(out var bulletUid, out var bulletComp))
+        while (query.MoveNext(out _, out var projectile))
         {
-            if (bulletComp.Weapon == gun)
-                entMan.QueueDeleteEntity(bulletUid);
+            if (projectile.Weapon == gun)
+                count++;
         }
+
+        return count;
     }
 
     private static int CountProjectiles(IEntityManager entMan, string proto)

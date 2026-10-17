@@ -496,6 +496,11 @@ so these fail only in CI:
 - Device network packets are processed **one tick after** being queued
   (`DeviceNetworkSystem.SwapQueues`), so tests (and any code that checks a signal's effect) must run
   a tick between `InvokePort`/`SendSignal` and the assertion.
+- **Mid-flight projectiles are never saved and never left behind when a ship is stored, deleted or
+  sold** (`BluespaceDockSystem.DeleteProjectiles`): a stored bolt would come back frozen, and a
+  projectile left in the world keeps `EntityUid` references to its weapon/shooter, which errors
+  during game state serialization once that entity is deleted. Files written before this rule are
+  cleaned on load. The same applies to any future system that deletes a grid with guns on it.
 - `SetTiles` with **diagonally adjacent** tiles splits the grid (`GridSplitEvent`): entities on the
   split-off part end up on a new grid without the original's components (deed, brand). Test setups
   must use orthogonally adjacent tiles.

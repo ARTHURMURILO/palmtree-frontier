@@ -539,6 +539,13 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
   containers are taken out first. Nothing alive is saved into the ship file or deleted with the grid.
   The shipyard's own sale path only preserved ghosts (`preserveOnSale`), so pets used to be destroyed
   by a sale.
+- **In-flight projectiles are never saved (`DeleteProjectiles`, 2026-10-16)**: `TrySaveShipFile`
+  (and the admin-delete/sale paths) delete a ship's shots - anything flying over the grid and
+  anything whose weapon/shooter is on it - before saving/deleting. A stored bolt would come back
+  frozen at its position, and a shot left in the world would keep pointing at a weapon that leaves
+  with the ship (`ProjectileComponent.Weapon`/`Shooter` are networked `EntityUid`s; referencing a
+  deleted one errors during game state serialization until the projectile despawns). Files written
+  before this rule can still contain projectiles; `TryLoadShipFile` drops them on load.
 - **Names**: a deed is stored split into a base name and a registration suffix (`ShipNameHelper` in
   `Content.Shared/_PS/ShipRegistry`). `BluespaceDockEntry.Name` holds the base name and
   `DisplayName` is rebuilt from the normalized parts on every store and retrieve, so the suffix

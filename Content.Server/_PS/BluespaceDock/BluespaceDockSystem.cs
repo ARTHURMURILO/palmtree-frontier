@@ -47,6 +47,7 @@ using Content.Shared.Station;
 using Content.Shared.Station.Components;
 using Content.Shared.Mobs.Components;
 using Content.Shared.Preferences;
+using Content.Shared.Projectiles;
 using Content.Shared.UserInterface;
 using Content.Shared.Warps;
 using Content.Shared.Weapons.Ranged.Components;
@@ -632,6 +633,11 @@ public sealed class BluespaceDockSystem : EntitySystem
         error = null;
         var path = new ResPath($"{ShipDirectory}/{relativePath}");
 
+        // In-flight projectiles are runtime state and are never saved: a stored bolt would come
+        // back frozen, and a shot left flying in the world would keep pointing at a weapon that
+        // goes into the dock with the ship.
+        DeleteProjectiles(shuttleUid);
+
         var removed = StripStationReferences(shuttleUid);
         stripped?.AddRange(removed);
 
@@ -933,9 +939,10 @@ public sealed class BluespaceDockSystem : EntitySystem
     }
 
     /// <summary>
-    /// Loads a ship file from <c>UserData/bluespace_dock/</c> onto a fresh map and restores the
-    /// map-init registration the loader skips for live-saved grids (device network membership and
-    /// shuttle cannon signal ports; see <see cref="RestoreMapInitRegistration"/>).
+    /// Loads a ship file from <c>UserData/bluespace_dock/</c> onto a fresh map, drops any in-flight
+    /// projectiles a legacy file still carries, and restores the map-init registration the loader
+    /// skips for live-saved grids (device network membership, shuttle cannon signal ports and the
+    /// modified gun values; see <see cref="RestoreMapInitRegistration"/>).
     /// </summary>
     public bool TryLoadShipFile(string relativePath, out EntityUid? shuttleUid)
     {
@@ -996,6 +1003,11 @@ public sealed class BluespaceDockSystem : EntitySystem
                     dock.DockJointId = null;
                 }
             }
+
+            // In-flight projectiles are runtime state and are never saved: a stored bolt would come
+            // back frozen at its position. Files written before this cleanup can still carry them,
+            // so drop any that came from the file.
+            DeleteProjectiles(shuttleUid.Value);
 
             // A stored ship is saved from a live grid, so every entity in the file carries
             // `mapInit: true` and the engine deliberately **skips MapInitEvent** when loading them
@@ -1503,6 +1515,40 @@ public sealed class BluespaceDockSystem : EntitySystem
     }
 
     /// <summary>
+    /// Deletes a grid's in-flight projectiles: anything flying over the grid and anything fired by
+    /// a weapon or shooter on it.
+    /// </summary>
+    /// <remarks>
+    /// Projectiles are runtime state. They are never saved into a ship file (a stored bolt would
+    /// come back frozen at its position), and when a ship leaves the world its in-flight shots must
+    /// not be left behind either: their weapon/shooter reference would point at a deleted entity,
+    /// which makes game state serialization error out until the projectile despawns.
+    /// </remarks>
+    /// <returns>How many projectiles were deleted.</returns>
+    public int DeleteProjectiles(EntityUid grid)
+    {
+        var entities = new HashSet<EntityUid>();
+        GetEntitiesOnGrid(grid, entities);
+
+        var toDelete = new List<EntityUid>();
+        var query = EntityQueryEnumerator<ProjectileComponent>();
+        while (query.MoveNext(out var uid, out var projectile))
+        {
+            if (entities.Contains(uid)
+                || (projectile.Weapon is { } weapon && entities.Contains(weapon))
+                || (projectile.Shooter is { } shooter && entities.Contains(shooter)))
+            {
+                toDelete.Add(uid);
+            }
+        }
+
+        foreach (var uid in toDelete)
+            Del(uid);
+
+        return toDelete.Count;
+    }
+
+    /// <summary>
     /// Moves every ghost and mob off a grid before it is stored or deleted, so passengers (pets
     /// included), corpses and onlookers are never swallowed by the grid's deletion or saved into
     /// the ship file. Mobs inside containers (a pet in a crate, for instance) are taken out of
@@ -1831,8 +1877,10 @@ public sealed class BluespaceDockSystem : EntitySystem
             return false;
         }
 
-        // Rescue ghosts, passengers and pets before the grid (and everything on it) is deleted.
+        // Rescue ghosts, passengers and pets before the grid (and everything on it) is deleted, and
+        // drop its in-flight shots so none are left pointing at a weapon that is about to vanish.
         EvacuateGrid(grid);
+        DeleteProjectiles(grid);
 
         ClearDeedsFor(grid);
 
@@ -2162,8 +2210,9 @@ public sealed class BluespaceDockSystem : EntitySystem
         }
 
         // The shipyard deletes the sold ship; get its occupants off first so pets, corpses and
-        // onlookers are not destroyed along with it.
+        // onlookers are not destroyed along with it, and drop its in-flight shots.
         EvacuateGrid(shuttleUid);
+        DeleteProjectiles(shuttleUid);
 
         // TrySellShuttle refuses every sale while the shipyard's parking map is not set up (it is
         // only created by a purchase or by the CVar handler, which does not run when the shipyard
