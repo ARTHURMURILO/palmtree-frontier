@@ -56,10 +56,11 @@ public sealed partial class ShipCombatComponent : Component
 }
 ```
 
-Events raised on the grid: `ShipCombatConditionChangedEvent` (M1), plus mode/power/shield/lock
-events in later milestones. All ship-combat actions are event-driven so a future AI brain can
-raise the same events without a console (`ShipCombatLockRequestEvent`, `ShipCombatSetModeEvent`,
-`ShipCombatFireEvent`, ...).
+Events: `ShipCombatConditionChangedEvent` (M1, **broadcast** — Robust allows only one component-event
+subscription per (component, event) pair, and several systems react to a condition change; filter on
+`args.Grid`), plus mode/power/shield/lock events in later milestones. All ship-combat actions are
+event-driven so a future AI brain can raise the same events without a console
+(`ShipCombatLockRequestEvent`, `ShipCombatSetModeEvent`, `ShipCombatFireEvent`, ...).
 
 ## Power model (STO adaptation)
 

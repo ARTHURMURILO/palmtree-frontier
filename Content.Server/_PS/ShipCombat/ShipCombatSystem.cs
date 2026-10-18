@@ -61,7 +61,7 @@ public sealed class ShipCombatSystem : EntitySystem
     }
 
     /// <summary>
-    /// Changes the ship's condition and raises <see cref="ShipCombatConditionChangedEvent"/>.
+    /// Changes the ship's condition and broadcasts <see cref="ShipCombatConditionChangedEvent"/>.
     /// Setting the current condition again is a no-op.
     /// </summary>
     public void SetCondition(Entity<ShipCombatComponent> combat, ShipCondition condition)
@@ -72,7 +72,7 @@ public sealed class ShipCombatSystem : EntitySystem
 
         combat.Comp.Condition = condition;
         var ev = new ShipCombatConditionChangedEvent(combat, oldCondition, condition);
-        RaiseLocalEvent(combat, ev);
+        RaiseLocalEvent(ev);
     }
 
     /// <summary>

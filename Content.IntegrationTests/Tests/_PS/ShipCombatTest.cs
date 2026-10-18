@@ -23,10 +23,10 @@ public sealed class ShipCombatTest
         public override void Initialize()
         {
             base.Initialize();
-            SubscribeLocalEvent<ShipCombatComponent, ShipCombatConditionChangedEvent>(OnConditionChanged);
+            SubscribeLocalEvent<ShipCombatConditionChangedEvent>(OnConditionChanged);
         }
 
-        private void OnConditionChanged(EntityUid uid, ShipCombatComponent component, ShipCombatConditionChangedEvent args)
+        private void OnConditionChanged(ShipCombatConditionChangedEvent args)
         {
             ConditionChanges.Add(args);
         }

@@ -3,8 +3,13 @@ using Robust.Shared.GameObjects;
 namespace Content.Shared._PS.ShipCombat;
 
 /// <summary>
-/// Palmtree: raised on a grid when its <see cref="Components.ShipCombatComponent.Condition"/> changes.
+/// Palmtree: broadcast when a grid's <see cref="Components.ShipCombatComponent.Condition"/> changes.
 /// </summary>
+/// <remarks>
+/// Broadcast rather than directed at the grid: Robust allows a single component-event subscription
+/// per (component, event) pair, and several systems (the consoles, the alert system, the condition
+/// sirens) react to a condition change. Filter on <see cref="Grid"/> in the handler.
+/// </remarks>
 public sealed class ShipCombatConditionChangedEvent : EntityEventArgs
 {
     /// <summary>The grid whose condition changed.</summary>

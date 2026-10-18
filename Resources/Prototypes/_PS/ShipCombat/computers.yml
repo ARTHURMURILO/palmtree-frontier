@@ -1,0 +1,29 @@
+- type: entity
+  parent: BaseComputer
+  id: ComputerTacticalConsole
+  name: tactical console
+  description: A military-grade targeting console. Renders the ship IFF with tactical overlays and controls the ship's weapons.
+  suffix: Palmtree
+  components:
+  - type: ShipTargetingConsole
+  - type: ActivatableUI
+    key: enum.TacticalConsoleUiKey.Key
+  - type: UserInterface
+    interfaces:
+      enum.TacticalConsoleUiKey.Key:
+        type: TacticalConsoleBoundUserInterface
+  - type: RadarConsole
+    maxRange: 512
+  - type: WorldLoader
+    radius: 512
+  - type: Sprite
+    sprite: _PS/Structures/Machines/tactical_console.rsi
+    layers:
+    - map: ["computerLayerBody"]
+      state: computer_blackmarket
+    - map: ["computerLayerKeyboard"]
+      state: generic_keyboard
+    - map: ["computerLayerScreen"]
+      state: shipyard_blackmarket
+    - map: ["computerLayerKeys"]
+      state: blackmarket_key

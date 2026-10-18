@@ -16,6 +16,7 @@ using Content.Server.StationRecords;
 using Content.Server.StationRecords.Systems;
 using Content.Server._NF.Shipyard.Systems;
 using Content.Server._NF.Station.Components;
+using Content.Server._PS.ShipCombat;
 using Content.Server.Access.Systems;
 using Content.Server.Administration.Logs;
 using Content.Server.Popups;
@@ -35,6 +36,7 @@ using Content.Shared._NF.Shipyard;
 using Content.Shared._NF.Shipyard.Components;
 using Content.Shared._NF.Shipyard.Prototypes;
 using Content.Shared._PS.BluespaceDock;
+using Content.Shared._PS.ShipCombat.Components;
 using Content.Shared._PS.ShipRegistry;
 using Content.Shared.Access.Components;
 using Content.Shared.Database;
@@ -126,6 +128,7 @@ public sealed class BluespaceDockSystem : EntitySystem
     [Dependency] private readonly GunSystem _gunSystem = default!;
     [Dependency] private readonly SharedRadarConsoleSystem _radar = default!;
     [Dependency] private readonly ExtensionCableSystem _extensionCable = default!;
+    [Dependency] private readonly ShipCombatSystem _shipCombat = default!;
     [Dependency] private readonly GameTicker _gameTicker = default!;
     [Dependency] private readonly UserInterfaceSystem _ui = default!;
 
@@ -1665,6 +1668,12 @@ public sealed class BluespaceDockSystem : EntitySystem
         // loaded gun, so saved guns cannot fire and emitter bolts spawn with no velocity.
         if (TryComp<GunComponent>(uid, out var gun))
             _gunSystem.RefreshModifiers((uid, gun));
+
+        // Palmtree: a loaded ship with a tactical console must get its ship combat state back
+        // (grids saved before the feature, or a file whose grid state was stripped). The state
+        // itself is saved on the grid, so this is idempotent.
+        if (HasComp<ShipTargetingConsoleComponent>(uid))
+            _shipCombat.TryEnsureShipCombat(uid, out _);
     }
 
     /// <summary>

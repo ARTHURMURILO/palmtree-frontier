@@ -23,4 +23,22 @@ public sealed partial class ShipCombatComponent : Component
     /// </summary>
     [DataField]
     public bool AutomaticCondition = true;
+
+    /// <summary>
+    /// Which weapon group the tactical console has selected.
+    /// </summary>
+    [DataField]
+    public ShipWeaponMode WeaponMode = ShipWeaponMode.MasterSafe;
+
+    /// <summary>
+    /// When true, weapons in the selected group fire automatically at the locked target.
+    /// </summary>
+    [DataField]
+    public bool AutomaticFire;
+
+    /// <summary>
+    /// When true, being attacked locks the attacker and arms every weapon group automatically.
+    /// </summary>
+    [DataField]
+    public bool AutomaticRetaliation;
 }

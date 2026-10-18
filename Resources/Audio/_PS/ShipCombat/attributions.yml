@@ -1,0 +1,4 @@
+- files: ["alert09.ogg", "alert10.ogg", "alert14.ogg", "alert18.ogg", "alert19.ogg", "alertklaxon_clean2.ogg", "computerbeep_35.ogg", "computerbeep_71.ogg", "computerbeep_72.ogg", "consolewarning.ogg", "critical.ogg", "damagealarm.ogg", "damagealarm2.ogg", "denybeep1.ogg", "input_ok_1_clean.ogg", "processing.ogg", "processing2.ogg", "processing3.ogg", "tng_red_alert1.ogg", "tng_torpedo_clean.ogg", "voy_redalert.ogg"]
+  license: "Custom"
+  copyright: "Ship combat console/siren sounds uploaded by the maintainer. Source and licence to be confirmed."
+  source: "NA"
