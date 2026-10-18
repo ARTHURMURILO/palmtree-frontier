@@ -1168,3 +1168,25 @@ Entries:
   time: '2026-10-17T01:23:15.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/471077c893448d8fd7620635aaa5d7a8abac52be
+- author: TheLife
+  changes:
+    - type: Fix
+      message: >-
+        Ships carrying a plant analyzer can be stored in the bluespace dock
+        again instead of failing to save.
+    - type: Fix
+      message: >-
+        Storing or selling a ship no longer makes shuttle consoles spam "Can't
+        resolve MetaDataComponent".
+    - type: Fix
+      message: >-
+        Retrieved ships reconnect their machines to the ship's APC instead of
+        reporting them as un-powered until rebuilt.
+    - type: Fix
+      message: >-
+        A stored ship whose saved item no longer exists loads without leaving
+        dangling container references.
+  id: 90073
+  time: '2026-10-18T04:18:29.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/d41566d5d0ba659b08f93183b735487e4761ea8a
