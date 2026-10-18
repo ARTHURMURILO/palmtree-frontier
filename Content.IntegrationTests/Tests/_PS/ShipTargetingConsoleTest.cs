@@ -139,6 +139,7 @@ public sealed class ShipTargetingConsoleTest
         EntityUid console = default;
         EntityUid consoleGrid = default;
         EntityUid nearGrid = default;
+        EntityUid plainGrid = default;
 
         await server.WaitPost(() =>
         {
@@ -150,10 +151,20 @@ public sealed class ShipTargetingConsoleTest
             console = entMan.SpawnEntity("ComputerTacticalConsole",
                 new EntityCoordinates(consoleGrid, new Vector2(0.5f, 0.5f)));
 
-            // A second grid 100 tiles away: inside the 512-tile tactical range.
-            nearGrid = mapMan.CreateGridEntity(mapId).Owner;
-            mapSystem.SetTile(nearGrid, entMan.GetComponent<MapGridComponent>(nearGrid), new Vector2i(0, 0), new Tile(1));
+            // A second grid 100 tiles away with a shuttle console: inside the 512-tile tactical
+            // range and a ship, so it counts as a contact.
+            var near = mapMan.CreateGridEntity(mapId);
+            nearGrid = near.Owner;
+            mapSystem.SetTile(nearGrid, near.Comp, new Vector2i(0, 0), new Tile(1));
+            entMan.SpawnEntity("ComputerShuttle", new EntityCoordinates(nearGrid, new Vector2(0.5f, 0.5f)));
             xformSystem.SetWorldPosition(nearGrid, new Vector2(100f, 0f));
+
+            // A grid without a shuttle console (an asteroid/wreck): in range, but not a ship, so it
+            // must not be a contact.
+            var plain = mapMan.CreateGridEntity(mapId);
+            plainGrid = plain.Owner;
+            mapSystem.SetTile(plainGrid, plain.Comp, new Vector2i(0, 0), new Tile(1));
+            xformSystem.SetWorldPosition(plainGrid, new Vector2(-100f, 0f));
         });
 
         // The contact scan runs once a second.
@@ -164,8 +175,10 @@ public sealed class ShipTargetingConsoleTest
             var system = server.System<ShipTargetingConsoleSystem>();
             var contacts = system.GetContacts(console);
             Assert.That(contacts, Is.Not.Null, "The console has not scanned for contacts yet.");
-            Assert.That(contacts, Does.Contain(nearGrid), "A grid inside the range was not picked up.");
+            Assert.That(contacts, Does.Contain(nearGrid), "A ship inside the range was not picked up.");
             Assert.That(contacts, Does.Not.Contain(consoleGrid), "The console's own grid is not a contact.");
+            Assert.That(contacts, Does.Not.Contain(plainGrid),
+                "A grid without a shuttle console (an asteroid/wreck) is not a ship contact.");
         });
 
         await server.WaitPost(() =>

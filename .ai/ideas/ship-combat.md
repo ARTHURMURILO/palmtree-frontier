@@ -22,7 +22,7 @@ alarms and Condition Sirens, plus the `PSShipCombat` research line.
 | Power model | STO-adapted: a fixed 200-point pool across Shields/Weapons/Thrusters/Aux, each settable 15–125, sum always 200, baseline 50, `|` marker at 100, defaults 50/50/50/50. Raising one pool lowers the others proportionally; per-pool locks and Attack/Defense/Balanced presets. Budget = the sink's rated throughput (upgradeable via `PowerCell` parts); the battery buffers and everything browns out proportionally when the battery is empty and intake is short. |
 | Power effects | Weapons damage `(p+100)/200` (torpedoes unaffected, STO rule); shields regen pulse ×`p/50` and hardness 0.2%/pt damage negation; thrusters thrust `1 + (p−50)×1%`; Aux shares `p/200` of throughput to the ship's grid. Offline below 25 points with the `(!)` alert. |
 | Shields | 4 facings. `Up` absorbs while charge > 0; at 0 → `Down` (no absorption from that side); re-arms above 20% of max (restored beep `input_ok_1_clean.ogg`). Regen pulse every 6 s adds `ratedRegen × (p/50)` to **each** facing (STO). Arrows = instant energy redistribution: click a facing to drain the other three into it (up to cap), `ALL` evens out; 10 s cooldown. Placeholder blue hit effect. |
-| Alarms | `damagealarm2.ogg` one-shot when a facing collapses (2 s cooldown between collapses); `damagealarm.ogg` on the transition that takes all facings down; every shielding console plays them. `critical.ogg` every 5 s on every tactical console while condition ∈ {YELLOW, RED} and the grid has no powered/intact ship weapon. `consolewarning.ogg` on being locked; `processing*.ogg` during lock; `computerbeep_35.ogg` clear lock; `denybeep1.ogg` denied lock; `computerbeep_71/72.ogg` contacts entering/leaving range (2 s cooldown); `alert14/19/18.ogg` torpedo alarms. |
+| Alarms | `damagealarm2.ogg` one-shot when a facing collapses (2 s cooldown between collapses); `damagealarm.ogg` on the transition that takes all facings down; every shielding console plays them. `critical.ogg` every 5 s on every tactical console while condition ∈ {YELLOW, RED} and the grid has no powered/intact ship weapon. `consolewarning.ogg` on being locked; `processing*.ogg` during lock; `computerbeep_35.ogg` clear lock; `denybeep1.ogg` denied lock; `computerbeep_71/72.ogg` contacts entering/leaving range (2 s cooldown, only grids **with a shuttle console** count as ships; asteroids/wrecks do not beep but stay lockable). Every console sound plays at the console and is audible to anyone nearby, whether or not the window is open. `alert14/19/18.ogg` torpedo alarms (alert14 one-shot on detection <800; alert19 loops 800→200; alert18, the fast beep, loops <200). |
 | Condition Sirens | Powered strobe-light variants (rotating light + looping ambient), active while the grid's condition is RED, constructible and in the tech tree: Voyager (`voy_redalert.ogg`), Buzz (`alert10.ogg`), Soft (`alert09.ogg`), TNG (`tng_red_alert1.ogg`), Deep (`alertklaxon_clean2.ogg`). |
 | Research | New `PSShipCombat` tech discipline + nodes, machine/computer boards and lathe recipes for every new machine. |
 | Assets | Console rsi copied from `_NF` blackmarket shipyard states (tactical plain, shielding tinted yellow); torpedo = copied `_NF` `frag-emp`; photon = red tesla sprite + `SingularityDistortionComponent`; launch sound `tng_torpedo_clean.ogg`. |
@@ -113,7 +113,9 @@ Both consoles are machines with parts (tactical lock speed uses `Capacitor`).
 ## Weapons & torpedoes
 
 - Turrets: SLAT sprites, no AI, 45° arc around placement angle, idle rotation inside the arc,
-  shots ignore their own grid, remote power, fire only with the target in arc.
+  remote power, fire only with the target in arc. They do **not** shoot through their own grid:
+  when the firing line is blocked by the ship's own hull the turret holds fire (a cvar restores
+  the original shoot-through-own-grid behaviour).
 - Stationary weapons: emitter sprites, exposed space, straight fire, collide with their own grid,
   ignore their own shields, remote power.
 - Torpedo launchers: exposed space (reuse `NozzleExposed`-style check), remote power, never
@@ -121,9 +123,12 @@ Both consoles are machines with parts (tactical lock speed uses `Capacitor`).
 - Torpedoes: `ProjectileComponent`-based (the dock's `DeleteProjectiles` cleans them up on save),
   slow limited steering at the grid captured at launch, long lifetime. Photon torpedo: 2× speed,
   steering starts at 0.5 s and ramps to max by 4 s, red tesla sprite + singularity distortion.
+- Torpedoes render on the tactical IFF as diamonds: **red** for torpedoes from other ships,
+  **green** for the console's own ship (server-driven blips in the console state so long-range
+  torpedoes are visible beyond PVS).
 - Incoming alarms per grid: `alert14.ogg` once when first detected under 800 tiles, looping
-  `alert19.ogg` (800–200) then `alert18.ogg` (<200); >30° deviation = miss, silence; `MSL: YES`
-  while inbound.
+  `alert19.ogg` (800–200) then the fast beep `alert18.ogg` (<200); >30° deviation = miss,
+  silence; `MSL: YES` while inbound.
 - `ShipWeaponComponent.FiresWhileSafe` leaves the door open for future non-hostile weapons
   (traction beams) usable on MASTER SAFE; targets still get the lock warning.
 

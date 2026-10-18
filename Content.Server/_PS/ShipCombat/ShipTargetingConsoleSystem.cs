@@ -1,4 +1,5 @@
 using System.Numerics;
+using Content.Server.Shuttles.Components;
 using Content.Server.Shuttles.Systems;
 using Content.Shared._PS.ShipCombat;
 using Content.Shared._PS.ShipCombat.Components;
@@ -71,10 +72,20 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
             grids.Add((gridUid, gridXform.MapID, position));
         }
 
+        // Only grids with a shuttle console count as ships for contact alerts. Asteroids, wrecks
+        // and other non-ship grids do not beep (they are still lockable).
+        var shipGrids = new HashSet<EntityUid>();
+        var shuttleConsoles = EntityQueryEnumerator<ShuttleConsoleComponent, TransformComponent>();
+        while (shuttleConsoles.MoveNext(out _, out _, out var shuttleXform))
+        {
+            if (shuttleXform.GridUid is { } shuttleGrid)
+                shipGrids.Add(shuttleGrid);
+        }
+
         var consoles = EntityQueryEnumerator<ShipTargetingConsoleComponent, RadarConsoleComponent, TransformComponent>();
         while (consoles.MoveNext(out var uid, out var console, out var radar, out var xform))
         {
-            ScanContacts(uid, console, radar, xform, grids);
+            ScanContacts(uid, console, radar, xform, grids, shipGrids);
         }
     }
 
@@ -96,9 +107,6 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
         if (args.UiKey is not TacticalConsoleUiKey.Key)
             return;
 
-        // Seed the contact list again so opening the window does not beep for everything already in
-        // range; the next scan stores the current contacts silently.
-        _contacts.Remove(uid);
         UpdateState(uid, component);
     }
 
@@ -209,7 +217,8 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
         ShipTargetingConsoleComponent console,
         RadarConsoleComponent radar,
         TransformComponent xform,
-        List<(EntityUid Grid, MapId Map, Vector2 Position)> grids)
+        List<(EntityUid Grid, MapId Map, Vector2 Position)> grids,
+        HashSet<EntityUid> shipGrids)
     {
         if (xform.GridUid is not { } ownGrid)
             return;
@@ -221,6 +230,9 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
         foreach (var (grid, map, position) in grids)
         {
             if (grid == ownGrid || map != xform.MapID)
+                continue;
+
+            if (!shipGrids.Contains(grid))
                 continue;
 
             if ((position - consolePosition).Length() > range)
@@ -260,13 +272,11 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
         if (!entered && !left)
             return;
 
-        // Contact sounds are alerts for whoever is watching the console.
-        if (!_ui.IsUiOpen(uid, TacticalConsoleUiKey.Key))
-            return;
-
         if (_nextContactSound.TryGetValue(uid, out var next) && _timing.CurTime < next)
             return;
 
+        // The alert is played at the console, audible by anyone nearby - it does not need the
+        // window to be open.
         _audio.PlayPvs(entered ? console.ContactEnterSound : console.ContactLeaveSound, uid);
         _nextContactSound[uid] = _timing.CurTime + console.ContactSoundCooldown;
     }
