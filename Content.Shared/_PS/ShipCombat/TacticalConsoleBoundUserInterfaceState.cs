@@ -41,6 +41,12 @@ public sealed class TacticalConsoleBoundUserInterfaceState : BoundUserInterfaceS
     /// </summary>
     public string? TargetName { get; }
 
+    /// <summary>
+    /// Ships the console can see: their armed state and whether they are locking this ship. Drives
+    /// the red threat IFF and the lock cursors.
+    /// </summary>
+    public List<TacticalContactState> Contacts { get; }
+
     public TacticalConsoleBoundUserInterfaceState(
         NavInterfaceState navState,
         ShipCondition condition,
@@ -52,7 +58,8 @@ public sealed class TacticalConsoleBoundUserInterfaceState : BoundUserInterfaceS
         bool incomingMissile,
         bool hasLock,
         NetEntity? lockTarget,
-        string? targetName)
+        string? targetName,
+        List<TacticalContactState> contacts)
     {
         NavState = navState;
         Condition = condition;
@@ -65,5 +72,36 @@ public sealed class TacticalConsoleBoundUserInterfaceState : BoundUserInterfaceS
         HasLock = hasLock;
         LockTarget = lockTarget;
         TargetName = targetName;
+        Contacts = contacts;
+    }
+}
+
+/// <summary>
+/// Palmtree: one visible ship on the tactical console.
+/// </summary>
+[Serializable, NetSerializable]
+public sealed class TacticalContactState
+{
+    /// <summary>The contact's grid.</summary>
+    public NetEntity Grid { get; set; }
+
+    /// <summary>
+    /// True when the contact is not on MASTER SAFE or is at YELLOW condition or above: its IFF
+    /// renders red on the tactical console.
+    /// </summary>
+    public bool Armed { get; set; }
+
+    /// <summary>True when this ship is currently locked by the contact (yellow lock cursor).</summary>
+    public bool LockingUs { get; set; }
+
+    public TacticalContactState()
+    {
+    }
+
+    public TacticalContactState(NetEntity grid, bool armed, bool lockingUs)
+    {
+        Grid = grid;
+        Armed = armed;
+        LockingUs = lockingUs;
     }
 }

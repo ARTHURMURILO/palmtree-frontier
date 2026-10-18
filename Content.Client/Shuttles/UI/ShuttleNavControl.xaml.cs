@@ -55,6 +55,16 @@ public sealed partial class ShuttleNavControl : BaseShuttleControl
     /// Color used for hidden-IFF contacts when <see cref="ShowHiddenIFF"/> is on.
     /// </summary>
     public Color HiddenIFFColor { get; set; } = Color.Red;
+
+    /// <summary>
+    /// Grids that render red on this radar (armed contacts on the tactical console).
+    /// </summary>
+    public HashSet<EntityUid>? HostileGrids { get; set; }
+
+    /// <summary>
+    /// Color used for armed contacts when <see cref="HostileGrids"/> is set.
+    /// </summary>
+    public Color ThreatColor { get; set; } = Color.Red;
     // End Palmtree
 
     /// <summary>
@@ -115,7 +125,10 @@ public sealed partial class ShuttleNavControl : BaseShuttleControl
             return;
         // End Frontier
 
-        var a = InverseScalePosition(args.RelativePosition);
+        // Palmtree: the click position is converted with the radar's pixel scale, so the virtual
+        // RelativePosition must not be mixed with the physical MidPoint/MinimapScale (clicks landed
+        // off the target whenever the UI scale was not 100%).
+        var a = InverseScalePosition(args.RelativePixelPosition);
         var relativeWorldPos = a with { Y = -a.Y };
         relativeWorldPos = _rotation.Value.RotateVec(relativeWorldPos);
         var coords = _coordinates.Value.Offset(relativeWorldPos);
@@ -301,6 +314,10 @@ public sealed partial class ShuttleNavControl : BaseShuttleControl
                 labelName = "?";
                 shouldDrawIFF = true;
             }
+
+            // Palmtree: armed contacts render red on the tactical console.
+            if (HostileGrids != null && HostileGrids.Contains(gUid))
+                labelColor = ThreatColor;
 
             if (shouldDrawIFF)
             {

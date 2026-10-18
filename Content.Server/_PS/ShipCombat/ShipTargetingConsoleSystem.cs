@@ -165,11 +165,29 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
     private void OnConditionChanged(ShipCombatConditionChangedEvent args)
     {
         UpdateConsolesOnGrid(args.Grid);
+        UpdateConsolesSeeing(args.Grid);
     }
 
     private void OnStateChanged(ShipCombatStateChangedEvent args)
     {
         UpdateConsolesOnGrid(args.Grid);
+        UpdateConsolesSeeing(args.Grid);
+    }
+
+    /// <summary>
+    /// Refreshes the consoles of ships that can see <paramref name="grid"/> (its threat state may
+    /// have changed: weapon mode, condition, lock).
+    /// </summary>
+    private void UpdateConsolesSeeing(EntityUid grid)
+    {
+        foreach (var (consoleUid, contacts) in _contacts)
+        {
+            if (!contacts.Contains(grid))
+                continue;
+
+            if (TryComp<ShipTargetingConsoleComponent>(consoleUid, out var console))
+                UpdateState(consoleUid, console);
+        }
     }
 
     private void OnLockRequest(EntityUid uid, ShipTargetingConsoleComponent component, TacticalConsoleLockRequestMessage args)
@@ -241,7 +259,35 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
             incomingMissile: false, // M8: torpedo alarms
             hasLock: hasLock,
             lockTarget: hasLock ? GetNetEntity(combat.LockTarget) : null,
-            targetName: hasLock ? GetTargetDisplayName(combat.LockTarget!.Value) : null);
+            targetName: hasLock ? GetTargetDisplayName(combat.LockTarget!.Value) : null,
+            contacts: BuildContacts(uid, combat));
+    }
+
+    /// <summary>
+    /// The ships this console can see, with their threat state (armed contacts render red and get a
+    /// flashing lock cursor when they are locking this ship).
+    /// </summary>
+    private List<TacticalContactState> BuildContacts(EntityUid console, ShipCombatComponent combat)
+    {
+        var contacts = new List<TacticalContactState>();
+        if (!_contacts.TryGetValue(console, out var grids))
+            return contacts;
+
+        foreach (var grid in grids)
+        {
+            var armed = TryComp<ShipCombatComponent>(grid, out var other) && IsArmed(other);
+            contacts.Add(new TacticalContactState(GetNetEntity(grid), armed, combat.IncomingLocks.Contains(grid)));
+        }
+
+        return contacts;
+    }
+
+    /// <summary>
+    /// A contact is a threat when it is not on MASTER SAFE or is at YELLOW condition or above.
+    /// </summary>
+    private static bool IsArmed(ShipCombatComponent combat)
+    {
+        return combat.WeaponMode != ShipWeaponMode.MasterSafe || combat.Condition != ShipCondition.Green;
     }
 
     /// <summary>
@@ -325,6 +371,9 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
 
         if (!entered && !left)
             return;
+
+        // The window's contact list (armed state, lock cursors) changed.
+        UpdateState(uid, console);
 
         if (_nextContactSound.TryGetValue(uid, out var next) && _timing.CurTime < next)
             return;

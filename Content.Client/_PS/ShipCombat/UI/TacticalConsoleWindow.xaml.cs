@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using Content.Client.UserInterface.Controls;
 using Content.Shared._PS.ShipCombat;
@@ -49,6 +50,9 @@ public sealed partial class TacticalConsoleWindow : FancyWindow
     private ShipCondition _condition = ShipCondition.Green;
 
     private readonly TacticalOverlayState _overlay = new();
+
+    /// <summary>Armed contacts that render red on the radar.</summary>
+    private readonly HashSet<EntityUid> _hostileGrids = new();
 
     public TacticalConsoleWindow()
     {
@@ -147,21 +151,42 @@ public sealed partial class TacticalConsoleWindow : FancyWindow
 
     private void UpdateTacticalOverlay(TacticalConsoleBoundUserInterfaceState state)
     {
-        _overlay.LockTargetPosition = null;
+        _overlay.LockTargetPosition = state.LockTarget is { } netTarget
+            ? GetGridMapPosition(netTarget)
+            : null;
 
-        if (state.LockTarget is { } netTarget
-            && _entManager.TryGetEntity(netTarget, out var target)
-            && target is { } targetUid)
+        _overlay.LockCursors.Clear();
+        _hostileGrids.Clear();
+
+        foreach (var contact in state.Contacts)
         {
-            var center = _entManager.TryGetComponent<PhysicsComponent>(targetUid, out var physics)
-                ? physics.LocalCenter
-                : Vector2.Zero;
+            // Armed contacts render red.
+            if (contact.Armed && _entManager.TryGetEntity(contact.Grid, out var armed) && armed is { } armedUid)
+                _hostileGrids.Add(armedUid);
 
-            _overlay.LockTargetPosition = _entManager.System<SharedTransformSystem>()
-                .ToMapCoordinates(new EntityCoordinates(targetUid, center)).Position;
+            // Contacts locking this ship get a yellow cursor (flashing when armed).
+            if (contact.LockingUs && GetGridMapPosition(contact.Grid) is { } position)
+                _overlay.LockCursors.Add(new TacticalLockCursor(position, contact.Armed));
         }
 
+        NavRadar.HostileGrids = _hostileGrids;
         NavRadar.TacticalOverlay = _overlay;
+    }
+
+    /// <summary>
+    /// The map position of a grid's centre, or null when it is not loaded client-side.
+    /// </summary>
+    private Vector2? GetGridMapPosition(NetEntity netEntity)
+    {
+        if (!_entManager.TryGetEntity(netEntity, out var entity) || entity is not { } uid)
+            return null;
+
+        var center = _entManager.TryGetComponent<PhysicsComponent>(uid, out var physics)
+            ? physics.LocalCenter
+            : Vector2.Zero;
+
+        return _entManager.System<SharedTransformSystem>()
+            .ToMapCoordinates(new EntityCoordinates(uid, center)).Position;
     }
 
     private void SetPendingCondition(ShipCondition condition)

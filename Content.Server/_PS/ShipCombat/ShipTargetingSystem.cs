@@ -2,6 +2,7 @@ using System.Numerics;
 using Content.Shared._PS.ShipCombat;
 using Content.Shared._PS.ShipCombat.Components;
 using Content.Shared.Damage;
+using Content.Shared.FixedPoint;
 using Content.Shared.Damage.Systems;
 using Content.Shared.Mobs.Components;
 using Content.Shared.Shuttles.Components;
@@ -44,7 +45,10 @@ public sealed class ShipTargetingSystem : EntitySystem
     {
         base.Initialize();
 
-        SubscribeLocalEvent<DamageableComponent, DamageChangedEvent>(OnDamageChanged);
+        // BeforeDamageChangedEvent fires before resistances: being shot at raises the alert even
+        // when the ship's armour absorbs the whole hit.
+        SubscribeLocalEvent<DamageableComponent, BeforeDamageChangedEvent>(OnBeforeDamageChanged);
+        SubscribeLocalEvent<ShipCombatConditionChangedEvent>(OnConditionChanged);
     }
 
     public override void Update(float frameTime)
@@ -111,6 +115,11 @@ public sealed class ShipTargetingSystem : EntitySystem
     public bool TryStartLock(EntityUid source, EntityUid targetGrid, float range)
     {
         if (!_combat.TryGetShipCombat(source, out var combat))
+            return false;
+
+        // While a lock is being acquired the fire control is busy: spam-clicking cannot retarget
+        // and does not beep.
+        if (combat.Comp.LockInProgress)
             return false;
 
         if (!HasComp<MapGridComponent>(targetGrid)
@@ -195,9 +204,19 @@ public sealed class ShipTargetingSystem : EntitySystem
             PlaySound(target, ConsoleSound.IncomingLock);
     }
 
-    private void OnDamageChanged(EntityUid uid, DamageableComponent damageable, DamageChangedEvent args)
+    private void OnConditionChanged(ShipCombatConditionChangedEvent args)
     {
-        if (!args.DamageIncreased)
+        // Dropping to peacetime releases the lock.
+        if (args.NewCondition != ShipCondition.Green)
+            return;
+
+        if (TryComp<ShipCombatComponent>(args.Grid, out var combat))
+            ClearLock(args.Grid, combat, silent: true);
+    }
+
+    private void OnBeforeDamageChanged(EntityUid uid, DamageableComponent damageable, ref BeforeDamageChangedEvent args)
+    {
+        if (args.Damage.GetTotal() <= FixedPoint2.Zero)
             return;
 
         if (!_combat.TryGetShipCombat(uid, out var combat))
