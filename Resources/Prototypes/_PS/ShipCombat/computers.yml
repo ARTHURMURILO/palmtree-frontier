@@ -6,6 +6,9 @@
   suffix: Palmtree
   components:
   - type: ShipTargetingConsole
+  - type: DeviceLinkSource
+    ports:
+    - ShipWeaponLink
   - type: ActivatableUI
     key: enum.TacticalConsoleUiKey.Key
   - type: UserInterface

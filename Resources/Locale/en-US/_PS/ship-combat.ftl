@@ -48,3 +48,12 @@ bluespace-power-sink-examine-charge = Charge: { $charge } kJ / { $max } kJ.
 bluespace-power-sink-examine-budget = It can split up to { $throughput } kW between the ship's power pools.
 bluespace-power-sink-examine-wiring = Generators connect to a cable terminal placed next to it and facing it (the input); cables under it feed the ship's power grid (the output).
 bluespace-power-sink-examine-same-net = [color=red]Warning: its input and output are on the same power segment. Put the generators on their own segment, separated from the ship's grid.[/color]
+
+signal-port-name-ship-weapon-primary = Primary weapons
+signal-port-description-ship-weapon-primary = Weapons linked on this port fire with the PRIMARY group.
+signal-port-name-ship-weapon-secondary = Secondary weapons
+signal-port-description-ship-weapon-secondary = Weapons linked on this port fire with the SECONDARY group.
+signal-port-name-ship-weapon-aux = Auxiliary weapons
+signal-port-description-ship-weapon-aux = Weapons linked on this port fire with the AUX group.
+signal-port-name-ship-weapon-link = Ship weapon
+signal-port-description-ship-weapon-link = Links the tactical console to a ship weapon.

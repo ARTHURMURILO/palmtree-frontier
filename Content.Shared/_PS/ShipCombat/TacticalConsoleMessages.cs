@@ -61,3 +61,9 @@ public sealed class TacticalConsoleLockRequestMessage(NetEntity target) : BoundU
 /// </summary>
 [Serializable, NetSerializable]
 public sealed class TacticalConsoleClearLockMessage : BoundUserInterfaceMessage;
+
+/// <summary>
+/// Palmtree: fires the selected weapon group once (the MANUAL FIRE button).
+/// </summary>
+[Serializable, NetSerializable]
+public sealed class TacticalConsoleManualFireMessage : BoundUserInterfaceMessage;

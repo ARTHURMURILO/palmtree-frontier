@@ -132,12 +132,13 @@ Both consoles are machines with parts (tactical lock speed uses `Capacitor`).
 
 ## Weapons & torpedoes
 
-- Turrets: SLAT sprites, no AI, 45° arc around placement angle, idle rotation inside the arc,
-  remote power, fire only with the target in arc. They do **not** shoot through their own grid:
-  when the firing line is blocked by the ship's own hull the turret holds fire (a cvar restores
-  the original shoot-through-own-grid behaviour).
-- Stationary weapons: emitter sprites, exposed space, straight fire, collide with their own grid,
-  ignore their own shields, remote power.
+- Turrets (M7): SLAT placeholder sprites, no AI, 45° arc around the placement angle, idle sweep
+  inside the arc, remote power, rotate towards the locked target and fire once aligned (5°
+  tolerance). They shoot through their own grid (marked `SharedProjectileSystem` fork hook keyed on
+  the weapon's `IgnoreOwnGrid`).
+- Stationary weapons (M7): emitter placeholder sprites, exposed space (muzzle tile must be space),
+  fire straight along their facing when the target is ahead (placeholder ±45° check), collide with
+  their own grid, and a ship's own weapons bypass its own shields.
 - Torpedo launchers: exposed space (reuse `NozzleExposed`-style check), remote power, never
   auto-fire; ripple-fire from the `FIRE TORPEDOES` button.
 - Torpedoes: `ProjectileComponent`-based (the dock's `DeleteProjectiles` cleans them up on save),
@@ -149,6 +150,11 @@ Both consoles are machines with parts (tactical lock speed uses `Capacitor`).
 - Incoming alarms per grid: `alert14.ogg` once when first detected under 800 tiles, looping
   `alert19.ogg` (800–200) then the fast beep `alert18.ogg` (<200); >30° deviation = miss,
   silence; `MSL: YES` while inbound.
+- Weapon groups come from device-link sink ports `ShipWeaponPrimary/Secondary/Aux`; the tactical
+  console carries the `ShipWeaponLink` source port. Firing is gated by GREEN, MASTER SAFE, power and
+  (for turrets) the firing arc; the `Automatic Fire` checkbox fires the selected group at the lock
+  and `MANUAL FIRE` fires it once. Damage scales with the Weapons pool through
+  `GunDamageMultiplierComponent` (unpowered weapons cannot fire).
 - `ShipWeaponComponent.FiresWhileSafe` leaves the door open for future non-hostile weapons
   (traction beams) usable on MASTER SAFE; targets still get the lock warning.
 

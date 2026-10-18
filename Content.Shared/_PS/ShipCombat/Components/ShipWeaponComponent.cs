@@ -1,0 +1,48 @@
+using Robust.Shared.Maths;
+
+namespace Content.Shared._PS.ShipCombat.Components;
+
+/// <summary>
+/// Palmtree: a ship weapon controlled by the tactical console (a turret or a stationary weapon).
+/// Weapons are grouped by the device-link sink port they are linked on (Primary/Secondary/Aux);
+/// they are powered remotely by the bluespace power sink.
+/// </summary>
+[RegisterComponent]
+public sealed partial class ShipWeaponComponent : Component
+{
+    /// <summary>How the weapon is aimed.</summary>
+    [DataField("weaponType")]
+    public ShipWeaponType Type = ShipWeaponType.Turret;
+
+    /// <summary>Half of the turret's firing arc, in degrees, around the angle it was placed at.</summary>
+    [DataField]
+    public float ArcHalfAngle = 22.5f;
+
+    /// <summary>Turret rotation speed, in degrees per second.</summary>
+    [DataField]
+    public float RotationSpeed = 60f;
+
+    /// <summary>How closely a turret must face its target before it fires, in degrees.</summary>
+    [DataField]
+    public float FireTolerance = 5f;
+
+    /// <summary>When true, the weapon fires through its own grid instead of colliding with it.</summary>
+    [DataField]
+    public bool IgnoreOwnGrid = true;
+
+    /// <summary>
+    /// When true, the weapon can fire while the ship is on MASTER SAFE (future traction beams).
+    /// </summary>
+    [DataField]
+    public bool FiresWhileSafe;
+
+    /// <summary>Half of the angle a fixed weapon will fire within, in degrees.</summary>
+    [DataField]
+    public float FixedFireAngle = 45f;
+
+    /// <summary>The angle the weapon was placed at; its arc is centred on this (runtime).</summary>
+    public Angle BaseAngle;
+
+    /// <summary>Idle sweep direction (runtime).</summary>
+    public bool IdleClockwise = true;
+}

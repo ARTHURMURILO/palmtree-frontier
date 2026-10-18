@@ -90,10 +90,14 @@ public sealed class ShipShieldSystem : EntitySystem
         if (total <= 0f)
             return false;
 
+        // The ship's own weapons bypass its shields (stationary weapons punish bad placement).
+        if (args.Origin is { } origin && Exists(origin) && Transform(origin).GridUid == grid)
+            return false;
+
         // Direction from the attacker when known; explosions have no origin and hit the strongest facing.
         Vector2? source = null;
-        if (args.Origin is { } origin && Exists(origin))
-            source = _transform.GetMapCoordinates(origin).Position;
+        if (args.Origin is { } attacker && Exists(attacker))
+            source = _transform.GetMapCoordinates(attacker).Position;
 
         if (!TryAbsorb(grid, shield, source, total))
             return false;

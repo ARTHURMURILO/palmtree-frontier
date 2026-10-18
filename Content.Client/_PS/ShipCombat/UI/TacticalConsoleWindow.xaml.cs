@@ -43,6 +43,9 @@ public sealed partial class TacticalConsoleWindow : FancyWindow
     /// <summary>Raised when the player presses CLEAR LOCK.</summary>
     public event Action? OnClearLockRequested;
 
+    /// <summary>Raised when the player presses MANUAL FIRE.</summary>
+    public event Action? OnManualFireRequested;
+
     /// <summary>The condition the player selected but has not confirmed yet.</summary>
     private ShipCondition? _pendingCondition;
 
@@ -105,6 +108,7 @@ public sealed partial class TacticalConsoleWindow : FancyWindow
         AutoRetaliationCheck.OnToggled += args => OnAutomaticRetaliationChanged?.Invoke(args.Pressed);
 
         ClearLockButton.OnPressed += _ => OnClearLockRequested?.Invoke();
+        FireButton.OnPressed += _ => OnManualFireRequested?.Invoke();
     }
 
     public void SetConsole(EntityUid console)

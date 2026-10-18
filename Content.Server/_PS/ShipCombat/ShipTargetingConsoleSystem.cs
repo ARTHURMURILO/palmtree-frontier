@@ -23,6 +23,7 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
 {
     [Dependency] private readonly ShipCombatSystem _combat = default!;
     [Dependency] private readonly ShipTargetingSystem _targeting = default!;
+    [Dependency] private readonly ShipWeaponSystem _weapons = default!;
     [Dependency] private readonly ShuttleConsoleSystem _shuttleConsole = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
@@ -57,6 +58,7 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
         SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleSetWeaponModeMessage>(OnSetWeaponMode);
         SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleLockRequestMessage>(OnLockRequest);
         SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleClearLockMessage>(OnClearLock);
+        SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleManualFireMessage>(OnManualFire);
         SubscribeLocalEvent<ShipCombatConditionChangedEvent>(OnConditionChanged);
         SubscribeLocalEvent<ShipCombatStateChangedEvent>(OnStateChanged);
     }
@@ -204,6 +206,11 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
     private void OnClearLock(EntityUid uid, ShipTargetingConsoleComponent component, TacticalConsoleClearLockMessage args)
     {
         _targeting.TryClearLock(uid);
+    }
+
+    private void OnManualFire(EntityUid uid, ShipTargetingConsoleComponent component, TacticalConsoleManualFireMessage args)
+    {
+        _weapons.TryManualFire(uid);
     }
 
     /// <summary>

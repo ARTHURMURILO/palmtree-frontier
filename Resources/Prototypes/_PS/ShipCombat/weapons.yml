@@ -1,0 +1,207 @@
+- type: entity
+  parent: BaseBullet
+  id: ShipTurretBolt
+  name: turret bolt
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    layers:
+    - state: beam_blue
+      shader: unshaded
+  - type: Ammo
+    muzzleFlash: null
+  - type: Physics
+  - type: Fixtures
+    fixtures:
+      projectile:
+        shape:
+          !type:PhysShapeAabb
+          bounds: "-0.2,-0.2,0.2,0.2"
+        hard: false
+        mask:
+        - Opaque
+  - type: Projectile
+    damage:
+      types:
+        Heat: 20
+  - type: TimedDespawn
+    lifetime: 6
+
+- type: entity
+  parent: BaseBullet
+  id: ShipStationaryBolt
+  name: ship weapon bolt
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: Structures/Power/Generation/Singularity/emitter.rsi
+    layers:
+    - state: projectile
+      shader: unshaded
+  - type: Ammo
+    muzzleFlash: null
+  - type: Physics
+  - type: Fixtures
+    fixtures:
+      projectile:
+        shape:
+          !type:PhysShapeAabb
+          bounds: "-0.2,-0.2,0.2,0.2"
+        hard: false
+        mask:
+        - Opaque
+  - type: Projectile
+    damage:
+      types:
+        Heat: 25
+  - type: TimedDespawn
+    lifetime: 6
+
+- type: entity
+  parent: BaseStructureDynamic
+  id: ShipTurret
+  name: ship turret
+  description: A console-driven turret with a 45-degree firing arc. Powered by the bluespace power sink.
+  suffix: Palmtree
+  placement:
+    mode: SnapgridCenter
+  components:
+  - type: Transform
+    anchored: true
+  - type: Physics
+    bodyType: Static
+  - type: Fixtures
+    fixtures:
+      fix1:
+        shape:
+          !type:PhysShapeAabb
+          bounds: "-0.45,-0.45,0.45,0.45"
+        density: 190
+        mask:
+        - MachineMask
+        layer:
+        - MachineLayer
+  - type: Rotatable
+    rotateWhileAnchored: true
+  - type: Sprite
+    sprite: _NF/Objects/Weapons/Guns/Turrets/laser.rsi # Placeholder until ship turrets get their own art.
+    layers:
+    - state: base
+  - type: ShipWeapon
+    weaponType: Turret
+    arcHalfAngle: 22.5
+  - type: Gun
+    fireRate: 1
+    projectileSpeed: 60
+    selectedMode: SemiAuto
+    minAngle: 0
+    maxAngle: 0
+    soundGunshot:
+      path: /Audio/Weapons/Guns/Gunshots/laser.ogg
+  - type: RechargeBasicEntityAmmo
+    rechargeCooldown: 1
+  - type: BasicEntityAmmoProvider
+    proto: ShipTurretBolt
+    capacity: 2
+    count: 2
+  - type: BluespacePowered
+    pool: Weapons
+    ratedPower: 10000
+  - type: ApcPowerReceiver
+    needsPower: false
+    powerDisabled: true
+    powerLoad: 0
+  - type: GunDamageMultiplier
+  - type: DeviceLinkSink
+    ports:
+    - ShipWeaponPrimary
+    - ShipWeaponSecondary
+    - ShipWeaponAux
+  - type: Damageable
+    damageContainer: StructuralInorganic
+    damageModifierSet: Electronic
+  - type: Destructible
+    thresholds:
+    - trigger:
+        !type:DamageTrigger
+        damage: 300
+      behaviors:
+      - !type:DoActsBehavior
+        acts: ["Destruction"]
+  - type: StaticPrice
+    price: 1500
+
+- type: entity
+  parent: BaseStructureDynamic
+  id: ShipStationaryWeapon
+  name: stationary ship weapon
+  description: A fixed ship weapon that fires straight along its facing. Needs exposed space and ignores its own ship's shields.
+  suffix: Palmtree
+  placement:
+    mode: SnapgridCenter
+  components:
+  - type: Transform
+    anchored: true
+  - type: Physics
+    bodyType: Static
+  - type: Fixtures
+    fixtures:
+      fix1:
+        shape:
+          !type:PhysShapeAabb
+          bounds: "-0.45,-0.45,0.45,0.45"
+        density: 190
+        mask:
+        - MachineMask
+        layer:
+        - MachineLayer
+  - type: Rotatable
+    rotateWhileAnchored: true
+  - type: Sprite
+    sprite: Structures/Power/Generation/Singularity/emitter.rsi # Placeholder until stationary ship weapons get their own art.
+    layers:
+    - state: emitter0
+  - type: ShipWeapon
+    weaponType: Fixed
+    ignoreOwnGrid: false
+  - type: Gun
+    fireRate: 0.5
+    projectileSpeed: 60
+    selectedMode: SemiAuto
+    minAngle: 0
+    maxAngle: 0
+    soundGunshot:
+      path: /Audio/Weapons/Guns/Gunshots/laser3.ogg
+  - type: RechargeBasicEntityAmmo
+    rechargeCooldown: 2
+  - type: BasicEntityAmmoProvider
+    proto: ShipStationaryBolt
+    capacity: 2
+    count: 2
+  - type: BluespacePowered
+    pool: Weapons
+    ratedPower: 15000
+  - type: ApcPowerReceiver
+    needsPower: false
+    powerDisabled: true
+    powerLoad: 0
+  - type: GunDamageMultiplier
+  - type: DeviceLinkSink
+    ports:
+    - ShipWeaponPrimary
+    - ShipWeaponSecondary
+    - ShipWeaponAux
+  - type: Damageable
+    damageContainer: StructuralInorganic
+    damageModifierSet: Electronic
+  - type: Destructible
+    thresholds:
+    - trigger:
+        !type:DamageTrigger
+        damage: 300
+      behaviors:
+      - !type:DoActsBehavior
+        acts: ["Destruction"]
+  - type: StaticPrice
+    price: 1500
