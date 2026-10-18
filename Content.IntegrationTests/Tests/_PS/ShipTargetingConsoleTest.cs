@@ -88,6 +88,23 @@ public sealed class ShipTargetingConsoleTest
             // An undefined mode is ignored.
             bus.RaiseLocalEvent(console, new TacticalConsoleSetWeaponModeMessage((ShipWeaponMode) 200));
             Assert.That(state.Comp.WeaponMode, Is.EqualTo(ShipWeaponMode.Primary));
+
+            // The aim mode travels through the console and reaches the window state.
+            bus.RaiseLocalEvent(console, new TacticalConsoleSetTargetModeMessage(ShipTargetMode.Thrusters));
+            Assert.That(state.Comp.TargetMode, Is.EqualTo(ShipTargetMode.Thrusters));
+            Assert.That(server.System<ShipTargetingConsoleSystem>().BuildState(console, state.Comp).TargetMode,
+                Is.EqualTo(ShipTargetMode.Thrusters));
+
+            // An undefined aim mode is ignored.
+            bus.RaiseLocalEvent(console, new TacticalConsoleSetTargetModeMessage((ShipTargetMode) 200));
+            Assert.That(state.Comp.TargetMode, Is.EqualTo(ShipTargetMode.Thrusters));
+
+            // The Silent checkbox is per console and travels into the window state.
+            Assert.That(server.System<ShipTargetingConsoleSystem>().BuildState(console, state.Comp).Silent, Is.False,
+                "Consoles are audible by default.");
+            bus.RaiseLocalEvent(console, new TacticalConsoleSetSilentMessage(true));
+            Assert.That(entMan.GetComponent<ShipTargetingConsoleComponent>(console).Silent, Is.True);
+            Assert.That(server.System<ShipTargetingConsoleSystem>().BuildState(console, state.Comp).Silent, Is.True);
         });
 
         await pair.CleanReturnAsync();

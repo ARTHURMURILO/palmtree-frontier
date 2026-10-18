@@ -28,8 +28,10 @@ public sealed class TacticalConsoleBoundUserInterface : BoundUserInterface
         _window.OnAutomaticFireChanged += enabled => SendMessage(new TacticalConsoleSetAutomaticFireMessage(enabled));
         _window.OnAutomaticRetaliationChanged += enabled => SendMessage(new TacticalConsoleSetAutomaticRetaliationMessage(enabled));
         _window.OnWeaponModeChanged += mode => SendMessage(new TacticalConsoleSetWeaponModeMessage(mode));
+        _window.OnTargetModeChanged += mode => SendMessage(new TacticalConsoleSetTargetModeMessage(mode));
         _window.OnClearLockRequested += () => SendMessage(new TacticalConsoleClearLockMessage());
         _window.OnManualFireRequested += () => SendMessage(new TacticalConsoleManualFireMessage());
+        _window.OnSilentChanged += silent => SendMessage(new TacticalConsoleSetSilentMessage(silent));
 
         // Palmtree: clicking a contact on the radar asks the server to lock it.
         _window.OnLockRequested += coords =>

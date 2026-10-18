@@ -9,6 +9,11 @@ namespace Content.Shared._PS.ShipCombat.Components;
 [RegisterComponent]
 public sealed partial class ShipShieldingConsoleComponent : Component
 {
+    /// <summary>
+    /// When true the console plays no sounds (the Silent checkbox at the bottom of the window).
+    /// </summary>
+    [DataField]
+    public bool Silent;
 }
 
 [Serializable, NetSerializable]

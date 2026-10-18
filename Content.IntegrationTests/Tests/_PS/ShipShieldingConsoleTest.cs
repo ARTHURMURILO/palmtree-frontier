@@ -65,6 +65,13 @@ public sealed class ShipShieldingConsoleTest
 
             bus.RaiseLocalEvent(console, new ShipConsoleSetConditionMessage(ShipCondition.Yellow));
             Assert.That(state.Comp.Condition, Is.EqualTo(ShipCondition.Yellow));
+
+            // The Silent checkbox is per console and travels into the window state.
+            Assert.That(server.System<ShipShieldingConsoleSystem>().BuildState(console, state.Comp).Silent, Is.False,
+                "Consoles are audible by default.");
+            bus.RaiseLocalEvent(console, new ShieldingConsoleSetSilentMessage(true));
+            Assert.That(entMan.GetComponent<ShipShieldingConsoleComponent>(console).Silent, Is.True);
+            Assert.That(server.System<ShipShieldingConsoleSystem>().BuildState(console, state.Comp).Silent, Is.True);
         });
 
         await pair.CleanReturnAsync();

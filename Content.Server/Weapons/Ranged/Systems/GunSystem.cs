@@ -15,6 +15,8 @@ using Content.Shared.Weapons.Ranged.Events;
 using Content.Shared.Weapons.Ranged.Systems;
 using Content.Shared.Weapons.Reflect;
 using Content.Shared.Damage.Components;
+using Content.Shared._PS.ShipCombat.Components; // Palmtree: ship weapons fire through their own grid
+using Content.Shared._PS.Weapons; // Palmtree: ship weapon damage scales with the Weapons power pool
 using Robust.Shared.Audio;
 using Robust.Shared.Map;
 using Robust.Shared.Physics;
@@ -174,6 +176,16 @@ public sealed partial class GunSystem : SharedGunSystem
                             var ray = new CollisionRay(from.Position, dir, hitscan.CollisionMask);
                             var rayCastResults =
                                 Physics.IntersectRay(from.MapId, ray, hitscan.MaxLength, lastUser, false).ToList();
+
+                            // Palmtree: ship turrets fire through their own grid.
+                            if (TryComp<ShipWeaponComponent>(lastUser, out var shipWeapon)
+                                && shipWeapon.IgnoreOwnGrid
+                                && Transform(lastUser).GridUid is { } shooterGrid)
+                            {
+                                rayCastResults.RemoveAll(hit =>
+                                    hit.HitEntity.IsValid() && Transform(hit.HitEntity).GridUid == shooterGrid);
+                            }
+
                             if (!rayCastResults.Any())
                                 break;
 
@@ -232,6 +244,10 @@ public sealed partial class GunSystem : SharedGunSystem
                             }
                         }
                         // Frontier end
+                        // Palmtree: ship weapon hitscan damage scales with the ship's Weapons power pool.
+                        if (dmg != null && TryComp<GunDamageMultiplierComponent>(gunUid, out var shipDamageMultiplier))
+                            dmg = dmg * shipDamageMultiplier.Multiplier;
+
                         var hitName = ToPrettyString(hitEntity);
                         if (dmg != null)
                             dmg = Damageable.TryChangeDamage(hitEntity, dmg * Damageable.UniversalHitscanDamageModifier, origin: user);

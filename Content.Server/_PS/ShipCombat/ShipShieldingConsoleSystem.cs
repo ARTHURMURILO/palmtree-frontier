@@ -37,6 +37,7 @@ public sealed class ShipShieldingConsoleSystem : EntitySystem
         SubscribeLocalEvent<ShipShieldingConsoleComponent, ShieldingConsoleSetPoolLockMessage>(OnSetPoolLock);
         SubscribeLocalEvent<ShipShieldingConsoleComponent, ShieldingConsoleSetPresetMessage>(OnSetPreset);
         SubscribeLocalEvent<ShipShieldingConsoleComponent, ShieldingConsoleRedistributeMessage>(OnRedistribute);
+        SubscribeLocalEvent<ShipShieldingConsoleComponent, ShieldingConsoleSetSilentMessage>(OnSetSilent);
         SubscribeLocalEvent<ShipCombatConditionChangedEvent>(OnConditionChanged);
         SubscribeLocalEvent<ShipCombatStateChangedEvent>(OnStateChanged);
     }
@@ -76,6 +77,15 @@ public sealed class ShipShieldingConsoleSystem : EntitySystem
     private void OnSetCondition(EntityUid uid, ShipShieldingConsoleComponent component, ShipConsoleSetConditionMessage args)
     {
         _combat.TrySetCondition(uid, args.Condition);
+    }
+
+    private void OnSetSilent(EntityUid uid, ShipShieldingConsoleComponent component, ShieldingConsoleSetSilentMessage args)
+    {
+        if (component.Silent == args.Silent)
+            return;
+
+        component.Silent = args.Silent;
+        UpdateState(uid, component);
     }
 
     private void OnSetPool(EntityUid uid, ShipShieldingConsoleComponent component, ShieldingConsoleSetPoolMessage args)
@@ -188,7 +198,8 @@ public sealed class ShipShieldingConsoleSystem : EntitySystem
             shieldsAlert: GetShieldsAlert(combat),
             weaponsAlert: GetWeaponsAlert(combat),
             thrustersAlert: GetThrustersAlert(combat.Owner),
-            auxiliaryAlert: GetAuxiliaryAlert(combat));
+            auxiliaryAlert: GetAuxiliaryAlert(combat),
+            silent: TryComp<ShipShieldingConsoleComponent>(uid, out var console) && console.Silent);
     }
 
     /// <summary>

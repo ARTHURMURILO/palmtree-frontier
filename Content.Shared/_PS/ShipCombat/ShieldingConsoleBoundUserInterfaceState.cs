@@ -44,6 +44,9 @@ public sealed class ShieldingConsoleBoundUserInterfaceState : BoundUserInterface
     public bool ThrustersAlert { get; }
     public bool AuxiliaryAlert { get; }
 
+    /// <summary>True when the console is muted (no sounds).</summary>
+    public bool Silent { get; }
+
     public ShieldingConsoleBoundUserInterfaceState(
         NavInterfaceState navState,
         ShipCondition condition,
@@ -62,7 +65,8 @@ public sealed class ShieldingConsoleBoundUserInterfaceState : BoundUserInterface
         bool shieldsAlert,
         bool weaponsAlert,
         bool thrustersAlert,
-        bool auxiliaryAlert)
+        bool auxiliaryAlert,
+        bool silent)
     {
         NavState = navState;
         Condition = condition;
@@ -82,5 +86,6 @@ public sealed class ShieldingConsoleBoundUserInterfaceState : BoundUserInterface
         WeaponsAlert = weaponsAlert;
         ThrustersAlert = thrustersAlert;
         AuxiliaryAlert = auxiliaryAlert;
+        Silent = silent;
     }
 }

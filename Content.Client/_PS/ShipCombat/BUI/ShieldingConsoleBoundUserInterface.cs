@@ -26,6 +26,7 @@ public sealed class ShieldingConsoleBoundUserInterface : BoundUserInterface
         _window.OnPoolLockChanged += (pool, locked) => SendMessage(new ShieldingConsoleSetPoolLockMessage(pool, locked));
         _window.OnPresetSelected += preset => SendMessage(new ShieldingConsoleSetPresetMessage(preset));
         _window.OnRedistribute += facing => SendMessage(new ShieldingConsoleRedistributeMessage(facing));
+        _window.OnSilentChanged += silent => SendMessage(new ShieldingConsoleSetSilentMessage(silent));
     }
 
     protected override void UpdateState(BoundUserInterfaceState state)

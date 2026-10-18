@@ -67,3 +67,21 @@ public sealed class TacticalConsoleClearLockMessage : BoundUserInterfaceMessage;
 /// </summary>
 [Serializable, NetSerializable]
 public sealed class TacticalConsoleManualFireMessage : BoundUserInterfaceMessage;
+
+/// <summary>
+/// Palmtree: silences (or unsilences) the console.
+/// </summary>
+[Serializable, NetSerializable]
+public sealed class TacticalConsoleSetSilentMessage(bool silent) : BoundUserInterfaceMessage
+{
+    public bool Silent { get; } = silent;
+}
+
+/// <summary>
+/// Palmtree: selects what the ship's weapons aim at on the locked grid.
+/// </summary>
+[Serializable, NetSerializable]
+public sealed class TacticalConsoleSetTargetModeMessage(ShipTargetMode mode) : BoundUserInterfaceMessage
+{
+    public ShipTargetMode Mode { get; } = mode;
+}

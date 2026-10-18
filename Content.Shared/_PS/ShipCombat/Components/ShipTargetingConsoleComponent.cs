@@ -64,6 +64,12 @@ public sealed partial class ShipTargetingConsoleComponent : Component
     /// </summary>
     [DataField]
     public SoundSpecifier ConditionRaisedSound = new SoundPathSpecifier("/Audio/_PS/ShipCombat/alert14.ogg");
+
+    /// <summary>
+    /// When true the console plays no sounds (the Silent checkbox at the bottom of the window).
+    /// </summary>
+    [DataField]
+    public bool Silent;
 }
 
 [Serializable, NetSerializable]

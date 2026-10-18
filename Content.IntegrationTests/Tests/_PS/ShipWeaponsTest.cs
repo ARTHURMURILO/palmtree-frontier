@@ -10,6 +10,7 @@ using Content.Shared.Damage.Prototypes;
 using Content.Shared.Damage.Systems;
 using Content.Shared.DeviceLinking;
 using Content.Shared.Projectiles;
+using Content.Server.Shuttles.Components;
 using NUnit.Framework;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
@@ -262,6 +263,126 @@ public sealed class ShipWeaponsTest
             var shield = entMan.GetComponent<ShipShieldComponent>(grid);
             Assert.That(shield.Facings[(int) ShieldFacing.Starboard], Is.LessThan(300f),
                 "An outside attacker should drain the facing towards it.");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task AimModesPickSubsystemsOnTheTarget()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var mapSystem = server.System<SharedMapSystem>();
+        var mapMan = server.ResolveDependency<IMapManager>();
+
+        EntityUid targetGrid = default;
+        EntityUid hull = default;
+        EntityUid thruster = default;
+        EntityUid generator = default;
+
+        await server.WaitPost(() =>
+        {
+            var target = mapMan.CreateGridEntity(testMap.MapId);
+            targetGrid = target.Owner;
+            for (var x = 0; x < 4; x++)
+                mapSystem.SetTile(targetGrid, target.Comp, new Vector2i(x, 0), new Tile(1));
+
+            hull = entMan.SpawnEntity("WallSolid", new EntityCoordinates(targetGrid, new Vector2(0.5f, 0.5f)));
+
+            thruster = entMan.SpawnEntity("WallSolid", new EntityCoordinates(targetGrid, new Vector2(1.5f, 0.5f)));
+            entMan.AddComponent<ThrusterComponent>(thruster);
+
+            generator = entMan.SpawnEntity("WallSolid", new EntityCoordinates(targetGrid, new Vector2(2.5f, 0.5f)));
+            entMan.AddComponent<PowerSupplierComponent>(generator);
+        });
+
+        await pair.RunTicksSync(5);
+
+        await server.WaitAssertion(() =>
+        {
+            var weapons = server.System<ShipWeaponSystem>();
+
+            Assert.That(weapons.GetAimTarget(targetGrid, ShipTargetMode.Random), Is.Null,
+                "RANDOM aims at the grid centre, not an entity.");
+            Assert.That(weapons.GetAimTarget(targetGrid, ShipTargetMode.Hull), Is.EqualTo(hull),
+                "HULL should pick the plain structure.");
+            Assert.That(weapons.GetAimTarget(targetGrid, ShipTargetMode.Thrusters), Is.EqualTo(thruster),
+                "THRUSTERS should pick the thruster.");
+            Assert.That(weapons.GetAimTarget(targetGrid, ShipTargetMode.Generators), Is.EqualTo(generator),
+                "GENERATORS should pick the power source.");
+            Assert.That(weapons.GetAimTarget(targetGrid, ShipTargetMode.Weapons), Is.Null,
+                "The target has no weapons.");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task BeamTurretFiresThroughOwnHull()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var mapSystem = server.System<SharedMapSystem>();
+        var mapMan = server.ResolveDependency<IMapManager>();
+        var xform = server.System<SharedTransformSystem>();
+
+        EntityUid console = default;
+        EntityUid grid = default;
+        EntityUid turret = default;
+        EntityUid targetGrid = default;
+        EntityUid ownWall = default;
+        EntityUid targetWall = default;
+
+        await server.WaitPost(() =>
+        {
+            var gridEnt = mapMan.CreateGridEntity(testMap.MapId);
+            grid = gridEnt.Owner;
+            for (var x = 0; x < 5; x++)
+                mapSystem.SetTile(grid, gridEnt.Comp, new Vector2i(x, 0), new Tile(1));
+
+            entMan.SpawnEntity("BluespacePowerSink", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            console = entMan.SpawnEntity("ComputerTacticalConsole", new EntityCoordinates(grid, new Vector2(1.5f, 0.5f)));
+            turret = entMan.SpawnEntity("ShipTurretBeam", new EntityCoordinates(grid, new Vector2(2.5f, 0.5f)));
+
+            // Face the turret east (its arc is centred on the angle it was placed at).
+            xform.SetLocalRotationNoLerp(turret, Angle.FromDegrees(90));
+            entMan.GetComponent<ShipWeaponComponent>(turret).BaseAngle = Angle.FromDegrees(90);
+
+            // A wall of our own hull sits in the firing line: the beam has to pass through it.
+            ownWall = entMan.SpawnEntity("WallSolid", new EntityCoordinates(grid, new Vector2(3.5f, 0.5f)));
+
+            var target = mapMan.CreateGridEntity(testMap.MapId);
+            targetGrid = target.Owner;
+            mapSystem.SetTile(targetGrid, target.Comp, new Vector2i(0, 0), new Tile(1));
+            xform.SetWorldPosition(targetGrid, new Vector2(40f, 0f));
+            targetWall = entMan.SpawnEntity("WallSolid", new EntityCoordinates(targetGrid, new Vector2(0.5f, 0.5f)));
+
+            var deviceLink = server.System<SharedDeviceLinkSystem>();
+            deviceLink.ToggleLink(null, console, turret, "ShipWeaponLink", "ShipWeaponPrimary");
+        });
+
+        await pair.RunTicksSync(10);
+
+        await server.WaitAssertion(() =>
+        {
+            var combat = server.System<ShipCombatSystem>();
+            Assert.That(combat.TryGetShipCombat(grid, out var state), Is.True);
+            combat.SetCondition(state, ShipCondition.Yellow);
+            state.Comp.WeaponMode = ShipWeaponMode.Primary;
+            state.Comp.LockTarget = targetGrid;
+
+            Assert.That(server.System<ShipWeaponSystem>().TryManualFire(console), Is.True,
+                "The beam turret should fire.");
+
+            Assert.That(entMan.GetComponent<DamageableComponent>(targetWall).TotalDamage.Int(), Is.GreaterThan(0),
+                "The beam should hit the target through our own hull.");
+            Assert.That(entMan.GetComponent<DamageableComponent>(ownWall).TotalDamage.Int(), Is.EqualTo(0),
+                "The beam must not hit our own hull.");
         });
 
         await pair.CleanReturnAsync();

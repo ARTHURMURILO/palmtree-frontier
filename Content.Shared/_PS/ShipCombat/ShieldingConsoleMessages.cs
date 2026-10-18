@@ -32,6 +32,15 @@ public sealed class ShieldingConsoleSetPresetMessage(ShipPowerPreset preset) : B
 }
 
 /// <summary>
+/// Palmtree: silences (or unsilences) the console.
+/// </summary>
+[Serializable, NetSerializable]
+public sealed class ShieldingConsoleSetSilentMessage(bool silent) : BoundUserInterfaceMessage
+{
+    public bool Silent { get; } = silent;
+}
+
+/// <summary>
 /// Palmtree: instantly redistributes shield energy into one facing, or evenly with
 /// <see cref="ShieldFacing.All"/>.
 /// </summary>

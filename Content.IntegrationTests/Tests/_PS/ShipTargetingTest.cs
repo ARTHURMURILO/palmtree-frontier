@@ -556,7 +556,7 @@ public sealed class ShipTargetingTest
             Assert.That(contact!.Armed, Is.False);
             Assert.That(contact.LockingUs, Is.False);
 
-            // Armed target (a tactical console gives it combat state; ALL WEAPONS arms it).
+            // Off MASTER SAFE but still at GREEN: peacetime, so not a threat.
             var targetConsole = entMan.SpawnEntity("ComputerTacticalConsole",
                 new EntityCoordinates(target, new Vector2(0.5f, 0.5f)));
             Assert.That(combat.TryGetShipCombat(target, out var targetState), Is.True);
@@ -564,7 +564,19 @@ public sealed class ShipTargetingTest
 
             state = consoleSystem.BuildState(console, shipState.Comp);
             contact = state.Contacts.Find(c => entMan.GetEntity(c.Grid) == target);
-            Assert.That(contact!.Armed, Is.True, "A target off MASTER SAFE is armed.");
+            Assert.That(contact!.Armed, Is.False, "A GREEN target is not a threat even with weapons armed.");
+
+            // Armed and at YELLOW: renders red.
+            combat.SetCondition(targetState, ShipCondition.Yellow);
+            state = consoleSystem.BuildState(console, shipState.Comp);
+            contact = state.Contacts.Find(c => entMan.GetEntity(c.Grid) == target);
+            Assert.That(contact!.Armed, Is.True, "A target off MASTER SAFE at YELLOW is armed.");
+
+            // Back on MASTER SAFE: no longer a threat.
+            targetState.Comp.WeaponMode = ShipWeaponMode.MasterSafe;
+            state = consoleSystem.BuildState(console, shipState.Comp);
+            contact = state.Contacts.Find(c => entMan.GetEntity(c.Grid) == target);
+            Assert.That(contact!.Armed, Is.False, "A target on MASTER SAFE is not a threat.");
 
             // A target locking this ship is flagged for the yellow cursor.
             shipState.Comp.IncomingLocks.Add(target);

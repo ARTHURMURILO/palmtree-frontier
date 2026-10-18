@@ -6,11 +6,15 @@ using Content.Shared.DeviceLinking;
 using Content.Shared.Maps;
 using Content.Shared.Weapons.Ranged.Components;
 using Content.Shared.Weapons.Ranged.Systems;
+using Content.Server.Power.Components;
+using Content.Shared.Damage;
+using Content.Shared.Mobs.Components;
+using Content.Server.Shuttles.Components;
 using Robust.Shared.Map;
 using Robust.Shared.Maths;
 using Robust.Shared.Map.Components;
-using Robust.Shared.Maths;
 using Robust.Shared.Physics.Components;
+using Robust.Shared.Random;
 using Robust.Shared.Timing;
 
 namespace Content.Server._PS.ShipCombat;
@@ -40,6 +44,11 @@ public sealed class ShipWeaponSystem : EntitySystem
     [Dependency] private readonly SharedTransformSystem _transform = default!;
     [Dependency] private readonly TurfSystem _turf = default!;
     [Dependency] private readonly SharedMapSystem _mapSystem = default!;
+    [Dependency] private readonly IRobustRandom _random = default!;
+    [Dependency] private readonly IGameTiming _timing = default!;
+
+    /// <summary>How often the weapons re-pick which subsystem they aim at.</summary>
+    private static readonly TimeSpan AimReselectInterval = TimeSpan.FromSeconds(2);
 
     public override void Initialize()
     {
@@ -79,7 +88,8 @@ public sealed class ShipWeaponSystem : EntitySystem
             return false;
 
         var grid = combat.Owner;
-        var target = GetTargetCoordinates(grid, combat.Comp);
+        RefreshAimTarget(combat.Comp);
+        var target = GetAimCoordinates(combat.Comp);
         if (target == null)
             return false;
 
@@ -116,8 +126,9 @@ public sealed class ShipWeaponSystem : EntitySystem
     private void UpdateGrid(EntityUid grid, ShipCombatComponent combat, float frameTime)
     {
         var groups = BuildGroups(grid);
+        RefreshAimTarget(combat);
         var autoFire = combat.AutomaticFire && combat.Condition != ShipCondition.Green;
-        var target = autoFire ? GetTargetCoordinates(grid, combat) : null;
+        var target = autoFire ? GetAimCoordinates(combat) : null;
 
         var query = EntityQueryEnumerator<ShipWeaponComponent, BluespacePoweredComponent, TransformComponent>();
         while (query.MoveNext(out var uid, out var weapon, out var powered, out var xform))
@@ -208,18 +219,86 @@ public sealed class ShipWeaponSystem : EntitySystem
     }
 
     /// <summary>
-    /// The locked grid's centre as firing coordinates.
+    /// Where the weapons should aim: the selected subsystem on the locked grid, or its centre.
     /// </summary>
-    private EntityCoordinates? GetTargetCoordinates(EntityUid grid, ShipCombatComponent combat)
+    private EntityCoordinates? GetAimCoordinates(ShipCombatComponent combat)
     {
         if (combat.LockTarget is not { } target || !Exists(target) || !HasComp<MapGridComponent>(target))
             return null;
+
+        if (combat.AimTarget is { } aim && Exists(aim) && Transform(aim).GridUid == target)
+            return Transform(aim).Coordinates;
 
         var center = TryComp<PhysicsComponent>(target, out var physics)
             ? physics.LocalCenter
             : Vector2.Zero;
 
         return new EntityCoordinates(target, center);
+    }
+
+    /// <summary>
+    /// Re-picks the subsystem the weapons aim at (every <see cref="AimReselectInterval"/>, or when
+    /// the lock moved or the selected target was destroyed).
+    /// </summary>
+    private void RefreshAimTarget(ShipCombatComponent combat)
+    {
+        if (combat.LockTarget is not { } target || !Exists(target))
+        {
+            combat.AimTarget = null;
+            return;
+        }
+
+        if (_timing.CurTime < combat.NextAimSelection
+            && combat.AimTarget is { } current
+            && Exists(current)
+            && Transform(current).GridUid == target)
+        {
+            return;
+        }
+
+        combat.AimTarget = GetAimTarget(target, combat.TargetMode);
+        combat.NextAimSelection = _timing.CurTime + AimReselectInterval;
+    }
+
+    /// <summary>
+    /// Picks a random entity of the requested kind on a grid, or null for
+    /// <see cref="ShipTargetMode.Random"/> (aim at the grid centre) or when nothing matches.
+    /// </summary>
+    public EntityUid? GetAimTarget(EntityUid grid, ShipTargetMode mode)
+    {
+        if (mode == ShipTargetMode.Random)
+            return null;
+
+        var matches = new List<EntityUid>();
+        var query = EntityQueryEnumerator<TransformComponent>();
+        while (query.MoveNext(out var uid, out var xform))
+        {
+            if (xform.GridUid != grid || !xform.Anchored)
+                continue;
+
+            if (MatchesAimMode(uid, mode))
+                matches.Add(uid);
+        }
+
+        return matches.Count == 0 ? null : _random.Pick(matches);
+    }
+
+    private bool MatchesAimMode(EntityUid uid, ShipTargetMode mode)
+    {
+        return mode switch
+        {
+            // Hull: any anchored structure that is not a subsystem.
+            ShipTargetMode.Hull => HasComp<DamageableComponent>(uid)
+                                   && !HasComp<MobStateComponent>(uid)
+                                   && !HasComp<ShipWeaponComponent>(uid)
+                                   && !HasComp<ThrusterComponent>(uid)
+                                   && !HasComp<PowerSupplierComponent>(uid),
+            ShipTargetMode.Generators => HasComp<PowerSupplierComponent>(uid)
+                                         || HasComp<BluespacePowerSinkComponent>(uid),
+            ShipTargetMode.Weapons => HasComp<ShipWeaponComponent>(uid),
+            ShipTargetMode.Thrusters => HasComp<ThrusterComponent>(uid),
+            _ => false,
+        };
     }
 
     private void UpdateTurret(EntityUid uid, ShipWeaponComponent weapon, TransformComponent xform, EntityCoordinates? target, float frameTime)

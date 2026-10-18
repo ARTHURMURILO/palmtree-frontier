@@ -56,6 +56,8 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
         SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleSetAutomaticFireMessage>(OnSetAutomaticFire);
         SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleSetAutomaticRetaliationMessage>(OnSetAutomaticRetaliation);
         SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleSetWeaponModeMessage>(OnSetWeaponMode);
+        SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleSetTargetModeMessage>(OnSetTargetMode);
+        SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleSetSilentMessage>(OnSetSilent);
         SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleLockRequestMessage>(OnLockRequest);
         SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleClearLockMessage>(OnClearLock);
         SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleManualFireMessage>(OnManualFire);
@@ -164,6 +166,30 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
         UpdateState(uid, component);
     }
 
+    private void OnSetSilent(EntityUid uid, ShipTargetingConsoleComponent component, TacticalConsoleSetSilentMessage args)
+    {
+        if (component.Silent == args.Silent)
+            return;
+
+        component.Silent = args.Silent;
+        UpdateState(uid, component);
+    }
+
+    private void OnSetTargetMode(EntityUid uid, ShipTargetingConsoleComponent component, TacticalConsoleSetTargetModeMessage args)
+    {
+        if (!Enum.IsDefined(args.Mode))
+            return;
+
+        if (!_combat.TryGetShipCombat(uid, out var combat) || combat.Comp.TargetMode == args.Mode)
+            return;
+
+        combat.Comp.TargetMode = args.Mode;
+
+        // Re-pick the aim point immediately so the next shot follows the new selection.
+        combat.Comp.NextAimSelection = TimeSpan.Zero;
+        UpdateState(uid, component);
+    }
+
     private void OnConditionChanged(ShipCombatConditionChangedEvent args)
     {
         UpdateConsolesOnGrid(args.Grid);
@@ -254,14 +280,17 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
         var nav = _shuttleConsole.GetNavState(uid, docks);
 
         var hasLock = combat.LockTarget != null && !combat.LockInProgress;
+        var silent = TryComp<ShipTargetingConsoleComponent>(uid, out var console) && console.Silent;
 
         return new TacticalConsoleBoundUserInterfaceState(
             nav,
             combat.Condition,
             combat.WeaponMode,
+            combat.TargetMode,
             combat.AutomaticCondition,
             combat.AutomaticFire,
             combat.AutomaticRetaliation,
+            silent: silent,
             beingLocked: combat.IncomingLocks.Count > 0,
             incomingMissile: false, // M8: torpedo alarms
             hasLock: hasLock,
@@ -290,11 +319,11 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
     }
 
     /// <summary>
-    /// A contact is a threat when it is not on MASTER SAFE or is at YELLOW condition or above.
+    /// A contact is a threat when it is off MASTER SAFE and at YELLOW condition or above.
     /// </summary>
     private static bool IsArmed(ShipCombatComponent combat)
     {
-        return combat.WeaponMode != ShipWeaponMode.MasterSafe || combat.Condition != ShipCondition.Green;
+        return combat.WeaponMode != ShipWeaponMode.MasterSafe && combat.Condition != ShipCondition.Green;
     }
 
     /// <summary>
@@ -381,6 +410,9 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
 
         // The window's contact list (armed state, lock cursors) changed.
         UpdateState(uid, console);
+
+        if (console.Silent)
+            return;
 
         if (_nextContactSound.TryGetValue(uid, out var next) && _timing.CurTime < next)
             return;

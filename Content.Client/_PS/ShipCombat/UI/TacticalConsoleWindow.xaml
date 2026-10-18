@@ -59,6 +59,11 @@
                            VerticalExpand="True"/>
                 </controls:StripeBack>
                 <OptionButton Name="WeaponsOption" Margin="3"/>
+                <BoxContainer Orientation="Horizontal" Margin="3">
+                    <Label Text="{Loc 'tactical-console-aim'}"/>
+                    <OptionButton Name="TargetOption"
+                                  HorizontalExpand="True"/>
+                </BoxContainer>
                 <Button Name="FireButton"
                         Text="{Loc 'tactical-console-fire'}"
                         Margin="3"/>
@@ -77,6 +82,9 @@
                 <Button Name="ClearLockButton"
                         Text="{Loc 'tactical-console-clear-lock'}"
                         Margin="3"/>
+                <CheckBox Name="SilentCheck"
+                          Text="{Loc 'ship-console-silent'}"
+                          Margin="3"/>
             </BoxContainer>
         </ScrollContainer>
     </BoxContainer>

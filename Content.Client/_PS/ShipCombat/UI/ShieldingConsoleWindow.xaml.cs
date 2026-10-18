@@ -32,6 +32,9 @@ public sealed partial class ShieldingConsoleWindow : FancyWindow
     public event Action<ShipPowerPreset>? OnPresetSelected;
     public event Action<ShieldFacing>? OnRedistribute;
 
+    /// <summary>Raised when the player toggles the console's Silent checkbox.</summary>
+    public event Action<bool>? OnSilentChanged;
+
     private readonly Dictionary<ShipPowerPool, ThresholdSlider> _sliders = new();
     private readonly Dictionary<ShipPowerPool, Label> _valueLabels = new();
     private readonly Dictionary<ShipPowerPool, Label> _alertLabels = new();
@@ -89,6 +92,7 @@ public sealed partial class ShieldingConsoleWindow : FancyWindow
         PresetAttackButton.OnPressed += _ => OnPresetSelected?.Invoke(ShipPowerPreset.Attack);
         PresetDefenseButton.OnPressed += _ => OnPresetSelected?.Invoke(ShipPowerPreset.Defense);
         PresetBalancedButton.OnPressed += _ => OnPresetSelected?.Invoke(ShipPowerPreset.Balanced);
+        SilentCheck.OnToggled += args => OnSilentChanged?.Invoke(args.Pressed);
     }
 
     public void SetConsole(EntityUid console)
@@ -121,6 +125,8 @@ public sealed partial class ShieldingConsoleWindow : FancyWindow
         RedistributeCooldownLabel.Text = state.RedistributionCooldown > 0f
             ? Loc.GetString("shielding-console-redistribute-cooldown", ("seconds", (int) MathF.Ceiling(state.RedistributionCooldown)))
             : Loc.GetString("shielding-console-redistribute-ready");
+
+        SilentCheck.Pressed = state.Silent;
     }
 
     private void RegisterPool(

@@ -37,6 +37,9 @@ public sealed partial class TacticalConsoleWindow : FancyWindow
     public event Action<bool>? OnAutomaticRetaliationChanged;
     public event Action<ShipWeaponMode>? OnWeaponModeChanged;
 
+    /// <summary>Raised when the player picks a new aim mode for the weapons.</summary>
+    public event Action<ShipTargetMode>? OnTargetModeChanged;
+
     /// <summary>Raised when the player clicks the radar (map coordinates of the click).</summary>
     public event Action<EntityCoordinates>? OnLockRequested;
 
@@ -45,6 +48,9 @@ public sealed partial class TacticalConsoleWindow : FancyWindow
 
     /// <summary>Raised when the player presses MANUAL FIRE.</summary>
     public event Action? OnManualFireRequested;
+
+    /// <summary>Raised when the player toggles the console's Silent checkbox.</summary>
+    public event Action<bool>? OnSilentChanged;
 
     /// <summary>The condition the player selected but has not confirmed yet.</summary>
     private ShipCondition? _pendingCondition;
@@ -90,6 +96,17 @@ public sealed partial class TacticalConsoleWindow : FancyWindow
             OnWeaponModeChanged?.Invoke((ShipWeaponMode) args.Id);
         };
 
+        TargetOption.AddItem(Loc.GetString("tactical-console-aim-random"), (int) ShipTargetMode.Random);
+        TargetOption.AddItem(Loc.GetString("tactical-console-aim-hull"), (int) ShipTargetMode.Hull);
+        TargetOption.AddItem(Loc.GetString("tactical-console-aim-generators"), (int) ShipTargetMode.Generators);
+        TargetOption.AddItem(Loc.GetString("tactical-console-aim-weapons"), (int) ShipTargetMode.Weapons);
+        TargetOption.AddItem(Loc.GetString("tactical-console-aim-thrusters"), (int) ShipTargetMode.Thrusters);
+        TargetOption.OnItemSelected += args =>
+        {
+            TargetOption.SelectId(args.Id);
+            OnTargetModeChanged?.Invoke((ShipTargetMode) args.Id);
+        };
+
         ConditionConfirmButton.OnPressed += _ =>
         {
             if (_pendingCondition is { } condition)
@@ -109,6 +126,7 @@ public sealed partial class TacticalConsoleWindow : FancyWindow
 
         ClearLockButton.OnPressed += _ => OnClearLockRequested?.Invoke();
         FireButton.OnPressed += _ => OnManualFireRequested?.Invoke();
+        SilentCheck.OnToggled += args => OnSilentChanged?.Invoke(args.Pressed);
     }
 
     public void SetConsole(EntityUid console)
@@ -129,10 +147,12 @@ public sealed partial class TacticalConsoleWindow : FancyWindow
             ConditionOption.SelectId((int) state.Condition);
 
         WeaponsOption.SelectId((int) state.WeaponMode);
+        TargetOption.SelectId((int) state.TargetMode);
 
         AutoConditionCheck.Pressed = state.AutomaticCondition;
         AutoFireCheck.Pressed = state.AutomaticFire;
         AutoRetaliationCheck.Pressed = state.AutomaticRetaliation;
+        SilentCheck.Pressed = state.Silent;
 
         LockStatusLabel.Text = FormatStatus("tactical-console-lock", state.BeingLocked);
         LockStatusLabel.FontColorOverride = state.BeingLocked ? WarningColor : null;

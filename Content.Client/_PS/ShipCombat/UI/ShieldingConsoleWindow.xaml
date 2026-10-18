@@ -114,6 +114,9 @@
                     <Button Name="PresetDefenseButton" Text="{Loc 'shielding-console-preset-defense'}" Margin="2"/>
                     <Button Name="PresetBalancedButton" Text="{Loc 'shielding-console-preset-balanced'}" Margin="2"/>
                 </BoxContainer>
+                <CheckBox Name="SilentCheck"
+                          Text="{Loc 'ship-console-silent'}"
+                          Margin="3"/>
             </BoxContainer>
         </ScrollContainer>
     </BoxContainer>

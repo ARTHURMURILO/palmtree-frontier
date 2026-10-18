@@ -134,8 +134,11 @@ Both consoles are machines with parts (tactical lock speed uses `Capacitor`).
 
 - Turrets (M7): SLAT placeholder sprites, no AI, 45° arc around the placement angle, idle sweep
   inside the arc, remote power, rotate towards the locked target and fire once aligned (5°
-  tolerance). They shoot through their own grid (marked `SharedProjectileSystem` fork hook keyed on
-  the weapon's `IgnoreOwnGrid`).
+  tolerance). They shoot through their own grid (marked `SharedProjectileSystem` and `GunSystem`
+  fork hooks keyed on the weapon's `IgnoreOwnGrid`). Two variants: **bolt** (`ShipTurret`, travelling
+  projectile) and **beam** (`ShipTurretBeam`, instant hitscan; infinite ammo via a self-recharging
+  battery, slower fire rate). Both scale damage with the Weapons pool — projectiles through
+  `GunDamageMultiplierSystem`, hitscan through a marked `GunSystem` hook.
 - Stationary weapons (M7): emitter placeholder sprites, exposed space (muzzle tile must be space),
   fire straight along their facing when the target is ahead (placeholder ±45° check), collide with
   their own grid, and a ship's own weapons bypass its own shields.
@@ -155,6 +158,12 @@ Both consoles are machines with parts (tactical lock speed uses `Capacitor`).
   (for turrets) the firing arc; the `Automatic Fire` checkbox fires the selected group at the lock
   and `MANUAL FIRE` fires it once. Damage scales with the Weapons pool through
   `GunDamageMultiplierComponent` (unpowered weapons cannot fire).
+- Aim selection (M7 feedback): the tactical console's `Aim` dropdown picks what the weapons shoot at
+  on the locked grid — `RANDOM` (grid centre), `HULL` (anchored structure), `GENERATORS` (power
+  sources and sinks), `WEAPONS` and `THRUSTERS`. The subsystem is re-picked every 2 s so turrets do
+  not jitter between targets.
+- Both consoles carry a `Silent` checkbox (off by default): a silent console plays no sounds at all
+  (contact beeps, lock sounds, the condition alarm), per console.
 - `ShipWeaponComponent.FiresWhileSafe` leaves the door open for future non-hostile weapons
   (traction beams) usable on MASTER SAFE; targets still get the lock warning.
 

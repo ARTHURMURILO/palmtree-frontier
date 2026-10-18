@@ -43,6 +43,12 @@ public sealed partial class ShipCombatComponent : Component
     public bool AutomaticRetaliation;
 
     /// <summary>
+    /// What the ship's weapons aim at on the locked grid.
+    /// </summary>
+    [DataField]
+    public ShipTargetMode TargetMode = ShipTargetMode.Random;
+
+    /// <summary>
     /// Shield power pool (STO-adapted 200-point budget; every pool is 15-125 and they sum to 200).
     /// </summary>
     [DataField, ViewVariables(VVAccess.ReadWrite)]
@@ -93,4 +99,11 @@ public sealed partial class ShipCombatComponent : Component
 
     /// <summary>Grids currently locking this ship.</summary>
     public readonly HashSet<EntityUid> IncomingLocks = new();
+
+    /// <summary>The entity on the locked grid the weapons currently aim at, if any (runtime).</summary>
+    public EntityUid? AimTarget;
+
+    /// <summary>When the aim target is next re-picked (runtime).</summary>
+    public TimeSpan NextAimSelection;
+
 }

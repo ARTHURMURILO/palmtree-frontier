@@ -19,9 +19,15 @@ public sealed class TacticalConsoleBoundUserInterfaceState : BoundUserInterfaceS
     /// <summary>The selected weapon group.</summary>
     public ShipWeaponMode WeaponMode { get; }
 
+    /// <summary>What the weapons aim at on the locked grid.</summary>
+    public ShipTargetMode TargetMode { get; }
+
     public bool AutomaticCondition { get; }
     public bool AutomaticFire { get; }
     public bool AutomaticRetaliation { get; }
+
+    /// <summary>True when the console is muted (no sounds).</summary>
+    public bool Silent { get; }
 
     /// <summary>True while another ship is locking this one (LOCK: YES).</summary>
     public bool BeingLocked { get; }
@@ -51,9 +57,11 @@ public sealed class TacticalConsoleBoundUserInterfaceState : BoundUserInterfaceS
         NavInterfaceState navState,
         ShipCondition condition,
         ShipWeaponMode weaponMode,
+        ShipTargetMode targetMode,
         bool automaticCondition,
         bool automaticFire,
         bool automaticRetaliation,
+        bool silent,
         bool beingLocked,
         bool incomingMissile,
         bool hasLock,
@@ -64,9 +72,11 @@ public sealed class TacticalConsoleBoundUserInterfaceState : BoundUserInterfaceS
         NavState = navState;
         Condition = condition;
         WeaponMode = weaponMode;
+        TargetMode = targetMode;
         AutomaticCondition = automaticCondition;
         AutomaticFire = automaticFire;
         AutomaticRetaliation = automaticRetaliation;
+        Silent = silent;
         BeingLocked = beingLocked;
         IncomingMissile = incomingMissile;
         HasLock = hasLock;
@@ -86,8 +96,8 @@ public sealed class TacticalContactState
     public NetEntity Grid { get; set; }
 
     /// <summary>
-    /// True when the contact is not on MASTER SAFE or is at YELLOW condition or above: its IFF
-    /// renders red on the tactical console.
+    /// True when the contact is off MASTER SAFE and at YELLOW condition or above: its IFF renders
+    /// red on the tactical console.
     /// </summary>
     public bool Armed { get; set; }
 
