@@ -45,19 +45,19 @@ public sealed partial class ShipCombatComponent : Component
     /// <summary>
     /// Shield power pool (STO-adapted 200-point budget; every pool is 15-125 and they sum to 200).
     /// </summary>
-    [DataField]
+    [DataField, ViewVariables(VVAccess.ReadWrite)]
     public int ShieldPower = 50;
 
     /// <summary>Weapon power pool.</summary>
-    [DataField]
+    [DataField, ViewVariables(VVAccess.ReadWrite)]
     public int WeaponPower = 50;
 
     /// <summary>Thruster power pool.</summary>
-    [DataField]
+    [DataField, ViewVariables(VVAccess.ReadWrite)]
     public int ThrusterPower = 50;
 
     /// <summary>Auxiliary power pool: the share returned to the ship's normal power grid.</summary>
-    [DataField]
+    [DataField, ViewVariables(VVAccess.ReadWrite)]
     public int AuxiliaryPower = 50;
 
     /// <summary>Locked pools do not move when another pool is adjusted.</summary>
