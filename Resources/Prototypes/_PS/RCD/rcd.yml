@@ -1,0 +1,68 @@
+# Palmtree: extra RCD construction modes (ported from the old Coyote code)
+
+- type: rcd
+  id: WallShuttle
+  category: WallsAndFlooring
+  sprite: { sprite: Structures/Walls/shuttle.rsi, state: full }
+  mode: ConstructObject
+  prototype: WallShuttle
+  cost: 3
+  delay: 1
+  collisionMask: FullTileMask
+  rotation: Fixed
+  fx: EffectRCDConstruct2
+
+# Plastitanium modes, used by the experimental RCD (ported from the old Coyote _CS set)
+- type: rcd
+  id: WallPlastitanium
+  category: WallsAndFlooring
+  sprite: { sprite: Structures/Walls/plastitanium.rsi, state: full }
+  mode: ConstructObject
+  prototype: WallPlastitanium
+  cost: 8
+  delay: 2
+  collisionMask: FullTileMask
+  rotation: Fixed
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: WallPlastitaniumDiagonal
+  category: WallsAndFlooring
+  sprite: { sprite: Structures/Walls/plastitanium_diagonal.rsi, state: state0 }
+  mode: ConstructObject
+  prototype: WallPlastitaniumDiagonal
+  cost: 6
+  delay: 2
+  collisionMask: FullTileMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: PlastitaniumWindow
+  category: WindowsAndGrilles
+  sprite: { sprite: Structures/Windows/plastitanium_window.rsi, state: full }
+  mode: ConstructObject
+  prototype: PlastitaniumWindow
+  cost: 6
+  delay: 2
+  collisionMask: Impassable
+  rules:
+  - IsWindow
+  rotation: Fixed
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: PlastitaniumWindowDiagonal
+  category: WindowsAndGrilles
+  sprite: { sprite: Structures/Windows/plastitanium_window_diagonal.rsi, state: state0 }
+  mode: ConstructObject
+  prototype: PlastitaniumWindowDiagonal
+  cost: 3
+  delay: 2
+  collisionMask: Impassable
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rules:
+  - IsWindow
+  rotation: User
+  fx: EffectRCDConstruct2

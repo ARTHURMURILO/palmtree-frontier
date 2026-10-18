@@ -300,6 +300,7 @@
   - type: RCD
     availablePrototypes:
     - WallSolid
+    - WallShuttle # Palmtree
     - FloorSteel
     - Plating
     - Catwalk
@@ -354,12 +355,64 @@
   - type: LimitedCharges
     lastCharges: -1
 
+# Palmtree: RPD, ported from the old Coyote code
+- type: entity
+  id: RPD
+  parent: RCD
+  name: RPD
+  description: The rapid piping device allows for the quick placement and removal of atmospheric-related buildings. Requires compressed matter to use.
+  components:
+  - type: RCD
+    isRpd: true
+    availablePrototypes:
+    - PipeFourway
+    - PipeStraight
+    - PipeBend
+    - PipeTJunction
+    - OutletInjector
+    - ManualValve
+    - VolumetricPump
+    - PressurePump
+    - VentScrubber
+    - PressureValve
+    - DualPortVent
+    - VentGas
+    - VentPassive
+    - MixerGas
+    - Radiator
+    - RadiatorBend
+    - SignalValve
+    - CanisterPort
+    - FilterGas
+    - Deconstruct
+  - type: LimitedCharges
+    maxCharges: 60
+  - type: Sprite
+    sprite: _PS/Objects/Tools/rpd.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: Clothing
+    sprite: _PS/Objects/Tools/rpd.rsi
+    quickEquip: false
+    slots:
+    - Belt
+
+- type: entity
+  id: RPDEmpty
+  parent: RPD
+  suffix: Empty
+  components:
+  - type: LimitedCharges
+    lastCharges: -1
+# Palmtree end
+
 - type: entity
   id: RCDRecharging
   parent: RCD
   name: experimental RCD
   description: Cyborg-mounted Rapid Construction Device which creates compressed matter on the fly using an internal fabricator.
-  suffix: AutoRecharge
+  suffix: AutoRecharge, Borg
   components:
   - type: LimitedCharges
     maxCharges: 20
@@ -373,6 +426,38 @@
   name: experimental RCD
   description: A bluespace-enhanced rapid construction device that passively generates its own compressed matter.
   components:
+  # Palmtree: instant construction + expanded mode list, ported from the old Coyote code
+  - type: RCD
+    instantConstruction: true
+    availablePrototypes:
+    - WallSolid
+    - WallShuttle
+    - WallMining
+    - WallMiningDiagonal
+    - WallPlastitanium
+    - WallPlastitaniumDiagonal
+    - PlastitaniumWindow
+    - PlastitaniumWindowDiagonal
+    - FloorSteel
+    - FloorWood
+    - Plating
+    - Catwalk
+    - Grille
+    - Window
+    - WindowDirectional
+    - WindowReinforcedDirectional
+    - ReinforcedWindow
+    - Airlock
+    - AirlockGlass
+    - Firelock
+    - TubeLight
+    - BulbLight
+    - LVCable
+    - MVCable
+    - HVCable
+    - CableTerminal
+    - Deconstruct
+  # Palmtree end
   - type: AutoRecharge
     rechargeDuration: 1
 

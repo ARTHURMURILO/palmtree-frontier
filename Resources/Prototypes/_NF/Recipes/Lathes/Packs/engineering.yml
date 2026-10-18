@@ -110,6 +110,8 @@
   recipes:
   - ShipyardRCD
   - ShipyardRCDAmmo
+  - RPD # Palmtree
+  - RCDAmmo # Palmtree
   - ConstructionBagOfHolding
   - ClothingBeltChiefEngineer
   - ClothingShoesBootsMag

@@ -537,3 +537,23 @@ so these fail only in CI:
   throws must not skip the registration of every entity after it. It also re-links every
   `ExtensionCableReceiverComponent` without a provider - a loaded machine whose APC link is missing
   shows "un-powered" until a player deconstructs and rebuilds it.
+
+## 26. RCD/RPD port notes (2026-10-18)
+
+- **The RPD deconstruct whitelist is opt-in per entity** (`RCDDeconstructableComponent.RpdDeconstructable`,
+  YAML `rpd: true`). The RPD refuses to deconstruct tiles outright. In `RCDSystem` the two flags are
+  independent gates: `rpd:` for the RPD, `deconstructable:` for the RCD (Coyote's original single
+  check required both). The whole atmos family inherits `rpd: true` + `deconstructable: false` from
+  `GasPipeBase` (pipes, pumps, valves, vents, injectors, radiators, mixers, filters, ports). Note
+  the sub-floor caveat: plain pipes under a floor tile keep `SubFloorHide.BlockInteractions` (true),
+  so they can only be clicked - built, wrenched or RPD'd - where they sit on exposed plating.
+- **Mirror prototypes are split client/server state.** The ghost placer
+  (`RCDConstructionGhostSystem`) picks the `MirrorPrototype` from its local `_useMirrorPrototype`
+  flag, toggled while placing with the flip keybind (`EditorFlipObject`, default `F`); the spawn in
+  `RCDSystem.FinalizeRCDOperation` uses `RCDComponent.UseMirrorPrototype`, which is synced by
+  `RCDConstructionGhostFlipEvent` only when the RCD is in the sender's active hand. When a mode
+  without a `mirrorPrototype:` is selected the fallback is the normal prototype, and the flip flag
+  survives the switch (toggling again on a mirror mode re-applies it).
+- **`InstantConstruction` skips the do-after delay, not the do-after**: it forces delay 0 and the
+  `EffectRCDConstruct0` fx, but validity/charge checks still run every tick (and it zeroes the
+  delay on deconstruct operations too).

@@ -42,6 +42,8 @@
   - Igniter
   - TRayScanner
   - LightReplacer
+  - RPD # Palmtree
+  - RCDAmmo # Palmtree
 
 - type: latheRecipePack
   id: NFBasicEVAToolsStatic

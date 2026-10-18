@@ -107,7 +107,7 @@
 | RPI economy, Needs, Healing bank, Space janitor, etc. (`_CS`) | Not ported; not requested. |
 | IPC species | Replaced by the Palmtree **Synth** species (`_PS`) — see `systems/ps-systems.md`. Battery and radio/encryption remain unported; **EMP and the reboot mechanic are implemented** (deadly EMP pulses, `DeadStartupButton`). |
 | Kitsune species | **Does not exist in the old codebase.** It only appears inside marking allowlists. Nothing to port. |
-| Turrets, RCD, strobe lighting, shipyard cauterizer | Not requested / possibly stale systems. (Sandstorm interaction sounds/panel were later ported — see `systems/interaction-panel.md`.) |
+| Turrets, RCD, strobe lighting, shipyard cauterizer | Not requested / possibly stale systems. (The **RCD/RPD** were ported in 2026-10 — see §24; turrets, strobe lighting and the shipyard cauterizer remain unported. Sandstorm interaction sounds/panel were ported — see `systems/interaction-panel.md`.) |
 
 ## 5. Bugs found and fixed during the port
 
@@ -725,3 +725,62 @@ stamina model; Monolith's live files were fetched from
 - Wizden's `ThrusterComponent.CanToggle` (their #42201, "make xenoborg thrusters anti-easy
   sabotage") is ported with the matching guard in `OnActivateThruster`, so a prototype can opt out
   of hand toggling. Nothing sets it to false yet (this fork has no xenoborg thrusters).
+
+## 24. 2026-10 RPD + RCD improvements (Coyote `palm3`)
+
+Source: the frozen Coyote checkout's `palm3` commits `ddda1d9695` ("RPD added") and `2a62f7373a`
+("Fixes and Adjustments"); the two client quickfixes (`c37fe1109f`, `a2116b0102`) are superseded by
+this repo's newer client code.
+
+- **RPD** (`RPD`/`RPDEmpty`): a new tool with 19 build modes — pipes (fourway/straight/bend/
+  T-junction), pumps & valves (pressure/volume/manual/signal/pneumatic), vents (injector/scrubber/
+  pump/dual-port/passive), atmospheric utility (radiator, radiator bend, gas mixer/filter, canister
+  port) — plus `Deconstruct`; 60 charges and it takes standard `RCDAmmo` (Coyote itself dropped the
+  short-lived `RPDAmmo` entity in its own fix commit).
+  - Modes: `Resources/Prototypes/_PS/RCD/rpd.yml`; the radial icons were repointed from the
+    upstream `Interface/Radial/RPD` path Coyote used to `Resources/Textures/_PS/Interface/Radial/RPD/`
+    and the item sprite to `Resources/Textures/_PS/Objects/Tools/rpd.rsi`.
+  - Client menu categories `Piping`/`AtmosphericUtility`/`PumpsValves`/`Vents` are registered in
+    `RCDMenuBoundUserInterface`; their locale keys live in `Resources/Locale/en-US/_PS/rcd.ftl`.
+- **RCD improvements** (same commits):
+  - `WallShuttle` construct mode (`Resources/Prototypes/_PS/RCD/rcd.yml`) added to the RCD's mode
+    list, and the shuttle wall's `RCDDeconstructable` cost/delay lowered to 3/2 (`#Palmtree`).
+  - `RCDComponent.InstantConstruction`: 0-delay do-afters with `EffectRCDConstruct0`. Used by
+    `RCDExperimental` (admeme), which also got a wider mode list (plastitanium walls/windows from
+    the old `_CS` RCD set, mining walls, wood floor).
+  - **Mirror prototypes**: `RCDPrototype.MirrorPrototype` + `RCDComponent.UseMirrorPrototype`,
+    flipped with the editor flip keybind (`EditorFlipObject`, default `F`) while placing, synced by
+    `RCDConstructionGhostFlipEvent`; used by the RPD's gas mixer/filter
+    (`GasMixerFlipped`/`GasFilterFlipped`).
+  - The old code's `RcdConstructionRule.IsWallLight` ("no light spam") rule is **not** ported: it
+    referenced a `WallLight` tag prototype that exists in neither checkout (the lint rejects it) and
+    no shipped mode ever opted into the rule anyway.
+  - `RCDDeconstructableComponent.RpdDeconstructable` (`rpd: true`): the RPD refuses to deconstruct
+    tiles and only deconstructs whitelisted entities. Coyote never set the flag; this fork wires it
+    on `GasPipeBase` (`deconstructable: false` + `rpd: true` + cost 1 / delay 0 / `EffectRCDConstruct0`)
+    so the RPD removes pipes, pumps, valves, vents, injectors, radiators, mixers, filters and ports
+    while the RCD stays off atmos entities. The RPD pass in `RCDSystem` was split so `rpd:` gates the
+    RPD and `deconstructable:` gates the RCD (Coyote's single check required both flags).
+- **Integration**: the engineer locker (`FillLockerAtmospherics`) and the EngiVend now stock the
+  RPD; the `RPD` lathe recipe (result `RPDEmpty`) sits in `Recipes/Lathes/tools.yml`, is unlocked
+  by `NFRapidConstruction` together with `RCDAmmo`, and both are in the `NFEngineering` and
+  `NFBasicToolsStatic` lathe packs plus the `NFBlueprintsEngineering` blueprint pack (the latter is
+  required by `TechnologyTreeTests`, which asserts every tech unlock is printable from a blueprint).
+- **Deliberately not ported**: the old `_CS` RCD roster (Pirate/NFSD RCDs and their locked-door
+  modes) — this repo already ships the newer Frontier pirate/shipyard RCDs. Only the four
+  plastitanium modes required by `RCDExperimental` were taken.
+
+## 25. 2026-10 Salto expedition ship (Coyote `_CS`)
+
+- Map: `Resources/Maps/_CS/Shuttles/Expedition/salto.yml` — the first `_CS` map this fork has
+  (format-7 save made on engine 261, 152 entities). Every one of the 54 prototypes and all 28
+  component types it uses exist here, and it is not on the Frontier ignore list.
+- Shipyard: `Resources/Prototypes/_CS/Shipyard/Expedition/salto.yml` — the `Salto` vessel
+  (`LL0 Salto`, Small/Expedition/AME, price 62500) plus its `gameMap` entry. It appears on the
+  expedition shipyard console through `group: Expedition`; no guidebook page (Coyote has none
+  either, so there is no `ShuttleMapSalto` poster to port).
+- Adaptations: `CompanionInterview` was dropped (the Companion job is Coyote `_CS` content that
+  needs the un-ported RPI systems), and the interview jobs use the `[ 0, 0 ]` convention every
+  other shipyard file here uses (Coyote's local tweak used `[ 2, 2 ]`).
+- Validation: `ShipyardTest` loads every vessel map and checks price vs appraised value
+  (`MinPriceMarkup` 1.05) — both tests cover the Salto.

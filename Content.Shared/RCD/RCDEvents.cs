@@ -16,6 +16,14 @@ public sealed class RCDConstructionGhostRotationEvent(NetEntity netEntity, Direc
     public readonly Direction Direction = direction;
 }
 
+// Palmtree: mirror prototype flip (ported from the old Coyote code)
+[Serializable, NetSerializable]
+public sealed class RCDConstructionGhostFlipEvent(NetEntity netEntity, bool useMirrorPrototype) : EntityEventArgs
+{
+    public readonly NetEntity NetEntity = netEntity;
+    public readonly bool UseMirrorPrototype = useMirrorPrototype;
+}
+
 [Serializable, NetSerializable]
 public enum RcdUiKey : byte
 {

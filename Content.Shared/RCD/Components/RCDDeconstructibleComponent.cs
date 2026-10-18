@@ -31,4 +31,12 @@ public sealed partial class RCDDeconstructableComponent : Component
     /// </summary>
     [DataField, ViewVariables(VVAccess.ReadWrite)]
     public bool Deconstructable = true;
+
+    // Palmtree: RPD deconstruction whitelist (ported from the old Coyote code)
+    /// <summary>
+    /// Toggles whether this entity is deconstructable by the RPD or not
+    /// </summary>
+    [DataField("rpd"), ViewVariables(VVAccess.ReadWrite)]
+    public bool RpdDeconstructable = false;
+    // Palmtree end
 }

@@ -131,6 +131,17 @@
     Steel: 500
     Plastic: 250
 
+# Palmtree: RPD, ported from the old Coyote code
+- type: latheRecipe
+  parent: BaseToolRecipe
+  id: RPD
+  result: RPDEmpty
+  completetime: 4
+  materials:
+    Steel: 1250
+    Plastic: 300
+# Palmtree end
+
 - type: latheRecipe
   parent: BaseBigToolRecipe
   id: HandHeldMassScanner

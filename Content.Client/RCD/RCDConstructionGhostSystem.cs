@@ -1,10 +1,13 @@
 using Content.Client.Hands.Systems;
+using Content.Shared.Input;
 using Content.Shared.Interaction;
 using Content.Shared.RCD;
 using Content.Shared.RCD.Components;
 using Robust.Client.Placement;
 using Robust.Client.Player;
 using Robust.Shared.Enums;
+using Robust.Shared.Input;
+using Robust.Shared.Input.Binding;
 using Robust.Shared.Prototypes;
 
 namespace Content.Client.RCD;
@@ -22,6 +25,54 @@ public sealed class RCDConstructionGhostSystem : EntitySystem
     [Dependency] private readonly HandsSystem _hands = default!;
     
     private Direction _placementDirection = default;
+    private bool _useMirrorPrototype = false; // Palmtree: mirror prototype flip
+
+    public override void Initialize()
+    {
+        base.Initialize();
+
+        // Palmtree: mirror prototype flip (ported from the old Coyote code)
+        CommandBinds.Builder
+            .Bind(ContentKeyFunctions.EditorFlipObject,
+                new PointerInputCmdHandler(HandleFlip, outsidePrediction: true))
+            .Register<RCDConstructionGhostSystem>();
+    }
+
+    public override void Shutdown()
+    {
+        // Palmtree: mirror prototype flip
+        CommandBinds.Unregister<RCDConstructionGhostSystem>();
+        base.Shutdown();
+    }
+
+    // Palmtree: mirror prototype flip (ported from the old Coyote code)
+    private bool HandleFlip(in PointerInputCmdHandler.PointerInputCmdArgs args)
+    {
+        if (args.State == BoundKeyState.Down)
+        {
+            if (!_placementManager.IsActive || _placementManager.Eraser)
+                return false;
+
+            var placerEntity = _placementManager.CurrentPermission?.MobUid;
+
+            if (!TryComp<RCDComponent>(placerEntity, out var rcd))
+                return false;
+
+            var prototype = _protoManager.Index(rcd.ProtoId);
+            if (string.IsNullOrEmpty(prototype.MirrorPrototype))
+                return false;
+
+            _useMirrorPrototype = !rcd.UseMirrorPrototype;
+
+            var useProto = _useMirrorPrototype ? prototype.MirrorPrototype : prototype.Prototype;
+            CreatePlacer(placerEntity.Value, rcd, useProto, prototype.Mode);
+
+            RaiseNetworkEvent(new RCDConstructionGhostFlipEvent(GetNetEntity(placerEntity.Value), _useMirrorPrototype));
+        }
+
+        return true;
+    }
+    // Palmtree end
 
     public override void Update(float frameTime)
     {
@@ -59,18 +110,29 @@ public sealed class RCDConstructionGhostSystem : EntitySystem
             RaiseNetworkEvent(new RCDConstructionGhostRotationEvent(GetNetEntity(heldEntity.Value), _placementDirection));
         }
 
+        // Palmtree: pick the mirror prototype when it is enabled (ported from the old Coyote code)
+        var useProto = _useMirrorPrototype && !string.IsNullOrEmpty(prototype.MirrorPrototype)
+            ? prototype.MirrorPrototype
+            : prototype.Prototype;
+
         // If the placer has not changed, exit
-        if (heldEntity == placerEntity && prototype.Prototype == placerProto)
+        if (heldEntity == placerEntity && useProto == placerProto)
             return;
 
         // Create a new placer
+        CreatePlacer(heldEntity.Value, rcd, useProto, prototype.Mode);
+        // Palmtree end
+    }
+
+    private void CreatePlacer(EntityUid uid, RCDComponent component, string? prototype, RcdMode mode)
+    {
         var newObjInfo = new PlacementInformation
         {
-            MobUid = heldEntity.Value,
+            MobUid = uid,
             PlacementOption = PlacementMode,
-            EntityType = prototype.Prototype,
+            EntityType = prototype,
             Range = (int) Math.Ceiling(SharedInteractionSystem.InteractionRange),
-            IsTile = (prototype.Mode == RcdMode.ConstructTile),
+            IsTile = (mode == RcdMode.ConstructTile),
             UseEditorContext = false,
         };
 

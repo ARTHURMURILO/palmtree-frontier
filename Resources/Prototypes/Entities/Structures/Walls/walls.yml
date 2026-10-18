@@ -1020,8 +1020,8 @@
         - WallLayer
         density: 2000
   - type: RCDDeconstructable #Frontier
-    cost: 6 #Frontier
-    delay: 8 #Frontier
+    cost: 3 #Palmtree
+    delay: 2 #Palmtree
     fx: EffectRCDDeconstruct8 #Frontier
 
 - type: entity

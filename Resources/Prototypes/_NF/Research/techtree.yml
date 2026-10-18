@@ -188,6 +188,8 @@
   recipeUnlocks:
   - ShipyardRCD
   - ShipyardRCDAmmo
+  - RPD # Palmtree
+  - RCDAmmo # Palmtree
   technologyPrerequisites:
   - NFMechanicalCompression
   position: 3, 1

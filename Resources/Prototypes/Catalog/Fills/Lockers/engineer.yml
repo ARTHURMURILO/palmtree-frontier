@@ -158,6 +158,7 @@
     - id: GasAnalyzer
     - id: MedkitOxygenFilled
     - id: HolofanProjector
+    - id: RPD # Palmtree
     # - id: RCD # Frontier
     # - id: RCDAmmo # Frontier
     - id: AirGrenade

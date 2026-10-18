@@ -131,6 +131,8 @@
   # RapidConstruction
   - ShipyardRCD
   - ShipyardRCDAmmo
+  - RPD # Palmtree
+  - RCDAmmo # Palmtree
   # ConstructionBags
   - ConstructionBagOfHolding
   # HardsuitsSpecialized

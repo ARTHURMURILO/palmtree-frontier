@@ -83,8 +83,9 @@ Adaptations made when porting (old 2023 prototypes):
 - `SoundOnTrigger` → `EmitSoundOnTrigger`, `OnUseTimerTrigger` → `TimerTrigger`.
 - `noSpawn: true` → `categories: [ HideSpawnMenu ]`.
 
-Not ported from `_PS`: turrets, RCD, strobe lighting, shipyard cauterizer, announcement/interaction
-sound collections, custom emotes. See `.ai/PORTING.md`.
+Not ported from `_PS`: turrets, strobe lighting, shipyard cauterizer, announcement/interaction
+sound collections, custom emotes. (The `_PS` **RCD/RPD** were ported in 2026-10 — see
+`.ai/PORTING.md` §24.)
 
 Re-enabled Frontier-disabled guns: Frontier deletes whole upstream weapon directories at load
 (`Resources/IgnoredPrototypes/ignoredPrototypes.yml`), so the upstream taser, elite taser, tesla
@@ -809,3 +810,15 @@ Small features that did not get their own section yet:
   the lobby so it can be exercised locally.
 - **RTG radiation** (commit `4d990c2942`): RTGs carry a small `RadiationSourceComponent` and emit
   radiation while running (portable fuel generators still do not).
+- **RPD + RCD improvements** (2026-10, ported from the old Coyote `palm3` code): the RPD tool
+  (atmos build modes, 60 charges, radial categories), shuttle-wall RCD mode + cheap/fast shuttle
+  wall deconstruct, instant-construction flag for the admeme `RCDExperimental`, and mirror
+  prototypes (gas mixer/filter flip with the placement flip key). RPD modes
+  `Resources/Prototypes/_PS/RCD/rpd.yml`, RCD modes `.../_PS/RCD/rcd.yml`, textures under
+  `Resources/Textures/_PS/...`, locale `Resources/Locale/en-US/_PS/rcd.ftl`. Details:
+  `.ai/PORTING.md` §24; traps: `.ai/HAZARDS.md` §26. The RPD deconstruct whitelist (`rpd: true`)
+  is wired on `GasPipeBase`, so the RPD removes atmos piping while the RCD stays off it.
+- **Salto expedition ship** (2026-10, ported from the old Coyote `_CS` code): `LL0 Salto`, a Small
+  Expedition/AME ship, map `Resources/Maps/_CS/Shuttles/Expedition/salto.yml`, vessel prototype
+  `Resources/Prototypes/_CS/Shipyard/Expedition/salto.yml`. Details and adaptations (dropped
+  `CompanionInterview`, `[ 0, 0 ]` job slots): `.ai/PORTING.md` §25.
