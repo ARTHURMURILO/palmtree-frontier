@@ -34,11 +34,15 @@
   - type: BatteryCharger
     voltage: High
     node: input
-  - type: BatteryDischarger
-    voltage: High
+  # Palmtree: the output side is a PowerSupplier, not a BatteryDischarger: the sink supplies the
+  # ship's grid (drained from its battery by ShipPowerSystem). A battery endpoint on both sides can
+  # form charger/discharger loops with other batteries, which crashes the power solver.
+  - type: PowerSupplier
     node: output
+    supplyRate: 0
+    supplyRampTolerance: 5000
+    supplyRampRate: 1000
   - type: PowerNetworkBattery
-    maxSupply: 100000
     maxChargeRate: 100000
     supplyRampTolerance: 5000
     supplyRampRate: 1000

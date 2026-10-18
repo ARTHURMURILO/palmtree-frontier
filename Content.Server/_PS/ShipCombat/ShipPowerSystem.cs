@@ -405,15 +405,24 @@ public sealed class ShipPowerSystem : EntitySystem
 
         DrainBatteries(sinks, used);
 
-        // Whatever the Auxiliary pool holds is fed back to the ship's power net.
+        // Whatever the Auxiliary pool holds is fed back to the ship's power net by the sink's
+        // PowerSupplier, limited to what the battery can actually cover this tick (brownout).
         var auxShare = GetPool(combat, ShipPowerPool.Auxiliary) / (float) PoolTotal;
-        foreach (var (sinkUid, sink, _) in sinks)
+        var auxUsed = 0f;
+        foreach (var (sinkUid, sink, battery) in sinks)
         {
-            if (!TryComp<PowerNetworkBatteryComponent>(sinkUid, out var netBattery))
+            if (!TryComp<PowerSupplierComponent>(sinkUid, out var supplier))
                 continue;
 
-            netBattery.MaxSupply = auxShare * sink.RatedThroughput;
+            var share = auxShare * sink.RatedThroughput;
+            var available = frameTime > 0f ? battery.CurrentCharge / frameTime : 0f;
+            supplier.MaxSupply = MathF.Min(share, available);
+
+            // The energy the grid actually drew from the sink this tick.
+            auxUsed += supplier.CurrentSupply * frameTime;
         }
+
+        DrainBatteries(sinks, auxUsed);
     }
 
     /// <summary>

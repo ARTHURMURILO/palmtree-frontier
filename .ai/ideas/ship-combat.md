@@ -78,8 +78,11 @@ event-driven so a future AI brain can raise the same events without a console
 - Sink = SMES-like machine (input node from the generators, output node to the ship grid; must be
   anchored). Rated throughput is the budget (100 kW placeholder); the battery buffers. When the
   battery is empty and intake is short, all effective outputs scale by `available/allocated`
-  (brownout). The Auxiliary share (`aux/200 × throughput`) is fed back to the grid by setting the
-  sink's `PowerNetworkBattery.MaxSupply` each tick.
+  (brownout). The Auxiliary share (`aux/200 × throughput`) is fed back to the grid by the sink's
+  **`PowerSupplier`** (the output side is deliberately *not* a `BatteryDischarger`: a battery
+  endpoint on both sides can form charger/discharger loops with other batteries, which trips the
+  power solver's DEBUG-only network-height assertion and crashes the server). The system drains the
+  battery by the energy the grid actually drew.
 - Remote devices (bluespace thrusters, later weapons/shields) carry `BluespacePoweredComponent`
   (pool + rated power) and `ApcPowerReceiverComponent { needsPower: false }`; `ShipPowerSystem`
   toggles `PowerDisabled` + performance each tick. Thrusters additionally scale their thrust via
