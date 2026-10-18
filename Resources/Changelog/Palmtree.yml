@@ -1214,3 +1214,13 @@ Entries:
   time: '2026-10-18T15:18:44.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/43d51053bad22f58c1f95d5dc8631ca4c69878c4
+- author: TheLife
+  changes:
+    - type: Fix
+      message: >-
+        Retrieved expedition ships are expedition capable again (their
+        expedition consoles no longer come back dead).
+  id: 90075
+  time: '2026-10-18T17:48:33.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/672bef83df1805825a8ab3e5e051708c20c8c530
