@@ -1,0 +1,74 @@
+- type: entity
+  parent: BaseMachine
+  id: BluespacePowerSink
+  name: bluespace power sink
+  description: Splits a ship's generator output between its shields, weapons and thrusters, and feeds whatever is left back into the power grid.
+  suffix: Palmtree
+  components:
+  - type: Sprite
+    sprite: Structures/Power/smes.rsi # Placeholder until the sink gets its own art.
+    snapCardinals: true
+    layers:
+    - state: smes
+  - type: PointLight
+    radius: 1.5
+    energy: 2.5
+    color: "#8f6fd8"
+    castShadows: false
+  - type: Battery
+    maxCharge: 2000000
+    startingCharge: 2000000
+  - type: NodeContainer
+    examinable: true
+    nodes:
+      input:
+        !type:CableTerminalPortNode
+        nodeGroupID: HVPower
+      output:
+        !type:CableDeviceNode
+        nodeGroupID: HVPower
+  - type: BatteryCharger
+    voltage: High
+    node: input
+  - type: BatteryDischarger
+    voltage: High
+    node: output
+  - type: PowerNetworkBattery
+    maxSupply: 100000
+    maxChargeRate: 100000
+    supplyRampTolerance: 5000
+    supplyRampRate: 1000
+  - type: BluespacePowerSink
+    ratedThroughput: 100000
+  - type: StaticPrice
+    price: 1500
+
+- type: entity
+  parent: BaseThruster
+  id: BluespaceThruster
+  name: bluespace thruster
+  description: A thruster fed by the ship's bluespace power sink instead of cables. More power means more speed.
+  suffix: Palmtree
+  components:
+  - type: Sprite
+    sprite: _NF/Structures/Shuttles/thruster.rsi # Placeholder until the bluespace thruster gets its own art.
+    layers:
+    - state: base
+      map: ["enum.ThrusterVisualLayers.Base"]
+    - state: thrust
+      map: ["enum.ThrusterVisualLayers.ThrustOn"]
+      shader: unshaded
+      visible: false
+    - state: thrust_burn_unshaded
+      map: ["enum.ThrusterVisualLayers.ThrustingUnshaded"]
+      shader: unshaded
+      visible: false
+      offset: 0, 1
+  - type: ApcPowerReceiver
+    needsPower: false
+    powerDisabled: true
+    powerLoad: 0
+  - type: BluespacePowered
+    pool: Thrusters
+    ratedPower: 10000
+  - type: BluespaceThruster

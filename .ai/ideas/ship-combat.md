@@ -74,13 +74,17 @@ event-driven so a future AI brain can raise the same events without a console
 | Auxiliary | 15–125 | 50 | 100 | `p/200` of sink throughput feeds the ship's power net |
 
 - Sum is always 200; raising one pool lowers the others proportionally; locks pin a pool; presets
-  Attack (100/50/25/25), Defense (50/100/25/25), Balanced (50/50/50/50).
-- Sink = SMES-like machine (input node from the generators, output node to the ship grid). Rated
-  throughput is the budget; the battery buffers. When the battery is empty and intake is short,
-  all effective outputs scale by `available/allocated` (brownout).
-- Remote devices (bluespace thrusters, ship weapons, shield generator) draw from the sink without
-  wires: they carry `ApcPowerReceiverComponent { needsPower: false }`; `ShipPowerSystem` toggles
-  `PowerDisabled` + `PowerChangedEvent`, which existing systems (thrusters) already react to.
+  Attack (100/50/25/25), Defense (50/100/25/25), Balanced (50/50/50/50). Presets override locks.
+- Sink = SMES-like machine (input node from the generators, output node to the ship grid; must be
+  anchored). Rated throughput is the budget (100 kW placeholder); the battery buffers. When the
+  battery is empty and intake is short, all effective outputs scale by `available/allocated`
+  (brownout). The Auxiliary share (`aux/200 × throughput`) is fed back to the grid by setting the
+  sink's `PowerNetworkBattery.MaxSupply` each tick.
+- Remote devices (bluespace thrusters, later weapons/shields) carry `BluespacePoweredComponent`
+  (pool + rated power) and `ApcPowerReceiverComponent { needsPower: false }`; `ShipPowerSystem`
+  toggles `PowerDisabled` + performance each tick. Thrusters additionally scale their thrust via
+  `ThrusterSystem.SetThrust` (fork method) and keep their parts thrust in
+  `BluespaceThrusterComponent.PartsThrust` (saved, captured on MapInit/parts refresh).
 - Offline below 25 points (shields/weapons/thrusters), `(!)` alerts per the original request
   (shields below minimum, any weapon unpowered, no/underpowered bluespace thrusters, aux at risk).
 

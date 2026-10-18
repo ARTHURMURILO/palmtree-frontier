@@ -327,10 +327,28 @@ public sealed class ThrusterSystem : EntitySystem
     }
 
     /// <summary>
+    /// Palmtree: sets a thruster's thrust and re-registers it, so the shuttle's thrust tables stay
+    /// correct. The bluespace power sink scales bluespace thrusters with the Thrusters power pool.
+    /// </summary>
+    public void SetThrust(EntityUid uid, ThrusterComponent component, float thrust)
+    {
+        if (MathF.Abs(component.Thrust - thrust) < 0.01f)
+            return;
+
+        var wasOn = component.IsOn;
+        if (wasOn)
+            DisableThruster(uid, component);
+
+        component.Thrust = thrust;
+
+        if (wasOn && CanEnable(uid, component))
+            EnableThruster(uid, component);
+    }
+
+    /// <summary>
     /// Tries to enable the thruster and turn it on. If it's already enabled it does nothing.
     /// </summary>
-    public void EnableThruster(EntityUid uid, ThrusterComponent component, TransformComponent? xform = null)
-    {
+    public void EnableThruster(EntityUid uid, ThrusterComponent component, TransformComponent? xform = null)    {
         if (component.IsOn ||
             !Resolve(uid, ref xform))
         {

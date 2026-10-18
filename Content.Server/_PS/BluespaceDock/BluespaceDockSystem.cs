@@ -1669,10 +1669,10 @@ public sealed class BluespaceDockSystem : EntitySystem
         if (TryComp<GunComponent>(uid, out var gun))
             _gunSystem.RefreshModifiers((uid, gun));
 
-        // Palmtree: a loaded ship with a tactical console must get its ship combat state back
-        // (grids saved before the feature, or a file whose grid state was stripped). The state
-        // itself is saved on the grid, so this is idempotent.
-        if (HasComp<ShipTargetingConsoleComponent>(uid))
+        // Palmtree: a loaded ship with a tactical console or power sink must get its ship combat
+        // state back (grids saved before the feature, or a file whose grid state was stripped). The
+        // state itself is saved on the grid, so this is idempotent.
+        if (HasComp<ShipTargetingConsoleComponent>(uid) || HasComp<BluespacePowerSinkComponent>(uid))
             _shipCombat.TryEnsureShipCombat(uid, out _);
     }
 

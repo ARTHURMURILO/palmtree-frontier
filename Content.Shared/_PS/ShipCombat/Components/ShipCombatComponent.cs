@@ -42,6 +42,40 @@ public sealed partial class ShipCombatComponent : Component
     [DataField]
     public bool AutomaticRetaliation;
 
+    /// <summary>
+    /// Shield power pool (STO-adapted 200-point budget; every pool is 15-125 and they sum to 200).
+    /// </summary>
+    [DataField]
+    public int ShieldPower = 50;
+
+    /// <summary>Weapon power pool.</summary>
+    [DataField]
+    public int WeaponPower = 50;
+
+    /// <summary>Thruster power pool.</summary>
+    [DataField]
+    public int ThrusterPower = 50;
+
+    /// <summary>Auxiliary power pool: the share returned to the ship's normal power grid.</summary>
+    [DataField]
+    public int AuxiliaryPower = 50;
+
+    /// <summary>Locked pools do not move when another pool is adjusted.</summary>
+    [DataField]
+    public bool ShieldPowerLocked;
+
+    /// <summary>Locked pools do not move when another pool is adjusted.</summary>
+    [DataField]
+    public bool WeaponPowerLocked;
+
+    /// <summary>Locked pools do not move when another pool is adjusted.</summary>
+    [DataField]
+    public bool ThrusterPowerLocked;
+
+    /// <summary>Locked pools do not move when another pool is adjusted.</summary>
+    [DataField]
+    public bool AuxiliaryPowerLocked;
+
     // Runtime-only lock state. These are deliberately not [DataField]s: the bluespace dock drops
     // them with the save, so a retrieved ship never carries a stale lock reference.
 
