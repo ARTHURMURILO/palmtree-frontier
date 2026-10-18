@@ -42,6 +42,7 @@ public sealed partial class ShuttleConsoleSystem : SharedShuttleConsoleSystem
     [Dependency] private readonly UserInterfaceSystem _ui = default!;
     [Dependency] private readonly SharedContentEyeSystem _eyeSystem = default!;
     [Dependency] private readonly AccessReaderSystem _access = default!;
+    [Dependency] private readonly SharedRadarConsoleSystem _radar = default!; // Palmtree
 
     private EntityQuery<MetaDataComponent> _metaQuery;
     private EntityQuery<TransformComponent> _xformQuery;
@@ -427,6 +428,10 @@ public sealed partial class ShuttleConsoleSystem : SharedShuttleConsoleSystem
             ? shuttleConsole.ProximityAlertEnabled
             : false;
         var proximityAlertRadius = shuttleConsole?.ProximityAlertRadius ?? 128f;
+
+        // Palmtree: drop a target whose entity is gone (a stored, sold or deleted ship can leave a
+        // console pointing at it) before GetNetEntity logs "Can't resolve MetaDataComponent".
+        _radar.ClearTargetIfDead(entity.Owner, entity.Comp1);
 
         return new NavInterfaceState(
             entity.Comp1.MaxRange,

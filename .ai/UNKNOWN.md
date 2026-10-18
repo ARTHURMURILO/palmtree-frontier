@@ -77,3 +77,16 @@ Questions that could not be answered confidently from the working tree. Treat th
 25. `.ai/` docs prefer symbol names; line numbers will drift. Update docs when architecture shifts.
 26. The generic Frontier system docs (`systems/*.md`) are summaries; deep NF internals should be
     verified against `_NF` source when relied upon.
+
+## Open reports
+
+27. **"Machines report un-powered until they are deconstructed and rebuilt"** - reported on a live
+    server after a *failed* ship store (2026-10-17). The successful store/retrieve round trip keeps
+    APC power (`BluespaceDockPowerTest.SavedShipMachinesStayPowered`), so the load path is not the
+    cause, and the failed-store path that produced it could not be reproduced once the save itself
+    was repaired (a plant analyzer and do-after ids made every save of that ship fail). The
+    load-time sweep now re-links any `ExtensionCableReceiverComponent` whose provider is missing and
+    is per-entity fault tolerant, which repairs that state whenever it shows up. If it recurs, check
+    the receiver's `Provider`/`Connectable` and whether the APC's `ExtensionCableProvider` was
+    disconnected (a `StationBoundObjectComponent` binding that no longer matches its station
+    disconnects power - see `BindToStationSystem`).

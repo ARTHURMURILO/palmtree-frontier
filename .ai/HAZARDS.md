@@ -504,3 +504,36 @@ so these fail only in CI:
 - `SetTiles` with **diagonally adjacent** tiles splits the grid (`GridSplitEvent`): entities on the
   split-off part end up on a new grid without the original's components (deed, brand). Test setups
   must use orthogonally adjacent tiles.
+
+## 25. Saving live grids: one unserializable field fails the whole ship (2026-10-18)
+
+- Every `[DataField]` type needs a `[DataDefinition]`. A live grid save serializes **all** components
+  on the grid, so a single field of a type without one throws
+  `No data definition found for type X when writing` (logged as `Caught exception while serializing
+  component X of entity Y`, then `Caught exception while trying to serialize grid ...`). Nothing is
+  written (the file only appears after a successful serialization), the dock reports
+  `bluespace-dock-error-save-failed`, and the ship cannot be stored until the offending item is
+  removed. **When a ship "won't store", grep the server log for `No data definition found`.**
+- Fixed offenders (2026-10-18):
+  - `PlantAnalyzerComponent.PlantInfo` - the "last scanned plant" memory is runtime UI state (and
+    holds a `NetEntity`), so it is deliberately **not** a `[DataField]` any more.
+  - `DoAfterId` - **in-place core patch** (`Content.Shared/DoAfter/DoAfter.cs`, marked Palmtree): it
+    is a `[DataDefinition]` now. Nine components (`ClimbingComponent`, `MagicMirrorComponent`,
+    `GraveComponent`, `EnvelopeComponent`, `CanEscapeInventoryComponent`, ...) store one as a
+    `[DataField]`, so any grid saved while someone was climbing/digging/scanning on it failed the
+    same way. Keep this in mind when a new component stores a `DoAfterId`.
+- A failed save is not side-effect free: `DeviceListSystem.OnMapSave` (and
+  `NetworkConfiguratorSystem`/`FollowerSystem`) mutate the world in `BeforeSerializationEvent` and
+  only `DeviceListSystem` mutates *permanently* - it prunes device-list entries that point at
+  another map and never restores them, so a failed store can break a ship's device links. Anything
+  else that hooks serialization and mutates state needs an `AfterSerializationEvent` counterpart.
+- **Dead radar targets log `Can't resolve MetaDataComponent`**: `RadarConsoleComponent.TargetEntity`
+  is a saved `EntityUid` that outlives the ship it points at (stored, sold, deleted). Every console
+  state refresh (`ShuttleConsoleSystem.GetNavState`, `RadarConsoleSystem.UpdateState` - both run for
+  all consoles when any ship docks) then calls `GetNetEntity` on a dead entity and logs the error.
+  The dock clears targets when it deletes a ship and both systems drop dead targets before using
+  them (`SharedRadarConsoleSystem.ClearTargetIfDead/ClearTargetsPointingAt`).
+- `RestoreMapInitRegistration` (section 24) runs **per entity in a try/catch**: one entity that
+  throws must not skip the registration of every entity after it. It also re-links every
+  `ExtensionCableReceiverComponent` without a provider - a loaded machine whose APC link is missing
+  shows "un-powered" until a player deconstructs and rebuilds it.

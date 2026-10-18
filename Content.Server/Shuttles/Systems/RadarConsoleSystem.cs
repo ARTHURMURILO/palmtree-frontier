@@ -64,6 +64,12 @@ public sealed partial class RadarConsoleSystem : SharedRadarConsoleSystem // Fro
 
             state.RotateWithEntity = !component.FollowEntity;
 
+            // Palmtree: a console can keep pointing at a ship that no longer exists - the bluespace dock
+            // deletes stored ships, and the same happens to sold or admin-deleted ones. GetNetEntity on a
+            // deleted entity logs "Can't resolve MetaDataComponent" on every console refresh, so
+            // drop the dead target here.
+            ClearTargetIfDead(uid, component);
+
             // Frontier: ghost radar restrictions
             if (component.MaxIffRange != null)
                 state.MaxIffRange = component.MaxIffRange.Value;

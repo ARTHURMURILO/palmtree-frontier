@@ -22,6 +22,7 @@ using Content.Server.Popups;
 using Content.Server.Radio.EntitySystems;
 using Content.Server.Preferences.Managers;
 using Content.Server.Power.Components;
+using Content.Server.Power.EntitySystems;
 using Content.Server.Shuttles.Components;
 using Content.Server.Shuttles.Systems;
 using Content.Server.Station.Systems;
@@ -43,6 +44,7 @@ using Content.Shared.Forensics.Components;
 using Content.Shared.GameTicking;
 using Content.Shared.Ghost;
 using Content.Shared.Shuttles.Components;
+using Content.Shared.Shuttles.Systems;
 using Content.Shared.Station;
 using Content.Shared.Station.Components;
 using Content.Shared.Mobs.Components;
@@ -121,6 +123,8 @@ public sealed class BluespaceDockSystem : EntitySystem
     [Dependency] private readonly DeviceLinkSystem _deviceLink = default!;
     [Dependency] private readonly DeviceNetworkSystem _deviceNetwork = default!;
     [Dependency] private readonly GunSystem _gunSystem = default!;
+    [Dependency] private readonly SharedRadarConsoleSystem _radar = default!;
+    [Dependency] private readonly ExtensionCableSystem _extensionCable = default!;
     [Dependency] private readonly GameTicker _gameTicker = default!;
     [Dependency] private readonly UserInterfaceSystem _ui = default!;
 
@@ -867,6 +871,30 @@ public sealed class BluespaceDockSystem : EntitySystem
 
             root["entities"] = kept;
 
+            // The copy no longer declares the dropped uids, so anything that pointed at them
+            // (a container that held one, a Storage that listed one) would deserialize to
+            // EntityUid.Invalid - and the deserializer logs "unknown entity yaml uid" for every
+            // one of them. Prune those references from the survivors.
+            // Ref: HardLight's ShipSaveYamlSanitizer.PruneContainerReferencesToRemovedEntities
+            // (see .ai/HAZARDS.md section 25).
+            foreach (var node in kept)
+            {
+                if (node is not MappingDataNode group ||
+                    !group.TryGet<SequenceDataNode>("entities", out var groupEntities))
+                {
+                    continue;
+                }
+
+                foreach (var entityNode in groupEntities)
+                {
+                    if (entityNode is MappingDataNode entity
+                        && entity.TryGet<SequenceDataNode>("components", out var components))
+                    {
+                        PruneDroppedReferences(components, dropped);
+                    }
+                }
+            }
+
             var name = $"migrated-{Guid.NewGuid():N}.yml";
             var destination = new ResPath($"{ShipDirectory}/{name}");
             _resource.UserData.CreateDir(new ResPath(ShipDirectory));
@@ -899,6 +927,78 @@ public sealed class BluespaceDockSystem : EntitySystem
             if (node is MappingDataNode entity && entity.TryGet<ValueDataNode>("uid", out var uid))
                 uids.Add(uid.Value);
         }
+    }
+
+    /// <summary>
+    /// Removes references to dropped entity uids from an entity's component list: container contents
+    /// (<c>ContainerContainer</c>) and storage lists (<c>Storage</c>), the two places a saved entity
+    /// names other entities by uid outside of component data fields.
+    /// </summary>
+    private static void PruneDroppedReferences(SequenceDataNode components, HashSet<string> dropped)
+    {
+        foreach (var compNode in components)
+        {
+            if (compNode is not MappingDataNode component
+                || !component.TryGet<ValueDataNode>("type", out var type))
+            {
+                continue;
+            }
+
+            switch (type.Value)
+            {
+                case "ContainerContainer":
+                    PruneDroppedContainerContents(component, dropped);
+                    break;
+                case "Storage":
+                    PruneDroppedStoredItems(component, dropped);
+                    break;
+            }
+        }
+    }
+
+    private static void PruneDroppedContainerContents(MappingDataNode component, HashSet<string> dropped)
+    {
+        if (!component.TryGet<MappingDataNode>("containers", out var containers))
+            return;
+
+        foreach (var (_, containerNode) in containers)
+        {
+            if (containerNode is not MappingDataNode container)
+                continue;
+
+            if (container.TryGet<SequenceDataNode>("ents", out var ents))
+            {
+                for (var i = ents.Count - 1; i >= 0; i--)
+                {
+                    if (ents[i] is ValueDataNode value && dropped.Contains(value.Value))
+                        ents.RemoveAt(i);
+                }
+            }
+
+            // A ContainerSlot names its single entity in "ent" instead of "ents".
+            if (container.TryGet<ValueDataNode>("ent", out var single)
+                && !single.IsNull
+                && dropped.Contains(single.Value))
+            {
+                container["ent"] = ValueDataNode.Null();
+            }
+        }
+    }
+
+    private static void PruneDroppedStoredItems(MappingDataNode component, HashSet<string> dropped)
+    {
+        if (!component.TryGet<MappingDataNode>("storedItems", out var storedItems))
+            return;
+
+        var toRemove = new List<string>();
+        foreach (var (key, _) in storedItems.Children)
+        {
+            if (dropped.Contains(key))
+                toRemove.Add(key);
+        }
+
+        foreach (var key in toRemove)
+            storedItems.Remove(key);
     }
 
     /// <summary>
@@ -1483,6 +1583,10 @@ public sealed class BluespaceDockSystem : EntitySystem
     /// device, the signal ports of shuttle cannons, and the modified gun values (fire rate,
     /// projectile speed, angles) that MapInit computes for every <see cref="GunComponent"/>.
     /// </summary>
+    /// <remarks>
+    /// Every entity is restored on its own: one entity that throws must not abort the sweep and
+    /// leave every later entity (doors, buttons, cannons, guns) unregistered.
+    /// </remarks>
     public void RestoreMapInitRegistration(EntityUid grid)
     {
         var entities = new HashSet<EntityUid>();
@@ -1493,25 +1597,50 @@ public sealed class BluespaceDockSystem : EntitySystem
             if (!Exists(uid))
                 continue;
 
-            // DeviceNetworkSystem.OnMapInit: join the device network, unless the device was
-            // deliberately disconnected or is already on it.
-            if (TryComp<DeviceNetworkComponent>(uid, out var device)
-                && device.AutoConnect
-                && !_deviceNetwork.IsDeviceConnected(uid, device))
+            try
             {
-                _deviceNetwork.ConnectDevice(uid, device);
+                RestoreEntityMapInitRegistration(uid);
             }
-
-            // GunSignalControlSystem.OnInit: shuttle cannons get their signal sink ports here.
-            if (TryComp<GunSignalControlComponent>(uid, out var gunControl))
-                _deviceLink.EnsureSinkPorts(uid, gunControl.TriggerPort, gunControl.TogglePort, gunControl.OnPort, gunControl.OffPort);
-
-            // SharedGunSystem.OnMapInit: refresh the modified gun values (fire rate, projectile
-            // speed, angles, ...). They are computed in MapInit and are otherwise left at zero on a
-            // loaded gun, so saved guns cannot fire and emitter bolts spawn with no velocity.
-            if (TryComp<GunComponent>(uid, out var gun))
-                _gunSystem.RefreshModifiers((uid, gun));
+            catch (Exception e)
+            {
+                _sawmill.Error($"Bluespace dock: failed to restore map-init registration for {ToPrettyString(uid)} " +
+                               $"on a loaded ship; the rest of the ship is still restored: {e}");
+            }
         }
+    }
+
+    /// <summary>
+    /// The per-entity half of <see cref="RestoreMapInitRegistration"/>.
+    /// </summary>
+    private void RestoreEntityMapInitRegistration(EntityUid uid)
+    {
+        // DeviceNetworkSystem.OnMapInit: join the device network, unless the device was
+        // deliberately disconnected or is already on it.
+        if (TryComp<DeviceNetworkComponent>(uid, out var device)
+            && device.AutoConnect
+            && !_deviceNetwork.IsDeviceConnected(uid, device))
+        {
+            _deviceNetwork.ConnectDevice(uid, device);
+        }
+
+        // ExtensionCableSystem only links a machine to an APC on component startup, on re-anchoring
+        // and when its reception range changes. A loaded machine that ends up without a provider is
+        // un-powered until a player deconstructs and rebuilds it, so look for one again here.
+        if (TryComp<ExtensionCableReceiverComponent>(uid, out var cableReceiver)
+            && cableReceiver.Provider == null)
+        {
+            _extensionCable.Connect((uid, cableReceiver));
+        }
+
+        // GunSignalControlSystem.OnInit: shuttle cannons get their signal sink ports here.
+        if (TryComp<GunSignalControlComponent>(uid, out var gunControl))
+            _deviceLink.EnsureSinkPorts(uid, gunControl.TriggerPort, gunControl.TogglePort, gunControl.OnPort, gunControl.OffPort);
+
+        // SharedGunSystem.OnMapInit: refresh the modified gun values (fire rate, projectile
+        // speed, angles, ...). They are computed in MapInit and are otherwise left at zero on a
+        // loaded gun, so saved guns cannot fire and emitter bolts spawn with no velocity.
+        if (TryComp<GunComponent>(uid, out var gun))
+            _gunSystem.RefreshModifiers((uid, gun));
     }
 
     /// <summary>
@@ -1794,6 +1923,7 @@ public sealed class BluespaceDockSystem : EntitySystem
             // Any deed pointing at the ship goes with it (the owner may be offline, so this is not
             // limited to one ID card).
             ClearDeedsFor(shuttleUid);
+            ClearRadarTargetsFor(shuttleUid);
             QueueDel(shuttleUid);
             return true;
         }
@@ -1820,6 +1950,17 @@ public sealed class BluespaceDockSystem : EntitySystem
             if (deed.ShuttleUid == grid)
                 RemComp<ShuttleDeedComponent>(uid);
         }
+    }
+
+    /// <summary>
+    /// Removes every radar console target that points at a grid that is about to be deleted. A console
+    /// left pointing at a deleted ship makes the console refresh log "Can't resolve
+    /// MetaDataComponent" (GetNetEntity on a dead entity) until it is refreshed again, and a save of
+    /// the console's own ship would carry the dead reference.
+    /// </summary>
+    private void ClearRadarTargetsFor(EntityUid grid)
+    {
+        _radar.ClearTargetsPointingAt(grid);
     }
 
     /// <summary>
@@ -1883,6 +2024,7 @@ public sealed class BluespaceDockSystem : EntitySystem
         DeleteProjectiles(grid);
 
         ClearDeedsFor(grid);
+        ClearRadarTargetsFor(grid);
 
         if (_station.GetOwningStation(grid) is { Valid: true } station)
             _station.DeleteStation(station);
@@ -2210,9 +2352,11 @@ public sealed class BluespaceDockSystem : EntitySystem
         }
 
         // The shipyard deletes the sold ship; get its occupants off first so pets, corpses and
-        // onlookers are not destroyed along with it, and drop its in-flight shots.
+        // onlookers are not destroyed along with it, and drop its in-flight shots. Consoles
+        // elsewhere must not be left pointing at the ship either.
         EvacuateGrid(shuttleUid);
         DeleteProjectiles(shuttleUid);
+        ClearRadarTargetsFor(shuttleUid);
 
         // TrySellShuttle refuses every sale while the shipyard's parking map is not set up (it is
         // only created by a purchase or by the CVar handler, which does not run when the shipyard

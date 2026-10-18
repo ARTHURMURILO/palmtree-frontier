@@ -35,6 +35,14 @@ public sealed partial class PlantAnalyzerComponent : Component
     /// <summary>
     ///    Info on the last scanned plant, if any
     /// </summary>
-    [DataField]
+    /// <remarks>
+    ///    Palmtree: runtime UI state, deliberately not a <c>[DataField]</c>. It is shown in the analyzer's
+    ///    window and is rebuilt by the next scan, but it cannot be persisted: the struct has no data
+    ///    definition, so a save (the bluespace dock's ship files, for instance) of any grid holding a
+    ///    plant analyzer throws "No data definition found for type
+    ///    PlantAnalyzerScannedPlantInformation" and fails. Its <c>NetEntity</c> target would also go
+    ///    stale across a save/load.
+    /// </remarks>
+    [ViewVariables(VVAccess.ReadOnly)]
     public PlantAnalyzerScannedPlantInformation? PlantInfo;
 }

@@ -249,8 +249,14 @@ Upstream actions/implants/inventory/equipment visuals, `ContentAudioSystem`/lobb
 `HilbertHotelTest` covers room-map loading and the hotel lifecycle; `InteractionPanelTest` covers
 the interaction/organ plumbing; `SynthTest` covers synth physiology (reboot, pressure immunity,
 heat/shock/radiation, EMP lethality, built-in prying) and that bodies no longer rot.
-`BluespaceDockTest` covers the dock registry/ship-file round trip and its self-heal sweep, and
-`ShipRegistrarTest` covers registration turning a docked grid into a civilian vessel. Everything
+`BluespaceDockTest` covers the dock registry/ship-file round trip and its self-heal sweep,
+`BluespaceDockSaveTest` covers the save-side hazards (a used plant analyzer / an in-progress do-after
+must not fail a save, migrated files must not keep references to dropped contents, and radar targets
+must not outlive the ship they point at), `BluespaceDockPowerTest` covers APC power after a
+store/retrieve round trip and the load-time re-link, `BluespaceDockShipSystemsTest` and
+`BluespaceDockDeviceLinkTest` cover the map-init registration (guns, emitters, device links,
+container contents), and `ShipRegistrarTest` covers registration turning a docked grid into a
+civilian vessel. Everything
 else is validated by the build, the YAMLLinter and in-game checks — do not add a new test file per
 feature.
 
@@ -594,6 +600,34 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
   replace this with a blanket MapInit re-raise - inventories depend on it. Also note device network
   packets are processed **one tick later** (`DeviceNetworkSystem.SwapQueues`), so a button's effect
   is never visible in the same tick.
+  **Fault tolerance (2026-10-18)**: the sweep is per entity in a `try`/`catch` (a single entity that
+  throws used to skip the registration of every entity after it), and it also **re-links power**:
+  every `ExtensionCableReceiverComponent` without a provider is connected to the nearest APC again
+  (`ExtensionCableSystem.Connect`). A machine whose APC link is missing is otherwise "un-powered"
+  until a player deconstructs and rebuilds it.
+- **One unserializable field fails the whole save (2026-10-18)**: a live save writes every component
+  on the grid, and a `[DataField]` whose type has no `[DataDefinition]` throws
+  ("No data definition found for type X when writing"), so the file is never written and the dock
+  reports `bluespace-dock-error-save-failed` (nothing is charged or deleted - the store is undone).
+  Two offenders were fixed: the plant analyzer's `PlantInfo` scan memory is runtime UI state and is
+  no longer saved, and `DoAfterId` is a data definition now (**in-place core patch** in
+  `Content.Shared/DoAfter/DoAfter.cs`, marked Palmtree) because nine components store one as a
+  `[DataField]` (climbing, digging, scanning, escaping inventory, ...). Details and diagnosis:
+  `.ai/HAZARDS.md` section 25.
+- **Dead radar targets (2026-10-18)**: `RadarConsoleComponent.TargetEntity` is a saved `EntityUid`,
+  so a console can end up pointing at a ship the dock stored, sold or deleted. Every console state
+  refresh (all of them refresh whenever any ship docks) then logs
+  `Can't resolve MetaDataComponent` for the dead target. The dock clears targets that point at a
+  ship before deleting it (`SharedRadarConsoleSystem.ClearTargetsPointingAt`) and both console
+  systems drop dead targets before using them (`ClearTargetIfDead`).
+- **Migration drops container references (2026-10-18)**: `TryWriteSanitizedShipFile` removes entities
+  whose prototype disappeared, and now also removes `ContainerContainer` (`ents` and `ent`) and
+  `Storage.storedItems` references to them - a dangling reference deserializes to
+  `EntityUid.Invalid` and logs "unknown entity yaml uid" per reference. Idea (and the test shape)
+  from HardLight's `ShipSaveYamlSanitizer`; their save system is reviewed in the local, untracked
+  `.ai/workspace/hardlight-ship-save-review-2026-10-18.md` - they never load ships back, but their
+  `FilteredTypes`/`FilteredPrototypes` lists are a useful checklist when an
+  "unresolved MetaDataComponent" or "Encountered deleted entity 0" report comes in.
 - **What a ship file may not contain**: `TrySaveShipFile` strips the deed and everything referencing
   the ship's station (`StationMemberComponent`, `StationBoundObjectComponent`) *before* serializing —
   the station is a mapped entity the file cannot carry, and stale references make the deserializer

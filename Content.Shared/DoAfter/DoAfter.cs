@@ -109,4 +109,16 @@ public sealed partial class DoAfter
 /// <remarks>
 ///     Can be used to track currently active do-afters to prevent simultaneous do-afters.
 /// </remarks>
-public record struct DoAfterId(EntityUid Uid, ushort Index);
+// Palmtree: must be a data definition. It is used as a [DataField] on many components (a plant
+// analyzer mid-scan, a climber, a grave being dug, ...), and without one any grid save that
+// captured an entity carrying a do-after threw "No data definition found for type
+// Content.Shared.DoAfter.DoAfterId" and failed as a whole (the bluespace dock's ship files).
+[DataDefinition]
+public readonly partial record struct DoAfterId(
+    [property: DataField] EntityUid Uid,
+    [property: DataField] ushort Index)
+{
+    public DoAfterId() : this(EntityUid.Invalid, 0)
+    {
+    }
+}
