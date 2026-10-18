@@ -26,6 +26,7 @@ namespace Content.Server._PS.ShipCombat;
 public sealed class ShipTargetingSystem : EntitySystem
 {
     [Dependency] private readonly ShipCombatSystem _combat = default!;
+    [Dependency] private readonly ShipShieldSystem _shields = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
@@ -218,6 +219,10 @@ public sealed class ShipTargetingSystem : EntitySystem
     {
         if (args.Damage.GetTotal() <= FixedPoint2.Zero)
             return;
+
+        // Ship shields absorb the hit first; an absorbed hit still counts as being attacked, so the
+        // reactions below run either way.
+        _shields.TryAbsorb(uid, ref args);
 
         if (!_combat.TryGetShipCombat(uid, out var combat))
             return;

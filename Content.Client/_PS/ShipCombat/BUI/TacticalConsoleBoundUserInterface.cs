@@ -23,7 +23,7 @@ public sealed class TacticalConsoleBoundUserInterface : BoundUserInterface
         _window = this.CreateWindow<TacticalConsoleWindow>();
         _window.SetConsole(Owner);
 
-        _window.OnConditionConfirmed += condition => SendMessage(new TacticalConsoleSetConditionMessage(condition));
+        _window.OnConditionConfirmed += condition => SendMessage(new ShipConsoleSetConditionMessage(condition));
         _window.OnAutomaticConditionChanged += enabled => SendMessage(new TacticalConsoleSetAutomaticConditionMessage(enabled));
         _window.OnAutomaticFireChanged += enabled => SendMessage(new TacticalConsoleSetAutomaticFireMessage(enabled));
         _window.OnAutomaticRetaliationChanged += enabled => SendMessage(new TacticalConsoleSetAutomaticRetaliationMessage(enabled));

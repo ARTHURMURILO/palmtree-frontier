@@ -10,6 +10,10 @@
     snapCardinals: true
     layers:
     - state: smes
+    - state: smes-oc0 # Input indicator, like the SMES.
+      shader: unshaded
+    - state: smes-op1 # Output indicator, like the SMES.
+      shader: unshaded
   - type: PointLight
     radius: 1.5
     energy: 2.5
@@ -72,3 +76,32 @@
     pool: Thrusters
     ratedPower: 10000
   - type: BluespaceThruster
+
+- type: entity
+  parent: BaseMachine
+  id: ShieldGenerator
+  name: shield generator
+  description: Projects the ship's directional shields, fed by the bluespace power sink.
+  suffix: Palmtree
+  components:
+  - type: Sprite
+    sprite: Structures/Machines/gravity_generator_mini.rsi # Placeholder until the shield generator gets its own art.
+    state: on
+    snapCardinals: true
+  - type: PointLight
+    radius: 1.5
+    energy: 3
+    color: "#4db8ff"
+    castShadows: false
+  - type: ShieldGenerator
+    maxPerFacing: 300
+    regenPerPulse: 30
+  - type: ApcPowerReceiver
+    needsPower: false
+    powerDisabled: true
+    powerLoad: 0
+  - type: BluespacePowered
+    pool: Shields
+    ratedPower: 15000
+  - type: StaticPrice
+    price: 2500

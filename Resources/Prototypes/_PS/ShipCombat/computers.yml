@@ -27,3 +27,34 @@
       state: shipyard_blackmarket
     - map: ["computerLayerKeys"]
       state: blackmarket_key
+
+- type: entity
+  parent: BaseComputer
+  id: ComputerShieldingConsole
+  name: shielding console
+  description: Engineering console for the ship's power distribution and directional shields.
+  suffix: Palmtree
+  components:
+  - type: ShipShieldingConsole
+  - type: ActivatableUI
+    key: enum.ShieldingConsoleUiKey.Key
+  - type: UserInterface
+    interfaces:
+      enum.ShieldingConsoleUiKey.Key:
+        type: ShieldingConsoleBoundUserInterface
+  - type: RadarConsole
+    maxRange: 512
+  - type: WorldLoader
+    radius: 512
+  - type: Sprite
+    sprite: _PS/Structures/Machines/tactical_console.rsi
+    color: "#d8c86a" # Placeholder dark yellow tint until the console gets its own art.
+    layers:
+    - map: ["computerLayerBody"]
+      state: computer_blackmarket
+    - map: ["computerLayerKeyboard"]
+      state: generic_keyboard
+    - map: ["computerLayerScreen"]
+      state: shipyard_blackmarket
+    - map: ["computerLayerKeys"]
+      state: blackmarket_key

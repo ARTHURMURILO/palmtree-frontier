@@ -1,4 +1,5 @@
 using System.Linq;
+using Content.Shared._PS.ShipCombat; // Palmtree: ship shields absorb explosions
 using System.Numerics;
 using Content.Server.Atmos.EntitySystems;
 using Content.Server.Explosion.Components;
@@ -499,6 +500,17 @@ public sealed partial class ExplosionSystem
     }
 
     /// <summary>
+    /// Palmtree: lets ship shields absorb an explosion before it damages the grid's floor tiles.
+    /// Returns true when the explosion was absorbed (the caller must skip the tile damage).
+    /// </summary>
+    public bool TryAbsorbExplosion(EntityUid grid, MapCoordinates epicenter, float intensity)
+    {
+        var ev = new ShieldTileDamageAttemptEvent(epicenter.Position, intensity);
+        RaiseLocalEvent(grid, ref ev);
+        return ev.Cancelled;
+    }
+
+    /// <summary>
     ///     Tries to damage floor tiles. Not to be confused with the function that damages entities intersecting the
     ///     grid tile.
     /// </summary>
@@ -863,7 +875,7 @@ sealed class Explosion
                     Cause);
 
                 // If the floor is not blocked by some dense object, damage the floor tiles.
-                if (canDamageFloor)
+                if (canDamageFloor && !_system.TryAbsorbExplosion(currentGrid.Owner, Epicenter, _currentIntensity * _tileBreakScale))
                     _system.DamageFloorTile(tileRef, _currentIntensity * _tileBreakScale, _maxTileBreak, _canCreateVacuum, tileUpdateList, ExplosionType);
             }
             else

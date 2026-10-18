@@ -90,16 +90,22 @@ event-driven so a future AI brain can raise the same events without a console
 
 ## Shields
 
-- Four facings (Fore/Port/Starboard/Aft), fixed capacity per facing (placeholder 300), direction
-  from the impact vector / attacker position in ship-local space.
+- Four facings (Fore/Starboard/Aft/Port, in the grid's local frame where +Y is fore), fixed capacity
+  per facing from the ship's **powered** generators (placeholder 300 each, 30 regen per pulse).
 - `Up` absorbs the whole hit while charge > 0 (STO: any energy protects); hits 0 → `Down`; a Down
-  facing does not absorb until it regenerates above 20% of max, then re-arms (`Up`).
-- Every 6 s: each facing gains `ratedRegen × (p/50)` (clamped). Excess wasted.
+  facing does not absorb until it regenerates above 20% of max, then re-arms. The hysteresis keeps
+  the collapse alarm from flapping.
+- Every 6 s: each facing gains `RegenPerPulse × generator performance` (clamped). Excess wasted.
+- Hardness: each shield power point negates 0.2% of the absorbed damage.
 - Redistribution (arrows): `^ < > v` drains the other three facings into the selected one up to its
-  cap; `ALL` splits the total evenly; 10 s cooldown shown in the UI.
-- Absorption hooks: global `BeforeDamageChangedEvent` subscription (projectiles, hitscan, melee —
-  direction from `Origin`) + marked `ExplosionSystem` patches for explosion entity/tile damage
-  (direction from the epicenter). Placeholder blue hit effect entity at the impact point.
+  cap; `ALL` splits the total evenly; 10 s cooldown. Redistributing into a downed facing can re-arm it.
+- Absorption hooks: `BeforeDamageChangedEvent` (all entity damage; direction from the attacker,
+  explosions with no origin hit the strongest facing) + a marked `ExplosionSystem` hook
+  (`ShieldTileDamageAttemptEvent` raised on the grid before floor tiles are destroyed).
+  Absorbed hits spawn the `ShieldImpactEffect` placeholder (blue gravity-pulse sprite) and still
+  count as being attacked (auto condition/retaliation).
+- The shield state lives on the grid (`ShipShieldComponent`, facings saved; pulse timers and
+  cooldown runtime) and is created by the shield generator.
 
 ## Consoles
 
@@ -112,9 +118,12 @@ the locked grid's name truncated to 24 characters, or `?` for unknown/hidden tar
 dropdown (MASTER SAFE / ALL WEAPONS / PRIMARY / SECONDARY / AUX), `FIRE`, `FIRE TORPEDOES`,
 `Automatic Fire`, `Automatic Condition`, `Automatic Retaliation`, `CLEAR LOCK`.
 
-**Shielding (engineering) console** — same radar view, dark yellow window. Right panel: condition
-row, facing arrows + `ALL`, four 15–125 sliders with `|` at 100, lock buttons, preset buttons,
-per-facing mini-bars, `(!)` alerts.
+**Shielding (engineering) console** — same radar view, dark yellow window (placeholder yellow tint
+on the console sprite). Right panel: condition display + dropdown with confirmation, the facing
+arrow grid (`^ < ALL > v` plus a redistribution cooldown line), per-facing charge readouts, four
+15–125 sliders with the `|` marker at 100, per-pool lock checkboxes, Attack/Defense/Balanced preset
+buttons and bold red `/!\` alerts (shields below minimum or an unpowered generator, any unpowered
+weapon, no/underpowered bluespace thrusters, Auxiliary below minimum).
 
 Both consoles are machines with parts (tactical lock speed uses `Capacitor`).
 

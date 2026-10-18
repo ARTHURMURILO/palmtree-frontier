@@ -50,7 +50,7 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
         SubscribeLocalEvent<ShipTargetingConsoleComponent, MapInitEvent>(OnMapInit);
         SubscribeLocalEvent<ShipTargetingConsoleComponent, ComponentShutdown>(OnShutdown);
         SubscribeLocalEvent<ShipTargetingConsoleComponent, BoundUIOpenedEvent>(OnUiOpened);
-        SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleSetConditionMessage>(OnSetCondition);
+        SubscribeLocalEvent<ShipTargetingConsoleComponent, ShipConsoleSetConditionMessage>(OnSetCondition);
         SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleSetAutomaticConditionMessage>(OnSetAutomaticCondition);
         SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleSetAutomaticFireMessage>(OnSetAutomaticFire);
         SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleSetAutomaticRetaliationMessage>(OnSetAutomaticRetaliation);
@@ -117,7 +117,7 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
         UpdateState(uid, component);
     }
 
-    private void OnSetCondition(EntityUid uid, ShipTargetingConsoleComponent component, TacticalConsoleSetConditionMessage args)
+    private void OnSetCondition(EntityUid uid, ShipTargetingConsoleComponent component, ShipConsoleSetConditionMessage args)
     {
         // The condition-changed event refreshes every console on the grid.
         _combat.TrySetCondition(uid, args.Condition);

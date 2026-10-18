@@ -4,6 +4,8 @@ using Content.Server.Shuttles.Components;
 using Content.Server.Shuttles.Systems;
 using Content.Shared.Construction.Components;
 using Content.Shared._PS.ShipCombat;
+using Content.Shared.Examine;
+using Content.Shared.NodeContainer;
 using Content.Shared._PS.ShipCombat.Components;
 
 namespace Content.Server._PS.ShipCombat;
@@ -20,12 +22,12 @@ namespace Content.Server._PS.ShipCombat;
 /// </remarks>
 public sealed class ShipPowerSystem : EntitySystem
 {
-    public const int PoolMin = 15;
-    public const int PoolMax = 125;
-    public const int PoolTotal = 200;
+    public const int PoolMin = ShipPowerConstants.PoolMin;
+    public const int PoolMax = ShipPowerConstants.PoolMax;
+    public const int PoolTotal = ShipPowerConstants.PoolTotal;
 
     /// <summary>Pools below this value cannot run their devices (the `(!)` alerts).</summary>
-    public const int MinOperatingPool = 25;
+    public const int MinOperatingPool = ShipPowerConstants.MinOperatingPool;
 
     private static readonly ShipPowerPool[] AllPools =
     {
@@ -50,6 +52,8 @@ public sealed class ShipPowerSystem : EntitySystem
         base.Initialize();
 
         UpdatesAfter.Add(typeof(PowerNetSystem));
+
+        SubscribeLocalEvent<BluespacePowerSinkComponent, ExaminedEvent>(OnSinkExamined);
 
         // Thruster parts refresh after ThrusterSystem, so the captured value is the parts-scaled one.
         SubscribeLocalEvent<BluespaceThrusterComponent, MapInitEvent>(OnThrusterMapInit,
@@ -263,8 +267,44 @@ public sealed class ShipPowerSystem : EntitySystem
         }
     }
 
-    private static void SetPools(ShipCombatComponent combat, int shields, int weapons, int thrusters, int auxiliary)
+    /// <summary>
+    /// Explains the sink's wiring, charge and budget, and warns when its input and output share a
+    /// segment (which makes the sink self-charge and never feed the ship).
+    /// </summary>
+    private void OnSinkExamined(EntityUid uid, BluespacePowerSinkComponent sink, ExaminedEvent args)
     {
+        if (!args.IsInDetailsRange)
+            return;
+
+        if (TryComp<BatteryComponent>(uid, out var battery))
+        {
+            args.PushMarkup(Loc.GetString("bluespace-power-sink-examine-charge",
+                ("charge", battery.CurrentCharge / 1000f),
+                ("max", battery.MaxCharge / 1000f)));
+        }
+
+        args.PushMarkup(Loc.GetString("bluespace-power-sink-examine-budget",
+            ("throughput", sink.RatedThroughput / 1000f)));
+
+        args.PushMarkup(Loc.GetString("bluespace-power-sink-examine-wiring"));
+
+        if (IsInputOutputSameNet(uid))
+            args.PushMarkup(Loc.GetString("bluespace-power-sink-examine-same-net"));
+    }
+
+    private bool IsInputOutputSameNet(EntityUid uid)
+    {
+        if (!TryComp<NodeContainerComponent>(uid, out var container))
+            return false;
+
+        if (!container.Nodes.TryGetValue("input", out var input)
+            || !container.Nodes.TryGetValue("output", out var output))
+            return false;
+
+        return input.NodeGroup != null && ReferenceEquals(input.NodeGroup, output.NodeGroup);
+    }
+
+    private static void SetPools(ShipCombatComponent combat, int shields, int weapons, int thrusters, int auxiliary)    {
         combat.ShieldPower = shields;
         combat.WeaponPower = weapons;
         combat.ThrusterPower = thrusters;

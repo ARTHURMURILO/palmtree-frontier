@@ -6,7 +6,7 @@ namespace Content.Shared._PS.ShipCombat;
 /// Palmtree: asks the tactical console to change the ship's condition (confirmed client-side).
 /// </summary>
 [Serializable, NetSerializable]
-public sealed class TacticalConsoleSetConditionMessage(ShipCondition condition) : BoundUserInterfaceMessage
+public sealed class ShipConsoleSetConditionMessage(ShipCondition condition) : BoundUserInterfaceMessage
 {
     public ShipCondition Condition { get; } = condition;
 }

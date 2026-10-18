@@ -25,3 +25,26 @@ tactical-console-auto-fire = Automatic Fire
 tactical-console-auto-condition = Automatic Condition
 tactical-console-auto-retaliation = Automatic Retaliation
 tactical-console-clear-lock = CLEAR LOCK
+
+shielding-console-window-title = Shielding Console
+shielding-console-shields = Shields
+shielding-console-power = Power
+shielding-console-pool-shields = Shields
+shielding-console-pool-weapons = Weapons
+shielding-console-pool-thrusters = Thrusters
+shielding-console-pool-auxiliary = Auxiliary
+shielding-console-facing-fore = Fore
+shielding-console-facing-starboard = Starboard
+shielding-console-facing-aft = Aft
+shielding-console-facing-port = Port
+shielding-console-facing-down = { $charge } / { $max } (DOWN)
+shielding-console-redistribute-ready = Redistribution ready
+shielding-console-redistribute-cooldown = Redistribution in { $seconds }s
+shielding-console-preset-attack = ATTACK
+shielding-console-preset-defense = DEFENSE
+shielding-console-preset-balanced = BALANCED
+
+bluespace-power-sink-examine-charge = Charge: { $charge } kJ / { $max } kJ.
+bluespace-power-sink-examine-budget = It can split up to { $throughput } kW between the ship's power pools.
+bluespace-power-sink-examine-wiring = Generators connect to a cable terminal placed next to it and facing it (the input); cables under it feed the ship's power grid (the output).
+bluespace-power-sink-examine-same-net = [color=red]Warning: its input and output are on the same power segment. Put the generators on their own segment, separated from the ship's grid.[/color]

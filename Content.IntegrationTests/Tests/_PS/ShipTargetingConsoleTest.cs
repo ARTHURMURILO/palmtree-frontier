@@ -70,7 +70,7 @@ public sealed class ShipTargetingConsoleTest
 
             // The handlers are the same ones the BUI raises; the UI does not have to be open for
             // the server-side logic to be exercised.
-            bus.RaiseLocalEvent(console, new TacticalConsoleSetConditionMessage(ShipCondition.Yellow));
+            bus.RaiseLocalEvent(console, new ShipConsoleSetConditionMessage(ShipCondition.Yellow));
             Assert.That(state.Comp.Condition, Is.EqualTo(ShipCondition.Yellow));
 
             bus.RaiseLocalEvent(console, new TacticalConsoleSetAutomaticConditionMessage(false));
