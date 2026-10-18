@@ -289,8 +289,13 @@ public sealed partial class ShuttleNavControl : BaseShuttleControl
             shouldDrawIFF = NFCheckShouldDrawIffRangeCondition(shouldDrawIFF, gridMapPos - mapPos.Position);
             // End Frontier
 
-            // Palmtree: hidden-IFF contacts render as a red "?" for the tactical console.
-            if (ShowHiddenIFF && iff != null && (iff.Flags & (IFFFlags.Hide | IFFFlags.HideLabel)) != 0x0)
+            // Palmtree: hidden-IFF *ships* (player shuttles with stealth on) render as a red "?" for
+            // the tactical console. Asteroids, wrecks and other unlabelled grids keep their normal
+            // appearance instead of cluttering the screen.
+            if (ShowHiddenIFF
+                && iff != null
+                && (iff.Flags & IFFFlags.IsPlayerShuttle) != 0x0
+                && (iff.Flags & (IFFFlags.Hide | IFFFlags.HideLabel)) != 0x0)
             {
                 labelColor = HiddenIFFColor;
                 labelName = "?";

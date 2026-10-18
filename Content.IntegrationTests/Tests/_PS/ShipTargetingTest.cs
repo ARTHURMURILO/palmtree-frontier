@@ -5,6 +5,8 @@ using Content.Shared._PS.ShipCombat.Components;
 using Content.Shared.Damage;
 using Content.Shared.Damage.Prototypes;
 using Content.Shared.Damage.Systems;
+using Content.Shared.Shuttles.Components;
+using Content.Shared.Shuttles.Systems;
 using NUnit.Framework;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
@@ -261,6 +263,59 @@ public sealed class ShipTargetingTest
                 "The damage still raises the condition.");
             Assert.That(shipState.Comp.LockInProgress, Is.False,
                 "A person with a gun is not a ship weapon and must not be retaliated against.");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task TargetDisplayNameFollowsIff()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var mapSystem = server.System<SharedMapSystem>();
+        var mapMan = server.ResolveDependency<IMapManager>();
+        var xform = server.System<SharedTransformSystem>();
+        var metaData = server.System<MetaDataSystem>();
+
+        EntityUid console = default;
+        EntityUid ship = default;
+        EntityUid target = default;
+
+        await server.WaitPost(() =>
+        {
+            (console, ship, target) = CreateShipPair(entMan, mapSystem, mapMan, xform, testMap.MapId, 100f);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            var combat = server.System<ShipCombatSystem>();
+            var consoleSystem = server.System<ShipTargetingConsoleSystem>();
+            Assert.That(combat.TryGetShipCombat(ship, out var shipState), Is.True);
+
+            // No lock -> the window shows TARGET: NONE.
+            var state = consoleSystem.BuildState(console, shipState.Comp);
+            Assert.That(state.TargetName, Is.Null);
+
+            // A visible target -> its name, truncated to 24 characters.
+            var shuttles = server.System<SharedShuttleSystem>();
+            if (!entMan.HasComponent<IFFComponent>(target))
+                entMan.AddComponent<IFFComponent>(target);
+            shuttles.AddIFFFlag(target, IFFFlags.IsPlayerShuttle);
+            metaData.SetEntityName(target, "A Very Long Ship Name That Keeps Going");
+            shipState.Comp.LockTarget = target;
+
+            state = consoleSystem.BuildState(console, shipState.Comp);
+            Assert.That(state.TargetName, Is.EqualTo("A Very Long Ship Name Th"),
+                "A long target name should be truncated to 24 characters.");
+
+            // A hidden-IFF target -> "?".
+            shuttles.AddIFFFlag(target, IFFFlags.HideLabel);
+            state = consoleSystem.BuildState(console, shipState.Comp);
+            Assert.That(state.TargetName, Is.EqualTo("?"),
+                "A target with a hidden IFF should show as unknown.");
         });
 
         await pair.CleanReturnAsync();

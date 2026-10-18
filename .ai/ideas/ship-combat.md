@@ -99,9 +99,11 @@ event-driven so a future AI brain can raise the same events without a console
 
 **Tactical (ship targeting) console** — blackmarket shipyard sprite copy, dark red window, radar
 range 512 (double the shuttle console), overlays on the IFF view (lock reticle, inbound missile
-marker, contact edge arrows) and **hidden/hidden-label IFF grids drawn red with name "?"**. Right
-panel: condition display + dropdown with confirmation, `LOCK`/`MSL`, weapons dropdown
-(MASTER SAFE / ALL WEAPONS / PRIMARY / SECONDARY / AUX), `FIRE`, `FIRE TORPEDOES`,
+marker, contact edge arrows) and **hidden/hidden-label IFF player shuttles drawn red with name "?"**
+(asteroids, wrecks and other unlabelled non-ship grids keep their normal appearance). Right panel:
+condition display + dropdown with confirmation, `LOCK`/`MSL`/`TARGET` status (TARGET shows `NONE`,
+the locked grid's name truncated to 24 characters, or `?` for unknown/hidden targets), weapons
+dropdown (MASTER SAFE / ALL WEAPONS / PRIMARY / SECONDARY / AUX), `FIRE`, `FIRE TORPEDOES`,
 `Automatic Fire`, `Automatic Condition`, `Automatic Retaliation`, `CLEAR LOCK`.
 
 **Shielding (engineering) console** — same radar view, dark yellow window. Right panel: condition

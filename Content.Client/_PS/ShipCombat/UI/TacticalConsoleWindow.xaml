@@ -52,6 +52,7 @@
                 </controls:StripeBack>
                 <Label Name="LockStatusLabel" Margin="3"/>
                 <Label Name="MslStatusLabel" Margin="3"/>
+                <Label Name="TargetStatusLabel" Margin="3"/>
                 <controls:StripeBack MinSize="48 48">
                     <Label Text="{Loc 'tactical-console-weapons'}"
                            HorizontalAlignment="Center"

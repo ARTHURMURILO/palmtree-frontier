@@ -53,6 +53,7 @@ public sealed partial class TacticalConsoleWindow : FancyWindow
     public TacticalConsoleWindow()
     {
         RobustXamlLoader.Load(this);
+        IoCManager.InjectDependencies(this);
 
         WindowBackgroundPanel.ModulateSelfOverride = WindowBackgroundColor;
         WindowHeadingPanel.ModulateSelfOverride = WindowHeadingColor;
@@ -129,6 +130,9 @@ public sealed partial class TacticalConsoleWindow : FancyWindow
         LockStatusLabel.FontColorOverride = state.BeingLocked ? WarningColor : null;
         MslStatusLabel.Text = FormatStatus("tactical-console-msl", state.IncomingMissile);
         MslStatusLabel.FontColorOverride = state.IncomingMissile ? WarningColor : null;
+        TargetStatusLabel.Text = state.TargetName is { } targetName
+            ? Loc.GetString("tactical-console-target-name", ("name", targetName))
+            : Loc.GetString("tactical-console-target-none");
 
         // Fire controls need a lock, an armed weapon group and a non-GREEN condition.
         var canFire = state.Condition != ShipCondition.Green

@@ -37,14 +37,23 @@ public sealed partial class ShuttleNavControl
 
     private static void DrawLockReticle(DrawingHandleScreen handle, Vector2 position)
     {
-        const float radius = 12f;
-        const float tick = 5f;
+        // A red square of corner brackets around the locked contact.
+        const float half = 14f;
+        const float len = 8f;
 
-        handle.DrawCircle(position, radius, LockColor, false);
-        handle.DrawLine(position + new Vector2(-radius - tick, 0f), position + new Vector2(-radius, 0f), LockColor);
-        handle.DrawLine(position + new Vector2(radius, 0f), position + new Vector2(radius + tick, 0f), LockColor);
-        handle.DrawLine(position + new Vector2(0f, -radius - tick), position + new Vector2(0f, -radius), LockColor);
-        handle.DrawLine(position + new Vector2(0f, radius), position + new Vector2(0f, radius + tick), LockColor);
+        var topLeft = position + new Vector2(-half, -half);
+        var topRight = position + new Vector2(half, -half);
+        var bottomRight = position + new Vector2(half, half);
+        var bottomLeft = position + new Vector2(-half, half);
+
+        handle.DrawLine(topLeft, topLeft + new Vector2(len, 0f), LockColor);
+        handle.DrawLine(topLeft, topLeft + new Vector2(0f, len), LockColor);
+        handle.DrawLine(topRight, topRight + new Vector2(-len, 0f), LockColor);
+        handle.DrawLine(topRight, topRight + new Vector2(0f, len), LockColor);
+        handle.DrawLine(bottomRight, bottomRight + new Vector2(-len, 0f), LockColor);
+        handle.DrawLine(bottomRight, bottomRight + new Vector2(0f, -len), LockColor);
+        handle.DrawLine(bottomLeft, bottomLeft + new Vector2(len, 0f), LockColor);
+        handle.DrawLine(bottomLeft, bottomLeft + new Vector2(0f, -len), LockColor);
     }
 
     private static void DrawDiamond(DrawingHandleScreen handle, Vector2 position, Color color)

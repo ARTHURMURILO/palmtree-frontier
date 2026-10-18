@@ -32,6 +32,9 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
     /// <summary>How often consoles rescan the grids in their range.</summary>
     private const float ContactScanInterval = 1f;
 
+    /// <summary>Longest target name shown in the window's TARGET line.</summary>
+    private const int MaxTargetNameLength = 24;
+
     /// <summary>Grids each console could see on the previous scan (runtime only).</summary>
     private readonly Dictionary<EntityUid, HashSet<EntityUid>> _contacts = new();
 
@@ -237,7 +240,22 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
             beingLocked: combat.IncomingLocks.Count > 0,
             incomingMissile: false, // M8: torpedo alarms
             hasLock: hasLock,
-            lockTarget: hasLock ? GetNetEntity(combat.LockTarget) : null);
+            lockTarget: hasLock ? GetNetEntity(combat.LockTarget) : null,
+            targetName: hasLock ? GetTargetDisplayName(combat.LockTarget!.Value) : null);
+    }
+
+    /// <summary>
+    /// The name shown in the window's TARGET line: the target's name (at most
+    /// <see cref="MaxTargetNameLength"/> characters), or "?" when it is unknown or its IFF is hidden.
+    /// </summary>
+    private string GetTargetDisplayName(EntityUid target)
+    {
+        if (!TryComp<IFFComponent>(target, out var iff)
+            || (iff.Flags & (IFFFlags.Hide | IFFFlags.HideLabel)) != 0x0)
+            return "?";
+
+        var name = Name(target);
+        return name.Length > MaxTargetNameLength ? name[..MaxTargetNameLength] : name;
     }
 
     /// <summary>

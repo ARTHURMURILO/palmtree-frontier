@@ -35,6 +35,12 @@ public sealed class TacticalConsoleBoundUserInterfaceState : BoundUserInterfaceS
     /// <summary>The locked grid, if any (used to draw the lock reticle).</summary>
     public NetEntity? LockTarget { get; }
 
+    /// <summary>
+    /// The locked grid's display name, truncated, or "?" for unknown/hidden contacts. Null when the
+    /// ship has no lock (the window shows TARGET: NONE).
+    /// </summary>
+    public string? TargetName { get; }
+
     public TacticalConsoleBoundUserInterfaceState(
         NavInterfaceState navState,
         ShipCondition condition,
@@ -45,7 +51,8 @@ public sealed class TacticalConsoleBoundUserInterfaceState : BoundUserInterfaceS
         bool beingLocked,
         bool incomingMissile,
         bool hasLock,
-        NetEntity? lockTarget)
+        NetEntity? lockTarget,
+        string? targetName)
     {
         NavState = navState;
         Condition = condition;
@@ -57,5 +64,6 @@ public sealed class TacticalConsoleBoundUserInterfaceState : BoundUserInterfaceS
         IncomingMissile = incomingMissile;
         HasLock = hasLock;
         LockTarget = lockTarget;
+        TargetName = targetName;
     }
 }
