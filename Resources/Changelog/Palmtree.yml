@@ -1190,3 +1190,27 @@ Entries:
   time: '2026-10-18T04:18:29.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/d41566d5d0ba659b08f93183b735487e4761ea8a
+- author: TheLife
+  changes:
+    - type: Add
+      message: >-
+        Added the RPD, a rapid piping device that builds and removes atmospheric
+        pipes, pumps, valves, vents, radiators, mixers and filters, with mixers
+        and filters flippable while placing. It is stocked in engineering
+        lathes, the EngiVend and the rapid construction research node.
+    - type: Add
+      message: >-
+        Added the LL0 Salto, a small expedition ship, to the expedition
+        shipyard.
+    - type: Add
+      message: >-
+        Added an admin-spawn experimental RCD that builds instantly, including
+        plastitanium walls and windows.
+    - type: Tweak
+      message: >-
+        The RCD can now build shuttle walls, and shuttle walls are much faster
+        and cheaper to deconstruct.
+  id: 90074
+  time: '2026-10-18T15:18:44.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/43d51053bad22f58c1f95d5dc8631ca4c69878c4
