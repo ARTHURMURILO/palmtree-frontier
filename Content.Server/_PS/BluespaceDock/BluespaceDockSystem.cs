@@ -23,6 +23,7 @@ using Content.Server.Radio.EntitySystems;
 using Content.Server.Preferences.Managers;
 using Content.Server.Power.Components;
 using Content.Server.Power.EntitySystems;
+using Content.Server.Maps;
 using Content.Server.Shuttles.Components;
 using Content.Server.Shuttles.Systems;
 using Content.Server.Station.Systems;
@@ -1154,6 +1155,29 @@ public sealed class BluespaceDockSystem : EntitySystem
     #region Vessel identity
 
     /// <summary>
+    /// The station a retrieved ship is rebuilt with, mirroring the shipyard's purchase path
+    /// (<c>ShipyardSystem.Consoles.TryPurchaseShuttle</c>): a vessel's game map prototype holds the
+    /// <see cref="StationConfig"/> its purchase uses, and an expedition vessel's config uses
+    /// <c>StandardFrontierExpeditionVessel</c> - which adds <c>BaseStationExpeditions</c>
+    /// (<c>SalvageExpeditionDataComponent</c>). A plain <c>StandardFrontierVessel</c> station has no
+    /// expedition data, so the ship's expedition consoles come back with nothing to talk to and every
+    /// button disabled (the ship is "no longer expedition capable"). Vessels with no game map
+    /// prototype (and hand-built ships, which have no vessel at all) fall back to
+    /// <c>StandardFrontierVessel</c>.
+    /// </summary>
+    public StationConfig GetShipStationConfig(ProtoId<VesselPrototype>? vessel)
+    {
+        if (vessel is { } vesselId
+            && _prototype.TryIndex<GameMapPrototype>(vesselId.Id, out var map)
+            && map.Stations.TryGetValue(vesselId.Id, out var config))
+        {
+            return config;
+        }
+
+        return new StationConfig { StationPrototype = "StandardFrontierVessel" };
+    }
+
+    /// <summary>
     /// Resolves a grid's vessel identity: a shipyard vessel prototype from the ship's station, or
     /// the Ship Registrar's marker for hand-built ships. Returns false when the grid has neither.
     /// </summary>
@@ -2155,7 +2179,7 @@ public sealed class BluespaceDockSystem : EntitySystem
                 : entry.Name;
             var displayName = ShipNameHelper.BuildFullName(baseName, entry.Suffix);
 
-            var stationConfig = new StationConfig { StationPrototype = "StandardFrontierVessel" };
+            var stationConfig = GetShipStationConfig(entry.Vessel);
             var shipStation = _station.InitializeNewStation(stationConfig, new List<EntityUid> { grid });
             _station.RenameStation(shipStation, displayName, loud: false);
             _metaData.SetEntityName(grid, displayName);

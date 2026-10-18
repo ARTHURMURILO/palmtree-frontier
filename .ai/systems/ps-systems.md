@@ -254,7 +254,8 @@ heat/shock/radiation, EMP lethality, built-in prying) and that bodies no longer 
 `BluespaceDockSaveTest` covers the save-side hazards (a used plant analyzer / an in-progress do-after
 must not fail a save, migrated files must not keep references to dropped contents, and radar targets
 must not outlive the ship they point at), `BluespaceDockPowerTest` covers APC power after a
-store/retrieve round trip and the load-time re-link, `BluespaceDockShipSystemsTest` and
+store/retrieve round trip and the load-time re-link, `BluespaceDockExpeditionTest` covers a retrieved
+expedition ship keeping its station's expedition data, `BluespaceDockShipSystemsTest` and
 `BluespaceDockDeviceLinkTest` cover the map-init registration (guns, emitters, device links,
 container contents), and `ShipRegistrarTest` covers registration turning a docked grid into a
 civilian vessel. Everything
@@ -581,6 +582,17 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
   and adds `BluespaceDockConsoleComponent.NewAccessLevels` (Captain by default) to their ID. Without
   the record the ship came back with no crew at all - no captain, nothing on the manifest. The Ship
   Registrar does the same at registration.
+- **Retrieved ships get the shipyard's station (`GetShipStationConfig`, 2026-10-18)**: the station a
+  ship lives on carries its capabilities, not the grid. Retrieval used to rebuild *every* ship with a
+  plain `StandardFrontierVessel` station, which silently cost expedition ships their
+  `BaseStationExpeditions` (`SalvageExpeditionDataComponent`): their salvage expedition consoles came
+  back with nothing to read (`SalvageSystem.UpdateConsole` finds no data on the station) and every
+  button disabled - the ship was no longer expedition capable. Retail: mirror the shipyard's purchase
+  path (`ShipyardSystem.Consoles.TryPurchaseShuttle`), which takes the station config from the
+  vessel's **game map prototype** (`GameMapPrototype.Stations[vesselId]`, keyed by the vessel id, e.g.
+  `Aegis` -> `StandardFrontierExpeditionVessel`). Ships with no vessel prototype (hand-built ones)
+  still fall back to `StandardFrontierVessel`. Entries stored before the fix carry the vessel id, so
+  an existing stored ship is repaired by its next retrieval.
 - **No pre-save power-down, no MapInit re-raise** (both inherited from Coyote's drydock, both removed):
   powering down fuel/charge systems wrote `on: false` / `switchedOn: false` into the file, so a
   retrieved ship came back unpowered (its APC off, the bridge door refusing to open). Re-raising
