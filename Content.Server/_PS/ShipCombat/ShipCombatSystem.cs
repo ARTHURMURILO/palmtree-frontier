@@ -15,6 +15,15 @@ namespace Content.Server._PS.ShipCombat;
 /// </remarks>
 public sealed class ShipCombatSystem : EntitySystem
 {
+    private ISawmill _sawmill = default!;
+
+    public override void Initialize()
+    {
+        base.Initialize();
+
+        _sawmill = Logger.GetSawmill("shipcombat");
+    }
+
     /// <summary>
     /// Resolves the grid of <paramref name="entity"/> (or the entity itself when it is a grid) and
     /// ensures it has a <see cref="ShipCombatComponent"/>. Idempotent.
@@ -71,6 +80,7 @@ public sealed class ShipCombatSystem : EntitySystem
             return;
 
         combat.Comp.Condition = condition;
+        _sawmill.Info($"{ToPrettyString(combat.Owner)} condition {oldCondition} -> {condition}");
         var ev = new ShipCombatConditionChangedEvent(combat, oldCondition, condition);
         RaiseLocalEvent(ev);
     }

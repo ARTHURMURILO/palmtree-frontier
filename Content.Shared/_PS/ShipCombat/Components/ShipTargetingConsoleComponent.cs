@@ -58,6 +58,12 @@ public sealed partial class ShipTargetingConsoleComponent : Component
     /// </summary>
     [DataField]
     public TimeSpan LockTime = TimeSpan.FromSeconds(2);
+
+    /// <summary>
+    /// Played on the ship's consoles when damage raises the condition out of peacetime automatically.
+    /// </summary>
+    [DataField]
+    public SoundSpecifier ConditionRaisedSound = new SoundPathSpecifier("/Audio/_PS/ShipCombat/alert14.ogg");
 }
 
 [Serializable, NetSerializable]

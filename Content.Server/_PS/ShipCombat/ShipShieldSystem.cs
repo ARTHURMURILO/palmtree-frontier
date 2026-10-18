@@ -33,9 +33,13 @@ public sealed class ShipShieldSystem : EntitySystem
     [Dependency] private readonly SharedTransformSystem _transform = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
 
+    private ISawmill _sawmill = default!;
+
     public override void Initialize()
     {
         base.Initialize();
+
+        _sawmill = Logger.GetSawmill("shipcombat");
 
         SubscribeLocalEvent<ShieldGeneratorComponent, MapInitEvent>(OnGeneratorInit);
         SubscribeLocalEvent<ShipShieldComponent, ShieldTileDamageAttemptEvent>(OnShieldTileDamage);
@@ -123,6 +127,7 @@ public sealed class ShipShieldSystem : EntitySystem
         {
             shield.Facings[index] = 0f;
             shield.Up[index] = false;
+            _sawmill.Info($"{ToPrettyString(grid)} {facing} shields collapsed");
         }
 
         return true;
@@ -181,6 +186,7 @@ public sealed class ShipShieldSystem : EntitySystem
         }
 
         shield.NextRedistribution = _timing.CurTime + RedistributionCooldown;
+        _sawmill.Info($"{ToPrettyString(grid)} shields redistributed ({facing})");
         return true;
     }
 
@@ -246,7 +252,10 @@ public sealed class ShipShieldSystem : EntitySystem
             shield.Facings[i] = value;
 
             if (!shield.Up[i] && value > max * shield.ReArmFraction)
+            {
                 shield.Up[i] = true;
+                _sawmill.Info($"{ToPrettyString(grid)} {(ShieldFacing) i} shields re-armed");
+            }
         }
     }
 

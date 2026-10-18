@@ -31,6 +31,8 @@ public sealed class ShipTargetingSystem : EntitySystem
     [Dependency] private readonly SharedTransformSystem _transform = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
 
+    private ISawmill _sawmill = default!;
+
     /// <summary>Lock time used when the ship has no tactical console (AI ships).</summary>
     private static readonly TimeSpan DefaultLockTime = TimeSpan.FromSeconds(2);
 
@@ -45,6 +47,8 @@ public sealed class ShipTargetingSystem : EntitySystem
     public override void Initialize()
     {
         base.Initialize();
+
+        _sawmill = Logger.GetSawmill("shipcombat");
 
         // BeforeDamageChangedEvent fires before resistances: being shot at raises the alert even
         // when the ship's armour absorbs the whole hit.
@@ -130,6 +134,7 @@ public sealed class ShipTargetingSystem : EntitySystem
             || (range > 0f && !InRange(combat.Owner, targetGrid, range)))
         {
             PlaySound(combat.Owner, ConsoleSound.LockDenied, source);
+            _sawmill.Debug($"{ToPrettyString(combat.Owner)} lock on {ToPrettyString(targetGrid)} refused");
             return false;
         }
 
@@ -147,6 +152,7 @@ public sealed class ShipTargetingSystem : EntitySystem
 
         PlaySound(combat.Owner, ConsoleSound.LockStart, source);
         RaiseStateChanged(combat.Owner);
+        _sawmill.Info($"{ToPrettyString(combat.Owner)} locking {ToPrettyString(targetGrid)}");
         return true;
     }
 
@@ -181,6 +187,7 @@ public sealed class ShipTargetingSystem : EntitySystem
         if (!silent)
             PlaySound(grid, ConsoleSound.LockCleared, source);
 
+        _sawmill.Info($"{ToPrettyString(grid)} cleared its lock");
         return true;
     }
 
@@ -202,7 +209,10 @@ public sealed class ShipTargetingSystem : EntitySystem
         RaiseStateChanged(target);
 
         if (added)
+        {
             PlaySound(target, ConsoleSound.IncomingLock);
+            _sawmill.Info($"{ToPrettyString(grid)} locked {ToPrettyString(target)}");
+        }
     }
 
     private void OnConditionChanged(ShipCombatConditionChangedEvent args)
@@ -227,9 +237,13 @@ public sealed class ShipTargetingSystem : EntitySystem
         if (!_combat.TryGetShipCombat(uid, out var combat))
             return;
 
-        // Automatic condition: any damage to the ship raises GREEN to YELLOW.
+        // Automatic condition: any damage to the ship raises GREEN to YELLOW (with the alarm).
         if (combat.Comp.AutomaticCondition && combat.Comp.Condition == ShipCondition.Green)
+        {
             _combat.SetCondition(combat, ShipCondition.Yellow);
+            PlayConditionRaised(combat.Owner);
+            _sawmill.Info($"{ToPrettyString(combat.Owner)} condition raised to YELLOW by damage to {ToPrettyString(uid)}");
+        }
 
         // Automatic retaliation: only ship weapons (a grid-anchored shooter, not a person with a gun).
         if (!combat.Comp.AutomaticRetaliation || combat.Comp.LockTarget != null || combat.Comp.LockInProgress)
@@ -252,6 +266,7 @@ public sealed class ShipTargetingSystem : EntitySystem
             RaiseStateChanged(combat.Owner);
         }
 
+        _sawmill.Info($"{ToPrettyString(combat.Owner)} retaliating against {ToPrettyString(attackerGrid)}");
         TryStartLock(combat.Owner, attackerGrid, GetMaxConsoleRange(combat.Owner));
     }
 
@@ -286,6 +301,21 @@ public sealed class ShipTargetingSystem : EntitySystem
 
         if (combat.IncomingLocks.Remove(locker))
             RaiseStateChanged(target);
+    }
+
+    /// <summary>
+    /// Plays the alarm on every tactical console of a ship whose condition was raised automatically.
+    /// </summary>
+    private void PlayConditionRaised(EntityUid grid)
+    {
+        var query = EntityQueryEnumerator<ShipTargetingConsoleComponent, TransformComponent>();
+        while (query.MoveNext(out var uid, out var console, out var xform))
+        {
+            if (xform.GridUid != grid)
+                continue;
+
+            _audio.PlayPvs(console.ConditionRaisedSound, uid);
+        }
     }
 
     private void RaiseStateChanged(EntityUid grid)

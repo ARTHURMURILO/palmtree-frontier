@@ -47,9 +47,16 @@ public sealed class ShipPowerSystem : EntitySystem
     [Dependency] private readonly BatterySystem _battery = default!;
     [Dependency] private readonly ThrusterSystem _thruster = default!;
 
+    private ISawmill _sawmill = default!;
+
+    /// <summary>Sinks whose battery has been logged as depleted (runtime only).</summary>
+    private readonly HashSet<EntityUid> _depletedSinks = new();
+
     public override void Initialize()
     {
         base.Initialize();
+
+        _sawmill = Logger.GetSawmill("shipcombat");
 
         UpdatesAfter.Add(typeof(PowerNetSystem));
 
@@ -417,6 +424,16 @@ public sealed class ShipPowerSystem : EntitySystem
             var share = auxShare * sink.RatedThroughput;
             var available = frameTime > 0f ? battery.CurrentCharge / frameTime : 0f;
             supplier.MaxSupply = MathF.Min(share, available);
+
+            if (available < share)
+            {
+                if (_depletedSinks.Add(sinkUid))
+                    _sawmill.Info($"{ToPrettyString(sinkUid)} battery depleted: the ship's grid is power-limited");
+            }
+            else
+            {
+                _depletedSinks.Remove(sinkUid);
+            }
 
             // The energy the grid actually drew from the sink this tick.
             auxUsed += supplier.CurrentSupply * frameTime;

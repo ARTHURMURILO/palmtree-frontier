@@ -1,3 +1,5 @@
+using Content.Server.Power.Components;
+using Content.Server.Power.NodeGroups;
 using Content.Server.Shuttles.Systems;
 using Content.Shared._PS.ShipCombat;
 using Content.Shared._PS.ShipCombat.Components;
@@ -186,7 +188,27 @@ public sealed class ShipShieldingConsoleSystem : EntitySystem
             shieldsAlert: GetShieldsAlert(combat),
             weaponsAlert: GetWeaponsAlert(combat),
             thrustersAlert: GetThrustersAlert(combat.Owner),
-            auxiliaryAlert: ShipPowerSystem.GetPool(combat, ShipPowerPool.Auxiliary) < ShipPowerSystem.MinOperatingPool);
+            auxiliaryAlert: GetAuxiliaryAlert(combat));
+    }
+
+    /// <summary>
+    /// Auxiliary alert: the ship's grid load exceeds what the sink can supply (like the power
+    /// monitoring console). A ship whose grid draws less than its share does not alert, even at a
+    /// low Auxiliary setting.
+    /// </summary>
+    private bool GetAuxiliaryAlert(ShipCombatComponent combat)
+    {
+        var query = EntityQueryEnumerator<BluespacePowerSinkComponent, PowerSupplierComponent, TransformComponent>();
+        while (query.MoveNext(out _, out _, out var supplier, out var xform))
+        {
+            if (xform.GridUid != combat.Owner)
+                continue;
+
+            if (supplier.Net is PowerNet net && net.NetworkNode.LastCombinedLoad > supplier.MaxSupply + 1f)
+                return true;
+        }
+
+        return false;
     }
 
     /// <summary>

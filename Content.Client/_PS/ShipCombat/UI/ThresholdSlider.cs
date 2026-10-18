@@ -26,7 +26,14 @@ public sealed class ThresholdSlider : Slider
             MouseFilter = MouseFilterMode.Ignore,
         };
 
-        AddChild(_thresholdMarker);
+        // The slider's own children live in an internal LayoutContainer (added first); the marker
+        // has to be a child of that container to be positioned by anchors and margins like the
+        // grabber is.
+        if (ChildCount > 0)
+            Children[0].AddChild(_thresholdMarker);
+        else
+            AddChild(_thresholdMarker);
+
         SetAnchorBottom(_thresholdMarker, 1);
         SetGrowHorizontal(_thresholdMarker, GrowDirection.Both);
         SetGrowVertical(_thresholdMarker, GrowDirection.Both);
