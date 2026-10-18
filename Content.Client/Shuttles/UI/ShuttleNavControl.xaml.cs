@@ -44,10 +44,29 @@ public sealed partial class ShuttleNavControl : BaseShuttleControl
     public bool ShowDocks { get; set; } = true;
     public bool RotateWithEntity { get; set; } = true;
 
+    // Palmtree: tactical console support
+    /// <summary>
+    /// When true, grids with a hidden IFF (<see cref="IFFFlags.Hide"/>/<see cref="IFFFlags.HideLabel"/>)
+    /// are still drawn, in <see cref="HiddenIFFColor"/> and labelled "?".
+    /// </summary>
+    public bool ShowHiddenIFF { get; set; }
+
+    /// <summary>
+    /// Color used for hidden-IFF contacts when <see cref="ShowHiddenIFF"/> is on.
+    /// </summary>
+    public Color HiddenIFFColor { get; set; } = Color.Red;
+    // End Palmtree
+
     /// <summary>
     ///   If present, called for every IFF. Must determine if it should or should not be shown.
     /// </summary>
     public Func<EntityUid, MapGridComponent, IFFComponent?, bool>? IFFFilter { get; set; } = null;
+
+    // Palmtree: fork overlay hook, called at the end of Draw with the map-to-view matrix
+    // (Vector2.Transform(worldPosition, mapToView) gives screen pixels, like the radar blips use).
+    // Implemented by the _PS partial file; the call is elided when no implementation exists.
+    partial void DrawForkOverlay(DrawingHandleScreen handle, Matrix3x2 mapToView);
+    // End Palmtree
 
     /// <summary>
     /// Raised if the user left-clicks on the radar control with the relevant entitycoordinates.
@@ -237,7 +256,8 @@ public sealed partial class ShuttleNavControl : BaseShuttleControl
             var gridBody = bodyQuery.GetComponent(gUid);
             EntManager.TryGetComponent<IFFComponent>(gUid, out var iff);
 
-            if (!_shuttles.CanDraw(gUid, gridBody, iff))
+            // Palmtree: tactical consoles see hidden-IFF grids (drawn red with a "?" below).
+            if (!_shuttles.CanDraw(gUid, gridBody, iff) && !ShowHiddenIFF)
                 continue;
 
             var curGridToWorld = _transform.GetWorldMatrix(gUid);
@@ -268,6 +288,14 @@ public sealed partial class ShuttleNavControl : BaseShuttleControl
             var gridMapPos = _transform.ToMapCoordinates(new EntityCoordinates(gUid, gridBody.LocalCenter)).Position;
             shouldDrawIFF = NFCheckShouldDrawIffRangeCondition(shouldDrawIFF, gridMapPos - mapPos.Position);
             // End Frontier
+
+            // Palmtree: hidden-IFF contacts render as a red "?" for the tactical console.
+            if (ShowHiddenIFF && iff != null && (iff.Flags & (IFFFlags.Hide | IFFFlags.HideLabel)) != 0x0)
+            {
+                labelColor = HiddenIFFColor;
+                labelName = "?";
+                shouldDrawIFF = true;
+            }
 
             if (shouldDrawIFF)
             {
@@ -510,6 +538,9 @@ public sealed partial class ShuttleNavControl : BaseShuttleControl
             }
         }
         // End Frontier
+
+        // Palmtree: fork overlays on top of the radar (lock reticle, torpedo blips, ...).
+        DrawForkOverlay(handle, worldToShuttle * shuttleToView);
     }
 
     private void DrawDocks(DrawingHandleScreen handle, EntityUid uid, Matrix3x2 gridToView)

@@ -22,6 +22,7 @@ namespace Content.Server._PS.ShipCombat;
 public sealed class ShipTargetingConsoleSystem : EntitySystem
 {
     [Dependency] private readonly ShipCombatSystem _combat = default!;
+    [Dependency] private readonly ShipTargetingSystem _targeting = default!;
     [Dependency] private readonly ShuttleConsoleSystem _shuttleConsole = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
@@ -51,7 +52,10 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
         SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleSetAutomaticFireMessage>(OnSetAutomaticFire);
         SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleSetAutomaticRetaliationMessage>(OnSetAutomaticRetaliation);
         SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleSetWeaponModeMessage>(OnSetWeaponMode);
+        SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleLockRequestMessage>(OnLockRequest);
+        SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleClearLockMessage>(OnClearLock);
         SubscribeLocalEvent<ShipCombatConditionChangedEvent>(OnConditionChanged);
+        SubscribeLocalEvent<ShipCombatStateChangedEvent>(OnStateChanged);
     }
 
     public override void Update(float frameTime)
@@ -157,10 +161,39 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
 
     private void OnConditionChanged(ShipCombatConditionChangedEvent args)
     {
+        UpdateConsolesOnGrid(args.Grid);
+    }
+
+    private void OnStateChanged(ShipCombatStateChangedEvent args)
+    {
+        UpdateConsolesOnGrid(args.Grid);
+    }
+
+    private void OnLockRequest(EntityUid uid, ShipTargetingConsoleComponent component, TacticalConsoleLockRequestMessage args)
+    {
+        if (!EntityManager.TryGetEntity(args.Target, out var target) || target is not { } targetGrid)
+            return;
+
+        if (!TryComp<RadarConsoleComponent>(uid, out var radar))
+            return;
+
+        _targeting.TryStartLock(uid, targetGrid, radar.MaxRange);
+    }
+
+    private void OnClearLock(EntityUid uid, ShipTargetingConsoleComponent component, TacticalConsoleClearLockMessage args)
+    {
+        _targeting.TryClearLock(uid);
+    }
+
+    /// <summary>
+    /// Refreshes the window of every tactical console on a grid.
+    /// </summary>
+    private void UpdateConsolesOnGrid(EntityUid grid)
+    {
         var consoles = EntityQueryEnumerator<ShipTargetingConsoleComponent, TransformComponent>();
         while (consoles.MoveNext(out var uid, out var console, out var xform))
         {
-            if (xform.GridUid != args.Grid)
+            if (xform.GridUid != grid)
                 continue;
 
             UpdateState(uid, console);
@@ -192,6 +225,8 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
         var docks = _shuttleConsole.GetAllDocks();
         var nav = _shuttleConsole.GetNavState(uid, docks);
 
+        var hasLock = combat.LockTarget != null && !combat.LockInProgress;
+
         return new TacticalConsoleBoundUserInterfaceState(
             nav,
             combat.Condition,
@@ -199,9 +234,10 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
             combat.AutomaticCondition,
             combat.AutomaticFire,
             combat.AutomaticRetaliation,
-            beingLocked: false, // M3: locks
+            beingLocked: combat.IncomingLocks.Count > 0,
             incomingMissile: false, // M8: torpedo alarms
-            hasLock: false); // M3: locks
+            hasLock: hasLock,
+            lockTarget: hasLock ? GetNetEntity(combat.LockTarget) : null);
     }
 
     /// <summary>

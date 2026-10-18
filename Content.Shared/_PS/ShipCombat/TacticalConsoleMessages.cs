@@ -46,3 +46,18 @@ public sealed class TacticalConsoleSetWeaponModeMessage(ShipWeaponMode mode) : B
 {
     public ShipWeaponMode Mode { get; } = mode;
 }
+
+/// <summary>
+/// Palmtree: asks the console to acquire a lock on the given grid.
+/// </summary>
+[Serializable, NetSerializable]
+public sealed class TacticalConsoleLockRequestMessage(NetEntity target) : BoundUserInterfaceMessage
+{
+    public NetEntity Target { get; } = target;
+}
+
+/// <summary>
+/// Palmtree: clears the ship's lock.
+/// </summary>
+[Serializable, NetSerializable]
+public sealed class TacticalConsoleClearLockMessage : BoundUserInterfaceMessage;

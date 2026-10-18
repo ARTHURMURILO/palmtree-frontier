@@ -32,6 +32,9 @@ public sealed class TacticalConsoleBoundUserInterfaceState : BoundUserInterfaceS
     /// <summary>True while this ship holds a target lock.</summary>
     public bool HasLock { get; }
 
+    /// <summary>The locked grid, if any (used to draw the lock reticle).</summary>
+    public NetEntity? LockTarget { get; }
+
     public TacticalConsoleBoundUserInterfaceState(
         NavInterfaceState navState,
         ShipCondition condition,
@@ -41,7 +44,8 @@ public sealed class TacticalConsoleBoundUserInterfaceState : BoundUserInterfaceS
         bool automaticRetaliation,
         bool beingLocked,
         bool incomingMissile,
-        bool hasLock)
+        bool hasLock,
+        NetEntity? lockTarget)
     {
         NavState = navState;
         Condition = condition;
@@ -52,5 +56,6 @@ public sealed class TacticalConsoleBoundUserInterfaceState : BoundUserInterfaceS
         BeingLocked = beingLocked;
         IncomingMissile = incomingMissile;
         HasLock = hasLock;
+        LockTarget = lockTarget;
     }
 }

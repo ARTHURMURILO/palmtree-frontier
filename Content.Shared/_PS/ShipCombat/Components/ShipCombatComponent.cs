@@ -41,4 +41,22 @@ public sealed partial class ShipCombatComponent : Component
     /// </summary>
     [DataField]
     public bool AutomaticRetaliation;
+
+    // Runtime-only lock state. These are deliberately not [DataField]s: the bluespace dock drops
+    // them with the save, so a retrieved ship never carries a stale lock reference.
+
+    /// <summary>The grid this ship is locking or has locked, if any.</summary>
+    public EntityUid? LockTarget;
+
+    /// <summary>True while a lock is being acquired.</summary>
+    public bool LockInProgress;
+
+    /// <summary>When the in-progress lock completes.</summary>
+    public TimeSpan LockCompleteTime;
+
+    /// <summary>Maximum distance to the lock target (0 = unlimited).</summary>
+    public float LockRange;
+
+    /// <summary>Grids currently locking this ship.</summary>
+    public readonly HashSet<EntityUid> IncomingLocks = new();
 }
