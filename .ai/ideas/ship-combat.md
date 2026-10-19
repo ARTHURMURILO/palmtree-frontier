@@ -134,8 +134,11 @@ Both consoles are machines with parts (tactical lock speed uses `Capacitor`).
 
 - Turrets (M7): SLAT placeholder sprites, no AI, 45° arc around the placement angle, idle sweep
   inside the arc, remote power, rotate towards the locked target and fire once aligned (5°
-  tolerance). They shoot through their own grid (marked `SharedProjectileSystem` and `GunSystem`
-  fork hooks keyed on the weapon's `IgnoreOwnGrid`). Two variants: **bolt** (`ShipTurret`, travelling
+  tolerance). **They hold fire while the ship's own hull blocks the firing line**; the cvar
+  `ps.ship_combat.turrets_shoot_through_hull` (default false) restores the original shoot-through
+  behaviour (marked `SharedProjectileSystem` and `GunSystem` fork hooks keyed on the weapon's
+  runtime `ShootThroughHull`, which `ShipWeaponSystem` derives from the cvar and the weapon's
+  `IgnoreOwnGrid` capability). Two variants: **bolt** (`ShipTurret`, travelling
   projectile) and **beam** (`ShipTurretBeam`, instant hitscan; infinite ammo via a self-recharging
   battery, slower fire rate). Both scale damage with the Weapons pool — projectiles through
   `GunDamageMultiplierSystem`, hitscan through a marked `GunSystem` hook.
@@ -164,6 +167,24 @@ Both consoles are machines with parts (tactical lock speed uses `Capacitor`).
   not jitter between targets.
 - Both consoles carry a `Silent` checkbox (off by default): a silent console plays no sounds at all
   (contact beeps, lock sounds, the condition alarm), per console.
+
+## Large scale exceptions
+
+Ship combat happens at ranges far beyond the PVS bubble (~32 tiles), so a few things deliberately
+bypass it:
+
+- **Gunshots**: ship weapons play their `ShipWeapon.gunshotSound` with a 16x PVS range multiplier
+  (~512 tiles, matching the console range) and `AudioParams.MaxDistance` 512 so it stays audible
+  across it. Ship weapon prototypes leave `Gun.soundGunshot` unset so nothing plays twice.
+- **Beams**: the server broadcasts `ShipBeamEffectEvent` (map-space coordinates, 16x PVS range) and
+  the client draws a stretched beam sprite. The vanilla hitscan flashes are grid-relative and sent
+  only to players whose PVS covers the shot, so the beam hitscan prototype leaves them unset.
+  Bolts stay ordinary projectiles (PVS limited); their gunshots are still far audible.
+- **Stack overflow guard**: the engine's `TilesEnumerator.MoveNext` recurses once per skipped tile,
+  so view-bounded tile overlays (ambient occlusion, roofs) overflow the stack on very large views
+  (huge viewport, low render scale, zoomed out). `TileEnumerationGuard` skips views above
+  `ps.client.tile_overlay_area_limit` (default 4096 tiles squared). RobustToolbox itself is never
+  modified.
 - `ShipWeaponComponent.FiresWhileSafe` leaves the door open for future non-hostile weapons
   (traction beams) usable on MASTER SAFE; targets still get the lock warning.
 

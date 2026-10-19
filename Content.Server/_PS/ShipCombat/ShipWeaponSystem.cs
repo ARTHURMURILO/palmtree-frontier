@@ -7,13 +7,21 @@ using Content.Shared.Maps;
 using Content.Shared.Weapons.Ranged.Components;
 using Content.Shared.Weapons.Ranged.Systems;
 using Content.Server.Power.Components;
+using Content.Shared._PS.CCVar;
 using Content.Shared.Damage;
+using Content.Shared.Physics;
 using Content.Shared.Mobs.Components;
 using Content.Server.Shuttles.Components;
+using Robust.Shared.Audio;
+using Robust.Shared.Audio.Systems;
+using Robust.Shared.Configuration;
 using Robust.Shared.Map;
 using Robust.Shared.Maths;
 using Robust.Shared.Map.Components;
+using Robust.Shared.Physics;
 using Robust.Shared.Physics.Components;
+using Robust.Shared.Physics.Systems;
+using Robust.Shared.Player;
 using Robust.Shared.Random;
 using Robust.Shared.Timing;
 
@@ -46,15 +54,46 @@ public sealed class ShipWeaponSystem : EntitySystem
     [Dependency] private readonly SharedMapSystem _mapSystem = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
+    [Dependency] private readonly SharedPhysicsSystem _physics = default!;
+    [Dependency] private readonly SharedAudioSystem _audio = default!;
+    [Dependency] private readonly IConfigurationManager _cfg = default!;
+
+    /// <summary>
+    /// ps.ship_combat.turrets_shoot_through_hull: when false, turrets hold fire while their own hull
+    /// blocks the firing line.
+    /// </summary>
+    private bool _shootThroughHull;
 
     /// <summary>How often the weapons re-pick which subsystem they aim at.</summary>
     private static readonly TimeSpan AimReselectInterval = TimeSpan.FromSeconds(2);
+
+    /// <summary>
+    /// Ship combat is larger scale than the PVS bubble (which is ~32 tiles): gunshots and beam
+    /// visuals are sent with this PVS range multiplier, covering the 512 tile console range.
+    /// </summary>
+    private const float ShipWeaponPvsRangeMultiplier = 16f;
+
+    /// <summary>Ship weapon sounds stay audible across the whole ship combat range.</summary>
+    private const float ShipWeaponSoundMaxDistance = 512f;
 
     public override void Initialize()
     {
         base.Initialize();
 
         SubscribeLocalEvent<ShipWeaponComponent, MapInitEvent>(OnMapInit);
+        _cfg.OnValueChanged(PSCVars.ShipCombatTurretsShootThroughHull, OnShootThroughHullChanged, true);
+    }
+
+    public override void Shutdown()
+    {
+        base.Shutdown();
+
+        _cfg.UnsubValueChanged(PSCVars.ShipCombatTurretsShootThroughHull, OnShootThroughHullChanged);
+    }
+
+    private void OnShootThroughHullChanged(bool value)
+    {
+        _shootThroughHull = value;
     }
 
     private void OnMapInit(EntityUid uid, ShipWeaponComponent component, MapInitEvent args)
@@ -105,10 +144,17 @@ public sealed class ShipWeaponSystem : EntitySystem
             if (!IsArmed(combat.Comp.WeaponMode, weapon, groups.GetValueOrDefault(uid)))
                 continue;
 
+            weapon.ShootThroughHull = weapon.IgnoreOwnGrid && _shootThroughHull;
+
             if (weapon.Type == ShipWeaponType.Turret)
             {
                 // Manual fire only needs the target inside the arc; auto-fire waits for alignment.
                 if (!IsInsideArc(weapon, xform, target.Value))
+                    continue;
+
+                // Turrets hold fire while their own hull blocks the shot (cvar restores shooting
+                // through).
+                if (!weapon.ShootThroughHull && IsBlockedByOwnGrid(uid, xform, target.Value))
                     continue;
             }
             else if (!IsFixedTargetAhead(weapon, xform, target.Value) || !IsExposed(xform))
@@ -143,6 +189,8 @@ public sealed class ShipWeaponSystem : EntitySystem
             if (!powered.Powered)
                 continue;
 
+            weapon.ShootThroughHull = weapon.IgnoreOwnGrid && _shootThroughHull;
+
             var armed = IsArmed(combat.WeaponMode, weapon, groups.GetValueOrDefault(uid));
             var trackTarget = target != null && armed && IsInsideArc(weapon, xform, target.Value);
 
@@ -155,6 +203,9 @@ public sealed class ShipWeaponSystem : EntitySystem
             if (weapon.Type == ShipWeaponType.Turret)
             {
                 if (!trackTarget || !IsAligned(weapon, xform, target.Value))
+                    continue;
+
+                if (!weapon.ShootThroughHull && IsBlockedByOwnGrid(uid, xform, target.Value))
                     continue;
             }
             else if (!IsFixedTargetAhead(weapon, xform, target.Value) || !IsExposed(xform))
@@ -176,7 +227,62 @@ public sealed class ShipWeaponSystem : EntitySystem
             ? target
             : xform.Coordinates.Offset(xform.LocalRotation.ToWorldVec() * 100f);
 
+        // Ship weapons are audible far beyond the PVS bubble: the gunshot goes to everyone inside the
+        // ship combat range instead of only players whose PVS covers the weapon.
+        if (weapon.GunshotSound != null)
+        {
+            _audio.PlayGlobal(weapon.GunshotSound,
+                Filter.Pvs(uid, ShipWeaponPvsRangeMultiplier, entityManager: EntityManager),
+                true,
+                AudioParams.Default.WithMaxDistance(ShipWeaponSoundMaxDistance));
+        }
+
         _gun.AttemptShoot(uid, uid, gun, to);
+
+        // Beams are instant and the vanilla hitscan flashes only reach players whose PVS covers the
+        // shot, so ship beams are drawn from a broadcast event instead.
+        if (HasComp<HitscanBatteryAmmoProviderComponent>(uid))
+            RaiseBeamEffect(uid, weapon, xform, to);
+    }
+
+    /// <summary>
+    /// Broadcasts a beam visual from the weapon to the first thing the shot hits (or the aim point).
+    /// </summary>
+    private void RaiseBeamEffect(EntityUid uid, ShipWeaponComponent weapon, TransformComponent xform, EntityCoordinates target)
+    {
+        if (xform.MapUid is not { } mapUid)
+            return;
+
+        var fromMap = _transform.GetMapCoordinates(xform);
+        var from = fromMap.Position;
+        var to = _transform.ToMapCoordinates(target).Position;
+        var delta = to - from;
+        var distance = delta.Length();
+        if (distance < 0.5f)
+            return;
+
+        var direction = delta / distance;
+        var end = to;
+
+        var ray = new CollisionRay(from, direction, (int) CollisionGroup.Opaque);
+        foreach (var hit in _physics.IntersectRay(xform.MapID, ray, distance, uid, false))
+        {
+            // A turret that shoots through its own grid ignores its own hull here too.
+            if (weapon.ShootThroughHull
+                && hit.HitEntity.IsValid()
+                && Transform(hit.HitEntity).GridUid == xform.GridUid)
+            {
+                continue;
+            }
+
+            end = from + direction * hit.Distance;
+            break;
+        }
+
+        var fromCoords = GetNetCoordinates(new EntityCoordinates(mapUid, from));
+        var toCoords = GetNetCoordinates(new EntityCoordinates(mapUid, end));
+        RaiseNetworkEvent(new ShipBeamEffectEvent(fromCoords, toCoords),
+            Filter.Pvs(fromMap, ShipWeaponPvsRangeMultiplier));
     }
 
     private static bool IsArmed(ShipWeaponMode mode, ShipWeaponComponent weapon, ShipWeaponMode? group)
@@ -368,6 +474,32 @@ public sealed class ShipWeaponSystem : EntitySystem
 
         var gridRotation = xform.GridUid is { } grid ? _transform.GetWorldRotation(grid) : Angle.Zero;
         return direction.ToWorldAngle() - gridRotation;
+    }
+
+    /// <summary>
+    /// True when the ship's own hull is in the firing line: the turret holds fire instead of
+    /// shooting through its own grid.
+    /// </summary>
+    private bool IsBlockedByOwnGrid(EntityUid uid, TransformComponent xform, EntityCoordinates target)
+    {
+        if (xform.GridUid is not { } gridUid)
+            return false;
+
+        var from = _transform.GetMapCoordinates(xform);
+        var to = _transform.ToMapCoordinates(target);
+        var direction = to.Position - from.Position;
+        var distance = direction.Length();
+        if (distance < 0.01f)
+            return false;
+
+        var ray = new CollisionRay(from.Position, direction.Normalized(), (int) CollisionGroup.Opaque);
+        foreach (var hit in _physics.IntersectRay(from.MapId, ray, distance, uid, false))
+        {
+            if (hit.HitEntity.IsValid() && Transform(hit.HitEntity).GridUid == gridUid)
+                return true;
+        }
+
+        return false;
     }
 
     /// <summary>

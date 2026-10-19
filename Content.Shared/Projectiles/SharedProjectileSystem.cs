@@ -207,10 +207,11 @@ public abstract partial class SharedProjectileSystem : EntitySystem
             return;
         }
 
-        // Palmtree: ship turrets shoot through their own grid (the weapon knows whether it does).
+        // Palmtree: ship turrets shoot through their own grid (the effective flag comes from the
+        // ps.ship_combat.turrets_shoot_through_hull cvar).
         if (component.Weapon is { } weapon
             && TryComp<ShipWeaponComponent>(weapon, out var shipWeapon)
-            && shipWeapon.IgnoreOwnGrid
+            && shipWeapon.ShootThroughHull
             && Transform(weapon).GridUid is { } weaponGrid
             && Transform(args.OtherEntity).GridUid == weaponGrid)
         {

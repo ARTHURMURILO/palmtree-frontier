@@ -177,9 +177,10 @@ public sealed partial class GunSystem : SharedGunSystem
                             var rayCastResults =
                                 Physics.IntersectRay(from.MapId, ray, hitscan.MaxLength, lastUser, false).ToList();
 
-                            // Palmtree: ship turrets fire through their own grid.
+                            // Palmtree: ship turrets fire through their own grid (the effective
+                            // flag comes from the ps.ship_combat.turrets_shoot_through_hull cvar).
                             if (TryComp<ShipWeaponComponent>(lastUser, out var shipWeapon)
-                                && shipWeapon.IgnoreOwnGrid
+                                && shipWeapon.ShootThroughHull
                                 && Transform(lastUser).GridUid is { } shooterGrid)
                             {
                                 rayCastResults.RemoveAll(hit =>

@@ -21,4 +21,27 @@ public sealed partial class PSCVars
     /// </summary>
     public static readonly CVarDef<float> PlacementOffsetY =
         CVarDef.Create("ps.placement.offset_y", 0f, CVar.CLIENTONLY | CVar.ARCHIVE);
+
+    /*
+     *  Ship combat
+     */
+
+    /// <summary>
+    /// Palmtree: when false (default) ship turrets hold fire while the ship's own hull blocks the
+    /// firing line. When true, turrets shoot through their own grid instead.
+    /// </summary>
+    public static readonly CVarDef<bool> ShipCombatTurretsShootThroughHull =
+        CVarDef.Create("ps.ship_combat.turrets_shoot_through_hull", false, CVar.SERVER | CVar.REPLICATED);
+
+    /*
+     *  Client
+     */
+
+    /// <summary>
+    /// Palmtree: client-side tile overlays (ambient occlusion, roofs) skip views larger than this
+    /// area, in tiles squared. The engine's tile enumerator recurses once per skipped tile and
+    /// overflows the stack on very large views; raise this if you want the overlays on huge views.
+    /// </summary>
+    public static readonly CVarDef<float> TileOverlayAreaLimit =
+        CVarDef.Create("ps.client.tile_overlay_area_limit", 4096f, CVar.CLIENTONLY | CVar.ARCHIVE);
 }
