@@ -12,8 +12,6 @@ using Content.Shared.Damage;
 using Content.Shared.Physics;
 using Content.Shared.Mobs.Components;
 using Content.Server.Shuttles.Components;
-using Robust.Shared.Audio;
-using Robust.Shared.Audio.Systems;
 using Robust.Shared.Configuration;
 using Robust.Shared.Map;
 using Robust.Shared.Maths;
@@ -21,7 +19,6 @@ using Robust.Shared.Map.Components;
 using Robust.Shared.Physics;
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Physics.Systems;
-using Robust.Shared.Player;
 using Robust.Shared.Random;
 using Robust.Shared.Timing;
 
@@ -55,7 +52,6 @@ public sealed class ShipWeaponSystem : EntitySystem
     [Dependency] private readonly IRobustRandom _random = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly SharedPhysicsSystem _physics = default!;
-    [Dependency] private readonly SharedAudioSystem _audio = default!;
     [Dependency] private readonly IConfigurationManager _cfg = default!;
 
     /// <summary>
@@ -67,14 +63,6 @@ public sealed class ShipWeaponSystem : EntitySystem
     /// <summary>How often the weapons re-pick which subsystem they aim at.</summary>
     private static readonly TimeSpan AimReselectInterval = TimeSpan.FromSeconds(2);
 
-    /// <summary>
-    /// Ship combat is larger scale than the PVS bubble (which is ~32 tiles): gunshots and beam
-    /// visuals are sent with this PVS range multiplier, covering the 512 tile console range.
-    /// </summary>
-    private const float ShipWeaponPvsRangeMultiplier = 16f;
-
-    /// <summary>Ship weapon sounds stay audible across the whole ship combat range.</summary>
-    private const float ShipWeaponSoundMaxDistance = 512f;
 
     public override void Initialize()
     {
@@ -227,62 +215,7 @@ public sealed class ShipWeaponSystem : EntitySystem
             ? target
             : xform.Coordinates.Offset(xform.LocalRotation.ToWorldVec() * 100f);
 
-        // Ship weapons are audible far beyond the PVS bubble: the gunshot goes to everyone inside the
-        // ship combat range instead of only players whose PVS covers the weapon.
-        if (weapon.GunshotSound != null)
-        {
-            _audio.PlayGlobal(weapon.GunshotSound,
-                Filter.Pvs(uid, ShipWeaponPvsRangeMultiplier, entityManager: EntityManager),
-                true,
-                AudioParams.Default.WithMaxDistance(ShipWeaponSoundMaxDistance));
-        }
-
         _gun.AttemptShoot(uid, uid, gun, to);
-
-        // Beams are instant and the vanilla hitscan flashes only reach players whose PVS covers the
-        // shot, so ship beams are drawn from a broadcast event instead.
-        if (HasComp<HitscanBatteryAmmoProviderComponent>(uid))
-            RaiseBeamEffect(uid, weapon, xform, to);
-    }
-
-    /// <summary>
-    /// Broadcasts a beam visual from the weapon to the first thing the shot hits (or the aim point).
-    /// </summary>
-    private void RaiseBeamEffect(EntityUid uid, ShipWeaponComponent weapon, TransformComponent xform, EntityCoordinates target)
-    {
-        if (xform.MapUid is not { } mapUid)
-            return;
-
-        var fromMap = _transform.GetMapCoordinates(xform);
-        var from = fromMap.Position;
-        var to = _transform.ToMapCoordinates(target).Position;
-        var delta = to - from;
-        var distance = delta.Length();
-        if (distance < 0.5f)
-            return;
-
-        var direction = delta / distance;
-        var end = to;
-
-        var ray = new CollisionRay(from, direction, (int) CollisionGroup.Opaque);
-        foreach (var hit in _physics.IntersectRay(xform.MapID, ray, distance, uid, false))
-        {
-            // A turret that shoots through its own grid ignores its own hull here too.
-            if (weapon.ShootThroughHull
-                && hit.HitEntity.IsValid()
-                && Transform(hit.HitEntity).GridUid == xform.GridUid)
-            {
-                continue;
-            }
-
-            end = from + direction * hit.Distance;
-            break;
-        }
-
-        var fromCoords = GetNetCoordinates(new EntityCoordinates(mapUid, from));
-        var toCoords = GetNetCoordinates(new EntityCoordinates(mapUid, end));
-        RaiseNetworkEvent(new ShipBeamEffectEvent(fromCoords, toCoords),
-            Filter.Pvs(fromMap, ShipWeaponPvsRangeMultiplier));
     }
 
     private static bool IsArmed(ShipWeaponMode mode, ShipWeaponComponent weapon, ShipWeaponMode? group)

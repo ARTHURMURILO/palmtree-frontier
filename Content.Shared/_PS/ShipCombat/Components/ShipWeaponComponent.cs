@@ -1,4 +1,3 @@
-using Robust.Shared.Audio;
 using Robust.Shared.Maths;
 
 namespace Content.Shared._PS.ShipCombat.Components;
@@ -48,14 +47,6 @@ public sealed partial class ShipWeaponComponent : Component
     /// <summary>Half of the angle a fixed weapon will fire within, in degrees.</summary>
     [DataField]
     public float FixedFireAngle = 45f;
-
-    /// <summary>
-    /// Played when the weapon fires. Ship combat is larger scale than the PVS bubble, so the sound is
-    /// broadcast to everyone inside the ship combat range and stays audible across it; the prototypes
-    /// leave <c>Gun.soundGunshot</c> unset so nothing is played twice.
-    /// </summary>
-    [DataField]
-    public SoundSpecifier? GunshotSound = new SoundPathSpecifier("/Audio/Weapons/Guns/Gunshots/laser.ogg");
 
     /// <summary>The angle the weapon was placed at; its arc is centred on this (runtime).</summary>
     public Angle BaseAngle;

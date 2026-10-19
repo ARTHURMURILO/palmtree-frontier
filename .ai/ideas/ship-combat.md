@@ -173,13 +173,12 @@ Both consoles are machines with parts (tactical lock speed uses `Capacitor`).
 Ship combat happens at ranges far beyond the PVS bubble (~32 tiles), so a few things deliberately
 bypass it:
 
-- **Gunshots**: ship weapons play their `ShipWeapon.gunshotSound` with a 16x PVS range multiplier
-  (~512 tiles, matching the console range) and `AudioParams.MaxDistance` 512 so it stays audible
-  across it. Ship weapon prototypes leave `Gun.soundGunshot` unset so nothing plays twice.
-- **Beams**: the server broadcasts `ShipBeamEffectEvent` (map-space coordinates, 16x PVS range) and
-  the client draws a stretched beam sprite. The vanilla hitscan flashes are grid-relative and sent
-  only to players whose PVS covers the shot, so the beam hitscan prototype leaves them unset.
-  Bolts stay ordinary projectiles (PVS limited); their gunshots are still far audible.
+- **Gunshots and beams**: reverted. Broadcasting them from `ShipWeaponSystem.TryFire` was wrong:
+  `TryFire` runs every tick while auto-fire is on (the gun's own rate limit lives inside
+  `AttemptShoot`), so the gunshot spammed at tick rate and the beam visuals did not render. If this
+  comes back it must be gated on the shot actually happening (e.g. hook `GunShotEvent`, or compare
+  `GunComponent.NextFire` around `AttemptShoot`), and the beam visual has to be verified client-side.
+  Weapons use the vanilla `Gun.soundGunshot` and hitscan flashes again.
 - **Stack overflow guard**: the engine's `TilesEnumerator.MoveNext` recurses once per skipped tile,
   so view-bounded tile overlays (ambient occlusion, roofs) overflow the stack on very large views
   (huge viewport, low render scale, zoomed out). `TileEnumerationGuard` skips views above
