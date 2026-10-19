@@ -446,9 +446,13 @@ public sealed class ShipWeaponsTest
             state.Comp.WeaponMode = ShipWeaponMode.Primary;
             state.Comp.LockTarget = targetGrid;
 
-            // Default: the turret holds fire while its own hull blocks the line.
+            // Opt in to hold-fire (the cvar defaults to shooting through).
+            server.CfgMan.SetCVar(PSCVars.ShipCombatTurretsShootThroughHull, false);
+
             Assert.That(weapons.TryManualFire(console), Is.False,
                 "A turret whose own hull blocks the line must hold fire.");
+            Assert.That(state.Comp.WeaponsBlocked, Is.True,
+                "The console must be able to explain why the weapons are silent.");
             Assert.That(CountProjectiles(entMan), Is.EqualTo(0));
 
             // The cvar restores the original shoot-through behaviour.
@@ -456,6 +460,103 @@ public sealed class ShipWeaponsTest
             Assert.That(weapons.TryManualFire(console), Is.True,
                 "The cvar should restore shooting through the ship's own hull.");
             Assert.That(CountProjectiles(entMan), Is.GreaterThan(0));
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task FloorsDoNotBlockTurretFire()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var mapSystem = server.System<SharedMapSystem>();
+        var mapMan = server.ResolveDependency<IMapManager>();
+        var xform = server.System<SharedTransformSystem>();
+
+        EntityUid console = default;
+        EntityUid grid = default;
+        EntityUid turret = default;
+        EntityUid targetGrid = default;
+
+        await server.WaitPost(() =>
+        {
+            (console, grid, turret, targetGrid) = CreateArmedShip(entMan, mapSystem, mapMan, xform, testMap.MapId,
+                server.System<SharedDeviceLinkSystem>());
+        });
+
+        await pair.RunTicksSync(10);
+
+        await server.WaitAssertion(() =>
+        {
+            var combat = server.System<ShipCombatSystem>();
+            var weapons = server.System<ShipWeaponSystem>();
+            Assert.That(combat.TryGetShipCombat(grid, out var state), Is.True);
+            combat.SetCondition(state, ShipCondition.Yellow);
+            state.Comp.WeaponMode = ShipWeaponMode.Primary;
+            state.Comp.LockTarget = targetGrid;
+
+            // The strictest setting: hold fire when the hull blocks the line. The shot still crosses
+            // the ship's own floor tiles on the way out, which must not count as blocking.
+            server.CfgMan.SetCVar(PSCVars.ShipCombatTurretsShootThroughHull, false);
+
+            Assert.That(weapons.TryManualFire(console), Is.True,
+                "The ship's own floor tiles must not block a turret.");
+            Assert.That(state.Comp.WeaponsBlocked, Is.False);
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task WallOnTheTurretsOwnTileBlocksFire()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var mapSystem = server.System<SharedMapSystem>();
+        var mapMan = server.ResolveDependency<IMapManager>();
+        var xform = server.System<SharedTransformSystem>();
+
+        EntityUid console = default;
+        EntityUid grid = default;
+        EntityUid turret = default;
+        EntityUid targetGrid = default;
+
+        await server.WaitPost(() =>
+        {
+            (console, grid, turret, targetGrid) = CreateArmedShip(entMan, mapSystem, mapMan, xform, testMap.MapId,
+                server.System<SharedDeviceLinkSystem>());
+
+            // The turret is mounted in the hull: a wall sits on its own tile, so the shot would hit
+            // it immediately.
+            entMan.SpawnEntity("WallSolid", new EntityCoordinates(grid, new Vector2(2.5f, 0.5f)));
+        });
+
+        await pair.RunTicksSync(10);
+
+        await server.WaitAssertion(() =>
+        {
+            var combat = server.System<ShipCombatSystem>();
+            var weapons = server.System<ShipWeaponSystem>();
+            Assert.That(combat.TryGetShipCombat(grid, out var state), Is.True);
+            combat.SetCondition(state, ShipCondition.Yellow);
+            state.Comp.WeaponMode = ShipWeaponMode.Primary;
+            state.Comp.LockTarget = targetGrid;
+
+            server.CfgMan.SetCVar(PSCVars.ShipCombatTurretsShootThroughHull, false);
+
+            Assert.That(weapons.TryManualFire(console), Is.False,
+                "A turret embedded in a hull wall must hold fire.");
+            Assert.That(state.Comp.WeaponsBlocked, Is.True);
+
+            // Shooting through the hull (the default) makes the same turret fire again.
+            server.CfgMan.SetCVar(PSCVars.ShipCombatTurretsShootThroughHull, true);
+            Assert.That(weapons.TryManualFire(console), Is.True,
+                "The cvar must restore shooting through the hull.");
         });
 
         await pair.CleanReturnAsync();

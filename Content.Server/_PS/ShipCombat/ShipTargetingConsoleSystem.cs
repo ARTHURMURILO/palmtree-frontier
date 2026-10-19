@@ -294,6 +294,7 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
             beingLocked: combat.IncomingLocks.Count > 0,
             incomingMissile: false, // M8: torpedo alarms
             hasLock: hasLock,
+            weaponsBlocked: combat.WeaponsBlocked,
             lockTarget: hasLock ? GetNetEntity(combat.LockTarget) : null,
             targetName: hasLock ? GetTargetDisplayName(combat.LockTarget!.Value) : null,
             contacts: BuildContacts(uid, combat));

@@ -54,6 +54,8 @@ public sealed class ShipWeaponSystem : EntitySystem
     [Dependency] private readonly SharedPhysicsSystem _physics = default!;
     [Dependency] private readonly IConfigurationManager _cfg = default!;
 
+    private ISawmill _sawmill = default!;
+
     /// <summary>
     /// ps.ship_combat.turrets_shoot_through_hull: when false, turrets hold fire while their own hull
     /// blocks the firing line.
@@ -67,6 +69,8 @@ public sealed class ShipWeaponSystem : EntitySystem
     public override void Initialize()
     {
         base.Initialize();
+
+        _sawmill = Logger.GetSawmill("shipcombat");
 
         SubscribeLocalEvent<ShipWeaponComponent, MapInitEvent>(OnMapInit);
         _cfg.OnValueChanged(PSCVars.ShipCombatTurretsShootThroughHull, OnShootThroughHullChanged, true);
@@ -140,10 +144,14 @@ public sealed class ShipWeaponSystem : EntitySystem
                 if (!IsInsideArc(weapon, xform, target.Value))
                     continue;
 
-                // Turrets hold fire while their own hull blocks the shot (cvar restores shooting
-                // through).
-                if (!weapon.ShootThroughHull && IsBlockedByOwnGrid(uid, xform, target.Value))
+                // Turrets hold fire while their own hull blocks the shot (the cvar restores
+                // shooting through).
+                if (!weapon.ShootThroughHull && FindHullBlocker(uid, xform, target.Value) is { } blocker)
+                {
+                    combat.Comp.WeaponsBlocked = true;
+                    LogHoldFire(uid, weapon, blocker);
                     continue;
+                }
             }
             else if (!IsFixedTargetAhead(weapon, xform, target.Value) || !IsExposed(xform))
             {
@@ -161,8 +169,13 @@ public sealed class ShipWeaponSystem : EntitySystem
     {
         var groups = BuildGroups(grid);
         RefreshAimTarget(combat);
+
+        // The aim point exists whenever there is a lock, even with auto-fire off: it is what the
+        // hull-blocked warning is measured against.
+        var aim = GetAimCoordinates(combat);
         var autoFire = combat.AutomaticFire && combat.Condition != ShipCondition.Green;
-        var target = autoFire ? GetAimCoordinates(combat) : null;
+        var target = autoFire ? aim : null;
+        var weaponsBlocked = false;
 
         var query = EntityQueryEnumerator<ShipWeaponComponent, BluespacePoweredComponent, TransformComponent>();
         while (query.MoveNext(out var uid, out var weapon, out var powered, out var xform))
@@ -180,6 +193,16 @@ public sealed class ShipWeaponSystem : EntitySystem
             weapon.ShootThroughHull = weapon.IgnoreOwnGrid && _shootThroughHull;
 
             var armed = IsArmed(combat.WeaponMode, weapon, groups.GetValueOrDefault(uid));
+
+            // An armed turret whose own hull blocks the line holds fire; remember it so the console
+            // can explain why nothing is shooting.
+            if (armed && aim != null && weapon.Type == ShipWeaponType.Turret && !weapon.ShootThroughHull
+                && FindHullBlocker(uid, xform, aim.Value) is { } hullBlocker)
+            {
+                weaponsBlocked = true;
+                LogHoldFire(uid, weapon, hullBlocker);
+            }
+
             var trackTarget = target != null && armed && IsInsideArc(weapon, xform, target.Value);
 
             if (weapon.Type == ShipWeaponType.Turret)
@@ -193,7 +216,7 @@ public sealed class ShipWeaponSystem : EntitySystem
                 if (!trackTarget || !IsAligned(weapon, xform, target.Value))
                     continue;
 
-                if (!weapon.ShootThroughHull && IsBlockedByOwnGrid(uid, xform, target.Value))
+                if (!weapon.ShootThroughHull && FindHullBlocker(uid, xform, target.Value) != null)
                     continue;
             }
             else if (!IsFixedTargetAhead(weapon, xform, target.Value) || !IsExposed(xform))
@@ -203,6 +226,8 @@ public sealed class ShipWeaponSystem : EntitySystem
 
             TryFire(uid, weapon, xform, target.Value);
         }
+
+        combat.WeaponsBlocked = weaponsBlocked;
     }
 
     private void TryFire(EntityUid uid, ShipWeaponComponent weapon, TransformComponent xform, EntityCoordinates target)
@@ -410,29 +435,44 @@ public sealed class ShipWeaponSystem : EntitySystem
     }
 
     /// <summary>
-    /// True when the ship's own hull is in the firing line: the turret holds fire instead of
-    /// shooting through its own grid.
+    /// The first entity on the weapon's own grid that its shot would hit, or null when the line is
+    /// clear. The ray uses the same <see cref="CollisionGroup.Opaque"/> mask a projectile uses, so
+    /// the result is exactly "would my own ship eat this shot" - floors do not block, walls,
+    /// windows, machines and a wall on the weapon's own tile do.
     /// </summary>
-    private bool IsBlockedByOwnGrid(EntityUid uid, TransformComponent xform, EntityCoordinates target)
+    private EntityUid? FindHullBlocker(EntityUid uid, TransformComponent xform, EntityCoordinates target)
     {
         if (xform.GridUid is not { } gridUid)
-            return false;
+            return null;
 
         var from = _transform.GetMapCoordinates(xform);
         var to = _transform.ToMapCoordinates(target);
         var direction = to.Position - from.Position;
         var distance = direction.Length();
         if (distance < 0.01f)
-            return false;
+            return null;
 
         var ray = new CollisionRay(from.Position, direction.Normalized(), (int) CollisionGroup.Opaque);
         foreach (var hit in _physics.IntersectRay(from.MapId, ray, distance, uid, false))
         {
             if (hit.HitEntity.IsValid() && Transform(hit.HitEntity).GridUid == gridUid)
-                return true;
+                return hit.HitEntity;
         }
 
-        return false;
+        return null;
+    }
+
+    /// <summary>
+    /// Writes (at most every few seconds per weapon) why a turret is holding fire.
+    /// </summary>
+    private void LogHoldFire(EntityUid uid, ShipWeaponComponent weapon, EntityUid blocker)
+    {
+        if (_timing.CurTime < weapon.NextHoldFireLog)
+            return;
+
+        weapon.NextHoldFireLog = _timing.CurTime + TimeSpan.FromSeconds(5);
+        _sawmill.Info($"{ToPrettyString(uid)} holding fire: {ToPrettyString(blocker)} blocks the line of fire "
+                      + "(set ps.ship_combat.turrets_shoot_through_hull to true to shoot through the hull)");
     }
 
     /// <summary>

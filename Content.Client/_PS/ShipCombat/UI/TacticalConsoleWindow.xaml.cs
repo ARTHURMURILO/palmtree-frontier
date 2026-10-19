@@ -153,6 +153,7 @@ public sealed partial class TacticalConsoleWindow : FancyWindow
         AutoFireCheck.Pressed = state.AutomaticFire;
         AutoRetaliationCheck.Pressed = state.AutomaticRetaliation;
         SilentCheck.Pressed = state.Silent;
+        WeaponsBlockedLabel.Visible = state.WeaponsBlocked;
 
         LockStatusLabel.Text = FormatStatus("tactical-console-lock", state.BeingLocked);
         LockStatusLabel.FontColorOverride = state.BeingLocked ? WarningColor : null;

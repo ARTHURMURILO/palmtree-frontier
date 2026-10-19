@@ -53,4 +53,7 @@ public sealed partial class ShipWeaponComponent : Component
 
     /// <summary>Idle sweep direction (runtime).</summary>
     public bool IdleClockwise = true;
+
+    /// <summary>When the "holding fire" log line may be written again (runtime).</summary>
+    public TimeSpan NextHoldFireLog;
 }

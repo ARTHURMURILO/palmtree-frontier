@@ -100,6 +100,12 @@ public sealed partial class ShipCombatComponent : Component
     /// <summary>Grids currently locking this ship.</summary>
     public readonly HashSet<EntityUid> IncomingLocks = new();
 
+    /// <summary>
+    /// True while an armed turret is holding fire because the ship's own hull blocks its line of
+    /// fire (runtime). Surfaced on the tactical console so silent weapons are explained.
+    /// </summary>
+    public bool WeaponsBlocked;
+
     /// <summary>The entity on the locked grid the weapons currently aim at, if any (runtime).</summary>
     public EntityUid? AimTarget;
 

@@ -134,11 +134,15 @@ Both consoles are machines with parts (tactical lock speed uses `Capacitor`).
 
 - Turrets (M7): SLAT placeholder sprites, no AI, 45° arc around the placement angle, idle sweep
   inside the arc, remote power, rotate towards the locked target and fire once aligned (5°
-  tolerance). **They hold fire while the ship's own hull blocks the firing line**; the cvar
-  `ps.ship_combat.turrets_shoot_through_hull` (default false) restores the original shoot-through
-  behaviour (marked `SharedProjectileSystem` and `GunSystem` fork hooks keyed on the weapon's
-  runtime `ShootThroughHull`, which `ShipWeaponSystem` derives from the cvar and the weapon's
-  `IgnoreOwnGrid` capability). Two variants: **bolt** (`ShipTurret`, travelling
+  tolerance). By default (`ps.ship_combat.turrets_shoot_through_hull`, **default true**) they shoot
+  through the ship's own grid, so a turret mounted inside or behind the hull still fires (marked
+  `SharedProjectileSystem` and `GunSystem` fork hooks keyed on the weapon's runtime
+  `ShootThroughHull`, which `ShipWeaponSystem` derives from the cvar and the weapon's `IgnoreOwnGrid`
+  capability). Setting the cvar to **false** makes turrets **hold fire while the ship's own hull
+  blocks the firing line**: the blocker is named in the `shipcombat` log and the tactical console
+  shows a red `HULL BLOCKS THE LINE OF FIRE` warning, so silent weapons are never unexplained. The
+  block check uses the same `Opaque` ray a projectile takes, so floors never block but walls,
+  windows, machines - and a hull wall on the turret's own tile - do. Two variants: **bolt** (`ShipTurret`, travelling
   projectile) and **beam** (`ShipTurretBeam`, instant hitscan; infinite ammo via a self-recharging
   battery, slower fire rate). Both scale damage with the Weapons pool — projectiles through
   `GunDamageMultiplierSystem`, hitscan through a marked `GunSystem` hook.

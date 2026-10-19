@@ -15,6 +15,7 @@ tactical-console-yes = YES
 tactical-console-no = NO
 tactical-console-weapons = Weapons
 tactical-console-aim = Aim
+tactical-console-weapons-blocked = ! HULL BLOCKS THE LINE OF FIRE !
 ship-console-silent = Silent
 tactical-console-aim-random = RANDOM
 tactical-console-aim-hull = HULL

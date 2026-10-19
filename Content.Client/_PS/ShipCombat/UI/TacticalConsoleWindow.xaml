@@ -79,6 +79,12 @@
                 <CheckBox Name="AutoRetaliationCheck"
                           Text="{Loc 'tactical-console-auto-retaliation'}"
                           Margin="3"/>
+                <Label Name="WeaponsBlockedLabel"
+                       Text="{Loc 'tactical-console-weapons-blocked'}"
+                       Modulate="#ff3b3b"
+                       HorizontalAlignment="Center"
+                       Visible="False"
+                       Margin="3"/>
                 <Button Name="ClearLockButton"
                         Text="{Loc 'tactical-console-clear-lock'}"
                         Margin="3"/>

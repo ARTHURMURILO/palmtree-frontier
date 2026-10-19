@@ -38,6 +38,12 @@ public sealed class TacticalConsoleBoundUserInterfaceState : BoundUserInterfaceS
     /// <summary>True while this ship holds a target lock.</summary>
     public bool HasLock { get; }
 
+    /// <summary>
+    /// True while an armed turret is holding fire because the ship's own hull blocks its line of
+    /// fire (the cvar ps.ship_combat.turrets_shoot_through_hull is off).
+    /// </summary>
+    public bool WeaponsBlocked { get; }
+
     /// <summary>The locked grid, if any (used to draw the lock reticle).</summary>
     public NetEntity? LockTarget { get; }
 
@@ -65,6 +71,7 @@ public sealed class TacticalConsoleBoundUserInterfaceState : BoundUserInterfaceS
         bool beingLocked,
         bool incomingMissile,
         bool hasLock,
+        bool weaponsBlocked,
         NetEntity? lockTarget,
         string? targetName,
         List<TacticalContactState> contacts)
@@ -80,6 +87,7 @@ public sealed class TacticalConsoleBoundUserInterfaceState : BoundUserInterfaceS
         BeingLocked = beingLocked;
         IncomingMissile = incomingMissile;
         HasLock = hasLock;
+        WeaponsBlocked = weaponsBlocked;
         LockTarget = lockTarget;
         TargetName = targetName;
         Contacts = contacts;
