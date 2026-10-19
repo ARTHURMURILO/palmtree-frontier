@@ -27,12 +27,13 @@ public sealed partial class PSCVars
      */
 
     /// <summary>
-    /// Palmtree: when true (default) ship turrets shoot through their own grid, so a turret mounted
-    /// inside or behind the hull still fires. Set it to false to make turrets hold fire while the
-    /// ship's own hull blocks the firing line (the tactical console then warns about it).
+    /// Palmtree: when false (default) ship turrets hold fire while the ship's own hull blocks the
+    /// firing line - the turret pops "Prevented from firing" and the tactical console's status
+    /// shows a warning naming nothing, the shipcombat log names the blocker. Set it to true to let
+    /// turrets shoot through their own grid again.
     /// </summary>
     public static readonly CVarDef<bool> ShipCombatTurretsShootThroughHull =
-        CVarDef.Create("ps.ship_combat.turrets_shoot_through_hull", true, CVar.SERVER | CVar.REPLICATED);
+        CVarDef.Create("ps.ship_combat.turrets_shoot_through_hull", false, CVar.SERVER | CVar.REPLICATED);
 
     /*
      *  Client

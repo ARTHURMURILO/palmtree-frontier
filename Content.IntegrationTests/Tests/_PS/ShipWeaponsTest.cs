@@ -4,10 +4,15 @@ using Content.Server._PS.ShipCombat;
 using Content.Server.Power.Components;
 using Content.Server.Power.EntitySystems;
 using Content.Shared._PS.CCVar;
+using Content.Shared.Damage.Prototypes;
+using Content.Shared.Mobs.Components;
+using Content.Shared.Mobs.Systems;
 using Content.Shared._PS.ShipCombat;
 using Content.Shared._PS.ShipCombat.Components;
 using Content.Shared.Damage;
 using Content.Shared.Damage.Prototypes;
+using Content.Shared.Mobs.Components;
+using Content.Shared.Mobs.Systems;
 using Content.Shared.Damage.Systems;
 using Content.Shared.DeviceLinking;
 using Content.Shared.Projectiles;
@@ -460,6 +465,163 @@ public sealed class ShipWeaponsTest
             Assert.That(weapons.TryManualFire(console), Is.True,
                 "The cvar should restore shooting through the ship's own hull.");
             Assert.That(CountProjectiles(entMan), Is.GreaterThan(0));
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task WeaponsDoNotFireWhileTheLockIsAcquiring()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var mapSystem = server.System<SharedMapSystem>();
+        var mapMan = server.ResolveDependency<IMapManager>();
+        var xform = server.System<SharedTransformSystem>();
+
+        EntityUid console = default;
+        EntityUid grid = default;
+        EntityUid turret = default;
+        EntityUid targetGrid = default;
+
+        await server.WaitPost(() =>
+        {
+            (console, grid, turret, targetGrid) = CreateArmedShip(entMan, mapSystem, mapMan, xform, testMap.MapId,
+                server.System<SharedDeviceLinkSystem>());
+        });
+
+        await pair.RunTicksSync(10);
+
+        await server.WaitAssertion(() =>
+        {
+            var combat = server.System<ShipCombatSystem>();
+            var weapons = server.System<ShipWeaponSystem>();
+            Assert.That(combat.TryGetShipCombat(grid, out var state), Is.True);
+            combat.SetCondition(state, ShipCondition.Yellow);
+            state.Comp.WeaponMode = ShipWeaponMode.Primary;
+
+            // A lock that is still being acquired must not fire the weapons.
+            state.Comp.LockTarget = targetGrid;
+            state.Comp.LockInProgress = true;
+
+            Assert.That(weapons.TryManualFire(console), Is.False,
+                "Weapons must not fire before the lock is set.");
+            Assert.That(CountProjectiles(entMan), Is.EqualTo(0));
+
+            // Once the lock is set they fire.
+            state.Comp.LockInProgress = false;
+            Assert.That(weapons.TryManualFire(console), Is.True);
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task CrewAimModePicksLivingThings()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var mapSystem = server.System<SharedMapSystem>();
+        var mapMan = server.ResolveDependency<IMapManager>();
+
+        EntityUid targetGrid = default;
+        EntityUid corgi = default;
+
+        await server.WaitPost(() =>
+        {
+            var target = mapMan.CreateGridEntity(testMap.MapId);
+            targetGrid = target.Owner;
+            // A 3x3 grid so the corgi cannot wander off the single tile it spawned on.
+            for (var x = 0; x < 3; x++)
+            {
+                for (var y = 0; y < 3; y++)
+                    mapSystem.SetTile(targetGrid, target.Comp, new Vector2i(x, y), new Tile(1));
+            }
+
+            entMan.SpawnEntity("WallSolid", new EntityCoordinates(targetGrid, new Vector2(2.5f, 2.5f)));
+            corgi = entMan.SpawnEntity("MobCorgi", new EntityCoordinates(targetGrid, new Vector2(1.5f, 1.5f)));
+        });
+
+        await pair.RunTicksSync(5);
+
+        await server.WaitAssertion(() =>
+        {
+            var weapons = server.System<ShipWeaponSystem>();
+
+            Assert.That(weapons.GetAimTarget(targetGrid, ShipTargetMode.Crew), Is.EqualTo(corgi),
+                "CREW should aim at living things on the target.");
+
+            // The dead are not living things.
+            var proto = server.ResolveDependency<IPrototypeManager>();
+            var damage = new DamageSpecifier(proto.Index<DamageTypePrototype>("Blunt"), 500f);
+            server.System<DamageableSystem>().TryChangeDamage(corgi, damage);
+        });
+
+        await pair.RunTicksSync(5);
+
+        await server.WaitAssertion(() =>
+        {
+            var weapons = server.System<ShipWeaponSystem>();
+            Assert.That(weapons.GetAimTarget(targetGrid, ShipTargetMode.Crew), Is.Null,
+                "CREW should ignore corpses.");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task TurretsTrackTheLockedTargetWithoutAutoFire()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var mapSystem = server.System<SharedMapSystem>();
+        var mapMan = server.ResolveDependency<IMapManager>();
+        var xform = server.System<SharedTransformSystem>();
+
+        EntityUid console = default;
+        EntityUid grid = default;
+        EntityUid turret = default;
+        EntityUid targetGrid = default;
+
+        await server.WaitPost(() =>
+        {
+            (console, grid, turret, targetGrid) = CreateArmedShip(entMan, mapSystem, mapMan, xform, testMap.MapId,
+                server.System<SharedDeviceLinkSystem>());
+
+            // Put the target south east of the turret, still inside its 45 degree arc.
+            xform.SetWorldPosition(targetGrid, new Vector2(22.5f, -6.8f));
+        });
+
+        await pair.RunTicksSync(5);
+
+        var startRotation = 0d;
+
+        await server.WaitAssertion(() =>
+        {
+            var combat = server.System<ShipCombatSystem>();
+            Assert.That(combat.TryGetShipCombat(grid, out var state), Is.True);
+            combat.SetCondition(state, ShipCondition.Yellow);
+            state.Comp.WeaponMode = ShipWeaponMode.Primary;
+            state.Comp.LockTarget = targetGrid;
+
+            startRotation = entMan.GetComponent<TransformComponent>(turret).LocalRotation.Degrees;
+            Assert.That(state.Comp.AutomaticFire, Is.False, "Auto-fire stays off in this test.");
+        });
+
+        // The turret should turn towards the locked target even though it will not shoot.
+        await pair.RunTicksSync(20);
+
+        await server.WaitAssertion(() =>
+        {
+            var rotation = entMan.GetComponent<TransformComponent>(turret).LocalRotation.Degrees;
+            Assert.That(rotation, Is.LessThan(startRotation - 5d),
+                $"The turret should track the locked target (was {startRotation}, now {rotation}).");
         });
 
         await pair.CleanReturnAsync();

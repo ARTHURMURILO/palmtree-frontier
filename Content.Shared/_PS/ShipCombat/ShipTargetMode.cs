@@ -23,4 +23,7 @@ public enum ShipTargetMode : byte
 
     /// <summary>Aim at the target's thrusters.</summary>
     Thrusters = 4,
+
+    /// <summary>Aim straight at living things on the target (crew in EVA, exposed mobs).</summary>
+    Crew = 5,
 }

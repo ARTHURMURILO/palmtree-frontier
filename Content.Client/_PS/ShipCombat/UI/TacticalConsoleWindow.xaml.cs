@@ -101,6 +101,7 @@ public sealed partial class TacticalConsoleWindow : FancyWindow
         TargetOption.AddItem(Loc.GetString("tactical-console-aim-generators"), (int) ShipTargetMode.Generators);
         TargetOption.AddItem(Loc.GetString("tactical-console-aim-weapons"), (int) ShipTargetMode.Weapons);
         TargetOption.AddItem(Loc.GetString("tactical-console-aim-thrusters"), (int) ShipTargetMode.Thrusters);
+        TargetOption.AddItem(Loc.GetString("tactical-console-aim-crew"), (int) ShipTargetMode.Crew);
         TargetOption.OnItemSelected += args =>
         {
             TargetOption.SelectId(args.Id);

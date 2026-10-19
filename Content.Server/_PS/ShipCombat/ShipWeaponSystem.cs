@@ -9,7 +9,9 @@ using Content.Shared.Weapons.Ranged.Systems;
 using Content.Server.Power.Components;
 using Content.Shared._PS.CCVar;
 using Content.Shared.Damage;
+using Content.Shared.Mobs.Systems;
 using Content.Shared.Physics;
+using Content.Shared.Popups;
 using Content.Shared.Mobs.Components;
 using Content.Server.Shuttles.Components;
 using Robust.Shared.Configuration;
@@ -52,6 +54,8 @@ public sealed class ShipWeaponSystem : EntitySystem
     [Dependency] private readonly IRobustRandom _random = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly SharedPhysicsSystem _physics = default!;
+    [Dependency] private readonly SharedPopupSystem _popup = default!;
+    [Dependency] private readonly MobStateSystem _mobState = default!;
     [Dependency] private readonly IConfigurationManager _cfg = default!;
 
     private ISawmill _sawmill = default!;
@@ -149,7 +153,7 @@ public sealed class ShipWeaponSystem : EntitySystem
                 if (!weapon.ShootThroughHull && FindHullBlocker(uid, xform, target.Value) is { } blocker)
                 {
                     combat.Comp.WeaponsBlocked = true;
-                    LogHoldFire(uid, weapon, blocker);
+                    ReportHoldFire(uid, weapon, blocker);
                     continue;
                 }
             }
@@ -200,13 +204,15 @@ public sealed class ShipWeaponSystem : EntitySystem
                 && FindHullBlocker(uid, xform, aim.Value) is { } hullBlocker)
             {
                 weaponsBlocked = true;
-                LogHoldFire(uid, weapon, hullBlocker);
+                ReportHoldFire(uid, weapon, hullBlocker);
             }
 
-            var trackTarget = target != null && armed && IsInsideArc(weapon, xform, target.Value);
+            // Turrets always try to aim at the locked target; auto-fire only decides whether they
+            // actually shoot (the arc still limits how far they can turn).
+            var trackTarget = aim != null && IsInsideArc(weapon, xform, aim.Value);
 
             if (weapon.Type == ShipWeaponType.Turret)
-                UpdateTurret(uid, weapon, xform, trackTarget ? target : null, frameTime);
+                UpdateTurret(uid, weapon, xform, trackTarget ? aim : null, frameTime);
 
             if (!armed || target == null)
                 continue;
@@ -287,6 +293,11 @@ public sealed class ShipWeaponSystem : EntitySystem
     /// </summary>
     private EntityCoordinates? GetAimCoordinates(ShipCombatComponent combat)
     {
+        // Weapons hold their aim until the lock is actually set: nothing aims or fires while a lock
+        // is still being acquired.
+        if (combat.LockInProgress)
+            return null;
+
         if (combat.LockTarget is not { } target || !Exists(target) || !HasComp<MapGridComponent>(target))
             return null;
 
@@ -337,7 +348,11 @@ public sealed class ShipWeaponSystem : EntitySystem
         var query = EntityQueryEnumerator<TransformComponent>();
         while (query.MoveNext(out var uid, out var xform))
         {
-            if (xform.GridUid != grid || !xform.Anchored)
+            if (xform.GridUid != grid)
+                continue;
+
+            // Every mode picks anchored structure; crew are not anchored.
+            if (mode != ShipTargetMode.Crew && !xform.Anchored)
                 continue;
 
             if (MatchesAimMode(uid, mode))
@@ -361,6 +376,7 @@ public sealed class ShipWeaponSystem : EntitySystem
                                          || HasComp<BluespacePowerSinkComponent>(uid),
             ShipTargetMode.Weapons => HasComp<ShipWeaponComponent>(uid),
             ShipTargetMode.Thrusters => HasComp<ThrusterComponent>(uid),
+            ShipTargetMode.Crew => _mobState.IsAlive(uid) || _mobState.IsCritical(uid),
             _ => false,
         };
     }
@@ -463,14 +479,21 @@ public sealed class ShipWeaponSystem : EntitySystem
     }
 
     /// <summary>
-    /// Writes (at most every few seconds per weapon) why a turret is holding fire.
+    /// Tells the player why a turret is holding fire: a short popup on the turret itself (at most
+    /// every three seconds) and a rate limited line in the shipcombat log naming the blocker.
     /// </summary>
-    private void LogHoldFire(EntityUid uid, ShipWeaponComponent weapon, EntityUid blocker)
+    private void ReportHoldFire(EntityUid uid, ShipWeaponComponent weapon, EntityUid blocker)
     {
+        if (_timing.CurTime >= weapon.NextBlockedPopup)
+        {
+            weapon.NextBlockedPopup = _timing.CurTime + TimeSpan.FromSeconds(3);
+            _popup.PopupEntity(Loc.GetString("ship-weapon-prevented-from-firing"), uid);
+        }
+
         if (_timing.CurTime < weapon.NextHoldFireLog)
             return;
 
-        weapon.NextHoldFireLog = _timing.CurTime + TimeSpan.FromSeconds(5);
+        weapon.NextHoldFireLog = _timing.CurTime + TimeSpan.FromSeconds(10);
         _sawmill.Info($"{ToPrettyString(uid)} holding fire: {ToPrettyString(blocker)} blocks the line of fire "
                       + "(set ps.ship_combat.turrets_shoot_through_hull to true to shoot through the hull)");
     }

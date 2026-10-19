@@ -68,13 +68,8 @@ public sealed class ShipTargetingSystem : EntitySystem
         var query = EntityQueryEnumerator<ShipCombatComponent>();
         while (query.MoveNext(out var grid, out var combat))
         {
-            if (combat.LockInProgress && _timing.CurTime >= combat.LockCompleteTime)
-            {
-                toComplete ??= new List<EntityUid>();
-                toComplete.Add(grid);
-                continue;
-            }
-
+            // A lock - held or still being acquired - is lost the moment the target leaves the lock
+            // range or stops being a grid, so weapons can never keep shooting out of range.
             if (combat.LockTarget is { } target
                 && (!Exists(target)
                     || !HasComp<MapGridComponent>(target)
@@ -82,6 +77,13 @@ public sealed class ShipTargetingSystem : EntitySystem
             {
                 toClear ??= new List<EntityUid>();
                 toClear.Add(grid);
+                continue;
+            }
+
+            if (combat.LockInProgress && _timing.CurTime >= combat.LockCompleteTime)
+            {
+                toComplete ??= new List<EntityUid>();
+                toComplete.Add(grid);
             }
         }
 

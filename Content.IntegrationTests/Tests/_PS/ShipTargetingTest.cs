@@ -128,6 +128,66 @@ public sealed class ShipTargetingTest
     }
 
     [Test]
+    public async Task LockIsLostWhenTheTargetLeavesRange()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var mapSystem = server.System<SharedMapSystem>();
+        var mapMan = server.ResolveDependency<IMapManager>();
+        var xform = server.System<SharedTransformSystem>();
+
+        EntityUid console = default;
+        EntityUid ship = default;
+        EntityUid target = default;
+
+        await server.WaitPost(() =>
+        {
+            (console, ship, target) = CreateShipPair(entMan, mapSystem, mapMan, xform, testMap.MapId, 100f);
+        });
+
+        await pair.RunTicksSync(5);
+
+        await server.WaitAssertion(() =>
+        {
+            var combat = server.System<ShipCombatSystem>();
+            var targeting = server.System<ShipTargetingSystem>();
+
+            Assert.That(combat.TryGetShipCombat(ship, out var shipState), Is.True);
+            combat.SetCondition(shipState, ShipCondition.Yellow);
+            shipState.Comp.WeaponMode = ShipWeaponMode.All;
+
+            Assert.That(targeting.TryStartLock(console, target, 512f), Is.True);
+        });
+
+        // Let the lock finish acquiring.
+        await pair.RunTicksSync(60);
+
+        await server.WaitAssertion(() =>
+        {
+            var combat = server.System<ShipCombatSystem>();
+            Assert.That(combat.TryGetShipCombat(ship, out var shipState), Is.True);
+            Assert.That(shipState.Comp.LockTarget, Is.EqualTo(target), "The lock should be held in range.");
+
+            // The target flies out of the console's range: the lock is lost automatically.
+            xform.SetWorldPosition(target, new Vector2(5000f, 0f));
+        });
+
+        await pair.RunTicksSync(10);
+
+        await server.WaitAssertion(() =>
+        {
+            var combat = server.System<ShipCombatSystem>();
+            Assert.That(combat.TryGetShipCombat(ship, out var shipState), Is.True);
+            Assert.That(shipState.Comp.LockTarget, Is.Null,
+                "A target leaving the lock range must lose the lock.");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
     public async Task DamageRaisesConditionAutomatically()
     {
         await using var pair = await PoolManager.GetServerClient();

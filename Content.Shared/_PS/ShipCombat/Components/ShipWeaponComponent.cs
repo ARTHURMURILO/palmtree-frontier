@@ -56,4 +56,7 @@ public sealed partial class ShipWeaponComponent : Component
 
     /// <summary>When the "holding fire" log line may be written again (runtime).</summary>
     public TimeSpan NextHoldFireLog;
+
+    /// <summary>When the "Prevented from firing" popup may be shown again (runtime).</summary>
+    public TimeSpan NextBlockedPopup;
 }

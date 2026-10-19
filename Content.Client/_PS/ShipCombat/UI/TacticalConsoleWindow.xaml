@@ -53,6 +53,11 @@
                 <Label Name="LockStatusLabel" Margin="3"/>
                 <Label Name="MslStatusLabel" Margin="3"/>
                 <Label Name="TargetStatusLabel" Margin="3"/>
+                <Label Name="WeaponsBlockedLabel"
+                       Text="{Loc 'tactical-console-weapons-blocked'}"
+                       Modulate="#ff3b3b"
+                       Margin="3"
+                       Visible="False"/>
                 <controls:StripeBack MinSize="48 48">
                     <Label Text="{Loc 'tactical-console-weapons'}"
                            HorizontalAlignment="Center"
@@ -79,12 +84,6 @@
                 <CheckBox Name="AutoRetaliationCheck"
                           Text="{Loc 'tactical-console-auto-retaliation'}"
                           Margin="3"/>
-                <Label Name="WeaponsBlockedLabel"
-                       Text="{Loc 'tactical-console-weapons-blocked'}"
-                       Modulate="#ff3b3b"
-                       HorizontalAlignment="Center"
-                       Visible="False"
-                       Margin="3"/>
                 <Button Name="ClearLockButton"
                         Text="{Loc 'tactical-console-clear-lock'}"
                         Margin="3"/>

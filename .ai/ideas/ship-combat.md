@@ -134,15 +134,17 @@ Both consoles are machines with parts (tactical lock speed uses `Capacitor`).
 
 - Turrets (M7): SLAT placeholder sprites, no AI, 45° arc around the placement angle, idle sweep
   inside the arc, remote power, rotate towards the locked target and fire once aligned (5°
-  tolerance). By default (`ps.ship_combat.turrets_shoot_through_hull`, **default true**) they shoot
-  through the ship's own grid, so a turret mounted inside or behind the hull still fires (marked
-  `SharedProjectileSystem` and `GunSystem` fork hooks keyed on the weapon's runtime
-  `ShootThroughHull`, which `ShipWeaponSystem` derives from the cvar and the weapon's `IgnoreOwnGrid`
-  capability). Setting the cvar to **false** makes turrets **hold fire while the ship's own hull
-  blocks the firing line**: the blocker is named in the `shipcombat` log and the tactical console
-  shows a red `HULL BLOCKS THE LINE OF FIRE` warning, so silent weapons are never unexplained. The
-  block check uses the same `Opaque` ray a projectile takes, so floors never block but walls,
-  windows, machines - and a hull wall on the turret's own tile - do. Two variants: **bolt** (`ShipTurret`, travelling
+  tolerance). Turrets **always turn towards the locked target** (auto-fire only decides whether they
+  shoot) and weapons do nothing until the lock is *set*: no aiming or firing while a lock is still
+  being acquired. `ps.ship_combat.turrets_shoot_through_hull` (**default false**) makes turrets
+  **hold fire while the ship's own hull blocks the firing line**: the turret pops `Prevented from
+  firing` (at most every 3 s), the tactical console's **status** section shows `WEAPONS: BLOCKED BY
+  HULL` and the `shipcombat` log names the blocker (at most every 10 s). Setting the cvar to true
+  restores shooting through the ship's own grid (marked `SharedProjectileSystem` and `GunSystem`
+  fork hooks keyed on the weapon's runtime `ShootThroughHull`, which `ShipWeaponSystem` derives from
+  the cvar and the weapon's `IgnoreOwnGrid` capability). The block check uses the same `Opaque` ray a
+  projectile takes, so floors never block but walls, windows, machines - and a hull wall on the
+  turret's own tile - do. Two variants: **bolt** (`ShipTurret`, travelling
   projectile) and **beam** (`ShipTurretBeam`, instant hitscan; infinite ammo via a self-recharging
   battery, slower fire rate). Both scale damage with the Weapons pool — projectiles through
   `GunDamageMultiplierSystem`, hitscan through a marked `GunSystem` hook.
@@ -167,8 +169,13 @@ Both consoles are machines with parts (tactical lock speed uses `Capacitor`).
   `GunDamageMultiplierComponent` (unpowered weapons cannot fire).
 - Aim selection (M7 feedback): the tactical console's `Aim` dropdown picks what the weapons shoot at
   on the locked grid — `RANDOM` (grid centre), `HULL` (anchored structure), `GENERATORS` (power
-  sources and sinks), `WEAPONS` and `THRUSTERS`. The subsystem is re-picked every 2 s so turrets do
-  not jitter between targets.
+  sources and sinks), `WEAPONS`, `THRUSTERS` and `CREW` (living things: alive or critical mobs,
+  which are not anchored, so the shot goes straight at them). The subsystem is re-picked every 2 s so
+  turrets do not jitter between targets.
+- Lock range is enforced on the server: `TryStartLock` refuses a target beyond the requesting
+  console's radar range (the range comes from the console's own `RadarConsoleComponent`, never from
+  the client message), and a lock - held or still being acquired - is dropped automatically the
+  moment the target leaves that range.
 - Both consoles carry a `Silent` checkbox (off by default): a silent console plays no sounds at all
   (contact beeps, lock sounds, the condition alarm), per console.
 
