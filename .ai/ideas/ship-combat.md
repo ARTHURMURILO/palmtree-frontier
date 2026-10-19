@@ -173,12 +173,18 @@ Both consoles are machines with parts (tactical lock speed uses `Capacitor`).
 Ship combat happens at ranges far beyond the PVS bubble (~32 tiles), so a few things deliberately
 bypass it:
 
-- **Gunshots and beams**: reverted. Broadcasting them from `ShipWeaponSystem.TryFire` was wrong:
-  `TryFire` runs every tick while auto-fire is on (the gun's own rate limit lives inside
-  `AttemptShoot`), so the gunshot spammed at tick rate and the beam visuals did not render. If this
-  comes back it must be gated on the shot actually happening (e.g. hook `GunShotEvent`, or compare
-  `GunComponent.NextFire` around `AttemptShoot`), and the beam visual has to be verified client-side.
-  Weapons use the vanilla `Gun.soundGunshot` and hitscan flashes again.
+- **Beams**: the vanilla hitscan effects are widened for ship weapons by a marked `GunSystem`
+  (`FireEffects`) patch: ship weapon effect coordinates are based on the **map** instead of the firing
+  grid (a client far outside the shooter's PVS does not know that grid, so it could not resolve or
+  draw grid-relative effects) and the `HitscanEvent` is sent with a 24x PVS range multiplier
+  (~600 tiles at the default 25 tile PVS range), covering the whole engagement envelope. The muzzle
+  flash, beam line and impact flash therefore render for the victim at full range. This is inherently
+  gated on a shot actually firing, because `FireEffects` only runs for real shots.
+- **Gunshots** stay vanilla (`Gun.soundGunshot`, PVS limited). An earlier attempt broadcast them from
+  `ShipWeaponSystem.TryFire`, which runs every tick while auto-fire is on (the gun's rate limit lives
+  inside `AttemptShoot`), so it spammed at tick rate and the beam visual never rendered; that was
+  reverted. If far-audible gunshots come back, gate them on the shot actually happening (hook
+  `GunShotEvent`, or compare `GunComponent.NextFire` around `AttemptShoot`).
 - **Stack overflow guard**: the engine's `TilesEnumerator.MoveNext` recurses once per skipped tile,
   so view-bounded tile overlays (ambient occlusion, roofs) overflow the stack on very large views
   (huge viewport, low render scale, zoomed out). `TileEnumerationGuard` skips views above

@@ -76,6 +76,10 @@
   impactFlash:
     sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
     state: impact_beam_heavy
+  # Plays at the hit entity, so the ship being shot hears the beam land (even through its shields).
+  sound:
+    path: /Audio/Weapons/Guns/Hits/energy_metal1.ogg
+  forceSound: true
   maxLength: 512
 
 - type: entity
