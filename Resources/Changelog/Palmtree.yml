@@ -1224,3 +1224,13 @@ Entries:
   time: '2026-10-18T17:48:33.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/672bef83df1805825a8ab3e5e051708c20c8c530
+- author: TheLife
+  changes:
+    - type: Fix
+      message: >-
+        Retrieved ships no longer come back with their buttons, switches,
+        toolbelts and guns stuck on a cooldown from the previous round.
+  id: 90076
+  time: '2026-10-20T01:49:34.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/23c30784a245f3628937bbef2f40138ac31dcdcd
