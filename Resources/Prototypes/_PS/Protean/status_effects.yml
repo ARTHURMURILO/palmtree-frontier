@@ -1,0 +1,17 @@
+- type: entity
+  parent: StatusEffectSlowdown
+  id: ProteanLowPowerStatusEffect
+  name: Protean low power
+  components:
+  - type: MovementModStatusEffect
+    walkSpeedModifier: 0.5
+    sprintSpeedModifier: 0.5
+
+- type: entity
+  parent: StatusEffectSlowdown
+  id: ProteanOrchestratorPenaltyStatusEffect
+  name: Protean orchestrator failure
+  components:
+  - type: MovementModStatusEffect
+    walkSpeedModifier: 0.5
+    sprintSpeedModifier: 0.5

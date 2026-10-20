@@ -785,27 +785,33 @@ this repo's newer client code.
 - Validation: `ShipyardTest` loads every vessel map and checks price vs appraised value
   (`MinPriceMarkup` 1.05) — both tests cover the Salto.
 
-## 27. MODsuits + Proteans (in progress, 2026-10-19)
+## 27. MODsuits + Proteans (feature checkpoint, 2026-10-20)
 
 This is a new port, not part of the Coyote merge. The fail-safe plan, batch order, omissions and
-hazards live in [`ideas/modsuit-protean-port.md`](ideas/modsuit-protean-port.md).
+hazards live in [`ideas/modsuit-protean-port.md`](ideas/modsuit-protean-port.md) (see the MODsuit/Protean plan).
 
 - **MODsuits source:** TG master `000a99fb`. **Protean source:** SPLURT-TG `59f9043a` (TG has no
-  Protean). SPLURT/Sandstorm art is used only for anthro/digitigrade variants and the Protean organ
-  art.
+  Protean). Digitigrade MODsuit deployment uses the existing leg-displacement maps; unique
+  Protean/anthro sprite variants are not present in the available source checkout.
 - **Implementation namespace:** `_PS/Modsuits` and `_PS/Protean`. The port rewrites the DM behavior
   into ECS components/systems and XAML BUIs; it does not copy DM classes or TGUI.
-- **Status (2026-10-19):** core control/part/core/module components, deploy/retract, seal/unseal,
+- **Status (2026-10-20):** core control/part/core/module components, deploy/retract, seal/unseal,
   passive power drain, storage/flashlight/magboots modules, a XAML control panel, TG-style shell
   assembly, techfab/research recipes, the crew theme/plating set, and the TG worn MODsuit RSI are
-  implemented. Item icons, remaining modules and anthro validation are next. The Protean core
-  species/suit/fold-unfold prototype is also in place, with a custom body and synthetic Protean organs;
-  refactory drain, automatic suit equip and suit lock are in; UI/assimilation/repair/servo are still
-  pending. Deployed-part removal, runtime armor/client visual pitfalls, and the integrated suit
-  spawn path are fixed/regression-tested. See the plan.
+  implemented. The Protean core has a custom body, synthetic organs, auto-equipped suit,
+  fold/unfold, lock, UI, theme-level assimilation/ejection with non-storage module transfer,
+  critical withdrawal/refactory repair, low power, self-repair with non-critical limb/organ
+  regeneration, pen memory reset, suit-deletion cleanup and species-loss cleanup. Basic servo
+  movement mode, Synth physiology (no breathing/metabolism, pressure immunity, reboot repair),
+  missing-organ penalties, refactory-bound suit power and digitigrade deployment are tested. Synth
+  damage resistance and forced prying are intentionally not inherited. Item icons, special suits,
+  the wider module
+  library, special-suit distribution and servo engineering mode remain optional breadth; 18 special
+  themes/plating recipes and their research pack are implemented. Critical organs still use the
+  refactory repair path. See the plan.
 - **Deliberate omissions:** ERP MODsuit content (Lustwish/hypnotic visor/Zubbers companion), MODlink
   and AI control, timeline/pathfinder/loader modules, surgery-dependent modules, soul/ethereal/plasma
-  cores, and the full TG art set until the `_PS` RSI conversion is done.
+  cores, the full TG art set beyond the current worn RSI, and unique Protean/anthro sprite variants.
 - **Protean plan:** use the existing SlimeForm-style polymorph parked-map path, but polymorph into an
   invisible `MobProteanSuitController` attached to the normal MODsuit item rather than putting the
   player body inside the suit. See the plan's sections 4 and 5 before starting Batch 4.

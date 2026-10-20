@@ -1,3 +1,4 @@
+using Content.Shared.Humanoid;
 using Robust.Shared.GameStates;
 
 namespace Content.Shared._PS.Modsuits;
@@ -16,4 +17,10 @@ public sealed partial class ModsuitPartComponent : Component
 
     [DataField, AutoNetworkedField]
     public bool Sealed;
+
+    /// <summary>
+    /// Humanoid layers hidden while this part is sealed and equipped.
+    /// </summary>
+    [DataField]
+    public List<HumanoidVisualLayers> HiddenWhenSealed = new();
 }

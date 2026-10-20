@@ -24,6 +24,12 @@
     size: Normal
   - type: ModsuitPart
     slot: Helmet
+    hiddenWhenSealed:
+    - Hair
+    - FacialHair
+    - Snout
+    - HeadTop
+    - HeadSide
   - type: AttachedClothing
 
 - type: entity

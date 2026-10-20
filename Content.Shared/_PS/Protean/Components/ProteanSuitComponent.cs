@@ -1,4 +1,6 @@
+using Content.Shared._PS.Modsuits;
 using Robust.Shared.GameStates;
+using Robust.Shared.Prototypes;
 
 namespace Content.Shared._PS.Protean;
 
@@ -24,4 +26,13 @@ public sealed partial class ProteanSuitComponent : Component
 
     [DataField]
     public EntityUid? StoredSuit;
+
+    [DataField]
+    public ProtoId<ModsuitThemePrototype>? StoredTheme;
+
+    [DataField]
+    public string? StoredSkin;
+
+    [DataField]
+    public List<EntityUid> AssimilatedModules = new();
 }

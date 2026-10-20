@@ -27,3 +27,36 @@
   - ModsuitModuleStorageRecipe
   - ModsuitModuleFlashlightRecipe
   - ModsuitModuleMagbootsRecipe
+  - ModsuitModuleProteanServoRecipe
+
+- type: latheRecipePack
+  id: PSProteanOrgans
+  recipes:
+  - OrganProteanStomachRecipe
+  - OrganProteanHeartRecipe
+  - OrganProteanEyesRecipe
+  - OrganProteanEarsRecipe
+  - OrganProteanTongueRecipe
+  - OrganProteanLiverRecipe
+
+- type: latheRecipePack
+  id: PSModsuitSpecial
+  recipes:
+  - ModsuitPlatingLoaderRecipe
+  - ModsuitPlatingAsteroidRecipe
+  - ModsuitPlatingCorpsmanRecipe
+  - ModsuitPlatingSyndicateRecipe
+  - ModsuitPlatingHonkerativeRecipe
+  - ModsuitPlatingEliteRecipe
+  - ModsuitPlatingInfiltratorRecipe
+  - ModsuitPlatingInterdyneRecipe
+  - ModsuitPlatingEnchantedRecipe
+  - ModsuitPlatingNinjaRecipe
+  - ModsuitPlatingPrototypeRecipe
+  - ModsuitPlatingGlitchRecipe
+  - ModsuitPlatingResponsoryRecipe
+  - ModsuitPlatingInquisitoryRecipe
+  - ModsuitPlatingApocryphalRecipe
+  - ModsuitPlatingCorporateRecipe
+  - ModsuitPlatingChronoRecipe
+  - ModsuitPlatingDebugRecipe

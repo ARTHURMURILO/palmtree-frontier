@@ -1,0 +1,233 @@
+- type: entity
+  id: ModsuitPlatingLoader
+  name: MOD loader external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeLoader
+
+- type: entity
+  id: ModsuitPlatingAsteroid
+  name: MOD asteroid external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeAsteroid
+
+- type: entity
+  id: ModsuitPlatingCorpsman
+  name: MOD corpsman external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeCorpsman
+
+- type: entity
+  id: ModsuitPlatingSyndicate
+  name: MOD syndicate external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeSyndicate
+
+- type: entity
+  id: ModsuitPlatingHonkerative
+  name: MOD honkerative external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeHonkerative
+
+- type: entity
+  id: ModsuitPlatingElite
+  name: MOD elite external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeElite
+
+- type: entity
+  id: ModsuitPlatingInfiltrator
+  name: MOD infiltrator external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeInfiltrator
+
+- type: entity
+  id: ModsuitPlatingInterdyne
+  name: MOD interdyne external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeInterdyne
+
+- type: entity
+  id: ModsuitPlatingEnchanted
+  name: MOD enchanted external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeEnchanted
+
+- type: entity
+  id: ModsuitPlatingNinja
+  name: MOD ninja external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeNinja
+
+- type: entity
+  id: ModsuitPlatingPrototype
+  name: MOD prototype external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemePrototype
+
+- type: entity
+  id: ModsuitPlatingGlitch
+  name: MOD glitch external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeGlitch
+
+- type: entity
+  id: ModsuitPlatingResponsory
+  name: MOD responsory external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeResponsory
+
+- type: entity
+  id: ModsuitPlatingInquisitory
+  name: MOD inquisitory external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeInquisitory
+
+- type: entity
+  id: ModsuitPlatingApocryphal
+  name: MOD apocryphal external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeApocryphal
+
+- type: entity
+  id: ModsuitPlatingCorporate
+  name: MOD corporate external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeCorporate
+
+- type: entity
+  id: ModsuitPlatingChrono
+  name: MOD chrono external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeChrono
+
+- type: entity
+  id: ModsuitPlatingDebug
+  name: MOD debug external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeDebug

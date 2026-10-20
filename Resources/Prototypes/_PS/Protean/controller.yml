@@ -15,7 +15,9 @@
     baseWalkSpeed: 0
     baseSprintSpeed: 0
   - type: UserInterface
-    interfaces: {}
+    interfaces:
+      enum.ProteanUiKey.Key:
+        type: ProteanBoundUserInterface
 
 - type: polymorph
   id: ProteanSuitForm

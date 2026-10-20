@@ -610,3 +610,39 @@ so these fail only in CI:
   the restored body is parented to the suit item. The prototype test `ProteanTest.FoldAndUnfold`
   locks this down. The current species reuses the human body/organs; replace them only with a
   complete body prototype and re-run the test.
+
+- **Protean repair timing is server-timer based.** `ProteanBrainComponent.RepairDuration` defaults to
+  five minutes; tests shorten it. The refactory organ is inserted into the parked body's torso and
+  the brain flag is cleared in the timer callback. Do not clear `Dead` when the organ is inserted or
+  the player can unfold before repairs finish.
+- **Protean assimilation stores the target suit in `protean_stored_suit`.** Theme/skin are applied
+  and non-storage modules are moved into the Protean suit; storage modules stay with the stored suit.
+  Ejection moves the transferred modules back, restores the original theme/skin and drops/returns the
+  stored suit. Keep `StoredSuit`/`AssimilatedModules` synchronized when extending this.
+
+- **Protean servo module modes are UI-driven in the current pass.** The module is a marker checked
+  by `ProteanUiSystem`; movement mode applies a movement status effect to the suit wearer. Engineering
+  mode and hand/restraint drawbacks are not ported yet. Do not assume the source medical mode exists.
+- **Low power is a one-day status effect refreshed by toggle.** It is removed when folding; suit
+  activation is blocked while it is active. The status effect prototype is separate from the old
+  `status_effects.yml` datum system.
+- **Field repair regrows limbs and non-critical organs from the body prototype.** It deliberately
+  skips brain/heart/stomach and the refactory; those require the critical withdrawal/refactory path.
+  When extending `RegrowBody`, preserve BFS order and do not bypass `SharedBodySystem` container
+  insertion or body-part access restrictions.
+
+- **Protean Synth physiology is marker-based.** `MobProtean` has `SynthComponent`, so
+  `RespiratorSystem` and reagent effects skip it. Do not remove the marker when adding new
+  Protean-specific organs; use the appropriate system checks instead. Synth damage resistance and
+  `Prying` are intentionally not copied.
+- **Sealed MODsuit layers are restored by `ModsuitSystem.ApplySealedLayerVisibility`.** The hidden-layer
+  list lives on `ModsuitPartComponent.HiddenWhenSealed`; the sealed/unsealed path must call the helper
+  with the correct slot flag, and suit deletion must restore the layers before parts are deleted.
+
+- **Special MODsuit themes must keep one skin per RSI prefix.** `special_themes.yml` is generated
+  from the worn RSI state prefixes; the WornRsi states are `prefix-helmet`, `prefix-chestplate`,
+  `prefix-gauntlets` and `prefix-boots` with `-sealed` variants. Add plating/recipes/pack entries
+  together, and keep the `PSModsuitSpecial` research node in sync with the recipe list.
+- **The Protean core is refactory-bound.** `ModsuitCoreProtean` is not a normal battery: its charge is
+  mirrored from the refactory metal each tick. Do not give it a positive `DrainMultiplier` or the
+  refactory system will fight the normal power drain. If metal hits zero the suit is force-retracted.

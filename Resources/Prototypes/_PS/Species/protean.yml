@@ -29,6 +29,40 @@
     prototype: Protean
     requiredLegs: 2
   - type: Protean
+  - type: Damageable
+    damageModifierSet: Protean
+  # Proteans share the synthetic physiology of Synths: they do not breathe, do not suffer
+  # reagent effects, and can be rebooted like a Synth. Damage resistance and forced prying
+  # are deliberately not inherited.
+  - type: Synth
+  - type: PressureImmunity
+  - type: ZombieImmune
+  - type: CanHostGuardian
+  - type: Deathgasp
+    prototype: SiliconDeathgasp
+  - type: TypingIndicator
+    proto: robot
+  - type: Temperature
+    heatDamageThreshold: 4000
+    coldDamageThreshold: 0
+    currentTemperature: 310.15
+    specificHeat: 42
+    atmosTemperatureTransferEfficiency: 0.8
+  - type: Flammable
+    damage:
+      types:
+        Heat: 0
+  - type: DeadStartupButton
+    sound:
+      path: /Audio/_EE/Effects/Silicon/startup.ogg
+    rebootHeal:
+      groups:
+        Brute: -150
+        Burn: -150
+  - type: UserInterface
+    interfaces:
+      enum.ProteanUiKey.Key:
+        type: ProteanBoundUserInterface
 
 - type: entity
   id: MobProteanDummy

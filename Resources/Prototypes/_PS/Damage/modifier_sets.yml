@@ -1,4 +1,10 @@
 - type: damageModifierSet
+  id: Protean
+  coefficients:
+    Poison: 0
+    Radiation: 0
+
+- type: damageModifierSet
   id: Synth
   coefficients:
     Blunt: 0.80

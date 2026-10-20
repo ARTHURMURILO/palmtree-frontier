@@ -1,0 +1,8 @@
+- type: entity
+  parent: StatusEffectSlowdown
+  id: ProteanServoMovementStatusEffect
+  name: Protean servo movement
+  components:
+  - type: MovementModStatusEffect
+    walkSpeedModifier: 1.4
+    sprintSpeedModifier: 1.4

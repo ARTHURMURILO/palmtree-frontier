@@ -27,6 +27,7 @@
   recipeUnlocks:
   - ModsuitPlatingEngineeringRecipe
   - ModsuitModuleMagbootsRecipe
+  - ModsuitModuleProteanServoRecipe
   technologyPrerequisites:
   - PSModsuitBase
   position: 5, 1
@@ -53,3 +54,51 @@
   technologyPrerequisites:
   - PSModsuitBase
   position: 5, 2
+
+- type: technology
+  id: PSProteanOrgans
+  name: ps-research-technology-protean-organs
+  entityIcon: OrganProteanStomach
+  discipline: NFMedical
+  tier: 2
+  cost: 3000
+  recipeUnlocks:
+  - OrganProteanStomachRecipe
+  - OrganProteanHeartRecipe
+  - OrganProteanEyesRecipe
+  - OrganProteanEarsRecipe
+  - OrganProteanTongueRecipe
+  - OrganProteanLiverRecipe
+  technologyPrerequisites:
+  - PSModsuitBase
+  position: 5, 3
+
+- type: technology
+  id: PSModsuitSpecial
+  name: ps-research-technology-modsuit-special
+  entityIcon: ModsuitPlatingSyndicate
+  discipline: NFEngineering
+  tier: 3
+  cost: 10000
+  recipeUnlocks:
+  - ModsuitPlatingLoaderRecipe
+  - ModsuitPlatingAsteroidRecipe
+  - ModsuitPlatingCorpsmanRecipe
+  - ModsuitPlatingSyndicateRecipe
+  - ModsuitPlatingHonkerativeRecipe
+  - ModsuitPlatingEliteRecipe
+  - ModsuitPlatingInfiltratorRecipe
+  - ModsuitPlatingInterdyneRecipe
+  - ModsuitPlatingEnchantedRecipe
+  - ModsuitPlatingNinjaRecipe
+  - ModsuitPlatingPrototypeRecipe
+  - ModsuitPlatingGlitchRecipe
+  - ModsuitPlatingResponsoryRecipe
+  - ModsuitPlatingInquisitoryRecipe
+  - ModsuitPlatingApocryphalRecipe
+  - ModsuitPlatingCorporateRecipe
+  - ModsuitPlatingChronoRecipe
+  - ModsuitPlatingDebugRecipe
+  technologyPrerequisites:
+  - PSModsuitCrewThemes
+  position: 5, 4

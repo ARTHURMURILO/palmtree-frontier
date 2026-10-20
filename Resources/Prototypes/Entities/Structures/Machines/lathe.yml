@@ -572,6 +572,8 @@
     - NFTopicalsStatic # Frontier
     - NFMedicalArchetypeStatic # Frontier
     - CSIPCTopicalsStatic # Palmtree: synthetic repair topicals
+    dynamicPacks:
+    - PSProteanOrgans
     # dynamicPacks: # Frontier
     # - Chemistry # Frontier
   - type: Machine

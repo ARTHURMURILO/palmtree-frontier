@@ -18,3 +18,63 @@
     Radiation: 0.5
     Caustic: 0.7
     Shock: 0.8
+
+- type: damageModifierSet
+  id: ModsuitArmorSyndicate
+  coefficients:
+    Blunt: 0.5
+    Slash: 0.5
+    Piercing: 0.5
+    Heat: 0.5
+    Radiation: 1.0
+    Caustic: 0.1
+    Shock: 0.5
+    Structural: 0.5
+
+- type: damageModifierSet
+  id: ModsuitArmorElite
+  coefficients:
+    Blunt: 0.4
+    Slash: 0.4
+    Piercing: 0.4
+    Heat: 0.3
+    Radiation: 0.5
+    Caustic: 0.1
+    Shock: 0.4
+    Structural: 0.3
+
+- type: damageModifierSet
+  id: ModsuitArmorSpecial
+  coefficients:
+    Blunt: 0.6
+    Slash: 0.6
+    Piercing: 0.6
+    Heat: 0.5
+    Radiation: 0.5
+    Caustic: 0.2
+    Shock: 0.7
+    Structural: 0.6
+
+- type: damageModifierSet
+  id: ModsuitArmorExperimental
+  coefficients:
+    Blunt: 0.8
+    Slash: 0.8
+    Piercing: 0.8
+    Heat: 0.7
+    Radiation: 0.5
+    Caustic: 0.7
+    Shock: 1.0
+    Structural: 0.7
+
+- type: damageModifierSet
+  id: ModsuitArmorDebug
+  coefficients:
+    Blunt: 0.0
+    Slash: 0.0
+    Piercing: 0.0
+    Heat: 0.0
+    Radiation: 0.0
+    Caustic: 0.0
+    Shock: 0.0
+    Structural: 0.0

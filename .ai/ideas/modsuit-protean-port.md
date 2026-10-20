@@ -1,6 +1,6 @@
 # MODsuits + Proteans port plan
 
-**Status:** In progress (2026-10-19: Batch 1/2 MODsuit core, crew themes, construction, research and worn art done; Batch 4 Protean core with custom organs, refactory drain, fold/unfold and suit lock validated. Remaining: module library, item/module icons, anthro validation, Protean UI/assimilation/repair/servo.
+**Status:** Feature checkpoint ready for in-game testing and polish (2026-10-20). MODsuit runtime, crew/special themes and recipes, construction/research, worn art and the Protean core are implemented. Remaining optional work: the wider module/art library and servo engineering mode. Digitigrade suit deployment is covered by the existing displacement maps; unique Protean/anthro sprite variants are not present in the available source checkout. Critical organs (brain/heart/stomach) still require refactory repair instead of field healing. Proteans use the Synth physiology marker (no respiration/metabolism), pressure immunity, environmental temperature/fire handling, Synth reboot repair and source-specific toxin/radiation immunity; Synth damage resistance and forced prying remain intentionally excluded.
 **Scope:** Port TG MODsuits and SPLURT-TG Proteans into Palmtree/Frontier, with anthro/digitigrade support.
 **Touched areas:** `Content.Shared/_PS/Modsuits`, `Content.Server/_PS/Modsuits`,
 `Content.Client/_PS/Modsuits`, `Content.Shared/_PS/Protean`, `Content.Server/_PS/Protean`,
@@ -330,7 +330,7 @@ controller is still parented to the suit, the body would be parented to the suit
 | Metal storage/refactory | Port; metal replaces hunger; passive drain and healing |
 | Low power | Port; slows movement, reduces metal drain, blocks suit activation, only outside suit |
 | Heal | Port; 30s, costs 6 metal, heals body/limbs/organs |
-| Suit assimilation | Port; absorb another MODsuit, copy theme/modules, store original |
+| Suit assimilation | Ported theme-level: absorb another MODsuit, store the original, apply its theme/skin. Module transfer is deferred. |
 | Suit ejection | Port; restore stored suit/theme/modules |
 | Plating assimilation | Port; copy theme, consume plating |
 | Lock suit | Port; owner-controlled lock on non-owner wearer |
@@ -514,15 +514,20 @@ runtime on complete art:
 | **3. Crew modules + species art** | Supported modules, anthro/digi art, tail/digi validation | Module install/use/UI works; crew suits render correctly on humanoid, anthro and digitigrade species |
 | **4. Protean core** | Species/body/organs, integrated suit, polymorph controller, fold/unfold, metal, power, Protean UI, spawn integration | Round-start Protean folds/unfolds; body inventory preserved; suit wearable by another; no ghost |
 | **5. Protean advanced** | Assimilation/ejection, lock, low power, heal, critical fold/repair, memory reset, servo module, suit deletion | All source non-ERP mechanics pass edge tests |
-| **6. Special MODsuits** | Antag/special themes and supported modules, uplink/admin distribution; omissions documented | No missing prototypes or unsupported module stubs |
+| **6. Special MODsuits** | Antag/special themes and supported modules, uplink/admin distribution; omissions documented | Special themes/plating/recipes load; unsupported modules documented |
 | **7. Hardening** | Remaining art, balance, guidebook, locale, docs, full validation | Build/lint/tests/typecheck clean; manual gameplay pass |
 
 Batch 3 may be split into 3a modules and 3b art. Protean must not start until Batch 1 runtime and
 Batch 2 base suit construction are stable.
 
-Current checkpoint (2026-10-19): Batch 1 is usable; Batch 2 crew themes/plating/research and worn TG
-art are in; Batch 4 core species/body/suit/fold-unfold/refactory/lock passes tests. Remaining work is
-the module library, item/module icons, anthro validation, and Protean advanced features/UI.
+Current checkpoint (2026-10-20): **feature checkpoint.** Batch 1 runtime is usable; Batch 2 crew
+themes/plating/research and worn TG art are in; Batch 3 retains the supported storage/flashlight/
+magboots/servo modules and digitigrade validation; Batch 4 Protean core/advanced (species, body/organs,
+fold/unfold, UI, lock, assimilation/ejection with module transfer, plating assimilation, low power,
+heal, memory reset, critical repair, core/metal bound suit power, missing-organ penalties and suit
+cleanup) passes tests. Batch 6 adds 18 special themes/plating recipes and their research/pack wiring.
+The remaining work is optional breadth: the wider module/art library, unique Protean/anthro art
+variants, servo engineering mode and unsupported modules/mechanics.
 
 ## 9. Explicit omissions and adaptations
 
@@ -660,6 +665,8 @@ Implemented anchors:
 - `Content.Shared/_PS/Protean/`
 - `Content.Server/_PS/Protean/ProteanSystem.cs`
 - `Content.Server/_PS/Protean/ProteanRefactorySystem.cs`
+- `Content.Server/_PS/Protean/ProteanUiSystem.cs`
+- `Content.Client/_PS/Protean/`
 - `Resources/Prototypes/_PS/Protean/`
 - `Resources/Prototypes/_PS/Species/protean.yml`
 - `Content.IntegrationTests/Tests/_PS/ProteanTest.cs`
@@ -700,14 +707,27 @@ Known gaps in the current slice:
 - [x] Refactory metal store and passive drain
 - [x] Suit lock action and non-owner removal/toggle block
 - [x] Integrated suit cannot be removed by its owner through normal inventory actions
-- [ ] Low power, healing
-- [ ] Protean UI
-- [ ] Suit assimilation/ejection
-- [ ] Critical withdrawal/refactory repair and memory reset
-- [ ] Servo module
+- [x] Low power and direct damage healing
+- [x] Non-critical organ and limb regeneration
+- [x] Refactory organ techfab recipes
+- [x] Protean UI (metal, fold/unfold, suit lock, ejection, low power, self-repair, servo)
+- [x] Suit assimilation/ejection (theme + non-storage module transfer)
+- [x] Refactory organ recipes and MedicalTechFab research unlock
+- [x] Critical withdrawal/refactory repair and five-minute repair timer
+- [x] Memory reset via pen do-after (sleep/log; no true memory storage)
+- [x] Basic servo movement mode + UI
+- [ ] Servo engineering mode (no target action-speed system)
 - [x] Deployed parts use `AttachedClothingComponent` for removal protection
-- [ ] Suit destruction cleanup and species-loss cleanup
-- [ ] Unique Protean sprites/anthro/digitigrade presentation
+- [x] Suit destruction cleanup
+- [x] Species-loss cleanup
+- [x] Synth physiology core (no breathing/metabolism, pressure immunity, temperature/fire handling, reboot repair)
+- [x] Source Protean toxin/radiation immunity and no-DNA handling
+- [ ] Source traits with no target system (virus, wounds, madness, dismemberment)
+- [x] Missing refactory/orchestrator penalties
+- [x] Integrated ProteanCore / plating assimilation
+- [x] Sealed MODsuit helmet hides hair and head layers
+- [x] Digitigrade MODsuit deployment via existing leg displacement maps
+- [ ] Unique Protean/anthro sprite variants (source art unavailable)
 
 Current Prototype anchors:
 
@@ -718,10 +738,18 @@ Current Prototype anchors:
 - `Content.Shared/_PS/Protean/ProteanEvents.cs`
 - `Content.Server/_PS/Protean/ProteanSystem.cs`
 - `Content.Server/_PS/Protean/ProteanRefactorySystem.cs`
+- `Content.Server/_PS/Protean/ProteanUiSystem.cs`
+- `Content.Client/_PS/Protean/`
 - `Resources/Prototypes/_PS/Protean/controller.yml`
 - `Resources/Prototypes/_PS/Protean/suit.yml`
 - `Resources/Prototypes/_PS/Protean/actions.yml`
 - `Resources/Prototypes/_PS/Protean/body.yml`
 - `Resources/Prototypes/_PS/Protean/organs.yml`
+- `Resources/Prototypes/_PS/Protean/ui.yml`
+- `Resources/Prototypes/_PS/Protean/status_effects.yml`
+- `Resources/Prototypes/_PS/Protean/servo_status_effect.yml`
+- `Content.Shared/_PS/Protean/Components/ProteanServoModuleComponent.cs`
+- `Content.Client/_PS/Protean/ProteanBoundUserInterface.cs`
+- `Content.Client/_PS/Protean/ProteanWindow.xaml` / `.xaml.cs`
 - `Resources/Prototypes/_PS/Species/protean.yml`
 - `Resources/Locale/en-US/_PS/protean.ftl`

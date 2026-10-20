@@ -3,7 +3,6 @@ using Content.Shared.Armor;
 using Content.Shared.Clothing;
 using Content.Shared.Clothing.Components;
 using Content.Shared.Item.ItemToggle.Components;
-using Content.Shared.Clothing.Components;
 using Robust.Shared.Prototypes;
 
 namespace Content.Shared._PS.Modsuits;

@@ -19,4 +19,10 @@ public sealed partial class ProteanControllerComponent : Component
 
     [DataField]
     public EntityUid? LockActionEntity;
+
+    [DataField]
+    public EntityUid? InterfaceActionEntity;
+
+    [DataField]
+    public EntityUid? HealActionEntity;
 }

@@ -1,0 +1,557 @@
+- type: modsuitTheme
+  id: ModsuitThemeLoader
+  name: loader
+  description: A loader MODsuit theme.
+  defaultSkin: loader
+  complexityMax: 15
+  chargeDrain: 0.05
+  armor: ModsuitArmorExperimental
+  inbuiltModules:
+  - ModsuitModuleStorage
+  skins:
+    loader:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: loader-helmet
+          sealedState: loader-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: loader-chestplate
+          sealedState: loader-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: loader-gauntlets
+          sealedState: loader-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: loader-boots
+          sealedState: loader-boots-sealed
+
+
+- type: modsuitTheme
+  id: ModsuitThemeAsteroid
+  name: asteroid
+  description: An asteroid MODsuit theme.
+  defaultSkin: asteroid
+  complexityMax: 15
+  chargeDrain: 0.05
+  armor: ModsuitArmorStandard
+  inbuiltModules:
+  - ModsuitModuleStorage
+  skins:
+    asteroid:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: asteroid-helmet
+          sealedState: asteroid-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: asteroid-chestplate
+          sealedState: asteroid-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: asteroid-gauntlets
+          sealedState: asteroid-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: asteroid-boots
+          sealedState: asteroid-boots-sealed
+
+
+- type: modsuitTheme
+  id: ModsuitThemeCorpsman
+  name: corpsman
+  description: A corpsman MODsuit theme.
+  defaultSkin: corpsman
+  complexityMax: 15
+  chargeDrain: 0.05
+  armor: ModsuitArmorStandard
+  inbuiltModules:
+  - ModsuitModuleStorage
+  skins:
+    corpsman:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: corpsman-helmet
+          sealedState: corpsman-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: corpsman-chestplate
+          sealedState: corpsman-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: corpsman-gauntlets
+          sealedState: corpsman-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: corpsman-boots
+          sealedState: corpsman-boots-sealed
+
+
+- type: modsuitTheme
+  id: ModsuitThemeSyndicate
+  name: syndicate
+  description: A syndicate MODsuit theme.
+  defaultSkin: syndicate
+  complexityMax: 20
+  chargeDrain: 0.05
+  armor: ModsuitArmorSyndicate
+  inbuiltModules:
+  - ModsuitModuleStorage
+  skins:
+    syndicate:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: syndicate-helmet
+          sealedState: syndicate-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: syndicate-chestplate
+          sealedState: syndicate-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: syndicate-gauntlets
+          sealedState: syndicate-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: syndicate-boots
+          sealedState: syndicate-boots-sealed
+
+
+- type: modsuitTheme
+  id: ModsuitThemeHonkerative
+  name: honkerative
+  description: A honkerative MODsuit theme.
+  defaultSkin: honkerative
+  complexityMax: 20
+  chargeDrain: 0.05
+  armor: ModsuitArmorSyndicate
+  inbuiltModules:
+  - ModsuitModuleStorage
+  skins:
+    honkerative:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: honkerative-helmet
+          sealedState: honkerative-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: honkerative-chestplate
+          sealedState: honkerative-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: honkerative-gauntlets
+          sealedState: honkerative-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: honkerative-boots
+          sealedState: honkerative-boots-sealed
+
+
+- type: modsuitTheme
+  id: ModsuitThemeElite
+  name: elite
+  description: An elite MODsuit theme.
+  defaultSkin: elite
+  complexityMax: 19
+  chargeDrain: 0.05
+  armor: ModsuitArmorElite
+  inbuiltModules:
+  - ModsuitModuleStorage
+  skins:
+    elite:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: elite-helmet
+          sealedState: elite-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: elite-chestplate
+          sealedState: elite-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: elite-gauntlets
+          sealedState: elite-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: elite-boots
+          sealedState: elite-boots-sealed
+
+
+- type: modsuitTheme
+  id: ModsuitThemeInfiltrator
+  name: infiltrator
+  description: An infiltrator MODsuit theme.
+  defaultSkin: infiltrator
+  complexityMax: 18
+  chargeDrain: 0.05
+  armor: ModsuitArmorSpecial
+  inbuiltModules:
+  - ModsuitModuleStorage
+  skins:
+    infiltrator:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: infiltrator-helmet
+          sealedState: infiltrator-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: infiltrator-chestplate
+          sealedState: infiltrator-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: infiltrator-gauntlets
+          sealedState: infiltrator-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: infiltrator-boots
+          sealedState: infiltrator-boots-sealed
+
+
+- type: modsuitTheme
+  id: ModsuitThemeInterdyne
+  name: interdyne
+  description: An interdyne MODsuit theme.
+  defaultSkin: interdyne
+  complexityMax: 18
+  chargeDrain: 0.1
+  armor: ModsuitArmorSpecial
+  inbuiltModules:
+  - ModsuitModuleStorage
+  skins:
+    interdyne:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: interdyne-helmet
+          sealedState: interdyne-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: interdyne-chestplate
+          sealedState: interdyne-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: interdyne-gauntlets
+          sealedState: interdyne-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: interdyne-boots
+          sealedState: interdyne-boots-sealed
+
+
+- type: modsuitTheme
+  id: ModsuitThemeEnchanted
+  name: enchanted
+  description: An enchanted MODsuit theme.
+  defaultSkin: enchanted
+  complexityMax: 18
+  chargeDrain: 0.05
+  armor: ModsuitArmorSpecial
+  inbuiltModules:
+  - ModsuitModuleStorage
+  skins:
+    enchanted:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: enchanted-helmet
+          sealedState: enchanted-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: enchanted-chestplate
+          sealedState: enchanted-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: enchanted-gauntlets
+          sealedState: enchanted-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: enchanted-boots
+          sealedState: enchanted-boots-sealed
+
+
+- type: modsuitTheme
+  id: ModsuitThemeNinja
+  name: ninja
+  description: A ninja MODsuit theme.
+  defaultSkin: ninja
+  complexityMax: 18
+  chargeDrain: 0.025
+  armor: ModsuitArmorSpecial
+  inbuiltModules:
+  - ModsuitModuleStorage
+  skins:
+    ninja:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: ninja-helmet
+          sealedState: ninja-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: ninja-chestplate
+          sealedState: ninja-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: ninja-gauntlets
+          sealedState: ninja-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: ninja-boots
+          sealedState: ninja-boots-sealed
+
+
+- type: modsuitTheme
+  id: ModsuitThemePrototype
+  name: prototype
+  description: A prototype MODsuit theme.
+  defaultSkin: prototype
+  complexityMax: 20
+  chargeDrain: 0.1
+  armor: ModsuitArmorExperimental
+  inbuiltModules:
+  - ModsuitModuleStorage
+  skins:
+    prototype:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: prototype-helmet
+          sealedState: prototype-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: prototype-chestplate
+          sealedState: prototype-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: prototype-gauntlets
+          sealedState: prototype-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: prototype-boots
+          sealedState: prototype-boots-sealed
+
+
+- type: modsuitTheme
+  id: ModsuitThemeGlitch
+  name: glitch
+  description: A glitch MODsuit theme.
+  defaultSkin: glitch
+  complexityMax: 18
+  chargeDrain: 0.05
+  armor: ModsuitArmorSpecial
+  inbuiltModules:
+  - ModsuitModuleStorage
+  skins:
+    glitch:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: glitch-helmet
+          sealedState: glitch-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: glitch-chestplate
+          sealedState: glitch-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: glitch-gauntlets
+          sealedState: glitch-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: glitch-boots
+          sealedState: glitch-boots-sealed
+
+
+- type: modsuitTheme
+  id: ModsuitThemeResponsory
+  name: responsory
+  description: A responsory MODsuit theme.
+  defaultSkin: responsory
+  complexityMax: 18
+  chargeDrain: 0.05
+  armor: ModsuitArmorSpecial
+  inbuiltModules:
+  - ModsuitModuleStorage
+  skins:
+    responsory:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: responsory-helmet
+          sealedState: responsory-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: responsory-chestplate
+          sealedState: responsory-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: responsory-gauntlets
+          sealedState: responsory-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: responsory-boots
+          sealedState: responsory-boots-sealed
+
+
+- type: modsuitTheme
+  id: ModsuitThemeInquisitory
+  name: inquisitory
+  description: An inquisitory MODsuit theme.
+  defaultSkin: inquisitory
+  complexityMax: 18
+  chargeDrain: 0.05
+  armor: ModsuitArmorSpecial
+  inbuiltModules:
+  - ModsuitModuleStorage
+  skins:
+    inquisitory:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: inquisitory-helmet
+          sealedState: inquisitory-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: inquisitory-chestplate
+          sealedState: inquisitory-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: inquisitory-gauntlets
+          sealedState: inquisitory-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: inquisitory-boots
+          sealedState: inquisitory-boots-sealed
+
+
+- type: modsuitTheme
+  id: ModsuitThemeApocryphal
+  name: apocryphal
+  description: An apocryphal MODsuit theme.
+  defaultSkin: apocryphal
+  complexityMax: 25
+  chargeDrain: 0.05
+  armor: ModsuitArmorElite
+  inbuiltModules:
+  - ModsuitModuleStorage
+  skins:
+    apocryphal:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: apocryphal-helmet
+          sealedState: apocryphal-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: apocryphal-chestplate
+          sealedState: apocryphal-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: apocryphal-gauntlets
+          sealedState: apocryphal-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: apocryphal-boots
+          sealedState: apocryphal-boots-sealed
+
+
+- type: modsuitTheme
+  id: ModsuitThemeCorporate
+  name: corporate
+  description: A corporate MODsuit theme.
+  defaultSkin: corporate
+  complexityMax: 20
+  chargeDrain: 0.05
+  armor: ModsuitArmorElite
+  inbuiltModules:
+  - ModsuitModuleStorage
+  skins:
+    corporate:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: corporate-helmet
+          sealedState: corporate-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: corporate-chestplate
+          sealedState: corporate-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: corporate-gauntlets
+          sealedState: corporate-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: corporate-boots
+          sealedState: corporate-boots-sealed
+
+
+- type: modsuitTheme
+  id: ModsuitThemeChrono
+  name: chrono
+  description: A chrono MODsuit theme.
+  defaultSkin: chrono
+  complexityMax: 10
+  chargeDrain: 0.05
+  armor: ModsuitArmorSpecial
+  inbuiltModules:
+  - ModsuitModuleStorage
+  skins:
+    chrono:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: chrono-helmet
+          sealedState: chrono-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: chrono-chestplate
+          sealedState: chrono-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: chrono-gauntlets
+          sealedState: chrono-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: chrono-boots
+          sealedState: chrono-boots-sealed
+
+
+- type: modsuitTheme
+  id: ModsuitThemeDebug
+  name: debug
+  description: A debug MODsuit theme.
+  defaultSkin: debug
+  complexityMax: 50
+  chargeDrain: 0.0
+  armor: ModsuitArmorDebug
+  inbuiltModules:
+  - ModsuitModuleStorage
+  skins:
+    debug:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: debug-helmet
+          sealedState: debug-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: debug-chestplate
+          sealedState: debug-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: debug-gauntlets
+          sealedState: debug-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: debug-boots
+          sealedState: debug-boots-sealed
+

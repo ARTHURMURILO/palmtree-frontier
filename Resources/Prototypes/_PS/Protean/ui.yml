@@ -1,0 +1,13 @@
+- type: entity
+  parent: BaseAction
+  id: ActionProteanInterface
+  name: Protean Interface
+  description: Open the Protean control panel.
+  components:
+  - type: Action
+    icon:
+      sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+      state: icon
+    useDelay: 1
+  - type: InstantAction
+    event: !type:ProteanInterfaceEvent

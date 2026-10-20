@@ -1,0 +1,197 @@
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingLoaderRecipe
+  result: ModsuitPlatingLoader
+  completetime: 4
+  materials:
+    Steel: 1500
+    Glass: 750
+    Gold: 350
+    Plasma: 500
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingAsteroidRecipe
+  result: ModsuitPlatingAsteroid
+  completetime: 4
+  materials:
+    Steel: 1500
+    Glass: 750
+    Gold: 350
+    Plasma: 500
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingCorpsmanRecipe
+  result: ModsuitPlatingCorpsman
+  completetime: 4
+  materials:
+    Steel: 1500
+    Glass: 750
+    Gold: 350
+    Plasma: 500
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingSyndicateRecipe
+  result: ModsuitPlatingSyndicate
+  completetime: 4
+  materials:
+    Steel: 1500
+    Glass: 750
+    Gold: 350
+    Plasma: 500
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingHonkerativeRecipe
+  result: ModsuitPlatingHonkerative
+  completetime: 4
+  materials:
+    Steel: 1500
+    Glass: 750
+    Gold: 350
+    Plasma: 500
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingEliteRecipe
+  result: ModsuitPlatingElite
+  completetime: 4
+  materials:
+    Steel: 1500
+    Glass: 750
+    Gold: 350
+    Plasma: 500
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingInfiltratorRecipe
+  result: ModsuitPlatingInfiltrator
+  completetime: 4
+  materials:
+    Steel: 1500
+    Glass: 750
+    Gold: 350
+    Plasma: 500
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingInterdyneRecipe
+  result: ModsuitPlatingInterdyne
+  completetime: 4
+  materials:
+    Steel: 1500
+    Glass: 750
+    Gold: 350
+    Plasma: 500
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingEnchantedRecipe
+  result: ModsuitPlatingEnchanted
+  completetime: 4
+  materials:
+    Steel: 1500
+    Glass: 750
+    Gold: 350
+    Plasma: 500
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingNinjaRecipe
+  result: ModsuitPlatingNinja
+  completetime: 4
+  materials:
+    Steel: 1500
+    Glass: 750
+    Gold: 350
+    Plasma: 500
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingPrototypeRecipe
+  result: ModsuitPlatingPrototype
+  completetime: 4
+  materials:
+    Steel: 1500
+    Glass: 750
+    Gold: 350
+    Plasma: 500
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingGlitchRecipe
+  result: ModsuitPlatingGlitch
+  completetime: 4
+  materials:
+    Steel: 1500
+    Glass: 750
+    Gold: 350
+    Plasma: 500
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingResponsoryRecipe
+  result: ModsuitPlatingResponsory
+  completetime: 4
+  materials:
+    Steel: 1500
+    Glass: 750
+    Gold: 350
+    Plasma: 500
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingInquisitoryRecipe
+  result: ModsuitPlatingInquisitory
+  completetime: 4
+  materials:
+    Steel: 1500
+    Glass: 750
+    Gold: 350
+    Plasma: 500
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingApocryphalRecipe
+  result: ModsuitPlatingApocryphal
+  completetime: 4
+  materials:
+    Steel: 1500
+    Glass: 750
+    Gold: 350
+    Plasma: 500
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingCorporateRecipe
+  result: ModsuitPlatingCorporate
+  completetime: 4
+  materials:
+    Steel: 1500
+    Glass: 750
+    Gold: 350
+    Plasma: 500
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingChronoRecipe
+  result: ModsuitPlatingChrono
+  completetime: 4
+  materials:
+    Steel: 1500
+    Glass: 750
+    Gold: 350
+    Plasma: 500
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingDebugRecipe
+  result: ModsuitPlatingDebug
+  completetime: 4
+  materials:
+    Steel: 1500
+    Glass: 750
+    Gold: 350
+    Plasma: 500

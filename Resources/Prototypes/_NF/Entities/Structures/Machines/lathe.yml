@@ -202,6 +202,7 @@
     dynamicPacks:
     - PSModsuitConstruction
     - PSModsuitModules
+    - PSModsuitSpecial
 
   - type: BlueprintReceiver
     whitelist:

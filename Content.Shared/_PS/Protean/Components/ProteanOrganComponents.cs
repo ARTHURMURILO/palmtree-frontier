@@ -16,6 +16,9 @@ public sealed partial class ProteanBrainComponent : Component
 {
     [DataField]
     public bool Dead;
+
+    [DataField]
+    public TimeSpan RepairDuration = TimeSpan.FromMinutes(5);
 }
 
 /// <summary>

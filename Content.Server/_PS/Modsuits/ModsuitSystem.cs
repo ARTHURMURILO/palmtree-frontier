@@ -5,6 +5,7 @@ using Content.Shared._PS.Modsuits;
 using Content.Shared.Actions;
 using Content.Shared.Armor;
 using Content.Shared.Clothing.Components;
+using Content.Shared.Humanoid;
 using Content.Shared.Inventory;
 using Content.Shared.Inventory.Events;
 using Content.Shared.Popups;
@@ -27,6 +28,7 @@ public sealed class ModsuitSystem : SharedModsuitSystem
     [Dependency] private readonly SharedPopupSystem _popup = default!;
     [Dependency] private readonly UserInterfaceSystem _ui = default!;
     [Dependency] private readonly TransformSystem _transform = default!;
+    [Dependency] private readonly SharedHumanoidAppearanceSystem _humanoid = default!;
 
     public override void Initialize()
     {
@@ -191,6 +193,15 @@ public sealed class ModsuitSystem : SharedModsuitSystem
 
     private void OnTerminating(Entity<ModsuitControlComponent> ent, ref EntityTerminatingEvent args)
     {
+        if (ent.Comp.Sealed && ent.Comp.Wearer is { } wearer && !TerminatingOrDeleted(wearer))
+        {
+            foreach (var part in ent.Comp.Parts.Values)
+            {
+                if (TryComp<ModsuitPartComponent>(part, out var partComp))
+                    ApplySealedLayerVisibility(wearer, partComp, false);
+            }
+        }
+
         foreach (var part in ent.Comp.Parts.Values)
         {
             if (!TerminatingOrDeleted(part))
@@ -313,6 +324,14 @@ public sealed class ModsuitSystem : SharedModsuitSystem
         Dirty(ent.Owner, ent.Comp);
     }
 
+    /// <summary>
+    /// Forced retraction for systems that must stow a deployed suit immediately (e.g. Protean critical fold).
+    /// </summary>
+    public void ForceRetract(Entity<ModsuitControlComponent> ent)
+    {
+        Retract(ent, ent.Comp.Wearer);
+    }
+
     private void Retract(Entity<ModsuitControlComponent> ent, EntityUid? wearer)
     {
         if (!ent.Comp.Active)
@@ -401,6 +420,9 @@ public sealed class ModsuitSystem : SharedModsuitSystem
             }
 
             ApplyPartVisuals(part, slot, theme, ent.Comp.Skin, isSealed);
+
+            if (partComp != null && ent.Comp.Wearer is { } wearer)
+                ApplySealedLayerVisibility(wearer, partComp, isSealed);
         }
 
         Dirty(ent.Owner, ent.Comp);
@@ -411,6 +433,31 @@ public sealed class ModsuitSystem : SharedModsuitSystem
         }
 
         UpdateUi(ent);
+    }
+
+    private void ApplySealedLayerVisibility(
+        EntityUid wearer,
+        ModsuitPartComponent part,
+        bool hidden)
+    {
+        if (part.HiddenWhenSealed.Count == 0
+            || !TryComp<HumanoidAppearanceComponent>(wearer, out var humanoid))
+            return;
+
+        var source = part.Slot switch
+        {
+            ModsuitPartSlot.Helmet => SlotFlags.HEAD,
+            ModsuitPartSlot.Chestplate => SlotFlags.OUTERCLOTHING,
+            ModsuitPartSlot.Gauntlets => SlotFlags.GLOVES,
+            ModsuitPartSlot.Boots => SlotFlags.FEET,
+            _ => SlotFlags.NONE,
+        };
+
+        if (source == SlotFlags.NONE)
+            return;
+
+        foreach (var layer in part.HiddenWhenSealed)
+            _humanoid.SetLayerVisibility((wearer, humanoid), layer, !hidden, source);
     }
 
     public void UpdateUi(Entity<ModsuitControlComponent> ent)

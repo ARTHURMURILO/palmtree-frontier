@@ -1,6 +1,9 @@
 using Content.Shared._PS.Modsuits;
 using Content.Shared.Actions;
+using Content.Shared.Clothing;
+using Content.Shared.Clothing.Components;
 using Content.Shared.Interaction;
+using Content.Shared.Item.ItemToggle.Components;
 using Content.Shared.Light.Components;
 using Content.Shared.Popups;
 using Content.Shared.Storage;
@@ -99,6 +102,52 @@ public sealed class ModsuitModuleSystem : SharedModsuitSystem
 
         _modsuits.UpdateUi(ent);
         return true;
+    }
+
+    public bool TryUninstallModule(Entity<ModsuitControlComponent> ent, EntityUid module, bool silent = false)
+    {
+        if (!ent.Comp.Modules.Remove(module))
+            return false;
+
+        _container.Remove(module, ent.Comp.ModuleContainer, force: true);
+
+        if (TryComp<ModsuitFlashlightModuleComponent>(module, out _) && !HasModule<ModsuitFlashlightModuleComponent>(ent))
+        {
+            if (TryComp<UnpoweredFlashlightComponent>(ent.Owner, out var light))
+                _actions.RemoveAction(ent.Owner, light.ToggleActionEntity);
+            RemComp<UnpoweredFlashlightComponent>(ent.Owner);
+            RemComp<PointLightComponent>(ent.Owner);
+        }
+
+        if (TryComp<ModsuitMagbootsModuleComponent>(module, out _) && !HasModule<ModsuitMagbootsModuleComponent>(ent))
+        {
+            foreach (var (slot, part) in ent.Comp.Parts)
+            {
+                if (slot != ModsuitPartSlot.Boots)
+                    continue;
+
+                if (TryComp<ToggleClothingComponent>(part, out var toggle))
+                    _actions.RemoveAction(part, toggle.ActionEntity);
+                RemComp<ToggleClothingComponent>(part);
+                RemComp<ItemToggleComponent>(part);
+                RemComp<MagbootsComponent>(part);
+                break;
+            }
+        }
+
+        _modsuits.UpdateUi(ent);
+        return true;
+    }
+
+    private bool HasModule<T>(Entity<ModsuitControlComponent> ent) where T : IComponent
+    {
+        foreach (var module in ent.Comp.Modules)
+        {
+            if (HasComp<T>(module))
+                return true;
+        }
+
+        return false;
     }
 
     private void ApplyModuleEffect(Entity<ModsuitControlComponent> ent, EntityUid module)

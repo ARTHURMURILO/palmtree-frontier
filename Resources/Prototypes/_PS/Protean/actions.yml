@@ -39,3 +39,31 @@
     useDelay: 1
   - type: InstantAction
     event: !type:ProteanLockEvent
+
+- type: entity
+  parent: BaseAction
+  id: ActionProteanLowPower
+  name: Toggle Low Power
+  description: Reduce movement speed and metal drain.
+  components:
+  - type: Action
+    icon:
+      sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+      state: icon
+    useDelay: 1
+  - type: InstantAction
+    event: !type:ProteanLowPowerEvent
+
+- type: entity
+  parent: BaseAction
+  id: ActionProteanHeal
+  name: Self-Repair
+  description: Spend refactory metal to repair your body.
+  components:
+  - type: Action
+    icon:
+      sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+      state: icon
+    useDelay: 5
+  - type: InstantAction
+    event: !type:ProteanHealEvent

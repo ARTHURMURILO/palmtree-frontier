@@ -1,6 +1,29 @@
 - type: entity
+  id: ModsuitCoreProtean
+  name: Protean MODsuit core
+  parent: ModsuitCoreStandard
+  components:
+  - type: ModsuitCore
+    charge: 10
+    maxCharge: 10
+    drainMultiplier: 0
+  - type: ProteanCore
+
+- type: entity
   id: ModsuitControlProtean
   name: Protean MODsuit
   parent: ModsuitControlStandard
   components:
+  - type: ModsuitControl
+    theme: ModsuitThemeStandard
+    skin: standard
+    corePrototype: ModsuitCoreProtean
   - type: ProteanSuit
+  - type: ContainerContainer
+    containers:
+      modsuit_parts: !type:Container
+      modsuit_modules: !type:Container
+      modsuit_overslot: !type:Container
+      modsuit_core: !type:ContainerSlot
+      storagebase: !type:Container
+      protean_stored_suit: !type:ContainerSlot

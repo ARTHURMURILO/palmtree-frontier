@@ -44,3 +44,18 @@
     moduleType: Toggle
     complexity: 2
   - type: ModsuitMagbootsModule
+
+- type: entity
+  id: ModsuitModuleProteanServo
+  name: Protean MOD servo module
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Small
+  - type: ModsuitModule
+    moduleType: Passive
+    complexity: 3
+  - type: ProteanServoModule
