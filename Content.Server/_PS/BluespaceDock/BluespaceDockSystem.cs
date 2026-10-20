@@ -53,6 +53,8 @@ using Content.Shared.Preferences;
 using Content.Shared.Projectiles;
 using Content.Shared.UserInterface;
 using Content.Shared.Warps;
+using Content.Shared.Timing;
+using Content.Shared.Weapons.Melee;
 using Content.Shared.Weapons.Ranged.Components;
 using Robust.Server.GameObjects;
 using Robust.Server.Player;
@@ -643,6 +645,10 @@ public sealed class BluespaceDockSystem : EntitySystem
         // goes into the dock with the ship.
         DeleteProjectiles(shuttleUid);
 
+        // Cooldowns are absolute round times, and they must not outlive the round they were started
+        // in (see ResetRuntimeCooldowns).
+        ResetRuntimeCooldowns(shuttleUid);
+
         var removed = StripStationReferences(shuttleUid);
         stripped?.AddRange(removed);
 
@@ -1109,6 +1115,11 @@ public sealed class BluespaceDockSystem : EntitySystem
             // back frozen at its position. Files written before this cleanup can still carry them,
             // so drop any that came from the file.
             DeleteProjectiles(shuttleUid.Value);
+
+            // Files written before the cooldown cleanup (or by an older build) still carry absolute
+            // round times from the round they were saved in, so clear them here as well: a retrieved
+            // ship must never come back with its buttons, switches or tools "on cooldown".
+            ResetRuntimeCooldowns(shuttleUid.Value);
 
             // A stored ship is saved from a live grid, so every entity in the file carries
             // `mapInit: true` and the engine deliberately **skips MapInitEvent** when loading them
@@ -1665,6 +1676,52 @@ public sealed class BluespaceDockSystem : EntitySystem
         // loaded gun, so saved guns cannot fire and emitter bolts spawn with no velocity.
         if (TryComp<GunComponent>(uid, out var gun))
             _gunSystem.RefreshModifiers((uid, gun));
+    }
+
+    /// <summary>
+    /// Clears per-entity action cooldowns before a ship is serialized. They are absolute
+    /// <see cref="TimeSpan"/>s on the round clock (<c>UseDelaySystem.IsDelayed</c> compares
+    /// <c>UseDelayInfo.EndTime</c> to <see cref="IGameTiming.CurTime"/>, for instance), and the clock
+    /// restarts at zero every round. A ship stored 40 minutes into a round therefore came back with
+    /// its buttons and switches "on cooldown" until the *next* round reached the old time - normal
+    /// clicks did nothing while right-click verbs (which bypass the delay) still worked.
+    /// </summary>
+    /// <remarks>
+    /// Only pure cooldowns are cleared, never anything that carries state: a store is not allowed to
+    /// keep a cooldown, and a failed store only loses a couple of seconds of delay. Called both when
+    /// saving (so no ship file ever carries a cooldown) and after loading (so files written before
+    /// this cleanup are repaired too).
+    /// </remarks>
+    public void ResetRuntimeCooldowns(EntityUid grid)
+    {
+        var entities = new HashSet<EntityUid>();
+        GetEntitiesOnGrid(grid, entities);
+
+        foreach (var uid in entities)
+        {
+            if (!Exists(uid))
+                continue;
+
+            if (TryComp<UseDelayComponent>(uid, out var useDelay))
+            {
+                foreach (var delay in useDelay.Delays.Values)
+                {
+                    delay.StartTime = TimeSpan.Zero;
+                    delay.EndTime = TimeSpan.Zero;
+                }
+
+                Dirty(uid, useDelay);
+            }
+
+            if (TryComp<GunComponent>(uid, out var gun))
+                _gunSystem.ResetCooldown((uid, gun));
+
+            if (TryComp<MeleeWeaponComponent>(uid, out var melee) && melee.NextAttack != TimeSpan.Zero)
+            {
+                melee.NextAttack = TimeSpan.Zero;
+                Dirty(uid, melee);
+            }
+        }
     }
 
     /// <summary>

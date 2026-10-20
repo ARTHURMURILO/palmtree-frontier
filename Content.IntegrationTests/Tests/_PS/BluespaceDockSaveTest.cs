@@ -3,12 +3,18 @@ using System.Linq;
 using System.Numerics;
 using Content.Server._PS.BluespaceDock;
 using Content.Server.Botany.Components;
+using Content.Server.DeviceLinking.Systems;
 using Content.Server.Shuttles.Systems;
 using Content.Shared._PS.BluespaceDock;
 using Content.Shared.Climbing.Components;
 using Content.Shared.DoAfter;
+using Content.Shared.Interaction;
+using Content.Shared.Light.Components;
 using Content.Shared.Shuttles.Components;
 using Content.Shared.Storage;
+using Content.Shared.Timing;
+using Content.Shared.Weapons.Ranged.Components;
+using Content.Shared.DeviceLinking;
 using NUnit.Framework;
 using Robust.Server.Containers;
 using Robust.Shared.ContentPack;
@@ -205,6 +211,153 @@ public sealed class BluespaceDockSaveTest
                 "Only the removed item should be gone from the toolbox.");
 
             dock.DeleteShipFile(file);
+        });
+
+        await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));
+        await server.WaitRunTicks(2);
+        await server.WaitAssertion(() => server.System<SharedMapSystem>().DeleteMap(loadedMap));
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    /// Action cooldowns are absolute round times (<see cref="UseDelayInfo.EndTime"/> is compared to
+    /// <c>IGameTiming.CurTime</c>), and the clock restarts every round. A ship stored late in a round
+    /// used to come back with every use-delayed entity - buttons, switches, toolbelts, guns - still
+    /// "on cooldown" until the new round reached the old time: clicks and E did nothing while
+    /// right-click verbs (which bypass the delay) still worked.
+    /// </summary>
+    [Test]
+    public async Task SavedShipForgetsActionCooldowns()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+
+        EntityUid loadedGrid = default;
+        MapId loadedMap = default;
+        var stale = TimeSpan.FromHours(1);
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var interaction = server.System<SharedInteractionSystem>();
+            var useDelaySystem = server.System<UseDelaySystem>();
+            var deviceLink = server.System<DeviceLinkSystem>();
+            var mapSystem = server.System<SharedMapSystem>();
+            var grid = testMap.Grid.Owner;
+
+            // A signal button wired to a light, a toolbelt (E opens its storage) and a gun, so the
+            // three use-delay paths a player hits are covered.
+            var button = entMan.SpawnEntity("SignalButton", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            var light = entMan.SpawnEntity("PoweredSmallLight", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            deviceLink.SaveLinks(null, button, light, new List<(string, string)> { ("Pressed", "Toggle") });
+
+            var belt = entMan.SpawnEntity("ClothingBeltUtilityFilled", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            var gun = entMan.SpawnEntity("PSWeaponRifleAk", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+
+            var player = entMan.SpawnEntity("MobHuman", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+
+            // Pretend the ship was stored late in a round: every cooldown is far in the future of a
+            // freshly restarted round.
+            foreach (var uid in new[] { button, belt, gun })
+            {
+                var useDelay = entMan.EnsureComponent<UseDelayComponent>(uid);
+                useDelaySystem.SetLength((uid, useDelay), TimeSpan.FromSeconds(1));
+                foreach (var delay in useDelay.Delays.Values)
+                {
+                    delay.StartTime = stale - TimeSpan.FromSeconds(1);
+                    delay.EndTime = stale;
+                }
+            }
+
+            // NextFire is access-restricted to the gun systems; reflection is only used to fake the
+            // stale cooldown a real save would carry.
+            typeof(GunComponent)
+                .GetField(nameof(GunComponent.NextFire))!
+                .SetValue(entMan.GetComponent<GunComponent>(gun), stale);
+
+            Assert.That(useDelaySystem.IsDelayed(button), Is.True, "sanity: the button starts on cooldown");
+            Assert.That(interaction.InteractionActivate(player, button), Is.False,
+                "sanity: a click on a cooldown-gated button must be dropped (this is the reported bug)");
+            Assert.That(interaction.UseInHandInteraction(player, belt), Is.True,
+                "sanity: E on a cooldown-gated item is consumed without doing anything");
+
+            var path = BluespaceDockSystem.GetShipFilePath("cooldown-save-test");
+            Assert.That(dock.TrySaveShipFile(grid, path, out var error), Is.True, error);
+            Assert.That(dock.TryLoadShipFile(path, out var loaded), Is.True, "Loading the saved ship failed.");
+            loadedGrid = loaded!.Value;
+            loadedMap = entMan.GetComponent<TransformComponent>(loadedGrid).MapID;
+            dock.DeleteShipFile(path);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var interaction = server.System<SharedInteractionSystem>();
+            var useDelaySystem = server.System<UseDelaySystem>();
+
+            EntityUid button = default;
+            EntityUid belt = default;
+            EntityUid gun = default;
+            EntityUid player = default;
+
+            var entities = new HashSet<EntityUid>();
+            dock.GetEntitiesOnGrid(loadedGrid, entities);
+            foreach (var uid in entities)
+            {
+                switch (entMan.GetComponent<MetaDataComponent>(uid).EntityPrototype?.ID)
+                {
+                    case "SignalButton":
+                        button = uid;
+                        break;
+                    case "ClothingBeltUtilityFilled":
+                        belt = uid;
+                        break;
+                    case "PSWeaponRifleAk":
+                        gun = uid;
+                        break;
+                }
+            }
+
+            var foundProtos = string.Join(",", entities.Select(u => entMan.GetComponent<MetaDataComponent>(u).EntityPrototype?.ID));
+            Assert.That(button.IsValid() && belt.IsValid() && gun.IsValid(), Is.True,
+                $"The retrieved ship is missing one of the test entities. Found: {foundProtos}");
+
+            // Mobs are not part of a ship file; the interacting player is a fresh one on the grid.
+            player = entMan.SpawnEntity("MobHuman", new EntityCoordinates(loadedGrid, new Vector2(0.5f, 0.5f)));
+
+            Assert.That(useDelaySystem.IsDelayed(button), Is.False,
+                "The retrieved button is still on a cooldown from the previous round.");
+            Assert.That(useDelaySystem.IsDelayed(belt), Is.False,
+                "The retrieved toolbelt is still on a cooldown from the previous round.");
+            Assert.That(entMan.GetComponent<GunComponent>(gun).NextFire, Is.EqualTo(TimeSpan.Zero),
+                "The retrieved gun kept its shot cooldown from the previous round.");
+
+            // The click now goes through and the button's signal reaches the light.
+            Assert.That(interaction.InteractionActivate(player, button), Is.True,
+                "A retrieved button still refuses clicks.");
+        });
+
+        await pair.RunTicksSync(5);
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var entities = new HashSet<EntityUid>();
+            dock.GetEntitiesOnGrid(loadedGrid, entities);
+
+            EntityUid? light = null;
+            foreach (var uid in entities)
+            {
+                if (entMan.GetComponent<MetaDataComponent>(uid).EntityPrototype?.ID == "PoweredSmallLight")
+                    light = uid;
+            }
+
+            Assert.That(light, Is.Not.Null, "The retrieved ship lost its light.");
+            Assert.That(entMan.GetComponent<PoweredLightComponent>(light!.Value).On, Is.False,
+                "The retrieved button's click did not reach the linked light.");
         });
 
         await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));

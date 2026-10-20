@@ -582,6 +582,13 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
   and adds `BluespaceDockConsoleComponent.NewAccessLevels` (Captain by default) to their ID. Without
   the record the ship came back with no crew at all - no captain, nothing on the manifest. The Ship
   Registrar does the same at registration.
+- **Action cooldowns are cleared on save (`ResetRuntimeCooldowns`, 2026-10-19)**: use delays, gun
+  `NextFire` and melee `NextAttack` are absolute round times, and the round clock restarts every
+  round. Without the reset a ship stored late in a round came back with its buttons, switches and
+  toolbelts still "on cooldown" for as long as the store happened into the round: left click and E
+  silently do nothing while right-click verbs (which bypass `UseDelay`) still work. The save clears
+  them; see `.ai/HAZARDS.md` section 27 for the full trap and the regression test
+  (`BluespaceDockSaveTest.SavedShipForgetsActionCooldowns`).
 - **Retrieved ships get the shipyard's station (`GetShipStationConfig`, 2026-10-18)**: the station a
   ship lives on carries its capabilities, not the grid. Retrieval used to rebuild *every* ship with a
   plain `StandardFrontierVessel` station, which silently cost expedition ships their

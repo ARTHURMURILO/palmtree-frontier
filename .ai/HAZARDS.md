@@ -557,3 +557,20 @@ so these fail only in CI:
 - **`InstantConstruction` skips the do-after delay, not the do-after**: it forces delay 0 and the
   `EffectRCDConstruct0` fx, but validity/charge checks still run every tick (and it zeroes the
   delay on deconstruct operations too).
+
+## 27. Absolute round-time cooldowns do not survive a round (2026-10-19)
+
+- `UseDelayInfo.EndTime`, `GunComponent.NextFire` and `MeleeWeaponComponent.NextAttack` are
+  `TimeSpan`s on the **round clock** (`IGameTiming.CurTime`), which restarts at zero every round. A
+  live ship save kept those absolute values, so after a round restart every affected entity was "on
+  cooldown" until the new round clock reached the old time: a ship stored 30 minutes into a round had
+  unusable buttons, switches and toolbelts for the first 30 minutes of the next round (same-round
+  store/retrieve looked fine, which is what made this look random).
+- The symptom misleads: `InteractionActivate` (left click) and `UseInHandInteraction` (E) silently
+  bail when `UseDelaySystem.IsDelayed`, while **right-click verbs bypass the check** - so a button
+  could be toggled from its verb menu while normal clicks and E did nothing.
+- `BluespaceDockSystem.TrySaveShipFile` calls `ResetRuntimeCooldowns` (all `UseDelay` delays to zero,
+  `SharedGunSystem.ResetCooldown` for guns, melee `NextAttack`). **Any new component that stores an
+  absolute `TimeSpan`/`GameTick` and gates an action needs a reset there too.** Relative counters are
+  fine (`DoorComponent.SecondsUntilStateChange` stores a relative number of seconds).
+- Regression test: `BluespaceDockSaveTest.SavedShipForgetsActionCooldowns` (fails without the reset).
