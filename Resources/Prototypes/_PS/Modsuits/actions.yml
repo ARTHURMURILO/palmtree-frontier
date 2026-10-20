@@ -1,0 +1,27 @@
+- type: entity
+  parent: BaseAction
+  id: ActionModsuitToggle
+  name: Toggle MODsuit
+  description: Deploy or retract the MODsuit.
+  components:
+  - type: Action
+    icon:
+      sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+      state: icon
+    useDelay: 1
+  - type: InstantAction
+    event: !type:ModsuitToggleEvent
+
+- type: entity
+  parent: BaseAction
+  id: ActionModsuitSeal
+  name: Seal MODsuit
+  description: Seal or unseal the MODsuit.
+  components:
+  - type: Action
+    icon:
+      sprite: Clothing/Head/Hardsuits/engineering.rsi
+      state: icon
+    useDelay: 1
+  - type: InstantAction
+    event: !type:ModsuitSealEvent

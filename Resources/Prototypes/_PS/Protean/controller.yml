@@ -1,0 +1,32 @@
+- type: entity
+  id: MobProteanSuitController
+  name: Protean suit controller
+  parent: BaseMob
+  save: false
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    drawdepth: Mobs
+    noRot: true
+    layers: []
+  - type: Fixtures
+    fixtures: {}
+  - type: MovementSpeedModifier
+    baseWalkSpeed: 0
+    baseSprintSpeed: 0
+  - type: UserInterface
+    interfaces: {}
+
+- type: polymorph
+  id: ProteanSuitForm
+  configuration:
+    entity: MobProteanSuitController
+    inventory: None
+    transferName: true
+    transferDamage: false
+    revertOnDeath: false
+    revertOnCrit: false
+    revertOnDelete: true
+    forced: true
+    polymorphPopup: protean-folded
+    exitPolymorphPopup: protean-unfolded

@@ -784,3 +784,32 @@ this repo's newer client code.
   other shipyard file here uses (Coyote's local tweak used `[ 2, 2 ]`).
 - Validation: `ShipyardTest` loads every vessel map and checks price vs appraised value
   (`MinPriceMarkup` 1.05) — both tests cover the Salto.
+
+## 27. MODsuits + Proteans (in progress, 2026-10-19)
+
+This is a new port, not part of the Coyote merge. The fail-safe plan, batch order, omissions and
+hazards live in [`ideas/modsuit-protean-port.md`](ideas/modsuit-protean-port.md).
+
+- **MODsuits source:** TG master `000a99fb`. **Protean source:** SPLURT-TG `59f9043a` (TG has no
+  Protean). SPLURT/Sandstorm art is used only for anthro/digitigrade variants and the Protean organ
+  art.
+- **Implementation namespace:** `_PS/Modsuits` and `_PS/Protean`. The port rewrites the DM behavior
+  into ECS components/systems and XAML BUIs; it does not copy DM classes or TGUI.
+- **Status (2026-10-19):** core control/part/core/module components, deploy/retract, seal/unseal,
+  passive power drain, storage/flashlight/magboots modules, a XAML control panel, TG-style shell
+  assembly, techfab/research recipes, the crew theme/plating set, and the TG worn MODsuit RSI are
+  implemented. Item icons, remaining modules and anthro validation are next. The Protean core
+  species/suit/fold-unfold prototype is also in place, with a custom body and synthetic Protean organs;
+  refactory drain, automatic suit equip and suit lock are in; UI/assimilation/repair/servo are still
+  pending. Deployed-part removal, runtime armor/client visual pitfalls, and the integrated suit
+  spawn path are fixed/regression-tested. See the plan.
+- **Deliberate omissions:** ERP MODsuit content (Lustwish/hypnotic visor/Zubbers companion), MODlink
+  and AI control, timeline/pathfinder/loader modules, surgery-dependent modules, soul/ethereal/plasma
+  cores, and the full TG art set until the `_PS` RSI conversion is done.
+- **Protean plan:** use the existing SlimeForm-style polymorph parked-map path, but polymorph into an
+  invisible `MobProteanSuitController` attached to the normal MODsuit item rather than putting the
+  player body inside the suit. See the plan's sections 4 and 5 before starting Batch 4.
+- **Core patches added by Batch 1:** narrow `Access` entries on `ArmorComponent`,
+  `ClothingComponent.EquippedState`, `PressureProtectionComponent`, `TemperatureProtectionComponent`
+  and `ToggleClothingComponent`; all marked `// Palmtree: MODsuits`. The module-init ordering hazard
+  is documented in `.ai/HAZARDS.md` section 27.

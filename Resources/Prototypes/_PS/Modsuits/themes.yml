@@ -1,0 +1,365 @@
+- type: modsuitTheme
+  id: ModsuitThemeStandard
+  name: standard
+  description: A general-purpose MODsuit theme.
+  defaultSkin: standard
+  complexityMax: 15
+  chargeDrain: 0.05
+  armor: ModsuitArmorStandard
+  inbuiltModules:
+  - ModsuitModuleStorage
+  skins:
+    standard:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: standard-helmet
+          sealedState: standard-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: standard-chestplate
+          sealedState: standard-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: standard-gauntlets
+          sealedState: standard-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: standard-boots
+          sealedState: standard-boots-sealed
+
+- type: modsuitTheme
+  id: ModsuitThemeEngineering
+  name: engineering
+  description: An engineering MODsuit theme with heat and radiation protection.
+  defaultSkin: engineering
+  complexityMax: 15
+  chargeDrain: 0.05
+  armor: ModsuitArmorEngineering
+  skins:
+    engineering:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: engineering-helmet
+          sealedState: engineering-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: engineering-chestplate
+          sealedState: engineering-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: engineering-gauntlets
+          sealedState: engineering-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: engineering-boots
+          sealedState: engineering-boots-sealed
+
+- type: modsuitTheme
+  id: ModsuitThemeCivilian
+  name: civilian
+  description: A lightweight civilian MODsuit theme.
+  defaultSkin: civilian
+  complexityMax: 15
+  chargeDrain: 0.05
+  armor: ModsuitArmorStandard
+  skins:
+    civilian:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: civilian-helmet
+          sealedState: civilian-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: civilian-chestplate
+          sealedState: civilian-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: civilian-gauntlets
+          sealedState: civilian-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: civilian-boots
+          sealedState: civilian-boots-sealed
+
+- type: modsuitTheme
+  id: ModsuitThemeAtmospheric
+  name: atmospheric
+  description: An atmospheric MODsuit theme with thermal protection.
+  defaultSkin: atmospheric
+  complexityMax: 15
+  chargeDrain: 0.05
+  armor: ModsuitArmorStandard
+  skins:
+    atmospheric:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: atmospheric-helmet
+          sealedState: atmospheric-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: atmospheric-chestplate
+          sealedState: atmospheric-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: atmospheric-gauntlets
+          sealedState: atmospheric-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: atmospheric-boots
+          sealedState: atmospheric-boots-sealed
+
+- type: modsuitTheme
+  id: ModsuitThemeAdvanced
+  name: advanced
+  description: An advanced general-purpose MODsuit theme.
+  defaultSkin: advanced
+  complexityMax: 15
+  chargeDrain: 0.05
+  armor: ModsuitArmorStandard
+  skins:
+    advanced:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: advanced-helmet
+          sealedState: advanced-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: advanced-chestplate
+          sealedState: advanced-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: advanced-gauntlets
+          sealedState: advanced-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: advanced-boots
+          sealedState: advanced-boots-sealed
+
+- type: modsuitTheme
+  id: ModsuitThemeMining
+  name: mining
+  description: A rugged mining MODsuit theme.
+  defaultSkin: mining
+  complexityMax: 15
+  chargeDrain: 0.05
+  armor: ModsuitArmorStandard
+  skins:
+    mining:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: mining-helmet
+          sealedState: mining-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: mining-chestplate
+          sealedState: mining-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: mining-gauntlets
+          sealedState: mining-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: mining-boots
+          sealedState: mining-boots-sealed
+
+- type: modsuitTheme
+  id: ModsuitThemeMedical
+  name: medical
+  description: A medical MODsuit theme.
+  defaultSkin: medical
+  complexityMax: 15
+  chargeDrain: 0.05
+  armor: ModsuitArmorStandard
+  skins:
+    medical:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: medical-helmet
+          sealedState: medical-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: medical-chestplate
+          sealedState: medical-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: medical-gauntlets
+          sealedState: medical-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: medical-boots
+          sealedState: medical-boots-sealed
+
+- type: modsuitTheme
+  id: ModsuitThemeRescue
+  name: rescue
+  description: A rescue MODsuit theme.
+  defaultSkin: rescue
+  complexityMax: 15
+  chargeDrain: 0.05
+  armor: ModsuitArmorStandard
+  skins:
+    rescue:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: rescue-helmet
+          sealedState: rescue-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: rescue-chestplate
+          sealedState: rescue-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: rescue-gauntlets
+          sealedState: rescue-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: rescue-boots
+          sealedState: rescue-boots-sealed
+
+- type: modsuitTheme
+  id: ModsuitThemeResearch
+  name: research
+  description: A research MODsuit theme.
+  defaultSkin: research
+  complexityMax: 15
+  chargeDrain: 0.05
+  armor: ModsuitArmorStandard
+  skins:
+    research:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: research-helmet
+          sealedState: research-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: research-chestplate
+          sealedState: research-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: research-gauntlets
+          sealedState: research-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: research-boots
+          sealedState: research-boots-sealed
+
+- type: modsuitTheme
+  id: ModsuitThemeSecurity
+  name: security
+  description: A security MODsuit theme.
+  defaultSkin: security
+  complexityMax: 15
+  chargeDrain: 0.05
+  armor: ModsuitArmorStandard
+  skins:
+    security:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: security-helmet
+          sealedState: security-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: security-chestplate
+          sealedState: security-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: security-gauntlets
+          sealedState: security-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: security-boots
+          sealedState: security-boots-sealed
+
+- type: modsuitTheme
+  id: ModsuitThemeSafeguard
+  name: safeguard
+  description: A safeguard MODsuit theme.
+  defaultSkin: safeguard
+  complexityMax: 15
+  chargeDrain: 0.05
+  armor: ModsuitArmorStandard
+  skins:
+    safeguard:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: safeguard-helmet
+          sealedState: safeguard-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: safeguard-chestplate
+          sealedState: safeguard-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: safeguard-gauntlets
+          sealedState: safeguard-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: safeguard-boots
+          sealedState: safeguard-boots-sealed
+
+- type: modsuitTheme
+  id: ModsuitThemeMagnate
+  name: magnate
+  description: A magnate MODsuit theme.
+  defaultSkin: magnate
+  complexityMax: 15
+  chargeDrain: 0.05
+  armor: ModsuitArmorStandard
+  skins:
+    magnate:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: magnate-helmet
+          sealedState: magnate-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: magnate-chestplate
+          sealedState: magnate-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: magnate-gauntlets
+          sealedState: magnate-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: magnate-boots
+          sealedState: magnate-boots-sealed
+
+- type: modsuitTheme
+  id: ModsuitThemeCosmohonk
+  name: cosmohonk
+  description: A cosmohonk MODsuit theme.
+  defaultSkin: cosmohonk
+  complexityMax: 15
+  chargeDrain: 0.05
+  armor: ModsuitArmorStandard
+  skins:
+    cosmohonk:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: cosmohonk-helmet
+          sealedState: cosmohonk-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: cosmohonk-chestplate
+          sealedState: cosmohonk-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: cosmohonk-gauntlets
+          sealedState: cosmohonk-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: cosmohonk-boots
+          sealedState: cosmohonk-boots-sealed

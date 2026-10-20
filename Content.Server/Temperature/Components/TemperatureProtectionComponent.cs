@@ -3,7 +3,7 @@
 namespace Content.Server.Temperature.Components;
 
 [RegisterComponent]
-[Access(typeof(TemperatureSystem))]
+[Access(typeof(TemperatureSystem), typeof(Content.Server._PS.Modsuits.ModsuitSystem))] // Palmtree: MODsuits
 public sealed partial class TemperatureProtectionComponent : Component
 {
     /// <summary>

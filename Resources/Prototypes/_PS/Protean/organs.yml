@@ -1,0 +1,54 @@
+- type: entity
+  id: OrganProteanBrain
+  parent: OrganHumanBrain
+  name: Protean core
+  description: A positronic brain suspended in a nanite swarm.
+  components:
+  - type: ProteanOrgan
+  - type: ProteanBrain
+
+- type: entity
+  id: OrganProteanHeart
+  parent: OrganHumanHeart
+  name: orchestrator module
+  description: A parallel-processing module that coordinates the Protean's nanites.
+  components:
+  - type: ProteanOrgan
+  - type: ProteanOrchestrator
+
+- type: entity
+  id: OrganProteanStomach
+  parent: OrganHumanStomach
+  name: refactory
+  description: A fragile nanite factory that stores and recycles metal.
+  components:
+  - type: ProteanOrgan
+  - type: ProteanRefactory
+
+- type: entity
+  id: OrganProteanLiver
+  parent: OrganHumanLiver
+  name: reagent catalyst
+  components:
+  - type: ProteanOrgan
+
+- type: entity
+  id: OrganProteanEyes
+  parent: OrganHumanEyes
+  name: imaging nanites
+  components:
+  - type: ProteanOrgan
+
+- type: entity
+  id: OrganProteanEars
+  parent: OrganHumanEars
+  name: sensory nanites
+  components:
+  - type: ProteanOrgan
+
+- type: entity
+  id: OrganProteanTongue
+  parent: OrganHumanTongue
+  name: audio fabricator
+  components:
+  - type: ProteanOrgan

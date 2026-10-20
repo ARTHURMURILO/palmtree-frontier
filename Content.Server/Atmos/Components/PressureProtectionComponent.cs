@@ -3,7 +3,7 @@
 namespace Content.Server.Atmos.Components;
 
 [RegisterComponent]
-[Access(typeof(BarotraumaSystem))]
+[Access(typeof(BarotraumaSystem), typeof(Content.Server._PS.Modsuits.ModsuitSystem))] // Palmtree: MODsuits
 public sealed partial class PressureProtectionComponent : Component
 {
     [DataField]

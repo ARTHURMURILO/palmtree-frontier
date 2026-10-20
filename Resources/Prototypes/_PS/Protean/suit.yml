@@ -1,0 +1,6 @@
+- type: entity
+  id: ModsuitControlProtean
+  name: Protean MODsuit
+  parent: ModsuitControlStandard
+  components:
+  - type: ProteanSuit

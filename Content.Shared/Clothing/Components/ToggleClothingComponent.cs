@@ -15,7 +15,7 @@ namespace Content.Shared.Clothing.Components;
 /// Not to be confused with <see cref="ToggleableClothingComponent"/> for hardsuit helmets and such.
 /// </remarks>
 [RegisterComponent, NetworkedComponent, AutoGenerateComponentState]
-[Access(typeof(ToggleClothingSystem))]
+[Access(typeof(ToggleClothingSystem), typeof(Content.Shared._PS.Modsuits.SharedModsuitSystem))] // Palmtree: MODsuits
 public sealed partial class ToggleClothingComponent : Component
 {
     /// <summary>

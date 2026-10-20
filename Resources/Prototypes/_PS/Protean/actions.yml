@@ -1,0 +1,41 @@
+- type: entity
+  parent: BaseAction
+  id: ActionProteanFold
+  name: Fold into MODsuit
+  description: Retract your body into your integrated MODsuit.
+  components:
+  - type: Action
+    icon:
+      sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+      state: icon
+    useDelay: 2
+  - type: InstantAction
+    event: !type:ProteanFoldEvent
+
+- type: entity
+  parent: BaseAction
+  id: ActionProteanUnfold
+  name: Unfold from MODsuit
+  description: Reform your body from the suit.
+  components:
+  - type: Action
+    icon:
+      sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+      state: icon
+    useDelay: 2
+  - type: InstantAction
+    event: !type:ProteanUnfoldEvent
+
+- type: entity
+  parent: BaseAction
+  id: ActionProteanLock
+  name: Toggle Suit Lock
+  description: Lock or unlock the integrated suit.
+  components:
+  - type: Action
+    icon:
+      sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+      state: icon
+    useDelay: 1
+  - type: InstantAction
+    event: !type:ProteanLockEvent

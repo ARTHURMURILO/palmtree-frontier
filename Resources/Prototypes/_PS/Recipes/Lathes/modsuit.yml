@@ -1,0 +1,215 @@
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitConstructionShellRecipe
+  result: ModsuitConstructionShell
+  completetime: 5
+  materials:
+    Steel: 2000
+    Glass: 500
+    Plasma: 250
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitCoreStandardRecipe
+  result: ModsuitCoreStandard
+  completetime: 4
+  materials:
+    Steel: 750
+    Glass: 750
+    Gold: 100
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitHelmetRecipe
+  result: ModsuitHelmet
+  completetime: 3
+  materials:
+    Steel: 500
+    Glass: 250
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitChestplateRecipe
+  result: ModsuitChestplate
+  completetime: 4
+  materials:
+    Steel: 1000
+    Glass: 250
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitGauntletsRecipe
+  result: ModsuitGauntlets
+  completetime: 3
+  materials:
+    Steel: 500
+    Plastic: 250
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitBootsRecipe
+  result: ModsuitBoots
+  completetime: 3
+  materials:
+    Steel: 500
+    Plastic: 250
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingStandardRecipe
+  result: ModsuitPlatingStandard
+  completetime: 4
+  materials:
+    Steel: 1000
+    Glass: 500
+    Plasma: 250
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingEngineeringRecipe
+  result: ModsuitPlatingEngineering
+  completetime: 4
+  materials:
+    Steel: 1000
+    Glass: 500
+    Gold: 200
+    Plasma: 250
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitModuleStorageRecipe
+  result: ModsuitModuleStorage
+  completetime: 3
+  materials:
+    Steel: 500
+    Plastic: 500
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitModuleFlashlightRecipe
+  result: ModsuitModuleFlashlight
+  completetime: 2
+  materials:
+    Steel: 250
+    Glass: 250
+    Plastic: 100
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitModuleMagbootsRecipe
+  result: ModsuitModuleMagboots
+  completetime: 3
+  materials:
+    Steel: 750
+    Plastic: 250
+    Gold: 100
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingCivilianRecipe
+  result: ModsuitPlatingCivilian
+  completetime: 4
+  materials:
+    Steel: 1000
+    Glass: 500
+    Plasma: 250
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingAtmosphericRecipe
+  result: ModsuitPlatingAtmospheric
+  completetime: 4
+  materials:
+    Steel: 1000
+    Glass: 500
+    Plasma: 250
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingAdvancedRecipe
+  result: ModsuitPlatingAdvanced
+  completetime: 4
+  materials:
+    Steel: 1000
+    Glass: 500
+    Plasma: 250
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingMiningRecipe
+  result: ModsuitPlatingMining
+  completetime: 4
+  materials:
+    Steel: 1000
+    Glass: 500
+    Plasma: 250
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingMedicalRecipe
+  result: ModsuitPlatingMedical
+  completetime: 4
+  materials:
+    Steel: 1000
+    Glass: 500
+    Plasma: 250
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingRescueRecipe
+  result: ModsuitPlatingRescue
+  completetime: 4
+  materials:
+    Steel: 1000
+    Glass: 500
+    Plasma: 250
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingResearchRecipe
+  result: ModsuitPlatingResearch
+  completetime: 4
+  materials:
+    Steel: 1000
+    Glass: 500
+    Plasma: 250
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingSecurityRecipe
+  result: ModsuitPlatingSecurity
+  completetime: 4
+  materials:
+    Steel: 1000
+    Glass: 500
+    Plasma: 250
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingSafeguardRecipe
+  result: ModsuitPlatingSafeguard
+  completetime: 4
+  materials:
+    Steel: 1000
+    Glass: 500
+    Plasma: 250
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingMagnateRecipe
+  result: ModsuitPlatingMagnate
+  completetime: 4
+  materials:
+    Steel: 1000
+    Glass: 500
+    Plasma: 250
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingCosmohonkRecipe
+  result: ModsuitPlatingCosmohonk
+  completetime: 4
+  materials:
+    Steel: 1000
+    Glass: 500
+    Plasma: 250

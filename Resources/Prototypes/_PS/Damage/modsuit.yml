@@ -1,0 +1,20 @@
+- type: damageModifierSet
+  id: ModsuitArmorStandard
+  coefficients:
+    Blunt: 0.95
+    Slash: 0.95
+    Piercing: 0.95
+    Heat: 0.9
+    Radiation: 0.8
+    Caustic: 0.9
+
+- type: damageModifierSet
+  id: ModsuitArmorEngineering
+  coefficients:
+    Blunt: 0.9
+    Slash: 0.9
+    Piercing: 0.9
+    Heat: 0.8
+    Radiation: 0.5
+    Caustic: 0.7
+    Shock: 0.8

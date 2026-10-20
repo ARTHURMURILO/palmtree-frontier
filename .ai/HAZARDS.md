@@ -557,3 +557,56 @@ so these fail only in CI:
 - **`InstantConstruction` skips the do-after delay, not the do-after**: it forces delay 0 and the
   `EffectRCDConstruct0` fx, but validity/charge checks still run every tick (and it zeroes the
   delay on deconstruct operations too).
+
+## 27. MODsuit port hazards (2026-10-19)
+
+- **One directed component/event handler per bus.** Robust's directed event bus stores one
+  registration per `(component, event)` pair. Two systems subscribing
+  `SubscribeLocalEvent<ModsuitControlComponent, MapInitEvent>` throws
+  `Duplicate Subscriptions for comp=..., event=MapInitEvent` at startup. `ModsuitSystem` owns the
+  control's `MapInitEvent`; `ModsuitModuleSystem` listens for the custom by-ref
+  `ModsuitModulesInitEvent` raised by `ModsuitSystem` after parts/core/theme setup. The same applies
+  to `ModsuitToggleEvent`: `ProteanSystem` listens on `ProteanSuitComponent` rather than adding a
+  second `ModsuitControlComponent` handler.
+- **By-ref events must be raised by ref.** `ModsuitModulesInitEvent` is `[ByRefEvent]`; use
+  `RaiseLocalEvent(uid, ref ev)`, not the by-value overload (RA0015).
+- **Modsuit systems write upstream component members.** The port added narrow `Access` entries to
+  `ArmorComponent`, `ClothingComponent` (`EquippedState`), `PressureProtectionComponent` and
+  `TemperatureProtectionComponent` (and `ToggleClothingComponent` for the magboots module) so
+  `SharedModsuitSystem`/`ModsuitSystem` can apply theme armor, visual states, seal protection and
+  module effects. Keep these patches marked `// Palmtree: MODsuits`; adding a new
+  writer requires extending the access list rather than reflection.
+- **New XAML files may not be picked up on an incremental build.** The existing XAML hazard applies
+  to `ModsuitWindow.xaml`. If the client throws "No precompiled XAML found", delete
+  `Content.Client/obj/Debug/XAML/doot` and rebuild. `strings bin/Content.Client/Content.Client.dll |
+  grep ModsuitWindow.xaml` confirms the compiled resource is embedded.
+- **DMI-to-RSI conversion needs one PNG per state and the correct atlas order.** SS14 expects
+  `standard-helmet.png` etc., not one sheet. DMI atlas indices are frame-major, then direction,
+  row-major by sheet columns (DMISharp/BYOND layout); RSI static states use a 2x2 direction grid.
+  The current `_PS/Modsuits/Clothing/mod_clothing.rsi` was generated that way. Module overlays are
+  still placeholders and need the same treatment for animated states.
+- **Storage modules add `StorageComponent` to the control at runtime.** The control prototype must
+  keep the `storagebase` container and `StorageUiKey` interface; removing them makes the module
+  silently unusable.
+- **Clothing/armor runtime mutation pitfalls.** `ClothingComponent.RsiPath` is *not* an
+  auto-networked field, so changing it at runtime only affects the server; put the correct relative RSI
+  path on the part prototype (`_PS/...`, no leading `/Textures`) and only drive `EquippedState` at
+  runtime. `ArmorComponent` has no auto component state; adding it at runtime leaves the client with
+  null `Modifiers` and examine verbs NRE in `SharedArmorSystem.GetArmorExamine`. Keep a static
+  `Armor` component on part prototypes and treat dynamic armor as server-only until networking is added.
+- **Reuse `AttachedClothingComponent` for deployed parts.** MODsuit parts carry both
+  `ModsuitPartComponent` (multi-part wiring) and the existing `AttachedClothingComponent` (hardsuit
+  attachment protection). Set `AttachedUid` to the control and dirty it; otherwise `CanAccess` tries
+  entity 0 and errors. Do not add another `BeingUnequippedAttemptEvent` handler for the same part.
+- **Force unequip bypasses `BeingUnequippedAttemptEvent`.** MODsuit retraction/fold must use
+  `force: true` internally; normal player removal uses the event to keep deployed parts and the
+  integrated Protean suit attached. Do not rely on the event to block force paths.
+- **Protean spawn must free the back slot.** Job loadouts commonly equip a backpack after the mob exists;
+  `InventorySystem.TryEquip(..., force: true)` does not evict an existing slot occupant. `EnsureSuit`
+  explicitly unequips the current back item before equipping the integrated suit, and the suit's
+  `BeingUnequippedAttemptEvent` blocks normal owner removal. Do not reintroduce a bare forced equip.
+- **Protean controller/revert ordering.** The controller is parented to the suit while folded. Before
+  `PolymorphSystem.Revert`, detach it to the grid (`SetCoordinates` + `AttachToGridOrMap`); otherwise
+  the restored body is parented to the suit item. The prototype test `ProteanTest.FoldAndUnfold`
+  locks this down. The current species reuses the human body/organs; replace them only with a
+  complete body prototype and re-run the test.

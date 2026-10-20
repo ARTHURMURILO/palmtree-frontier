@@ -1,0 +1,180 @@
+- type: entity
+  id: ModsuitConstructionShell
+  name: MOD shell
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Huge
+  - type: ModsuitConstructionShell
+
+- type: entity
+  id: ModsuitPlatingStandard
+  name: MOD standard external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeStandard
+
+- type: entity
+  id: ModsuitPlatingEngineering
+  name: MOD engineering external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeEngineering
+
+- type: entity
+  id: ModsuitPlatingCivilian
+  name: MOD civilian external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeCivilian
+
+- type: entity
+  id: ModsuitPlatingAtmospheric
+  name: MOD atmospheric external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeAtmospheric
+
+- type: entity
+  id: ModsuitPlatingAdvanced
+  name: MOD advanced external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeAdvanced
+
+- type: entity
+  id: ModsuitPlatingMining
+  name: MOD mining external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeMining
+
+- type: entity
+  id: ModsuitPlatingMedical
+  name: MOD medical external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeMedical
+
+- type: entity
+  id: ModsuitPlatingRescue
+  name: MOD rescue external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeRescue
+
+- type: entity
+  id: ModsuitPlatingResearch
+  name: MOD research external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeResearch
+
+- type: entity
+  id: ModsuitPlatingSecurity
+  name: MOD security external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeSecurity
+
+- type: entity
+  id: ModsuitPlatingSafeguard
+  name: MOD safeguard external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeSafeguard
+
+- type: entity
+  id: ModsuitPlatingMagnate
+  name: MOD magnate external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeMagnate
+
+- type: entity
+  id: ModsuitPlatingCosmohonk
+  name: MOD cosmohonk external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeCosmohonk

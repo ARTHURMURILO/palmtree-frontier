@@ -1,0 +1,13 @@
+- type: entity
+  parent: BaseAction
+  id: ActionModsuitUi
+  name: Open MODsuit Panel
+  description: Open the MODsuit control panel.
+  components:
+  - type: Action
+    icon:
+      sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+      state: icon
+    useDelay: 1
+  - type: InstantAction
+    event: !type:ModsuitUiEvent

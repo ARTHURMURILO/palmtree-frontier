@@ -1,0 +1,46 @@
+- type: entity
+  id: ModsuitModuleStorage
+  name: MOD storage module
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/Hands/Gloves/forensic.rsi
+    state: icon
+  - type: Item
+    size: Small
+  - type: ModsuitModule
+    moduleType: Passive
+    complexity: 3
+  - type: ModsuitStorageModule
+    grid:
+    - 0,0,3,1
+
+- type: entity
+  id: ModsuitModuleFlashlight
+  name: MOD flashlight module
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/Head/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Small
+  - type: ModsuitModule
+    moduleType: Toggle
+    complexity: 1
+  - type: ModsuitFlashlightModule
+
+- type: entity
+  id: ModsuitModuleMagboots
+  name: MOD magboots module
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/Shoes/Boots/magboots.rsi
+    state: icon
+  - type: Item
+    size: Small
+  - type: ModsuitModule
+    moduleType: Toggle
+    complexity: 2
+  - type: ModsuitMagbootsModule

@@ -1,0 +1,111 @@
+- type: entity
+  id: ModsuitHelmet
+  name: MOD helmet
+  parent: Clothing
+  save: false
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: Clothing/Head/Hardsuits/engineering.rsi
+    state: icon
+  - type: Clothing
+    slots: [ HEAD ]
+    sprite: _PS/Modsuits/Clothing/mod_clothing.rsi
+  - type: Armor
+    modifiers:
+      coefficients:
+        Blunt: 0.95
+        Slash: 0.95
+        Piercing: 0.95
+        Heat: 0.9
+        Radiation: 0.8
+        Caustic: 0.9
+  - type: Item
+    size: Normal
+  - type: ModsuitPart
+    slot: Helmet
+  - type: AttachedClothing
+
+- type: entity
+  id: ModsuitChestplate
+  name: MOD chestplate
+  parent: Clothing
+  save: false
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Clothing
+    slots: [ OUTERCLOTHING ]
+    sprite: _PS/Modsuits/Clothing/mod_clothing.rsi
+  - type: Armor
+    modifiers:
+      coefficients:
+        Blunt: 0.95
+        Slash: 0.95
+        Piercing: 0.95
+        Heat: 0.9
+        Radiation: 0.8
+        Caustic: 0.9
+  - type: Item
+    size: Ginormous
+  - type: ModsuitPart
+    slot: Chestplate
+  - type: AttachedClothing
+
+- type: entity
+  id: ModsuitGauntlets
+  name: MOD gauntlets
+  parent: Clothing
+  save: false
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: Clothing/Hands/Gloves/forensic.rsi
+    state: icon
+  - type: Clothing
+    slots: [ GLOVES ]
+    sprite: _PS/Modsuits/Clothing/mod_clothing.rsi
+  - type: Armor
+    modifiers:
+      coefficients:
+        Blunt: 0.95
+        Slash: 0.95
+        Piercing: 0.95
+        Heat: 0.9
+        Radiation: 0.8
+        Caustic: 0.9
+  - type: Item
+    size: Normal
+  - type: ModsuitPart
+    slot: Gauntlets
+  - type: AttachedClothing
+
+- type: entity
+  id: ModsuitBoots
+  name: MOD boots
+  parent: Clothing
+  save: false
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: Clothing/Shoes/color.rsi
+    state: icon
+  - type: Clothing
+    slots: [ FEET ]
+    sprite: _PS/Modsuits/Clothing/mod_clothing.rsi
+  - type: Armor
+    modifiers:
+      coefficients:
+        Blunt: 0.95
+        Slash: 0.95
+        Piercing: 0.95
+        Heat: 0.9
+        Radiation: 0.8
+        Caustic: 0.9
+  - type: Item
+    size: Normal
+  - type: ModsuitPart
+    slot: Boots
+  - type: AttachedClothing

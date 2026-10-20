@@ -1,0 +1,71 @@
+- type: entity
+  id: ModsuitCoreStandard
+  name: MOD standard core
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/Head/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Small
+  - type: ModsuitCore
+    charge: 100
+    maxCharge: 100
+
+- type: entity
+  id: ModsuitControlStandard
+  name: MODsuit control unit
+  parent: Clothing
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Clothing
+    slots: [ BACK ]
+  - type: Item
+    size: Ginormous
+  - type: ModsuitControl
+    theme: ModsuitThemeStandard
+    skin: standard
+  - type: ContainerContainer
+    containers:
+      modsuit_parts: !type:Container
+      modsuit_modules: !type:Container
+      modsuit_overslot: !type:Container
+      modsuit_core: !type:ContainerSlot
+      storagebase: !type:Container
+  - type: UserInterface
+    interfaces:
+      enum.ModsuitUiKey.Key:
+        type: ModsuitBoundUserInterface
+      enum.StorageUiKey.Key:
+        type: StorageBoundUserInterface
+
+- type: entity
+  id: ModsuitControlEngineering
+  name: MODsuit control unit
+  parent: Clothing
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Clothing
+    slots: [ BACK ]
+  - type: Item
+    size: Ginormous
+  - type: ModsuitControl
+    theme: ModsuitThemeEngineering
+    skin: engineering
+  - type: ContainerContainer
+    containers:
+      modsuit_parts: !type:Container
+      modsuit_modules: !type:Container
+      modsuit_overslot: !type:Container
+      modsuit_core: !type:ContainerSlot
+      storagebase: !type:Container
+  - type: UserInterface
+    interfaces:
+      enum.ModsuitUiKey.Key:
+        type: ModsuitBoundUserInterface
+      enum.StorageUiKey.Key:
+        type: StorageBoundUserInterface

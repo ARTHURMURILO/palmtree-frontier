@@ -1,0 +1,1407 @@
+{
+  "version": 1,
+  "license": "CC-BY-SA-3.0",
+  "copyright": "Taken from tgstation at commit https://github.com/tgstation/tgstation/commit/4f6190e2895e09116663ef282d3ce1d8b35c032e. Converted to RSI for Palmtree MODsuits.",
+  "size": {
+    "x": 32,
+    "y": 32
+  },
+  "states": [
+    {
+      "name": "standard-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "standard-control",
+      "directions": 4
+    },
+    {
+      "name": "standard-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "standard-helmet",
+      "directions": 4
+    },
+    {
+      "name": "standard-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "standard-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "standard-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "standard-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "standard-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "standard-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "standard-boots",
+      "directions": 4
+    },
+    {
+      "name": "civilian-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "civilian-control",
+      "directions": 4
+    },
+    {
+      "name": "civilian-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "civilian-helmet",
+      "directions": 4
+    },
+    {
+      "name": "civilian-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "civilian-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "civilian-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "civilian-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "civilian-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "civilian-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "civilian-boots",
+      "directions": 4
+    },
+    {
+      "name": "engineering-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "engineering-control",
+      "directions": 4
+    },
+    {
+      "name": "engineering-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "engineering-helmet",
+      "directions": 4
+    },
+    {
+      "name": "engineering-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "engineering-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "engineering-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "engineering-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "engineering-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "engineering-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "engineering-boots",
+      "directions": 4
+    },
+    {
+      "name": "atmospheric-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "atmospheric-control",
+      "directions": 4
+    },
+    {
+      "name": "atmospheric-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "atmospheric-helmet",
+      "directions": 4
+    },
+    {
+      "name": "atmospheric-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "atmospheric-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "atmospheric-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "atmospheric-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "atmospheric-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "atmospheric-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "atmospheric-boots",
+      "directions": 4
+    },
+    {
+      "name": "advanced-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "advanced-control",
+      "directions": 4
+    },
+    {
+      "name": "advanced-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "advanced-helmet",
+      "directions": 4
+    },
+    {
+      "name": "advanced-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "advanced-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "advanced-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "advanced-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "advanced-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "advanced-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "advanced-boots",
+      "directions": 4
+    },
+    {
+      "name": "mining-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "mining-control",
+      "directions": 4
+    },
+    {
+      "name": "mining-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "mining-helmet",
+      "directions": 4
+    },
+    {
+      "name": "mining-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "mining-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "mining-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "mining-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "mining-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "mining-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "mining-boots",
+      "directions": 4
+    },
+    {
+      "name": "asteroid-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "asteroid-control",
+      "directions": 4
+    },
+    {
+      "name": "asteroid-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "asteroid-helmet",
+      "directions": 4
+    },
+    {
+      "name": "asteroid-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "asteroid-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "asteroid-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "asteroid-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "asteroid-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "asteroid-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "asteroid-boots",
+      "directions": 4
+    },
+    {
+      "name": "loader-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "loader-control",
+      "directions": 4
+    },
+    {
+      "name": "loader-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "loader-helmet",
+      "directions": 4
+    },
+    {
+      "name": "loader-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "loader-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "loader-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "loader-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "loader-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "loader-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "loader-boots",
+      "directions": 4
+    },
+    {
+      "name": "medical-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "medical-control",
+      "directions": 4
+    },
+    {
+      "name": "medical-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "medical-helmet",
+      "directions": 4
+    },
+    {
+      "name": "medical-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "medical-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "medical-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "medical-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "medical-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "medical-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "medical-boots",
+      "directions": 4
+    },
+    {
+      "name": "corpsman-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "corpsman-control",
+      "directions": 4
+    },
+    {
+      "name": "corpsman-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "corpsman-helmet",
+      "directions": 4
+    },
+    {
+      "name": "corpsman-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "corpsman-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "corpsman-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "corpsman-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "corpsman-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "corpsman-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "corpsman-boots",
+      "directions": 4
+    },
+    {
+      "name": "rescue-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "rescue-control",
+      "directions": 4
+    },
+    {
+      "name": "rescue-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "rescue-helmet",
+      "directions": 4
+    },
+    {
+      "name": "rescue-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "rescue-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "rescue-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "rescue-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "rescue-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "rescue-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "rescue-boots",
+      "directions": 4
+    },
+    {
+      "name": "research-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "research-control",
+      "directions": 4
+    },
+    {
+      "name": "research-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "research-helmet",
+      "directions": 4
+    },
+    {
+      "name": "research-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "research-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "research-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "research-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "research-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "research-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "research-boots",
+      "directions": 4
+    },
+    {
+      "name": "security-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "security-control",
+      "directions": 4
+    },
+    {
+      "name": "security-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "security-helmet",
+      "directions": 4
+    },
+    {
+      "name": "security-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "security-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "security-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "security-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "security-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "security-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "security-boots",
+      "directions": 4
+    },
+    {
+      "name": "safeguard-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "safeguard-control",
+      "directions": 4
+    },
+    {
+      "name": "safeguard-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "safeguard-helmet",
+      "directions": 4
+    },
+    {
+      "name": "safeguard-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "safeguard-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "safeguard-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "safeguard-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "safeguard-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "safeguard-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "safeguard-boots",
+      "directions": 4
+    },
+    {
+      "name": "magnate-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "magnate-control",
+      "directions": 4
+    },
+    {
+      "name": "magnate-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "magnate-helmet",
+      "directions": 4
+    },
+    {
+      "name": "magnate-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "magnate-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "magnate-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "magnate-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "magnate-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "magnate-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "magnate-boots",
+      "directions": 4
+    },
+    {
+      "name": "cosmohonk-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "cosmohonk-control",
+      "directions": 4
+    },
+    {
+      "name": "cosmohonk-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "cosmohonk-helmet",
+      "directions": 4
+    },
+    {
+      "name": "cosmohonk-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "cosmohonk-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "cosmohonk-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "cosmohonk-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "cosmohonk-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "cosmohonk-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "cosmohonk-boots",
+      "directions": 4
+    },
+    {
+      "name": "syndicate-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "syndicate-control",
+      "directions": 4
+    },
+    {
+      "name": "syndicate-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "syndicate-helmet",
+      "directions": 4
+    },
+    {
+      "name": "syndicate-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "syndicate-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "syndicate-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "syndicate-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "syndicate-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "syndicate-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "syndicate-boots",
+      "directions": 4
+    },
+    {
+      "name": "honkerative-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "honkerative-control",
+      "directions": 4
+    },
+    {
+      "name": "honkerative-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "honkerative-helmet",
+      "directions": 4
+    },
+    {
+      "name": "honkerative-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "honkerative-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "honkerative-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "honkerative-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "honkerative-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "honkerative-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "honkerative-boots",
+      "directions": 4
+    },
+    {
+      "name": "elite-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "elite-control",
+      "directions": 4
+    },
+    {
+      "name": "elite-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "elite-helmet",
+      "directions": 4
+    },
+    {
+      "name": "elite-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "elite-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "elite-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "elite-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "elite-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "elite-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "elite-boots",
+      "directions": 4
+    },
+    {
+      "name": "infiltrator-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "infiltrator-control",
+      "directions": 4
+    },
+    {
+      "name": "interdyne-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "interdyne-control",
+      "directions": 4
+    },
+    {
+      "name": "interdyne-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "interdyne-helmet",
+      "directions": 4
+    },
+    {
+      "name": "interdyne-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "interdyne-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "interdyne-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "interdyne-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "interdyne-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "interdyne-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "interdyne-boots",
+      "directions": 4
+    },
+    {
+      "name": "enchanted-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "enchanted-control",
+      "directions": 4
+    },
+    {
+      "name": "enchanted-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "enchanted-helmet",
+      "directions": 4
+    },
+    {
+      "name": "enchanted-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "enchanted-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "enchanted-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "enchanted-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "enchanted-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "enchanted-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "enchanted-boots",
+      "directions": 4
+    },
+    {
+      "name": "ninja-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "ninja-control",
+      "directions": 4
+    },
+    {
+      "name": "ninja-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "ninja-helmet",
+      "directions": 4
+    },
+    {
+      "name": "ninja-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "ninja-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "ninja-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "ninja-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "ninja-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "ninja-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "ninja-boots",
+      "directions": 4
+    },
+    {
+      "name": "prototype-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "prototype-control",
+      "directions": 4
+    },
+    {
+      "name": "prototype-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "prototype-helmet",
+      "directions": 4
+    },
+    {
+      "name": "prototype-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "prototype-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "prototype-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "prototype-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "prototype-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "prototype-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "prototype-boots",
+      "directions": 4
+    },
+    {
+      "name": "responsory-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "responsory-control",
+      "directions": 4
+    },
+    {
+      "name": "responsory-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "responsory-helmet",
+      "directions": 4
+    },
+    {
+      "name": "responsory-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "responsory-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "responsory-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "responsory-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "responsory-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "responsory-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "responsory-boots",
+      "directions": 4
+    },
+    {
+      "name": "inquisitory-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "inquisitory-control",
+      "directions": 4
+    },
+    {
+      "name": "inquisitory-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "inquisitory-helmet",
+      "directions": 4
+    },
+    {
+      "name": "inquisitory-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "inquisitory-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "inquisitory-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "inquisitory-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "inquisitory-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "inquisitory-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "inquisitory-boots",
+      "directions": 4
+    },
+    {
+      "name": "apocryphal-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "apocryphal-control",
+      "directions": 4
+    },
+    {
+      "name": "apocryphal-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "apocryphal-helmet",
+      "directions": 4
+    },
+    {
+      "name": "apocryphal-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "apocryphal-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "apocryphal-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "apocryphal-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "apocryphal-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "apocryphal-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "apocryphal-boots",
+      "directions": 4
+    },
+    {
+      "name": "corporate-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "corporate-control",
+      "directions": 4
+    },
+    {
+      "name": "corporate-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "corporate-helmet",
+      "directions": 4
+    },
+    {
+      "name": "corporate-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "corporate-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "corporate-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "corporate-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "corporate-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "corporate-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "corporate-boots",
+      "directions": 4
+    },
+    {
+      "name": "chrono-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "chrono-control",
+      "directions": 4
+    },
+    {
+      "name": "chrono-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "chrono-helmet",
+      "directions": 4
+    },
+    {
+      "name": "chrono-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "chrono-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "chrono-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "chrono-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "chrono-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "chrono-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "chrono-boots",
+      "directions": 4
+    },
+    {
+      "name": "debug-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "debug-control",
+      "directions": 4
+    },
+    {
+      "name": "debug-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "debug-helmet",
+      "directions": 4
+    },
+    {
+      "name": "debug-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "debug-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "debug-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "debug-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "debug-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "debug-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "debug-boots",
+      "directions": 4
+    },
+    {
+      "name": "glitch-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "glitch-control",
+      "directions": 4
+    },
+    {
+      "name": "glitch-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "glitch-helmet",
+      "directions": 4
+    },
+    {
+      "name": "glitch-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "glitch-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "glitch-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "glitch-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "glitch-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "glitch-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "glitch-boots",
+      "directions": 4
+    },
+    {
+      "name": "infiltrator-helmet-sealed",
+      "directions": 4
+    },
+    {
+      "name": "infiltrator-helmet",
+      "directions": 4
+    },
+    {
+      "name": "infiltrator-helmet-visor",
+      "directions": 4
+    },
+    {
+      "name": "infiltrator-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "infiltrator-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "infiltrator-gauntlets-sealed",
+      "directions": 4
+    },
+    {
+      "name": "infiltrator-gauntlets",
+      "directions": 4
+    },
+    {
+      "name": "infiltrator-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "infiltrator-boots",
+      "directions": 4
+    },
+    {
+      "name": "psuit-glasses",
+      "directions": 4
+    },
+    {
+      "name": "psuit-boots",
+      "directions": 4
+    },
+    {
+      "name": "psuit-boots-sealed",
+      "directions": 4
+    },
+    {
+      "name": "psuit-chestplate-sealed",
+      "directions": 4
+    },
+    {
+      "name": "psuit-chestplate",
+      "directions": 4
+    },
+    {
+      "name": "psuit-control-sealed",
+      "directions": 4
+    },
+    {
+      "name": "psuit-control",
+      "directions": 4
+    },
+    {
+      "name": "psuit-glasses-sealed",
+      "directions": 4
+    }
+  ]
+}

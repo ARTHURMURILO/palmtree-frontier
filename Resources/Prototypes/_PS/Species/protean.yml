@@ -1,0 +1,39 @@
+- type: species
+  id: Protean
+  name: species-name-protean
+  roundStart: true
+  prototype: MobProtean
+  sprites: MobHumanSprites
+  markingLimits: MobHumanMarkingLimits
+  dollPrototype: MobProteanDummy
+  kind:
+  - BasicHumanlike
+  - BasicFurry
+  - BasicRobot
+  - VoxLike
+  sexes:
+  - Male
+  - Female
+  - Unsexed
+  skinColoration: Hues
+
+- type: entity
+  id: MobProtean
+  name: Urist McProtean
+  parent: MobHuman
+  save: false
+  components:
+  - type: HumanoidAppearance
+    species: Protean
+  - type: Body
+    prototype: Protean
+    requiredLegs: 2
+  - type: Protean
+
+- type: entity
+  id: MobProteanDummy
+  parent: MobHumanDummy
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: HumanoidAppearance
+    species: Protean

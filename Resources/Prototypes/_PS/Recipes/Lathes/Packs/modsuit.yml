@@ -1,0 +1,29 @@
+- type: latheRecipePack
+  id: PSModsuitConstruction
+  recipes:
+  - ModsuitConstructionShellRecipe
+  - ModsuitCoreStandardRecipe
+  - ModsuitHelmetRecipe
+  - ModsuitChestplateRecipe
+  - ModsuitGauntletsRecipe
+  - ModsuitBootsRecipe
+  - ModsuitPlatingStandardRecipe
+  - ModsuitPlatingEngineeringRecipe
+  - ModsuitPlatingCosmohonkRecipe
+  - ModsuitPlatingMagnateRecipe
+  - ModsuitPlatingSafeguardRecipe
+  - ModsuitPlatingSecurityRecipe
+  - ModsuitPlatingResearchRecipe
+  - ModsuitPlatingRescueRecipe
+  - ModsuitPlatingMedicalRecipe
+  - ModsuitPlatingMiningRecipe
+  - ModsuitPlatingAdvancedRecipe
+  - ModsuitPlatingAtmosphericRecipe
+  - ModsuitPlatingCivilianRecipe
+
+- type: latheRecipePack
+  id: PSModsuitModules
+  recipes:
+  - ModsuitModuleStorageRecipe
+  - ModsuitModuleFlashlightRecipe
+  - ModsuitModuleMagbootsRecipe

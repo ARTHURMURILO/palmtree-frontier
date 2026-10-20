@@ -1,0 +1,55 @@
+- type: technology
+  id: PSModsuitBase
+  name: ps-research-technology-modsuit-base
+  entityIcon: ModsuitControlStandard
+  discipline: NFEngineering
+  tier: 1
+  cost: 1500
+  recipeUnlocks:
+  - ModsuitConstructionShellRecipe
+  - ModsuitCoreStandardRecipe
+  - ModsuitHelmetRecipe
+  - ModsuitChestplateRecipe
+  - ModsuitGauntletsRecipe
+  - ModsuitBootsRecipe
+  - ModsuitPlatingStandardRecipe
+  - ModsuitModuleStorageRecipe
+  - ModsuitModuleFlashlightRecipe
+  position: 5, 0
+
+- type: technology
+  id: PSModsuitEngineering
+  name: ps-research-technology-modsuit-engineering
+  entityIcon: ModsuitPlatingEngineering
+  discipline: NFEngineering
+  tier: 1
+  cost: 2500
+  recipeUnlocks:
+  - ModsuitPlatingEngineeringRecipe
+  - ModsuitModuleMagbootsRecipe
+  technologyPrerequisites:
+  - PSModsuitBase
+  position: 5, 1
+
+- type: technology
+  id: PSModsuitCrewThemes
+  name: ps-research-technology-modsuit-crew
+  entityIcon: ModsuitPlatingSecurity
+  discipline: NFEngineering
+  tier: 2
+  cost: 5000
+  recipeUnlocks:
+  - ModsuitPlatingCivilianRecipe
+  - ModsuitPlatingAtmosphericRecipe
+  - ModsuitPlatingAdvancedRecipe
+  - ModsuitPlatingMiningRecipe
+  - ModsuitPlatingMedicalRecipe
+  - ModsuitPlatingRescueRecipe
+  - ModsuitPlatingResearchRecipe
+  - ModsuitPlatingSecurityRecipe
+  - ModsuitPlatingSafeguardRecipe
+  - ModsuitPlatingMagnateRecipe
+  - ModsuitPlatingCosmohonkRecipe
+  technologyPrerequisites:
+  - PSModsuitBase
+  position: 5, 2

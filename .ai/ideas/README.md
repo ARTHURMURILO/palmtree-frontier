@@ -20,3 +20,4 @@ Conventions:
 | [`coyote-bayou-weapons.md`](coyote-bayou-weapons.md) — Coyote Bayou (BYOND) weapon port backlog | Partially implemented (2026-10): 29 ballistic guns + 11 calibers are in (`_CS/.../Fallout/`); the energy set is not |
 | [`bluespace-dock.md`](bluespace-dock.md) — Bluespace Dock, Ship Registrar and ship preview | Implemented (2026-10) on `master` |
 | [`beepsky.md`](beepsky.md) — Officer Beepsky, a patrolling security bot (stun/arrest, outpost placement) | Proposed / not implemented (plan for a future port) |
+| [`modsuit-protean-port.md`](modsuit-protean-port.md) — TG MODsuits + SPLURT Protean port | In progress (2026-10): MODsuit core/crew content; Protean fold/unfold core |

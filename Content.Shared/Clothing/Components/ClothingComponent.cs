@@ -12,7 +12,7 @@ namespace Content.Shared.Clothing.Components;
 ///     This handles entities which can be equipped.
 /// </summary>
 [RegisterComponent, NetworkedComponent, AutoGenerateComponentState(true)]
-[Access(typeof(ClothingSystem), typeof(InventorySystem))]
+[Access(typeof(ClothingSystem), typeof(InventorySystem), typeof(Content.Shared._PS.Modsuits.SharedModsuitSystem))] // Palmtree: MODsuits
 public sealed partial class ClothingComponent : Component
 {
     [DataField]
@@ -52,7 +52,7 @@ public sealed partial class ClothingComponent : Component
     /// Allows the equipped state to be directly overwritten.
     /// useful when prototyping INNERCLOTHING items into OUTERCLOTHING items without duplicating/modifying RSIs etc.
     /// </summary>
-    [Access(typeof(ClothingSystem))]
+    [Access(typeof(ClothingSystem), typeof(Content.Shared._PS.Modsuits.SharedModsuitSystem))] // Palmtree: MODsuits
     [DataField, AutoNetworkedField]
     public string? EquippedState;
 
