@@ -10,9 +10,10 @@ using Robust.Shared.Player;
 namespace Content.Server._PS.Commands;
 
 /// <summary>
-/// Palmtree: stores a player's ship in the bluespace dock without requiring it to be docked. Every
-/// other store check still runs (nothing living aboard, civilian vessel, and so on) and failures are
-/// printed to the console. No tax is charged.
+/// Palmtree: stores a player's ship in the bluespace dock without requiring it to be docked. Living
+/// things aboard are moved off the ship instead of refusing the store; every other check still runs
+/// (civilian vessel, not already being processed, and so on) and failures are printed to the console.
+/// No tax is charged.
 /// </summary>
 [AdminCommand(AdminFlags.Admin)]
 public sealed class ForceDockCommand : IConsoleCommand
@@ -95,12 +96,17 @@ public sealed class ForceDockCommand : IConsoleCommand
             }
         }
 
-        // Every store check except "must be docked to this station".
-        if (dock.FindStoreBlocker(ship.Grid, requireDocked: false, stationGrid: null) is { } blocker)
+        // Every store check except "must be docked to this station" and "nothing living aboard":
+        // force-dock kicks the occupants out instead of refusing the ship.
+        if (dock.FindStoreBlocker(ship.Grid, requireDocked: false, stationGrid: null, allowOrganics: true) is { } blocker)
         {
             shell.WriteError(Loc.GetString(blocker));
             return;
         }
+
+        // Get everyone off first so the console can say how many were moved. TryStoreShip evacuates
+        // again, which is a no-op by then.
+        var evacuated = dock.EvacuateGrid(ship.Grid);
 
         var value = dock.AppraiseShip(ship.Grid);
         if (!dock.TryStoreShip(ship.Grid, ownerUserId, ownerName, value, payer: null, cost: 0,
@@ -114,6 +120,9 @@ public sealed class ForceDockCommand : IConsoleCommand
             $"{shell.Player?.Name ?? "Console"} force-docked ship {ship.Name} into the bluespace dock as {ownerName} ({ownerUserId})");
 
         shell.WriteLine($"Stored {ship.Name} for {ownerName} in the bluespace dock. No tax was charged.");
+
+        if (evacuated > 0)
+            shell.WriteLine($"Moved {evacuated} living thing(s) (or ghosts/corpses) off {ship.Name} before storing it.");
 
         if (skipped > 0)
         {

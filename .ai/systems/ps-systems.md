@@ -632,6 +632,24 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
   longer a `[DataField]`; `SmartFridgeSystem` rebuilds it from the container on `ComponentStartup`
   and `MapInit` (startup runs for loaded ships, which skip MapInit), so the fridge and its contents
   survive. This is persistence-only: insertion/ejection behave exactly as before.
+- **PDAs and ID cards (2026-10-22)**: an ID card is normal serializable data - `IdCardComponent`
+  (full name, job title/icon/prototype, departments) and `AccessComponent` (`Tags`) survive a
+  store/retrieve, including extra access someone gave the card. Two things do not:
+  - **`ShuttleDeedComponent` is stripped from every entity on the grid before saving** (see the
+    station-reference strip): a card stored on a ship comes back without its deed. The ship identity
+    is rebuilt from the registry on retrieval, not from the stored card.
+  - **A PDA could not be saved at all**: every PDA has a `StoreComponent`, and
+    `StoreComponent.StartingMap` is a `[DataField] EntityUid?` holding the **map entity** the store
+    was created on. A grid file's parent (the map) is the serializer's truncated entity, so the
+    strict save threw on the Store component. `ClearRuntimeMapReferences` clears `StartingMap`
+    before the save and the load-time registration sweep pins it to the map the ship is loaded onto.
+  - **PDA card link**: `PdaComponent.ContainedId` (and the "card inserted" appearance) is runtime
+    state set by the insert event, which the loader does not raise while filling the slot; the
+    registration sweep restores it from the ID slot, otherwise access checks and the ID UI on a
+    retrieved PDA were dead until the card was re-inserted.
+  - Contents (card in the ID slot, pen, cartridges) are saved as container/slot contents. A card or
+    PDA that still cannot be serialized is covered by the resilient save (fresh copy from its
+    prototype, so a *customized* card loses its custom name/job/access in that case).
 - **Retrieved ships get the shipyard's station (`GetShipStationConfig`, 2026-10-18)**: the station a
   ship lives on carries its capabilities, not the grid. Retrieval used to rebuild *every* ship with a
   plain `StandardFrontierVessel` station, which silently cost expedition ships their

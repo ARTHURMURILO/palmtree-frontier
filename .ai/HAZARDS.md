@@ -615,6 +615,11 @@ so these fail only in CI:
     save threw `Caught exception while serializing component SmartFridge`; it only failed once the
     fridge was used (empty dictionary = no keys). Dictionary keys must be scalars (`string`, `int`,
     `ProtoId`, ...).
+    - **`[DataField] EntityUid?` holding the map.** `StoreComponent.StartingMap` ("the map the store was
+    originally from, used to block refunds if the map is changed") is a direct reference to the map
+    entity. Saving a *grid* truncates the map (it is the grid's parent), and a reference to it makes
+    the component serialization fail: every PDA (they all carry a Store) failed every strict save.
+    Clear such fields before serializing and re-derive them on load (`ClearRuntimeMapReferences`).
   - **Session-scoped refs in persisted collections** (`NetEntity` sets/maps): even when they
     serialize, they describe a round. Prefer `[ViewVariables]`/`[AutoNetworkedField]` plus a rebuild
     from real entity state (`SmartFridgeComponent.ContainedEntries` is rebuilt from the container).

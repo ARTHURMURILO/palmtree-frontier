@@ -6,6 +6,7 @@ using Content.Server.Botany.Components;
 using Content.Server.DeviceLinking.Systems;
 using Content.Server.Shuttles.Systems;
 using Content.Shared._PS.BluespaceDock;
+using Content.Shared._NF.Shipyard.Components;
 using Content.Shared.Climbing.Components;
 using Content.Shared.DoAfter;
 using Content.Shared.Interaction;
@@ -15,7 +16,10 @@ using Content.Shared.Storage;
 using Content.Shared.Timing;
 using Content.Shared.Weapons.Ranged.Components;
 using Content.Shared.DeviceLinking;
+using Content.Shared.Access.Components;
+using Content.Shared.Access.Systems;
 using Content.Shared.Hands.EntitySystems;
+using Content.Shared.PDA;
 using Content.Shared.SmartFridge;
 using NUnit.Framework;
 using Robust.Server.Containers;
@@ -205,6 +209,103 @@ public sealed class BluespaceDockSaveTest
             // The entry list is rebuilt on startup, so the fridge can still dispense it.
             Assert.That(fridgeComp.ContainedEntries.Count, Is.EqualTo(1),
                 "The retrieved fridge's entry list was not rebuilt from its contents.");
+        });
+
+        await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));
+        await server.WaitRunTicks(2);
+        await server.WaitAssertion(() => server.System<SharedMapSystem>().DeleteMap(loadedMap));
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    /// A PDA carries a <c>StoreComponent</c>, whose <c>StartingMap</c> field holds the map entity it
+    /// was created on - a reference to the saved grid's parent, which a grid file cannot carry (the
+    /// strict save used to fail on it). It also links its ID card in a runtime field that the loader
+    /// never fills, so a retrieved PDA stopped recognizing its own card. Both are restored by the
+    /// dock; the card's name/job/access survive, while its ship deed deliberately does not (the dock
+    /// registry owns the ship identity).
+    /// </summary>
+    [Test]
+    public async Task PdaAndIdCardSurviveTheSave()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var containers = server.System<ContainerSystem>();
+
+        EntityUid loadedGrid = default;
+        MapId loadedMap = default;
+        var beforeTags = string.Empty;
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var sharedDock = server.System<SharedBluespaceDockSystem>();
+            var idCards = server.System<SharedIdCardSystem>();
+            var grid = testMap.Grid.Owner;
+
+            var pda = entMan.SpawnEntity("PassengerPDA", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            var pdaComp = entMan.GetComponent<PdaComponent>(pda);
+            var card = pdaComp.IdSlot.ContainerSlot?.ContainedEntity;
+            Assert.That(card, Is.Not.Null, "sanity: the PDA has no ID card");
+
+            var cardComp = entMan.GetComponent<IdCardComponent>(card!.Value);
+            cardComp.FullName = "Probe Person";
+            idCards.TryChangeJobTitle(card.Value, "Probe Job");
+            beforeTags = string.Join(",", entMan.GetComponent<AccessComponent>(card.Value).Tags);
+
+            // A deed on the card must not survive the store: the registry owns the ship identity.
+            sharedDock.AssignDeed(card.Value, grid, "Deed Ship", null, "Deed Owner");
+            Assert.That(entMan.HasComponent<ShuttleDeedComponent>(card.Value), Is.True, "sanity: deed on the card");
+
+            var path = BluespaceDockSystem.GetShipFilePath("pda-save-test");
+            Assert.That(dock.TrySaveShipFile(grid, path, out var error), Is.True,
+                $"Saving a grid with a PDA failed: {error}");
+            Assert.That(dock.TryLoadShipFile(path, out var loaded), Is.True, "Loading the saved ship failed.");
+            loadedGrid = loaded!.Value;
+            loadedMap = entMan.GetComponent<TransformComponent>(loadedGrid).MapID;
+            dock.DeleteShipFile(path);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var idCards = server.System<SharedIdCardSystem>();
+            var entities = new HashSet<EntityUid>();
+            dock.GetEntitiesOnGrid(loadedGrid, entities);
+
+            EntityUid? loadedPda = null;
+            foreach (var uid in entities)
+            {
+                if (entMan.GetComponent<MetaDataComponent>(uid).EntityPrototype?.ID == "PassengerPDA")
+                    loadedPda = uid;
+            }
+
+            Assert.That(loadedPda, Is.Not.Null, "The retrieved ship lost its PDA.");
+            var pdaComp = entMan.GetComponent<PdaComponent>(loadedPda!.Value);
+
+            var card = pdaComp.IdSlot.ContainerSlot?.ContainedEntity;
+            Assert.That(card, Is.Not.Null, "The retrieved PDA lost its ID card.");
+            Assert.That(pdaComp.PenSlot.ContainerSlot?.ContainedEntity, Is.Not.Null,
+                "The retrieved PDA lost its pen.");
+
+            // The card link is runtime state; without it access checks and the ID UI are dead.
+            Assert.That(pdaComp.ContainedId, Is.EqualTo(card),
+                "The retrieved PDA does not recognize the card in its ID slot.");
+            Assert.That(idCards.TryFindIdCard(loadedPda.Value, out var foundCard) && foundCard.Owner == card,
+                Is.True, "The retrieved PDA has no findable ID card.");
+
+            // The card's identity and access survive...
+            var cardComp = entMan.GetComponent<IdCardComponent>(card!.Value);
+            Assert.That(cardComp.FullName, Is.EqualTo("Probe Person"), "The retrieved ID card lost its name.");
+            Assert.That(string.Join(",", entMan.GetComponent<AccessComponent>(card.Value).Tags), Is.EqualTo(beforeTags),
+                "The retrieved ID card lost its access.");
+
+            // ...but not the deed (it belongs to the dock registry, and the ship it names no longer exists).
+            Assert.That(entMan.HasComponent<ShuttleDeedComponent>(card.Value), Is.False,
+                "A stored ID card came back with its old ship deed.");
         });
 
         await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));

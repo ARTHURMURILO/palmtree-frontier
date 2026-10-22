@@ -51,8 +51,10 @@ using Content.Shared.Shuttles.Systems;
 using Content.Shared.SmartFridge;
 using Content.Shared.Station;
 using Content.Shared.Station.Components;
+using Content.Shared.Store.Components;
 using Content.Shared.Mind.Components;
 using Content.Shared.Mobs.Components;
+using Content.Shared.PDA;
 using Content.Shared.Preferences;
 using Content.Shared.Projectiles;
 using Content.Shared.UserInterface;
@@ -134,6 +136,7 @@ public sealed class BluespaceDockSystem : EntitySystem
     [Dependency] private readonly SharedRadarConsoleSystem _radar = default!;
     [Dependency] private readonly ExtensionCableSystem _extensionCable = default!;
     [Dependency] private readonly SmartFridgeSystem _smartFridge = default!;
+    [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
     [Dependency] private readonly GameTicker _gameTicker = default!;
     [Dependency] private readonly UserInterfaceSystem _ui = default!;
 
@@ -655,6 +658,9 @@ public sealed class BluespaceDockSystem : EntitySystem
         // Cooldowns are absolute round times, and they must not outlive the round they were started
         // in (see ResetRuntimeCooldowns).
         ResetRuntimeCooldowns(shuttleUid);
+
+        // Runtime references to the map cannot be carried by a grid file (see ClearRuntimeMapReferences).
+        ClearRuntimeMapReferences(shuttleUid);
 
         var removed = StripStationReferences(shuttleUid);
         stripped?.AddRange(removed);
@@ -2093,6 +2099,23 @@ public sealed class BluespaceDockSystem : EntitySystem
             _extensionCable.Connect((uid, cableReceiver));
         }
 
+        // A PDA's card link and its "ID inserted" appearance are runtime state set when a card is
+        // inserted; the loader fills the slot without raising that event, so a retrieved PDA did not
+        // recognize its own card (access checks and the ID UI were dead until it was re-inserted).
+        if (TryComp<PdaComponent>(uid, out var pda)
+            && pda.ContainedId == null
+            && pda.IdSlot.ContainerSlot?.ContainedEntity is { } pdaId)
+        {
+            pda.ContainedId = pdaId;
+            _appearance.SetData(uid, PdaVisuals.IdCardInserted, true);
+        }
+
+        // StoreSystem pins StartingMap on creation (it gates refunds/upgrades to the map the store was
+        // made on). A loaded ship is on a new map, so pin the store to it again instead of leaving the
+        // stale map uid the file carried (or none at all).
+        if (TryComp<StoreComponent>(uid, out var store))
+            store.StartingMap = Transform(uid).MapUid;
+
         // GunSignalControlSystem.OnInit: shuttle cannons get their signal sink ports here.
         if (TryComp<GunSignalControlComponent>(uid, out var gunControl))
             _deviceLink.EnsureSinkPorts(uid, gunControl.TriggerPort, gunControl.TogglePort, gunControl.OnPort, gunControl.OffPort);
@@ -2295,6 +2318,26 @@ public sealed class BluespaceDockSystem : EntitySystem
     }
 
     /// <summary>
+    /// Clears components whose <c>[DataField]</c> holds the map the entity was created on. A grid file
+    /// cannot carry its map: the map is the saved grid's parent, i.e. the serializer's truncated
+    /// entity, and any reference to it makes the component's serialization fail. That broke every
+    /// save of a PDA (or anything else with a <see cref="StoreComponent"/>): the store pins
+    /// <c>StartingMap</c> ("used to block refunds if the map is changed"). The store is re-pinned to
+    /// the map it is loaded onto instead (see <see cref="RestoreEntityMapInitRegistration"/>).
+    /// </summary>
+    public void ClearRuntimeMapReferences(EntityUid grid)
+    {
+        var entities = new HashSet<EntityUid>();
+        GetEntitiesOnGrid(grid, entities);
+
+        foreach (var uid in entities)
+        {
+            if (TryComp<StoreComponent>(uid, out var store) && store.StartingMap != null)
+                store.StartingMap = null;
+        }
+    }
+
+    /// <summary>
     /// Deletes a grid's in-flight projectiles: anything flying over the grid and anything fired by
     /// a weapon or shooter on it.
     /// </summary>
@@ -2467,9 +2510,12 @@ public sealed class BluespaceDockSystem : EntitySystem
     /// <summary>
     /// The first thing stopping a ship from being stored, as a localization key (null when it can be
     /// stored). <paramref name="requireDocked"/> is false for the admin force-dock command, which
-    /// skips the "docked to this station" requirement but nothing else.
+    /// skips the "docked to this station" requirement but nothing else. <paramref name="allowOrganics"/>
+    /// is for force-dock too: instead of refusing a ship with living things aboard, the store moves
+    /// them off it (see <see cref="EvacuateGrid"/>).
     /// </summary>
-    public string? FindStoreBlocker(EntityUid shuttleUid, bool requireDocked, EntityUid? stationGrid)
+    public string? FindStoreBlocker(EntityUid shuttleUid, bool requireDocked, EntityUid? stationGrid,
+        bool allowOrganics = false)
     {
         if (!Exists(shuttleUid) || !HasComp<ShuttleComponent>(shuttleUid))
             return "bluespace-dock-error-no-ship";
@@ -2483,7 +2529,7 @@ public sealed class BluespaceDockSystem : EntitySystem
         if (requireDocked && (stationGrid is not { } grid || !IsDockedToGrid(shuttleUid, grid)))
             return "bluespace-dock-error-not-docked";
 
-        if (FoundOrganics(shuttleUid) is not null)
+        if (!allowOrganics && FoundOrganics(shuttleUid) is not null)
             return "bluespace-dock-error-organic-aboard";
 
         if (!TryGetVesselInfo(shuttleUid, out var vesselInfo) || !IsAllowedGroup(vesselInfo.Group))
