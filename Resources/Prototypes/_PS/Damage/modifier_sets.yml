@@ -3,6 +3,7 @@
   coefficients:
     Poison: 0
     Radiation: 0
+    Shock: 1.5
 
 - type: damageModifierSet
   id: Synth

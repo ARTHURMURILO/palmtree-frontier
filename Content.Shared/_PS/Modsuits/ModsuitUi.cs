@@ -16,23 +16,33 @@ public sealed class ModsuitToggleMessage : BoundUserInterfaceMessage;
 public sealed class ModsuitSealMessage : BoundUserInterfaceMessage;
 
 [Serializable, NetSerializable]
+public sealed class ModsuitRemoveModuleMessage(int index) : BoundUserInterfaceMessage
+{
+    public int Index { get; } = index;
+}
+
+[Serializable, NetSerializable]
 public sealed class ModsuitModuleEntry
 {
     public string Name = string.Empty;
     public byte Type;
     public int Complexity;
     public bool Active;
+    public int Index;
+    public bool CanRemove = true;
 
     public ModsuitModuleEntry()
     {
     }
 
-    public ModsuitModuleEntry(string name, ModsuitModuleType type, int complexity, bool active)
+    public ModsuitModuleEntry(string name, ModsuitModuleType type, int complexity, bool active, int index, bool canRemove = true)
     {
         Name = name;
         Type = (byte) type;
         Complexity = complexity;
         Active = active;
+        Index = index;
+        CanRemove = canRemove;
     }
 }
 

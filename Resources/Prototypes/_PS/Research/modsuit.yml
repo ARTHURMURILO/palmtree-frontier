@@ -14,6 +14,7 @@
   - ModsuitBootsRecipe
   - ModsuitPlatingStandardRecipe
   - ModsuitModuleStorageRecipe
+  - ModsuitModuleStorageLargeRecipe
   - ModsuitModuleFlashlightRecipe
   position: 5, 0
 
@@ -99,6 +100,7 @@
   - ModsuitPlatingCorporateRecipe
   - ModsuitPlatingChronoRecipe
   - ModsuitPlatingDebugRecipe
+  - ModsuitPlatingAdministrativeRecipe
   technologyPrerequisites:
   - PSModsuitCrewThemes
   position: 5, 4

@@ -1,6 +1,6 @@
 # MODsuits + Proteans port plan
 
-**Status:** Feature checkpoint ready for in-game testing and polish (2026-10-20). MODsuit runtime, crew/special themes and recipes, construction/research, worn art and the Protean core are implemented. Remaining optional work: the wider module/art library and servo engineering mode. Digitigrade suit deployment is covered by the existing displacement maps; unique Protean/anthro sprite variants are not present in the available source checkout. Critical organs (brain/heart/stomach) still require refactory repair instead of field healing. Proteans use the Synth physiology marker (no respiration/metabolism), pressure immunity, environmental temperature/fire handling, Synth reboot repair and source-specific toxin/radiation immunity; Synth damage resistance and forced prying remain intentionally excluded.
+**Status:** Feature checkpoint ready for in-game testing and polish (2026-10-20). MODsuit runtime, crew/special themes and recipes, construction/research, worn art and the Protean core are implemented. Remaining optional work: the wider module/art library, special-suit distribution and servo engineering mode. Digitigrade suit deployment is covered by the existing displacement maps; unique Protean/anthro sprite variants are not present in the available source checkout. Critical organs (brain/heart/stomach) still require refactory repair instead of field healing. Proteans use the Synth physiology marker (no respiration/metabolism), pressure immunity, environmental temperature/fire handling, Synth reboot repair and source-specific toxin/radiation immunity; Synth damage resistance and forced prying remain intentionally excluded.
 **Scope:** Port TG MODsuits and SPLURT-TG Proteans into Palmtree/Frontier, with anthro/digitigrade support.
 **Touched areas:** `Content.Shared/_PS/Modsuits`, `Content.Server/_PS/Modsuits`,
 `Content.Client/_PS/Modsuits`, `Content.Shared/_PS/Protean`, `Content.Server/_PS/Protean`,
@@ -525,9 +525,11 @@ themes/plating/research and worn TG art are in; Batch 3 retains the supported st
 magboots/servo modules and digitigrade validation; Batch 4 Protean core/advanced (species, body/organs,
 fold/unfold, UI, lock, assimilation/ejection with module transfer, plating assimilation, low power,
 heal, memory reset, critical repair, core/metal bound suit power, missing-organ penalties and suit
-cleanup) passes tests. Batch 6 adds 18 special themes/plating recipes and their research/pack wiring.
-The remaining work is optional breadth: the wider module/art library, unique Protean/anthro art
-variants, servo engineering mode and unsupported modules/mechanics.
+cleanup) passes tests. Batch 6 adds 19 special themes/plating recipes and their research/pack wiring.
+Post-checkpoint local polish adds the module service hatch/removal UI, expanded storage, metal
+consumption and additional tests. The remaining work is optional breadth: the wider module/art
+library, special-suit distribution, unique Protean/anthro art variants, servo engineering mode and
+unsupported modules/mechanics.
 
 ## 9. Explicit omissions and adaptations
 
@@ -717,6 +719,7 @@ Known gaps in the current slice:
 - [x] Memory reset via pen do-after (sleep/log; no true memory storage)
 - [x] Basic servo movement mode + UI
 - [ ] Servo engineering mode (no target action-speed system)
+- [x] Module hatch screwdriver interaction and module removal UI
 - [x] Deployed parts use `AttachedClothingComponent` for removal protection
 - [x] Suit destruction cleanup
 - [x] Species-loss cleanup
@@ -725,6 +728,8 @@ Known gaps in the current slice:
 - [ ] Source traits with no target system (virus, wounds, madness, dismemberment)
 - [x] Missing refactory/orchestrator penalties
 - [x] Integrated ProteanCore / plating assimilation
+- [x] Metal-sheet consumption into the refactory
+- [x] Expanded storage module and module removal UI/hatch
 - [x] Sealed MODsuit helmet hides hair and head layers
 - [x] Digitigrade MODsuit deployment via existing leg displacement maps
 - [ ] Unique Protean/anthro sprite variants (source art unavailable)

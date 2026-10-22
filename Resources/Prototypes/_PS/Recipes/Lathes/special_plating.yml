@@ -195,3 +195,14 @@
     Glass: 750
     Gold: 350
     Plasma: 500
+
+- type: latheRecipe
+  parent: BaseRoboticsRecipe
+  id: ModsuitPlatingAdministrativeRecipe
+  result: ModsuitPlatingAdministrative
+  completetime: 4
+  materials:
+    Steel: 1500
+    Glass: 750
+    Gold: 350
+    Plasma: 500

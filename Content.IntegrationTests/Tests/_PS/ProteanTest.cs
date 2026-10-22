@@ -14,9 +14,11 @@ using Content.Shared.StatusEffectNew;
 using Content.Shared.Damage;
 using Content.Shared.Damage.Prototypes;
 using Content.Shared.Damage.Systems;
+using Content.Shared.Forensics.Components;
 using Robust.Shared.Prototypes;
 using Content.Shared._PS.Protean;
 using Content.Shared.Inventory;
+using Content.Shared.Interaction;
 using Robust.Server.GameObjects;
 using Robust.Shared.Containers;
 using Robust.Shared.GameObjects;
@@ -55,6 +57,7 @@ public sealed class ProteanTest
                 "Proteans should not take pressure damage");
             Assert.That(entMan.HasComponent<Content.Shared.Nutrition.Components.HungerComponent>(body), Is.False);
             Assert.That(entMan.HasComponent<Content.Shared.Nutrition.Components.ThirstComponent>(body), Is.False);
+            Assert.That(entMan.HasComponent<DnaComponent>(body), Is.False);
             Assert.That(entMan.HasComponent<Content.Shared.Body.Components.BodyComponent>(body), Is.True);
             var bodySystem = entMan.System<Content.Shared.Body.Systems.SharedBodySystem>();
             Assert.That(bodySystem.TryGetBodyOrganEntityComps<ProteanRefactoryComponent>(
@@ -243,6 +246,61 @@ public sealed class ProteanTest
             Assert.That(entMan.GetComponent<DamageableComponent>(body).Damage.GetTotal().Float(), Is.EqualTo(0).Within(0.1f));
             Assert.That(refactory.Comp1.Metal, Is.EqualTo(4f).Within(0.01f));
 
+            entMan.DeleteEntity(body);
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task SynthImmunities()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var proto = server.ResolveDependency<IPrototypeManager>();
+        var map = await pair.CreateTestMap();
+
+        await server.WaitAssertion(() =>
+        {
+            var body = entMan.SpawnEntity("MobProtean", map.GridCoords);
+            var damageable = entMan.System<DamageableSystem>();
+            damageable.TryChangeDamage(body,
+                new DamageSpecifier(proto.Index<DamageTypePrototype>("Poison"), 20));
+            damageable.TryChangeDamage(body,
+                new DamageSpecifier(proto.Index<DamageTypePrototype>("Radiation"), 20));
+            Assert.That(entMan.GetComponent<DamageableComponent>(body).Damage.GetTotal().Float(),
+                Is.EqualTo(0f).Within(0.1f));
+            entMan.DeleteEntity(body);
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task EatsMetalIntoRefactory()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var map = await pair.CreateTestMap();
+
+        await server.WaitAssertion(() =>
+        {
+            var proteanSystem = entMan.System<ProteanSystem>();
+            var bodySystem = entMan.System<SharedBodySystem>();
+            var body = entMan.SpawnEntity("MobProtean", map.GridCoords);
+            proteanSystem.EnsureSuit(body);
+            var bodyComp = entMan.GetComponent<BodyComponent>(body);
+            Assert.That(bodySystem.TryGetBodyOrganEntityComps<ProteanRefactoryComponent>(
+                (body, bodyComp), out var factories), Is.True);
+            factories![0].Comp1.Metal = 4f;
+
+            var sheet = entMan.SpawnEntity("SheetSteel1", map.GridCoords);
+            var coords = entMan.GetComponent<TransformComponent>(body).Coordinates;
+            entMan.EventBus.RaiseLocalEvent(body, new InteractUsingEvent(body, sheet, body, coords));
+
+            Assert.That(factories[0].Comp1.Metal, Is.EqualTo(5f).Within(0.1f));
             entMan.DeleteEntity(body);
         });
 

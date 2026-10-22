@@ -231,3 +231,16 @@
     size: Normal
   - type: ModsuitPlating
     theme: ModsuitThemeDebug
+
+- type: entity
+  id: ModsuitPlatingAdministrative
+  name: MOD administrative external plating
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Hardsuits/engineering.rsi
+    state: icon
+  - type: Item
+    size: Normal
+  - type: ModsuitPlating
+    theme: ModsuitThemeAdministrative

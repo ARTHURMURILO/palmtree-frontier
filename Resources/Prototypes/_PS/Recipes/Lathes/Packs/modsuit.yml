@@ -25,6 +25,7 @@
   id: PSModsuitModules
   recipes:
   - ModsuitModuleStorageRecipe
+  - ModsuitModuleStorageLargeRecipe
   - ModsuitModuleFlashlightRecipe
   - ModsuitModuleMagbootsRecipe
   - ModsuitModuleProteanServoRecipe
@@ -60,3 +61,4 @@
   - ModsuitPlatingCorporateRecipe
   - ModsuitPlatingChronoRecipe
   - ModsuitPlatingDebugRecipe
+  - ModsuitPlatingAdministrativeRecipe

@@ -43,6 +43,7 @@ public sealed class ModsuitTest
 
             var modules = proto.Index<LatheRecipePackPrototype>("PSModsuitModules");
             Assert.That(modules.Recipes, Contains.Item("ModsuitModuleStorageRecipe"));
+            Assert.That(modules.Recipes, Contains.Item("ModsuitModuleStorageLargeRecipe"));
             Assert.That(modules.Recipes, Contains.Item("ModsuitModuleMagbootsRecipe"));
 
             var baseTech = proto.Index<TechnologyPrototype>("PSModsuitBase");
@@ -129,6 +130,47 @@ public sealed class ModsuitTest
             entMan.DeleteEntity(control.Owner);
             entMan.DeleteEntity(screwdriver);
             entMan.DeleteEntity(wrench);
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task AllSpecialThemesApply()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var proto = server.ResolveDependency<IPrototypeManager>();
+        var map = await pair.CreateTestMap();
+
+        await server.WaitAssertion(() =>
+        {
+            var modsuitSystem = entMan.System<ModsuitSystem>();
+            var suit = entMan.SpawnEntity("ModsuitControlStandard", map.GridCoords);
+            var control = entMan.GetComponent<ModsuitControlComponent>(suit);
+            var helmet = control.Parts[ModsuitPartSlot.Helmet];
+            var clothing = entMan.GetComponent<ClothingComponent>(helmet);
+
+            var themeIds = new[]
+            {
+                "ModsuitThemeLoader", "ModsuitThemeAsteroid", "ModsuitThemeCorpsman",
+                "ModsuitThemeSyndicate", "ModsuitThemeHonkerative", "ModsuitThemeElite",
+                "ModsuitThemeInfiltrator", "ModsuitThemeInterdyne", "ModsuitThemeEnchanted",
+                "ModsuitThemeNinja", "ModsuitThemePrototype", "ModsuitThemeGlitch",
+                "ModsuitThemeResponsory", "ModsuitThemeInquisitory", "ModsuitThemeApocryphal",
+                "ModsuitThemeCorporate", "ModsuitThemeChrono", "ModsuitThemeDebug",
+                "ModsuitThemeAdministrative",
+            };
+
+            foreach (var id in themeIds)
+            {
+                Assert.That(proto.TryIndex<ModsuitThemePrototype>(id, out var theme), Is.True, id);
+                modsuitSystem.SetTheme((suit, control), new ProtoId<ModsuitThemePrototype>(id), theme!.DefaultSkin);
+                Assert.That(clothing.EquippedState, Is.EqualTo($"{theme.DefaultSkin}-helmet"), id);
+            }
+
+            entMan.DeleteEntity(suit);
         });
 
         await pair.CleanReturnAsync();
@@ -280,6 +322,14 @@ public sealed class ModsuitTest
             Assert.That(inventory.TryGetSlotEntity(human, "gloves", out _), Is.False);
             Assert.That(inventory.TryGetSlotEntity(human, "shoes", out _), Is.False);
 
+            var screwdriver = entMan.SpawnEntity("Screwdriver", map.GridCoords);
+            entMan.EventBus.RaiseLocalEvent(suit,
+                new InteractUsingEvent(human, screwdriver, suit, entMan.GetComponent<TransformComponent>(suit).Coordinates));
+            Assert.That(suitComp.Open, Is.True, "a screwdriver should open the service hatch");
+            Assert.That(moduleSystem.TryUninstallModule((suit, suitComp), module, silent: true), Is.True);
+            Assert.That(suitComp.Modules, Has.Count.EqualTo(2));
+
+            entMan.DeleteEntity(screwdriver);
             entMan.DeleteEntity(human);
             entMan.DeleteEntity(suit);
         });

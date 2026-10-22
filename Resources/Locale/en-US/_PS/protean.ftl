@@ -37,3 +37,5 @@ protean-window-servo = Servo: enhance wearer movement
 protean-window-low-power-on = Enable low power
 protean-window-low-power-off = Disable low power
 protean-window-heal = Self-repair
+protean-metal-eaten = You consume the metal and add it to your refactory.
+protean-metal-full = Your refactory is already full.

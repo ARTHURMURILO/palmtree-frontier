@@ -806,9 +806,10 @@ hazards live in [`ideas/modsuit-protean-port.md`](ideas/modsuit-protean-port.md)
   missing-organ penalties, refactory-bound suit power and digitigrade deployment are tested. Synth
   damage resistance and forced prying are intentionally not inherited. Item icons, special suits,
   the wider module
-  library, special-suit distribution and servo engineering mode remain optional breadth; 18 special
+  library, special-suit distribution and servo engineering mode remain optional breadth; 19 special
   themes/plating recipes and their research pack are implemented. Critical organs still use the
-  refactory repair path. See the plan.
+  refactory repair path. Post-checkpoint local polish adds module hatch/removal UI, expanded
+  storage, metal consumption and additional integration coverage. See the plan.
 - **Deliberate omissions:** ERP MODsuit content (Lustwish/hypnotic visor/Zubbers companion), MODlink
   and AI control, timeline/pathfinder/loader modules, surgery-dependent modules, soul/ethereal/plasma
   cores, the full TG art set beyond the current worn RSI, and unique Protean/anthro sprite variants.

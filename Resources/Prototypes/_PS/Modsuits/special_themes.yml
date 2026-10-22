@@ -555,3 +555,33 @@
           state: debug-boots
           sealedState: debug-boots-sealed
 
+
+- type: modsuitTheme
+  id: ModsuitThemeAdministrative
+  name: administrative
+  description: An administrative MODsuit theme using the debug visual kit.
+  defaultSkin: debug
+  complexityMax: 1000
+  chargeDrain: 0
+  armor: ModsuitArmorDebug
+  inbuiltModules:
+  - ModsuitModuleStorage
+  skins:
+    debug:
+      parts:
+        helmet:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: debug-helmet
+          sealedState: debug-helmet-sealed
+        chestplate:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: debug-chestplate
+          sealedState: debug-chestplate-sealed
+        gauntlets:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: debug-gauntlets
+          sealedState: debug-gauntlets-sealed
+        boots:
+          sprite: /Textures/_PS/Modsuits/Clothing/mod_clothing.rsi
+          state: debug-boots
+          sealedState: debug-boots-sealed

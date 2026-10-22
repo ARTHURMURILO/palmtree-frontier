@@ -30,6 +30,7 @@ using Content.Shared.Nutrition.Components;
 using Content.Shared.Polymorph;
 using Content.Shared.Popups;
 using Content.Shared.Tag;
+using Content.Shared.Stacks;
 using Content.Shared.StatusEffectNew;
 using Robust.Server.GameObjects;
 using Robust.Shared.Prototypes;
@@ -61,6 +62,7 @@ public sealed class ProteanSystem : EntitySystem
     [Dependency] private readonly StatusEffectsSystem _statusEffects = default!;
     [Dependency] private readonly TagSystem _tags = default!;
     [Dependency] private readonly IAdminLogManager _adminLogger = default!;
+    [Dependency] private readonly SharedStackSystem _stacks = default!;
     [Dependency] private readonly IPrototypeManager _prototypes = default!;
 
     public override void Initialize()
@@ -86,6 +88,7 @@ public sealed class ProteanSystem : EntitySystem
         SubscribeLocalEvent<ProteanSuitComponent, ProteanMemoryResetDoAfterEvent>(OnMemoryResetDoAfter);
         SubscribeLocalEvent<ProteanSuitComponent, EntityTerminatingEvent>(OnSuitTerminating);
         SubscribeLocalEvent<ProteanComponent, MobStateChangedEvent>(OnMobStateChanged);
+        SubscribeLocalEvent<ProteanComponent, InteractUsingEvent>(OnProteanInteractUsing);
         SubscribeLocalEvent<OrganComponent, OrganAddedToBodyEvent>(OnOrganAdded);
         SubscribeLocalEvent<PlayerSpawnCompleteEvent>(OnPlayerSpawnComplete);
     }
@@ -116,6 +119,34 @@ public sealed class ProteanSystem : EntitySystem
 
         ent.Comp.Suit = null;
         ent.Comp.Controller = null;
+    }
+
+    private void OnProteanInteractUsing(Entity<ProteanComponent> ent, ref InteractUsingEvent args)
+    {
+        if (args.Handled
+            || ent.Comp.Folded
+            || !_tags.HasTag(args.Used, "Metal")
+            || !_tags.HasTag(args.Used, "Sheet")
+            || !TryGetOrgan<ProteanRefactoryComponent>(ent.Owner, out var refactory))
+            return;
+
+        if (refactory.Comp1.Metal >= refactory.Comp1.MaxMetal)
+        {
+            _popup.PopupEntity(Loc.GetString("protean-metal-full"), ent.Owner, args.User);
+            args.Handled = true;
+            return;
+        }
+
+        refactory.Comp1.Metal = Math.Min(refactory.Comp1.MaxMetal, refactory.Comp1.Metal + 1f);
+        Dirty(refactory.Owner, refactory.Comp1);
+
+        if (TryComp<StackComponent>(args.Used, out var stack))
+            _stacks.SetCount(args.Used, stack.Count - 1, stack);
+        else
+            QueueDel(args.Used);
+
+        _popup.PopupEntity(Loc.GetString("protean-metal-eaten"), ent.Owner, args.User);
+        args.Handled = true;
     }
 
     private void OnPlayerSpawnComplete(PlayerSpawnCompleteEvent args)

@@ -646,3 +646,8 @@ so these fail only in CI:
 - **The Protean core is refactory-bound.** `ModsuitCoreProtean` is not a normal battery: its charge is
   mirrored from the refactory metal each tick. Do not give it a positive `DrainMultiplier` or the
   refactory system will fight the normal power drain. If metal hits zero the suit is force-retracted.
+
+- **MODsuit module removal is UI/hatch gated.** The screwdriver hatch sets `Open`; removal is
+  rejected while active or closed. Storage modules are marked non-removable in the UI because their
+  storage grid is shared with the suit rather than owned exclusively by the module. If storage
+  ownership is reworked, remove that guard deliberately and dump/transfer contents first.

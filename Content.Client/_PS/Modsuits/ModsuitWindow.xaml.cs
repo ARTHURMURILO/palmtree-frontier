@@ -12,6 +12,7 @@ public sealed partial class ModsuitWindow : DefaultWindow
 {
     public event Action? TogglePressed;
     public event Action? SealPressed;
+    public event Action<int>? RemovePressed;
 
     public ModsuitWindow()
     {
@@ -66,7 +67,12 @@ public sealed partial class ModsuitWindow : DefaultWindow
 
         foreach (var module in state.Modules)
         {
-            ModulesContainer.AddChild(new Label
+            var row = new BoxContainer
+            {
+                Orientation = BoxContainer.LayoutOrientation.Horizontal,
+                SeparationOverride = 4,
+            };
+            row.AddChild(new Label
             {
                 Text = Loc.GetString(
                     "modsuit-window-module",
@@ -75,7 +81,17 @@ public sealed partial class ModsuitWindow : DefaultWindow
                     ("status", module.Active
                         ? Loc.GetString("modsuit-window-module-active")
                         : Loc.GetString("modsuit-window-module-passive"))),
+                HorizontalExpand = true,
             });
+            var remove = new Button
+            {
+                Text = Loc.GetString("modsuit-window-remove-module"),
+                Disabled = !state.Open || state.Active || !module.CanRemove,
+            };
+            var index = module.Index;
+            remove.OnPressed += _ => RemovePressed?.Invoke(index);
+            row.AddChild(remove);
+            ModulesContainer.AddChild(row);
         }
     }
 }

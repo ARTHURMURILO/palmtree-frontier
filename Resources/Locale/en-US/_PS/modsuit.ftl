@@ -37,3 +37,7 @@ modsuit-construction-secured = You secure the assembly.
 modsuit-construction-finished = The MODsuit is complete.
 modsuit-construction-incomplete = The shell is not ready for that step.
 modsuit-part-integrated = That part is locked to the active MODsuit.
+modsuit-hatch-open = You open the MODsuit service hatch.
+modsuit-hatch-close = You close the MODsuit service hatch.
+modsuit-module-removed = { $module } removed.
+modsuit-window-remove-module = Remove

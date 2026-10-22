@@ -21,6 +21,7 @@ public sealed class ModsuitBoundUserInterface : BoundUserInterface
         _window = this.CreateWindow<ModsuitWindow>();
         _window.TogglePressed += () => SendMessage(new ModsuitToggleMessage());
         _window.SealPressed += () => SendMessage(new ModsuitSealMessage());
+        _window.RemovePressed += index => SendMessage(new ModsuitRemoveModuleMessage(index));
     }
 
     protected override void UpdateState(BoundUserInterfaceState state)

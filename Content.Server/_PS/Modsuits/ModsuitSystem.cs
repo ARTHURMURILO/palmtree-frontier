@@ -189,8 +189,6 @@ public sealed class ModsuitSystem : SharedModsuitSystem
         UpdateUi((uid, comp));
     }
 
-
-
     private void OnTerminating(Entity<ModsuitControlComponent> ent, ref EntityTerminatingEvent args)
     {
         if (ent.Comp.Sealed && ent.Comp.Wearer is { } wearer && !TerminatingOrDeleted(wearer))
@@ -483,8 +481,9 @@ public sealed class ModsuitSystem : SharedModsuitSystem
             state.MaxCharge = core.Infinite ? 0f : core.GetMaxCharge();
         }
 
-        foreach (var module in ent.Comp.Modules)
+        for (var i = 0; i < ent.Comp.Modules.Count; i++)
         {
+            var module = ent.Comp.Modules[i];
             if (!TryComp<ModsuitModuleComponent>(module, out var moduleComp))
                 continue;
 
@@ -493,7 +492,9 @@ public sealed class ModsuitSystem : SharedModsuitSystem
                 Name(module),
                 moduleComp.ModuleType,
                 moduleComp.Complexity,
-                moduleComp.Active));
+                moduleComp.Active,
+                i,
+                !HasComp<ModsuitStorageModuleComponent>(module)));
         }
 
         foreach (var (slot, part) in ent.Comp.Parts)

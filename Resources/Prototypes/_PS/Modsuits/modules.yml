@@ -59,3 +59,20 @@
     moduleType: Passive
     complexity: 3
   - type: ProteanServoModule
+
+- type: entity
+  id: ModsuitModuleStorageLarge
+  name: MOD expanded storage module
+  parent: BaseItem
+  components:
+  - type: Sprite
+    sprite: Clothing/Back/Backpacks/backpack.rsi
+    state: icon
+  - type: Item
+    size: Small
+  - type: ModsuitModule
+    moduleType: Passive
+    complexity: 5
+  - type: ModsuitStorageModule
+    grid:
+    - 0,0,5,2

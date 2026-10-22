@@ -79,8 +79,10 @@ public sealed class ProteanRefactorySystem : EntitySystem
                         continue;
 
                     var drain = (lowPower ? 0.0003f : 0.005f) * frameTime;
-                    refactory.Comp1.Metal = Math.Max(0f, refactory.Comp1.Metal - drain);
-                    Dirty(refactory.Owner, refactory.Comp1);
+                    var oldMetal = refactory.Comp1.Metal;
+                    refactory.Comp1.Metal = Math.Max(0f, oldMetal - drain);
+                    if (oldMetal != refactory.Comp1.Metal)
+                        Dirty(refactory.Owner, refactory.Comp1);
                 }
 
                 // High-metal Proteans slowly knit their swarm back together, mirroring the source's
@@ -104,10 +106,10 @@ public sealed class ProteanRefactorySystem : EntitySystem
             {
                 if (now >= protean.NextOrchestratorPenalty)
                 {
-                    protean.NextOrchestratorPenalty = now + TimeSpan.FromSeconds(5);
+                    protean.NextOrchestratorPenalty = now + TimeSpan.FromSeconds(30);
                     _statusEffects.TryAddStatusEffectDuration(uid,
                         "ProteanOrchestratorPenaltyStatusEffect",
-                        TimeSpan.FromSeconds(6));
+                        TimeSpan.FromSeconds(30));
                     _stun.TryKnockdown((uid, null), TimeSpan.FromSeconds(1), force: true);
                 }
 
@@ -133,9 +135,15 @@ public sealed class ProteanRefactorySystem : EntitySystem
             || !HasComp<ProteanCoreComponent>(coreUid))
             return;
 
-        core.Charge = Math.Clamp(metal, 0f, Math.Max(maxMetal, 0.1f));
-        core.MaxCharge = Math.Max(maxMetal, 0.1f);
-        Dirty(coreUid, core);
+        var newCharge = Math.Clamp(metal, 0f, Math.Max(maxMetal, 0.1f));
+        var newMax = Math.Max(maxMetal, 0.1f);
+        if (Math.Abs(core.Charge - newCharge) > 0.0001f
+            || Math.Abs(core.MaxCharge - newMax) > 0.0001f)
+        {
+            core.Charge = newCharge;
+            core.MaxCharge = newMax;
+            Dirty(coreUid, core);
+        }
 
         if (control.Active && core.Charge <= 0f)
             _modsuits.ForceRetract((suitUid, control));

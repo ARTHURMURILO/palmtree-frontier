@@ -7,6 +7,7 @@ using Content.Shared.Item.ItemToggle.Components;
 using Content.Shared.Light.Components;
 using Content.Shared.Popups;
 using Content.Shared.Storage;
+using Content.Shared.Tag;
 using Robust.Server.GameObjects;
 using Robust.Shared.Containers;
 using Robust.Shared.GameObjects;
@@ -24,6 +25,7 @@ public sealed class ModsuitModuleSystem : SharedModsuitSystem
     [Dependency] private readonly ModsuitSystem _modsuits = default!;
     [Dependency] private readonly SharedActionsSystem _actions = default!;
     [Dependency] private readonly SharedPointLightSystem _pointLight = default!;
+    [Dependency] private readonly TagSystem _tags = default!;
 
     public override void Initialize()
     {
@@ -31,6 +33,10 @@ public sealed class ModsuitModuleSystem : SharedModsuitSystem
 
         SubscribeLocalEvent<ModsuitControlComponent, InteractUsingEvent>(OnInteractUsing);
         SubscribeLocalEvent<ModsuitControlComponent, ModsuitModulesInitEvent>(OnModulesInit);
+        Subs.BuiEvents<ModsuitControlComponent>(ModsuitUiKey.Key, subs =>
+        {
+            subs.Event<ModsuitRemoveModuleMessage>(OnRemoveModuleMessage);
+        });
     }
 
     private void OnModulesInit(Entity<ModsuitControlComponent> ent, ref ModsuitModulesInitEvent args)
@@ -48,10 +54,20 @@ public sealed class ModsuitModuleSystem : SharedModsuitSystem
 
     private void OnInteractUsing(Entity<ModsuitControlComponent> ent, ref InteractUsingEvent args)
     {
-        if (args.Handled || ent.Comp.Active)
+        if (args.Handled)
             return;
 
-        if (!HasComp<ModsuitModuleComponent>(args.Used))
+        if (!ent.Comp.Active && _tags.HasTag(args.Used, "Screwdriver"))
+        {
+            ent.Comp.Open = !ent.Comp.Open;
+            Dirty(ent.Owner, ent.Comp);
+            _popup.PopupEntity(Loc.GetString(ent.Comp.Open ? "modsuit-hatch-open" : "modsuit-hatch-close"), ent.Owner, args.User);
+            _modsuits.UpdateUi(ent);
+            args.Handled = true;
+            return;
+        }
+
+        if (ent.Comp.Active || !HasComp<ModsuitModuleComponent>(args.Used))
             return;
 
         if (TryInstallModule(ent, args.Used, silent: false, user: args.User))
@@ -102,6 +118,25 @@ public sealed class ModsuitModuleSystem : SharedModsuitSystem
 
         _modsuits.UpdateUi(ent);
         return true;
+    }
+
+    private void OnRemoveModuleMessage(
+        EntityUid uid,
+        ModsuitControlComponent comp,
+        ModsuitRemoveModuleMessage args)
+    {
+        if (comp.Wearer != args.Actor || comp.Active || !comp.Open)
+            return;
+
+        if (args.Index < 0 || args.Index >= comp.Modules.Count)
+            return;
+
+        var module = comp.Modules[args.Index];
+        if (HasComp<ModsuitStorageModuleComponent>(module))
+            return;
+
+        if (TryUninstallModule((uid, comp), module, silent: true))
+            _popup.PopupEntity(Loc.GetString("modsuit-module-removed", ("module", Name(module))), uid, args.Actor);
     }
 
     public bool TryUninstallModule(Entity<ModsuitControlComponent> ent, EntityUid module, bool silent = false)
