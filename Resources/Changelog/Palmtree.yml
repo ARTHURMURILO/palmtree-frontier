@@ -1256,3 +1256,17 @@ Entries:
   time: '2026-10-22T18:54:55.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/6d55dfd08059ba51b58c33c6d935db1fcbca178d
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: >-
+        Added flickering and rave variants for wall, small and post lights and
+        their bulbs, including always-powered versions.
+    - type: Add
+      message: >-
+        Rave lights pulse continuously, and a screwdriver cycles their period
+        between 0.5, 1 and 2 seconds.
+  id: 90078
+  time: '2026-10-22T19:53:02.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/aec1b95a1899d0b580d4c0aec1717fb51dd0397e
