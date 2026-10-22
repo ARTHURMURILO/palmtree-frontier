@@ -15,6 +15,8 @@ using Content.Shared.Storage;
 using Content.Shared.Timing;
 using Content.Shared.Weapons.Ranged.Components;
 using Content.Shared.DeviceLinking;
+using Content.Shared.Hands.EntitySystems;
+using Content.Shared.SmartFridge;
 using NUnit.Framework;
 using Robust.Server.Containers;
 using Robust.Shared.ContentPack;
@@ -127,6 +129,87 @@ public sealed class BluespaceDockSaveTest
                 "The do-after id was not remapped to the loaded entity.");
             Assert.That(loadedClimbing.DoAfter.Value.Index, Is.EqualTo(1), "The do-after id's index changed.");
         });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    /// A used smart fridge (its UI entry cache maps <c>SmartFridgeEntry</c> - a mapping type, so it
+    /// cannot be a dictionary key - to session-scoped <c>NetEntity</c>s) used to fail the whole save
+    /// with "Caught exception while serializing component SmartFridge". The cache is not persisted and
+    /// is rebuilt from the container on startup instead, so the fridge and its contents survive.
+    /// </summary>
+    [Test]
+    public async Task UsedSmartFridgeSurvivesTheSave()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var containers = server.System<ContainerSystem>();
+
+        EntityUid loadedGrid = default;
+        MapId loadedMap = default;
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var hands = server.System<SharedHandsSystem>();
+            var grid = testMap.Grid.Owner;
+
+            var fridge = entMan.SpawnEntity("SmartFridge", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            var apple = entMan.SpawnEntity("FoodApple", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            var user = entMan.SpawnEntity("MobHuman", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            Assert.That(hands.TryForcePickupAnyHand(user, apple), Is.True, "sanity: the user must hold the apple");
+
+            // The real insertion path populates ContainedEntries (the part that could not be saved).
+            var interact = new InteractUsingEvent(user, apple, fridge,
+                entMan.GetComponent<TransformComponent>(fridge).Coordinates);
+            entMan.EventBus.RaiseLocalEvent(fridge, interact);
+            Assert.That(interact.Handled, Is.True, "sanity: the apple was not inserted into the fridge");
+            Assert.That(entMan.GetComponent<SmartFridgeComponent>(fridge).ContainedEntries.Count, Is.EqualTo(1),
+                "sanity: the fridge lists its contents");
+
+            var path = BluespaceDockSystem.GetShipFilePath("smart-fridge-save-test");
+            Assert.That(dock.TrySaveShipFile(grid, path, out var error), Is.True,
+                $"Saving a grid with a used smart fridge failed: {error}");
+            Assert.That(dock.TryLoadShipFile(path, out var loaded), Is.True, "Loading the saved ship failed.");
+            loadedGrid = loaded!.Value;
+            loadedMap = entMan.GetComponent<TransformComponent>(loadedGrid).MapID;
+            dock.DeleteShipFile(path);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var entities = new HashSet<EntityUid>();
+            dock.GetEntitiesOnGrid(loadedGrid, entities);
+
+            EntityUid? loadedFridge = null;
+            foreach (var uid in entities)
+            {
+                if (entMan.GetComponent<MetaDataComponent>(uid).EntityPrototype?.ID == "SmartFridge")
+                    loadedFridge = uid;
+            }
+
+            Assert.That(loadedFridge, Is.Not.Null, "The retrieved ship lost its smart fridge.");
+
+            var containers = server.System<ContainerSystem>();
+            var fridgeComp = entMan.GetComponent<SmartFridgeComponent>(loadedFridge!.Value);
+            Assert.That(containers.TryGetContainer(loadedFridge.Value, fridgeComp.Container, out var container), Is.True);
+
+            var apples = container!.ContainedEntities.Count(uid =>
+                entMan.GetComponent<MetaDataComponent>(uid).EntityPrototype?.ID == "FoodApple");
+            Assert.That(apples, Is.EqualTo(1), "The retrieved fridge lost its contents.");
+
+            // The entry list is rebuilt on startup, so the fridge can still dispense it.
+            Assert.That(fridgeComp.ContainedEntries.Count, Is.EqualTo(1),
+                "The retrieved fridge's entry list was not rebuilt from its contents.");
+        });
+
+        await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));
+        await server.WaitRunTicks(2);
+        await server.WaitAssertion(() => server.System<SharedMapSystem>().DeleteMap(loadedMap));
 
         await pair.CleanReturnAsync();
     }

@@ -604,3 +604,27 @@ so these fail only in CI:
 - `emotelist` runs from the server console with no attached entity; pass a string as the Fluent
   `entity` argument (neuter fallback) instead of `EntityUid.Invalid`, which logs
   `MetaDataComponent` KeyNotFound errors for pronoun functions.
+
+## 28. Saving live grids: runtime-only fields are the main failure source (2026-10-22)
+
+- The same rule as §25 keeps surfacing: every `[DataField]` must be writable. Two shapes that look
+  harmless but are not:
+  - **Dictionary keys that are mappings.** `SmartFridgeComponent.ContainedEntries` is a
+    `Dictionary<SmartFridgeEntry, HashSet<NetEntity>>`; `SmartFridgeEntry` is a `[DataRecord]`
+    struct, so the key serializes as a *mapping*, and a dictionary key must be a value node. The
+    save threw `Caught exception while serializing component SmartFridge`; it only failed once the
+    fridge was used (empty dictionary = no keys). Dictionary keys must be scalars (`string`, `int`,
+    `ProtoId`, ...).
+  - **Session-scoped refs in persisted collections** (`NetEntity` sets/maps): even when they
+    serialize, they describe a round. Prefer `[ViewVariables]`/`[AutoNetworkedField]` plus a rebuild
+    from real entity state (`SmartFridgeComponent.ContainedEntries` is rebuilt from the container).
+- **A save must never be the only copy of the store decision.** `TrySaveShipFile` falls back to
+  `EntityExceptionBehaviour.IgnoreEntityAndChildren` and records what it skipped in the file's
+  `droppedEntities` section; loading spawns fresh copies (`TrySpawnDroppedEntities`). The strict
+  attempt still logs an ERRO (the engine does), so a "ship stored with skipped entities" shows up in
+  the log as `entity_serializer: Caught exception` followed by
+  `bluespace_dock: ... falling back to a save that skips them`.
+- **The store strips before it knows the file is good.** Any new failure point after
+  `StripStationReferences`/`UndockShuttle` must go through `RestoreStoreFailure` (station refs, deed,
+  docking to the *grid it was docked to*). A stripped ship has no station member/bound components, so
+  its station-bound machinery and power look "soft-broken" until it is restored.

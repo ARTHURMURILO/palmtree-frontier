@@ -45,7 +45,15 @@ public sealed partial class SmartFridgeComponent : Component
     /// <summary>
     /// A mapping of smart fridge entries to the actual contained contents
     /// </summary>
-    [DataField, AutoNetworkedField]
+    /// <remarks>
+    /// Palmtree: runtime UI state, deliberately not a <c>[DataField]</c>. <see cref="SmartFridgeEntry"/>
+    /// is a mapping (it has no scalar form), so a non-empty dictionary cannot be serialized (a dictionary
+    /// needs value-node keys) - a live grid save of a used fridge threw "Caught exception while
+    /// serializing component SmartFridge" and failed the whole save (the bluespace dock's ship files).
+    /// The values are also session-scoped <see cref="NetEntity"/>s. <see cref="SmartFridgeSystem"/>
+    /// rebuilds this from the container on startup/MapInit instead.
+    /// </remarks>
+    [AutoNetworkedField]
     [Access(typeof(SmartFridgeSystem), Other = AccessPermissions.ReadExecute)]
     public Dictionary<SmartFridgeEntry, HashSet<NetEntity>> ContainedEntries = new();
 

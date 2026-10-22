@@ -600,6 +600,29 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
   silently do nothing while right-click verbs (which bypass `UseDelay`) still work. The save clears
   them; see `.ai/HAZARDS.md` section 27 for the full trap and the regression test
   (`BluespaceDockSaveTest.SavedShipForgetsActionCooldowns`).
+- **One unserializable entity no longer fails a store (2026-10-22)**: the save first tries strictly
+  (`IncludeNullspace` then `Ignore`). When something on the grid cannot be serialized at all (a
+  component field the serializer has no data definition for), it retries with
+  `EntityExceptionBehaviour.IgnoreEntityAndChildren`, writes the file without that entity (and its
+  transform children - container contents are transform children of their container, so a dropped
+  machine loses its contents), and records the skipped entities under `droppedEntities` in the file
+  (prototype, local position, rotation, anchored). `TryLoadShipFile` then spawns a **fresh copy** of
+  each at its saved position (`TrySpawnDroppedEntities`); mobs and ghosts are never recorded. The
+  rewritten file also prunes container/storage references to uids it no longer declares. Diagnostics:
+  `grep "could not be serialized and were skipped"` in the server log.
+- **Failed stores restore the ship (2026-10-22)**: the store strips station references, the deed and
+  the docking *before* saving, so any failure after that point must undo it. The `TryStoreShip`
+  exception path now calls `RestoreStoreFailure` too (it used to just log), and the restore re-docks
+  to the grid the ship was docked to at store time - it used to pass the ship's *own* station, whose
+  largest grid is the ship itself. A ship left stripped is station-less, which is what made its
+  machinery stop working after a failed store.
+- **Smart fridges are saveable (2026-10-22)**: `SmartFridgeComponent.ContainedEntries` (the UI entry
+  cache: `Dictionary<SmartFridgeEntry, HashSet<NetEntity>>`) is a mapping-keyed dictionary with
+  session-scoped refs and cannot be serialized at all - a live save of a used fridge threw
+  "Caught exception while serializing component SmartFridge" and failed the whole store. It is no
+  longer a `[DataField]`; `SmartFridgeSystem` rebuilds it from the container on `ComponentStartup`
+  and `MapInit` (startup runs for loaded ships, which skip MapInit), so the fridge and its contents
+  survive. This is persistence-only: insertion/ejection behave exactly as before.
 - **Retrieved ships get the shipyard's station (`GetShipStationConfig`, 2026-10-18)**: the station a
   ship lives on carries its capabilities, not the grid. Retrieval used to rebuild *every* ship with a
   plain `StandardFrontierVessel` station, which silently cost expedition ships their
