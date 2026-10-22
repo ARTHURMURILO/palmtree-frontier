@@ -574,3 +574,33 @@ so these fail only in CI:
   absolute `TimeSpan`/`GameTick` and gates an action needs a reset there too.** Relative counters are
   fine (`DoorComponent.SecondsUntilStateChange` stores a relative number of seconds).
 - Regression test: `BluespaceDockSaveTest.SavedShipForgetsActionCooldowns` (fails without the reset).
+
+## 28. Emote categories and chat triggers (2026-10)
+
+- **`EmoteCategory` is an `int` flag set now, not `ushort`.** All 16 old bits were taken and
+  SPLURT's `Funny` category needed a new one. `General` is `int.MaxValue`; `Funny` is
+  `Vocal | (1 << 16)` (not just `1 << 16`, or mutes/mumbling stop applying). Keep new categories
+  as flags and update `EmotesUIController.EmoteGroupingInfo` **and**
+  `EmoteCategoryWindow.CategoryTooltips` or the wheel throws on a missing dictionary key.
+- Category persistence is by enum **name** (`ServerDbBase` joins/splits `HiddenEmoteCategories`),
+  so widening the backing type does not need a DB migration. `Sex`/`Vocal`/`Invalid` are stripped
+  on save and forced visible.
+- **`*trigger` is just `EmotePrototype.ChatTriggers`.** ChatSystem strips the `*`, lowercases and
+  trims punctuation before the dictionary lookup. A trigger must be unique across every emote
+  prototype (duplicates only log a warning and the first emote wins), and a prototype with no
+  trigger cannot be used from chat even if it is in the wheel.
+- Funny emote sounds are inherited: `SupplementalFunnyEmotes` (abstract, `_PS`) is the parent of
+  `SupplementalCoyoteEmoteStuff`, which is the `VocalComponent` default. Adding an emote to the
+  wheel without adding it to that `sounds` dictionary still works for chat but is silent.
+- FTL chat messages can use Fluent pronoun helpers (`{POSS-ADJ($entity)}`, `{SUBJECT($entity)}`);
+  plain HTML tags and `[user.p_their()]`-style DM macros are not valid in SS14 locale strings.
+- **Abstract prototypes are not instantiated and cannot be `Index<T>()`-ed.** Use them only as
+  `parent:` data (`SupplementalFunnyEmotes`); a `ProtoId` field/default that points at an abstract
+  prototype fails at runtime with `UnknownPrototypeException` even though the linter accepts it.
+  `SupplementalFunnyMale`/`Female` are therefore concrete `emoteSounds` prototypes.
+- The chat-trigger path (`*trigger`) is separate from `TryEmoteWithChat`: without special handling
+  it sends the raw trigger text, not `ChatMessages`. `SendEntityEmote` now replaces the action with
+  the localized message for `EmoteCategory.Funny` only.
+- `emotelist` runs from the server console with no attached entity; pass a string as the Fluent
+  `entity` argument (neuter fallback) instead of `EntityUid.Invalid`, which logs
+  `MetaDataComponent` KeyNotFound errors for pronoun functions.

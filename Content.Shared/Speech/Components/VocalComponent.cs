@@ -59,4 +59,17 @@ public sealed partial class VocalComponent : Component
     [ViewVariables]
     [AutoNetworkedField]
     public ProtoId<EmoteSoundsPrototype> SupplementalSounds = "SupplementalCoyoteEmoteStuff";
+
+    /// <summary>
+    /// Palmtree: optional per-sex supplemental sounds, checked before <see cref="SupplementalSounds"/>.
+    /// Used for meme emotes with separate male/female voice lines (the Ace Attorney set).
+    /// Server-only; the client never needs to resolve this set.
+    /// </summary>
+    [DataField]
+    [ViewVariables]
+    public Dictionary<Sex, ProtoId<EmoteSoundsPrototype>>? SexSupplementalSounds = new()
+    {
+        { Sex.Male, "SupplementalFunnyMale" },
+        { Sex.Female, "SupplementalFunnyFemale" },
+    };
 }

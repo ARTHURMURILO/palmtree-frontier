@@ -12,6 +12,7 @@ using Content.Shared.ActionBlocker;
 using Content.Shared.Administration;
 using Content.Shared.CCVar;
 using Content.Shared.Chat;
+using Content.Shared.Chat.Prototypes;
 using Content.Shared.Database;
 using Content.Shared.Examine;
 using Content.Shared.Ghost;
@@ -590,18 +591,26 @@ public sealed partial class ChatSystem : SharedChatSystem
         var ent = Identity.Entity(source, EntityManager);
         string name = FormattedMessage.EscapeText(nameOverride ?? Name(ent));
 
+        bool emoteEventInvoked = false; // Frontier: track emote event
+        EmotePrototype? triggeredEmote = null;
+        if (checkEmote &&
+            !TryEmoteChatInput(source, action, out emoteEventInvoked, out triggeredEmote)) // Frontier: track emote event
+        {
+            return;
+        }
+
+        // Palmtree: SPLURT Funny emotes carry their own third-person message, so show that instead
+        // of echoing the raw chat trigger (e.g. "*laugh2" -> "laughs like a king.").
+        if (triggeredEmote is { Category: EmoteCategory.Funny } && triggeredEmote.ChatMessages.Count > 0)
+        {
+            action = Loc.GetString(_random.Pick(triggeredEmote.ChatMessages), ("entity", source));
+        }
+
         // Emotes use Identity.Name, since it doesn't actually involve your voice at all.
         var wrappedMessage = Loc.GetString("chat-manager-entity-me-wrap-message",
             ("entityName", name),
             ("entity", ent),
             ("message", FormattedMessage.RemoveMarkupOrThrow(action)));
-
-        bool emoteEventInvoked = false; // Frontier: track emote event
-        if (checkEmote &&
-            !TryEmoteChatInput(source, action, out emoteEventInvoked)) // Frontier: track emote event
-        {
-            return;
-        }
 
         // Frontier: send custom emotes through custom event
         if (!emoteEventInvoked)

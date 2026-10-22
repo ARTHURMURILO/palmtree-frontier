@@ -69,6 +69,8 @@ public sealed class EmotesUIController : UIController, IOnStateChanged<GameplayS
                 new SpriteSpecifier.Texture(new ResPath("/Textures/_CS/Emojis/plug.png"))),
             [EmoteCategory.Felinid] = ("emote-menu-category-felinid",
                 new SpriteSpecifier.Texture(new ResPath("/Textures/_CS/Emojis/cat.png"))),
+            [EmoteCategory.Funny] = ("emote-menu-category-funny",
+                new SpriteSpecifier.Texture(new ResPath("/Textures/Interface/Emotes/laugh.png"))),
         };
 
     // Palmtree/Coyote: these categories are always visible in the wheel.

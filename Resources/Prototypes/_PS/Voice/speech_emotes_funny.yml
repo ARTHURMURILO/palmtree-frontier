@@ -1,0 +1,1261 @@
+# Funny emotes ported from SPLURT-Station-13
+# (modular_splurt/code/modules/mob/living/emotes.dm).
+# Available to every species; the emote category picker can hide them.
+
+- type: emote
+  id: Tilt
+  name: chat-emote-name-funny-tilt
+  category: Funny
+  available: true
+  chatMessages: [chat-emote-msg-funny-tilt]
+  chatTriggers:
+    - tilt
+    - tilts
+
+- type: emote
+  id: Squint
+  name: chat-emote-name-funny-squint
+  category: Funny
+  available: true
+  chatMessages: [chat-emote-msg-funny-squint]
+  chatTriggers:
+    - squint
+    - squints
+
+- type: emote
+  id: Ruffle
+  name: chat-emote-name-funny-ruffle
+  category: Funny
+  available: true
+  chatMessages: [chat-emote-msg-funny-ruffle]
+  chatTriggers:
+    - ruffle
+    - ruffles
+
+
+- type: emote
+  id: Cackle
+  name: chat-emote-name-funny-cackle
+  category: Funny
+  available: true
+  icon: Interface/Emotes/laugh.png
+  chatMessages: [chat-emote-msg-funny-cackle]
+  chatTriggers:
+    - cackle
+    - cackles
+
+- type: emote
+  id: Speen
+  name: chat-emote-name-funny-speen
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-speen]
+  chatTriggers:
+    - speen
+    - speens
+    - speening
+
+- type: emote
+  id: Chitter2
+  name: chat-emote-name-funny-chitter2
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-chitter2]
+  chatTriggers:
+    - chitter2
+    - chitters2
+
+
+- type: emote
+  id: Bruh
+  name: chat-emote-name-funny-bruh
+  category: Funny
+  available: true
+  chatMessages: [chat-emote-msg-funny-bruh]
+  chatTriggers:
+    - bruh
+    - bruhs
+
+- type: emote
+  id: Bababooey
+  name: chat-emote-name-funny-bababooey
+  category: Funny
+  available: true
+  chatMessages: [chat-emote-msg-funny-bababooey]
+  chatTriggers:
+    - bababooey
+    - bababooeys
+
+- type: emote
+  id: Babafooey
+  name: chat-emote-name-funny-babafooey
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-babafooey]
+  chatTriggers:
+    - babafooey
+    - babafooeys
+
+- type: emote
+  id: Fafafooey
+  name: chat-emote-name-funny-fafafooey
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-fafafooey]
+  chatTriggers:
+    - fafafooey
+    - fafafooeys
+
+- type: emote
+  id: Fafafoggy
+  name: chat-emote-name-funny-fafafoggy
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-fafafoggy]
+  chatTriggers:
+    - fafafoggy
+    - fafafoggys
+
+- type: emote
+  id: Hohohoy
+  name: chat-emote-name-funny-hohohoy
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-hohohoy]
+  chatTriggers:
+    - hohohoy
+    - hohohoys
+
+- type: emote
+  id: Ffff
+  name: chat-emote-name-funny-ffff
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-ffff]
+  chatTriggers:
+    - ffff
+    - ffffs
+
+- type: emote
+  id: Fafafail
+  name: chat-emote-name-funny-fafafail
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-fafafail]
+  chatTriggers:
+    - fafafail
+    - fafafails
+
+- type: emote
+  id: Boowomp
+  name: chat-emote-name-funny-boowomp
+  category: Funny
+  available: true
+  chatMessages: [chat-emote-msg-funny-boowomp]
+  chatTriggers:
+    - boowomp
+    - boowomps
+
+- type: emote
+  id: Swaos
+  name: chat-emote-name-funny-swaos
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-swaos]
+  chatTriggers:
+    - swaos
+
+- type: emote
+  id: Eyebrow3
+  name: chat-emote-name-funny-eyebrow3
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-eyebrow3]
+  chatTriggers:
+    - eyebrow3
+    - eyebrows3
+
+- type: emote
+  id: Blink2
+  name: chat-emote-name-funny-blink2
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-blink2]
+  chatTriggers:
+    - blink2
+    - blinks2
+
+- type: emote
+  id: Laugh2
+  name: chat-emote-name-funny-laugh2
+  category: Funny
+  available: true
+  icon: Interface/Emotes/laugh.png
+  chatMessages: [chat-emote-msg-funny-laugh2]
+  chatTriggers:
+    - laugh2
+    - laughs2
+
+- type: emote
+  id: Laugh3
+  name: chat-emote-name-funny-laugh3
+  category: Funny
+  available: true
+  icon: Interface/Emotes/laugh.png
+  chatMessages: [chat-emote-msg-funny-laugh3]
+  chatTriggers:
+    - laugh3
+    - laughs3
+
+- type: emote
+  id: Laugh4
+  name: chat-emote-name-funny-laugh4
+  category: Funny
+  available: true
+  icon: Interface/Emotes/laugh.png
+  chatMessages: [chat-emote-msg-funny-laugh4]
+  chatTriggers:
+    - laugh4
+    - laughs4
+
+- type: emote
+  id: Laugh5
+  name: chat-emote-name-funny-laugh5
+  category: Funny
+  available: true
+  icon: Interface/Emotes/laugh.png
+  chatMessages: [chat-emote-msg-funny-laugh5]
+  chatTriggers:
+    - laugh5
+    - laughs5
+
+- type: emote
+  id: Laugh6
+  name: chat-emote-name-funny-laugh6
+  category: Funny
+  available: true
+  icon: Interface/Emotes/laugh.png
+  chatMessages: [chat-emote-msg-funny-laugh6]
+  chatTriggers:
+    - laugh6
+    - laughs6
+
+- type: emote
+  id: Breakbad
+  name: chat-emote-name-funny-breakbad
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-breakbad]
+  chatTriggers:
+    - breakbad
+    - breakbads
+
+- type: emote
+  id: Lawyerup
+  name: chat-emote-name-funny-lawyerup
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-lawyerup]
+  chatTriggers:
+    - lawyerup
+    - lawyerups
+
+- type: emote
+  id: Goddamn
+  name: chat-emote-name-funny-goddamn
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-goddamn]
+  chatTriggers:
+    - damn
+    - damns
+
+- type: emote
+  id: Spoonful
+  name: chat-emote-name-funny-spoonful
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-spoonful]
+  chatTriggers:
+    - spoonful
+    - spoonfuls
+
+- type: emote
+  id: Ohhmygod
+  name: chat-emote-name-funny-ohhmygod
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-ohhmygod]
+  chatTriggers:
+    - mygod
+    - omgs
+
+- type: emote
+  id: Whatthehell
+  name: chat-emote-name-funny-whatthehell
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-whatthehell]
+  chatTriggers:
+    - wth
+    - wths
+
+- type: emote
+  id: Fusrodah
+  name: chat-emote-name-funny-fusrodah
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-fusrodah]
+  chatTriggers:
+    - fusrodah
+    - furodahs
+
+- type: emote
+  id: Skibidi
+  name: chat-emote-name-funny-skibidi
+  category: Funny
+  available: true
+  chatMessages: [chat-emote-msg-funny-skibidi]
+  chatTriggers:
+    - skibidi
+    - skibidis
+
+- type: emote
+  id: Fbi
+  name: chat-emote-name-funny-fbi
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-fbi]
+  chatTriggers:
+    - fbi
+    - fbis
+
+- type: emote
+  id: Illuminati
+  name: chat-emote-name-funny-illuminati
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-illuminati]
+  chatTriggers:
+    - illuminati
+    - illuminatis
+
+- type: emote
+  id: Bonerif
+  name: chat-emote-name-funny-bonerif
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-bonerif]
+  chatTriggers:
+    - bonerif
+    - bonerifs
+
+- type: emote
+  id: Cry2
+  name: chat-emote-name-funny-cry2
+  category: Funny
+  available: true
+  icon: Interface/Emotes/cry.png
+  chatMessages: [chat-emote-msg-funny-cry2]
+  chatTriggers:
+    - cry2
+    - cries2
+
+- type: emote
+  id: Choir
+  name: chat-emote-name-funny-choir
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-choir]
+  chatTriggers:
+    - choir
+    - choirs
+
+- type: emote
+  id: Agony
+  name: chat-emote-name-funny-agony
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-agony]
+  chatTriggers:
+    - agony
+    - agonys
+
+- type: emote
+  id: Whistletune
+  name: chat-emote-name-funny-whistletune
+  category: Funny
+  available: true
+  showInWheel: false
+  icon: Interface/Emotes/whistle.png
+  chatMessages: [chat-emote-msg-funny-whistletune]
+  chatTriggers:
+    - whistletune
+    - whistletunes
+
+- type: emote
+  id: Wolfwhistle
+  name: chat-emote-name-funny-wolfwhistle
+  category: Funny
+  available: true
+  showInWheel: false
+  icon: Interface/Emotes/whistle.png
+  chatMessages: [chat-emote-msg-funny-wolfwhistle]
+  chatTriggers:
+    - wolfwhistle
+    - wolfwhistles
+
+- type: emote
+  id: Terror
+  name: chat-emote-name-funny-terror
+  category: Funny
+  available: true
+  showInWheel: false
+  icon: Interface/Emotes/whistle.png
+  chatMessages: [chat-emote-msg-funny-terror]
+  chatTriggers:
+    - terror
+    - terrors
+
+- type: emote
+  id: Deathglare
+  name: chat-emote-name-funny-deathglare
+  category: Funny
+  available: true
+  chatMessages: [chat-emote-msg-funny-deathglare]
+  chatTriggers:
+    - glare2
+    - glares2
+
+- type: emote
+  id: Sicko
+  name: chat-emote-name-funny-sicko
+  category: Funny
+  available: true
+  chatMessages: [chat-emote-msg-funny-sicko]
+  chatTriggers:
+    - sicko
+    - sickos
+
+- type: emote
+  id: Chill
+  name: chat-emote-name-funny-chill
+  category: Funny
+  available: true
+  chatMessages: [chat-emote-msg-funny-chill]
+  chatTriggers:
+    - chill
+    - chills
+
+- type: emote
+  id: Taunt
+  name: chat-emote-name-funny-taunt
+  category: Funny
+  available: true
+  chatMessages: [chat-emote-msg-funny-taunt]
+  chatTriggers:
+    - tt
+    - taunt
+    - taunts
+
+- type: emote
+  id: Taunt2
+  name: chat-emote-name-funny-taunt2
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-taunt2]
+  chatTriggers:
+    - tt2
+    - taunt2
+    - taunts2
+
+- type: emote
+  id: Weh2
+  name: chat-emote-name-funny-weh2
+  category: Funny
+  available: true
+  icon: Interface/Emotes/weh.png
+  chatMessages: [chat-emote-msg-funny-weh2]
+  chatTriggers:
+    - weh2
+    - wehs2
+
+- type: emote
+  id: Weh3
+  name: chat-emote-name-funny-weh3
+  category: Funny
+  available: true
+  icon: Interface/Emotes/weh.png
+  chatMessages: [chat-emote-msg-funny-weh3]
+  chatTriggers:
+    - weh3
+    - wehs3
+
+- type: emote
+  id: Weh4
+  name: chat-emote-name-funny-weh4
+  category: Funny
+  available: true
+  icon: Interface/Emotes/weh.png
+  chatMessages: [chat-emote-msg-funny-weh4]
+  chatTriggers:
+    - weh4
+    - wehs4
+
+- type: emote
+  id: Waa
+  name: chat-emote-name-funny-waa
+  category: Funny
+  available: true
+  chatMessages: [chat-emote-msg-funny-waa]
+  chatTriggers:
+    - waa
+    - waas
+
+- type: emote
+  id: Bark2
+  name: chat-emote-name-funny-bark2
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-bark2]
+  chatTriggers:
+    - bark2
+    - barks2
+
+- type: emote
+  id: Bork
+  name: chat-emote-name-funny-bork
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-bork]
+  chatTriggers:
+    - bork
+    - borks
+
+- type: emote
+  id: Woof
+  name: chat-emote-name-funny-woof
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-woof]
+  chatTriggers:
+    - woof
+    - woofs
+
+- type: emote
+  id: Woof2
+  name: chat-emote-name-funny-woof2
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-woof2]
+  chatTriggers:
+    - woof2
+    - woofs2
+
+- type: emote
+  id: Coyhowl
+  name: chat-emote-name-funny-coyhowl
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-coyhowl]
+  chatTriggers:
+    - coyhowl
+    - coyhowls
+
+- type: emote
+  id: Mlem
+  name: chat-emote-name-funny-mlem
+  category: Funny
+  available: true
+  chatMessages: [chat-emote-msg-funny-mlem]
+  chatTriggers:
+    - mlem
+    - mlems
+
+- type: emote
+  id: Snore2
+  name: chat-emote-name-funny-snore2
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-snore2]
+  chatTriggers:
+    - snore2
+    - snores2
+
+- type: emote
+  id: Pant
+  name: chat-emote-name-funny-pant
+  category: Funny
+  available: true
+  chatMessages: [chat-emote-msg-funny-pant]
+  chatTriggers:
+    - pant
+    - pants
+
+- type: emote
+  id: Yippee
+  name: chat-emote-name-funny-yippee
+  category: Funny
+  available: true
+  chatMessages: [chat-emote-msg-funny-yippee]
+  chatTriggers:
+    - yippee
+    - yippees
+
+- type: emote
+  id: Mewo
+  name: chat-emote-name-funny-mewo
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-mewo]
+  chatTriggers:
+    - mewo
+    - mewos
+
+- type: emote
+  id: Missouri
+  name: chat-emote-name-funny-missouri
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-missouri]
+  chatTriggers:
+    - missouri
+    - missouris
+
+- type: emote
+  id: Facehand
+  name: chat-emote-name-funny-facehand
+  category: Funny
+  available: true
+  chatMessages: [chat-emote-msg-funny-facehand]
+  chatTriggers:
+    - facehand
+    - facehands
+
+- type: emote
+  id: Facepaw
+  name: chat-emote-name-funny-facepaw
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-facepaw]
+  chatTriggers:
+    - facepaw
+    - facepaws
+
+- type: emote
+  id: Faceclaw
+  name: chat-emote-name-funny-faceclaw
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-faceclaw]
+  chatTriggers:
+    - faceclaw
+    - faceclaws
+
+- type: emote
+  id: Facewing
+  name: chat-emote-name-funny-facewing
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-facewing]
+  chatTriggers:
+    - facewing
+    - facewings
+
+- type: emote
+  id: Facehoof
+  name: chat-emote-name-funny-facehoof
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-facehoof]
+  chatTriggers:
+    - facehoof
+    - facehoofs
+
+- type: emote
+  id: Poyo
+  name: chat-emote-name-funny-poyo
+  category: Funny
+  available: true
+  chatMessages: [chat-emote-msg-funny-poyo]
+  chatTriggers:
+    - poyo
+    - poyos
+
+- type: emote
+  id: Buff
+  name: chat-emote-name-funny-buff
+  category: Funny
+  available: true
+  icon: Interface/Emotes/salute.png
+  chatMessages: [chat-emote-msg-funny-buff]
+  chatTriggers:
+    - buff
+    - buffs
+
+- type: emote
+  id: Merowr
+  name: chat-emote-name-funny-merowr
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-merowr]
+  chatTriggers:
+    - merowr
+    - merowrs
+
+- type: emote
+  id: Hoot
+  name: chat-emote-name-funny-hoot
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-hoot]
+  chatTriggers:
+    - hoot
+    - hoots
+
+- type: emote
+  id: Wurble
+  name: chat-emote-name-funny-wurble
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-wurble]
+  chatTriggers:
+    - wurble
+    - wurbles
+
+- type: emote
+  id: Warble
+  name: chat-emote-name-funny-warble
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-warble]
+  chatTriggers:
+    - warble
+    - warbles
+
+- type: emote
+  id: Trill2
+  name: chat-emote-name-funny-trill2
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-trill2]
+  chatTriggers:
+    - trill2
+    - trills2
+
+- type: emote
+  id: Rattle
+  name: chat-emote-name-funny-rattle
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-rattle]
+  chatTriggers:
+    - rattle
+    - rattles
+
+- type: emote
+  id: Rpurr
+  name: chat-emote-name-funny-rpurr
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-rpurr]
+  chatTriggers:
+    - rpurr
+    - rpurrs
+
+- type: emote
+  id: Bawk
+  name: chat-emote-name-funny-bawk
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-bawk]
+  chatTriggers:
+    - bawk
+    - bawks
+
+- type: emote
+  id: Coo
+  name: chat-emote-name-funny-coo
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-coo]
+  chatTriggers:
+    - coo
+    - coos
+
+- type: emote
+  id: Goosehonk
+  name: chat-emote-name-funny-goosehonk
+  category: Funny
+  available: true
+  chatMessages: [chat-emote-msg-funny-goosehonk]
+  chatTriggers:
+    - goosehonk
+    - goosehonks
+
+- type: emote
+  id: Scream2
+  name: chat-emote-name-funny-scream2
+  category: Funny
+  available: true
+  icon: Interface/Actions/scream.png
+  chatMessages: [chat-emote-msg-funny-scream2]
+  chatTriggers:
+    - scream2
+    - screams2
+
+- type: emote
+  id: Scream3
+  name: chat-emote-name-funny-scream3
+  category: Funny
+  available: true
+  showInWheel: false
+  icon: Interface/Actions/scream.png
+  chatMessages: [chat-emote-msg-funny-scream3]
+  chatTriggers:
+    - scream3
+    - screams3
+
+- type: emote
+  id: Woop
+  name: chat-emote-name-funny-woop
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-woop]
+  chatTriggers:
+    - woop
+    - woops
+
+- type: emote
+  id: Whatthehell2
+  name: chat-emote-name-funny-whatthehell2
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-whatthehell2]
+  chatTriggers:
+    - wth2
+    - wths2
+
+- type: emote
+  id: Pardon
+  name: chat-emote-name-funny-pardon
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-pardon]
+  chatTriggers:
+    - sorry
+    - sorrys
+
+- type: emote
+  id: Pardonfor
+  name: chat-emote-name-funny-pardonfor
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-pardonfor]
+  chatTriggers:
+    - sorryfor
+    - sorrysfor
+
+- type: emote
+  id: Fock
+  name: chat-emote-name-funny-fock
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-fock]
+  chatTriggers:
+    - fuckyou
+    - fuckyous
+
+- type: emote
+  id: Letsgo
+  name: chat-emote-name-funny-letsgo
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-letsgo]
+  chatTriggers:
+    - go
+    - goes
+
+- type: emote
+  id: Chuckle2
+  name: chat-emote-name-funny-chuckle2
+  category: Funny
+  available: true
+  showInWheel: false
+  icon: Interface/Emotes/laugh.png
+  chatMessages: [chat-emote-msg-funny-chuckle2]
+  chatTriggers:
+    - chuckle2
+    - chuckles2
+
+- type: emote
+  id: Fockslaves
+  name: chat-emote-name-funny-fockslaves
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-fockslaves]
+  chatTriggers:
+    - slaves
+
+- type: emote
+  id: Getbuttback
+  name: chat-emote-name-funny-getbuttback
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-getbuttback]
+  chatTriggers:
+    - assback
+    - assbacks
+
+- type: emote
+  id: Boss
+  name: chat-emote-name-funny-boss
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-boss]
+  chatTriggers:
+    - boss
+
+- type: emote
+  id: Attention
+  name: chat-emote-name-funny-attention
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-attention]
+  chatTriggers:
+    - attention
+    - attentions
+
+- type: emote
+  id: Ah
+  name: chat-emote-name-funny-ah
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-ah]
+  chatTriggers:
+    - ah
+    - ahs
+
+- type: emote
+  id: Boolets
+  name: chat-emote-name-funny-boolets
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-boolets]
+  chatTriggers:
+    - ammo
+    - ammos
+
+- type: emote
+  id: Wepon
+  name: chat-emote-name-funny-wepon
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-wepon]
+  chatTriggers:
+    - wepon
+    - wepons
+
+- type: emote
+  id: Sciteam
+  name: chat-emote-name-funny-sciteam
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-sciteam]
+  chatTriggers:
+    - sciteam
+    - sciteams
+
+- type: emote
+  id: Eekum
+  name: chat-emote-name-funny-eekum
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-eekum]
+  chatTriggers:
+    - eekumbokum
+    - eekumbokums
+
+- type: emote
+  id: Bazinga
+  name: chat-emote-name-funny-bazinga
+  category: Funny
+  available: true
+  chatMessages: [chat-emote-msg-funny-bazinga]
+  chatTriggers:
+    - bazinga
+    - bazingas
+
+- type: emote
+  id: Yooo
+  name: chat-emote-name-funny-yooo
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-yooo]
+  chatTriggers:
+    - yooo
+    - yooos
+
+- type: emote
+  id: BuzzerCorrect
+  name: chat-emote-name-funny-buzzercorrect
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-buzzercorrect]
+  chatTriggers:
+    - correct
+    - corrects
+
+- type: emote
+  id: BuzzerIncorrect
+  name: chat-emote-name-funny-buzzerincorrect
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-buzzerincorrect]
+  chatTriggers:
+    - incorrect
+    - incorrects
+
+- type: emote
+  id: ObjectionGeneric
+  name: chat-emote-name-funny-objectiongeneric
+  category: Funny
+  available: true
+  chatMessages: [chat-emote-msg-funny-objectiongeneric]
+  chatTriggers:
+    - objection0
+    - objectiongeneric
+
+- type: emote
+  id: Objection
+  name: chat-emote-name-funny-objection
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-objection]
+  chatTriggers:
+    - objection
+    - objects
+
+- type: emote
+  id: HoldIt
+  name: chat-emote-name-funny-holdit
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-holdit]
+  chatTriggers:
+    - holdit
+    - holdsit
+
+- type: emote
+  id: TakeThat
+  name: chat-emote-name-funny-takethat
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-takethat]
+  chatTriggers:
+    - takethat
+    - takesthat
+
+- type: emote
+  id: Realize
+  name: chat-emote-name-funny-realize
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-realize]
+  chatTriggers:
+    - realize
+    - realizes
+
+- type: emote
+  id: Smirk2
+  name: chat-emote-name-funny-smirk2
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-smirk2]
+  chatTriggers:
+    - smirk2
+    - smirks2
+
+- type: emote
+  id: Nani
+  name: chat-emote-name-funny-nani
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-nani]
+  chatTriggers:
+    - nani
+    - nanis
+
+- type: emote
+  id: Canonevent
+  name: chat-emote-name-funny-canonevent
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-canonevent]
+  chatTriggers:
+    - 2099
+    - canonevent
+    - canonevents
+
+- type: emote
+  id: Meow2
+  name: chat-emote-name-funny-meow2
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-meow2]
+  chatTriggers:
+    - meow2
+    - meows2
+
+- type: emote
+  id: Mrrp
+  name: chat-emote-name-funny-mrrp
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-mrrp]
+  chatTriggers:
+    - mrrp
+    - mrrps
+
+- type: emote
+  id: Mrowl
+  name: chat-emote-name-funny-mrowl
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-mrowl]
+  chatTriggers:
+    - mrowl
+    - mrowls
+
+- type: emote
+  id: Gay
+  name: chat-emote-name-funny-gay
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-gay]
+  chatTriggers:
+    - gay
+
+- type: emote
+  id: Flabbergast
+  name: chat-emote-name-funny-flabbergast
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-flabbergast]
+  chatTriggers:
+    - flabbergast
+
+- type: emote
+  id: Rawr
+  name: chat-emote-name-funny-rawr
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-rawr]
+  chatTriggers:
+    - rawr
+    - rawrs
+
+- type: emote
+  id: Sadness
+  name: chat-emote-name-funny-sadness
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-sadness]
+  chatTriggers:
+    - sadness
+
+- type: emote
+  id: Squirm
+  name: chat-emote-name-funny-squirm
+  category: Funny
+  available: true
+  chatMessages: [chat-emote-msg-funny-squirm]
+  chatTriggers:
+    - squirm
+
+- type: emote
+  id: Malaysia
+  name: chat-emote-name-funny-malaysia
+  category: Funny
+  available: true
+  showInWheel: false
+  chatMessages: [chat-emote-msg-funny-malaysia]
+  chatTriggers:
+    - malaysia

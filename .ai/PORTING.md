@@ -784,3 +784,50 @@ this repo's newer client code.
   other shipyard file here uses (Coyote's local tweak used `[ 2, 2 ]`).
 - Validation: `ShipyardTest` loads every vessel map and checks price vs appraised value
   (`MinPriceMarkup` 1.05) — both tests cover the Salto.
+
+## 26. 2026-10 SPLURT Funny emotes (BYOND)
+
+Source: `BYOND/S.P.L.U.R.T-Station-13/modular_splurt/code/modules/mob/living/emotes.dm`
+(the old SPLURT emote file, not the newer `/tg` checkout). Ported as a single Palmtree category
+rather than scattered species categories.
+
+- **Category**: `EmoteCategory.Funny`, set to `Vocal | (1 << 16)` so mutes and mumbling still
+  apply. The enum backing was widened from `ushort` to `int` (all 16 old bits were taken);
+  `General` became `int.MaxValue`. The category is registered in `EmotesUIController` and
+  `EmoteCategoryWindow`, with `emote-menu-category-funny = Funny`.
+- **Availability**: every prototype is `available: true` with no whitelist/blacklist, so any
+  species can use the chat triggers (including `*laugh2`/`*laugh3`). The radial menu only shows a
+  curated 33-entry headline set (`showInWheel: false` on the long tail) because one ring cannot
+  fit 116 buttons on screen; every emote still works through its trigger. The character editor's
+  emote category picker can hide the whole category.
+- **Content**: 116 emotes from the SPLURT file, including `Laugh2`-`Laugh6`, `Cackle`,
+  `Chuckle2`, `Cry2`, `Scream2`/`Scream3`, the bababooey/fafafooey set, `Bruh`, `Speen`,
+  `Waa`/`Weh2`-`Weh4`, the gachi and Ace Attorney sets, animal/meme noises, and visual
+  emotes (tilt/squint/ruffle/mlem/pant/squirm/facepaw etc.).
+  - Excluded because the fork already has them: `chirp`, `caw`, `mew`, `meow`, `bleat`, `yap`,
+    `yip`, `howl`, `moo`, `eyebrow2` (the existing `Eyebrow` is the same vine-boom emote).
+  - Excluded as sexual content (not Funny): `moan2`, `ambatukam`/`ambatukam2`, `ara`/`ara2`,
+    `rizz`. `twerk` and `fart` were removed on request.
+- **Files**: `_PS/Voice/speech_emotes_funny.yml` (prototypes),
+  `_PS/Voice/speech_emote_sounds_funny.yml` (`SupplementalFunnyEmotes`, an abstract parent of
+  `SupplementalCoyoteEmoteStuff`, so every vocal species gets the sounds; plus concrete
+  `SupplementalFunnyMale`/`SupplementalFunnyFemale` for the gendered Ace Attorney lines),
+  `_PS/SoundCollections/emotes_funny.yml` (random variants), `_PS/chat/emotes_funny.ftl`, and
+  `Resources/Audio/_PS/Voice/Emote/Funny/**` (160 copied OGGs with an attribution file).
+- **Chat text**: `*laugh2`/`*laugh3` are ordinary `chatTriggers`; all triggers were checked
+  for duplicates against every other emote prototype (none). ChatSystem lowercases and trims the
+  `*` prefix before the dictionary lookup, so the keys match. The chat-trigger path originally
+  echoed the raw trigger ("Mike Winterbells laugh2"); `SendEntityEmote` now detects the matched
+  Funny emote and sends its localized `ChatMessages` entry instead.
+- **Gender split**: `VocalComponent.SexSupplementalSounds` (Palmtree) is checked before the shared
+  supplemental set, so `Objection`, `HoldIt` and `TakeThat` play the SPLURT `_m`/`_f` collections
+  for male/female mobs. The files are explicitly named (`ace_objection_m1..m3` / `_f1..f2`, same
+  for holdit/takethat), so no manual review is needed.
+- **`emotelist`**: server console/player command (`Content.Server/Chat/Commands/EmoteListCommand.cs`)
+  dumps every chat-triggerable emote as `[*emote = "text"]`, three per line. The server console has
+  no entity, so it passes a plain-string entity context to Fluent to get neuter pronouns without
+  logging `MetaDataComponent` errors.
+- Validation: full solution build, rebuilt YAMLLinter (`No errors found`), `Content.Tests`,
+  `_PS|EntityTest|CharacterCreationTest` integration tests and the headless client IL check all
+  pass. Scratch integration coverage confirmed `*laugh2` produces "laughs like a king." in the
+  client chat history, the male/female supplemental prototypes resolve, and `emotelist` runs.

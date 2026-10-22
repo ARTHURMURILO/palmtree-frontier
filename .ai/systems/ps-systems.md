@@ -271,8 +271,19 @@ feature.
 - **Emote category picker**: `HumanoidCharacterProfile.HiddenEmoteCategories` (DB column
   `hiddenemotecategories`, comma-separated), `EmoteCategoryWindow` opened from the traits tab,
   wheel filtering in `EmotesUIController.IsHiddenCategory`, `EmotePrototype.ShowInWheel`.
-  `EmoteCategory` is Coyote's `ushort` flag set (`Vulp`, `Felinid`, `Borg`, ...); `Sex`/`Vocal`
-  are always visible.
+  `EmoteCategory` is Coyote's flag set (`Vulp`, `Felinid`, `Borg`, ...) widened to `int` for
+  Palmtree's `Funny` bit; `Sex`/`Vocal` are always visible.
+- **Funny emotes (SPLURT)**: `EmoteCategory.Funny = Vocal | (1 << 16)`, 116 SPLURT emotes
+  (`Laugh2`-`Laugh6`, `Cackle`, `Bruh`, the gachi/Ace Attorney sets, ...) in
+  `_PS/Voice/speech_emotes_funny.yml`. They are `available: true` with no species restriction, so
+  `*laugh2`/`*laugh3` work for every mob; sounds come from
+  `_PS/Voice/speech_emote_sounds_funny.yml` via `SupplementalFunnyEmotes` (parent of
+  `SupplementalCoyoteEmoteStuff`). Only the 33 headline emotes set `showInWheel: true` - the ring
+  cannot fit all 116 - but every trigger works. The category can be hidden in the picker.
+  Chat triggers send the prototype's localized `ChatMessages` text instead of the raw trigger
+  (`SendEntityEmote`), and `Objection`/`HoldIt`/`TakeThat` use
+  `VocalComponent.SexSupplementalSounds` (`SupplementalFunnyMale`/`Female`) for male/female voices.
+  `emotelist` dumps all triggerable emotes as `[*emote = "text"]`, three per line.
 - **Supplemental emote sounds**: `VocalComponent.SupplementalSounds` (default
   `SupplementalCoyoteEmoteStuff`) lets any vocal mob use any emote sound; `ChatSystem.TryPlayEmoteSound`
   checks the species collection first, then the supplemental one. Server-side `AllowedToUseEmote`

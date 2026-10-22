@@ -1,0 +1,196 @@
+# Funny emote sound collections ported from SPLURT-Station-13.
+
+
+- type: soundCollection
+  id: PSFunnyBababooey
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/bababooey/bababooey.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/bababooey/bababooey2.ogg
+
+- type: soundCollection
+  id: PSFunnyFafafooey
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/bababooey/fafafooey.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/bababooey/fafafooey2.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/bababooey/fafafooey3.ogg
+
+- type: soundCollection
+  id: PSFunnyFafafoggy
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/bababooey/fafafoggy.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/bababooey/fafafoggy2.ogg
+
+- type: soundCollection
+  id: PSFunnyCry2
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/cry_king.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/cry_king2.ogg
+
+- type: soundCollection
+  id: PSFunnyWhistletune
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/wtune1.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/wtune2.ogg
+
+- type: soundCollection
+  id: PSFunnyTerror
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/terror1.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/terror2.ogg
+
+- type: soundCollection
+  id: PSFunnyCoyhowl
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/coyotehowl.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/coyotehowl2.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/coyotehowl3.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/coyotehowl4.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/coyotehowl5.ogg
+
+- type: soundCollection
+  id: PSFunnySnore2
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/aauugghh1.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/aauugghh2.ogg
+
+- type: soundCollection
+  id: PSFunnyGoosehonk
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/goosehonk/sfx_goose_honk_b_01.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/goosehonk/sfx_goose_honk_b_02.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/goosehonk/sfx_goose_honk_b_03.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/goosehonk/sfx_goose_honk_b_06.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/goosehonk/sfx_gooseB_honk_02.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/goosehonk/sfx_gooseB_honk_03.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/goosehonk/sfx_gooseB_honk_04.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/goosehonk/sfx_gooseB_honk_06.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/goosehonk/sfx_gooseB_honk_07.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/goosehonk/sfx_gooseB_honk_08.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/goosehonk/sfx_gooseB_honk_09.ogg
+
+- type: soundCollection
+  id: PSFunnyScream2
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/cscream1.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/cscream2.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/cscream3.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/cscream4.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/cscream5.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/cscream6.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/cscream7.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/cscream8.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/cscream9.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/cscream10.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/cscream11.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/cscream12.ogg
+
+- type: soundCollection
+  id: PSFunnyScream3
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/gachi/scream1.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/gachi/scream2.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/gachi/scream3.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/gachi/scream4.ogg
+
+- type: soundCollection
+  id: PSFunnyFock
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/gachi/fockyou1.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/gachi/fockyou2.ogg
+
+- type: soundCollection
+  id: PSFunnyBoolets
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/gachi/boolets.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/gachi/boolets2.ogg
+
+- type: soundCollection
+  id: PSFunnyEekum
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/eekum-bokum.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/eekum-bokum_f1.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/eekum-bokum_f2.ogg
+
+- type: soundCollection
+  id: PSFunnyBazinga
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/bazinga.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/bazinga_ebil.ogg
+
+- type: soundCollection
+  id: PSFunnyObjection
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_objection_m1.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_objection_m2.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_objection_m3.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_objection_f1.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_objection_f2.ogg
+
+- type: soundCollection
+  id: PSFunnyHoldIt
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_holdit_m1.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_holdit_m2.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_holdit_m3.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_holdit_f1.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_holdit_f2.ogg
+
+- type: soundCollection
+  id: PSFunnyTakeThat
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_takethat_m1.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_takethat_m2.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_takethat_m3.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_takethat_f1.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_takethat_f2.ogg
+
+- type: soundCollection
+  id: PSFunnyObjectionMale
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_objection_m1.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_objection_m2.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_objection_m3.ogg
+
+- type: soundCollection
+  id: PSFunnyObjectionFemale
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_objection_f1.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_objection_f2.ogg
+
+- type: soundCollection
+  id: PSFunnyHoldItMale
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_holdit_m1.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_holdit_m2.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_holdit_m3.ogg
+
+- type: soundCollection
+  id: PSFunnyHoldItFemale
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_holdit_f1.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_holdit_f2.ogg
+
+- type: soundCollection
+  id: PSFunnyTakeThatMale
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_takethat_m1.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_takethat_m2.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_takethat_m3.ogg
+
+- type: soundCollection
+  id: PSFunnyTakeThatFemale
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_takethat_f1.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_takethat_f2.ogg
+
+- type: soundCollection
+  id: PSFunnyMeow2
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/catpeople/cat_mew1.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/catpeople/cat_mew2.ogg
+
+- type: soundCollection
+  id: PSFunnyMrrp
+  files:
+  - /Audio/_PS/Voice/Emote/Funny/voice/catpeople/cat_mrrp1.ogg
+  - /Audio/_PS/Voice/Emote/Funny/voice/catpeople/cat_mrrp2.ogg
