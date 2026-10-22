@@ -1318,3 +1318,17 @@ Entries:
   time: '2026-10-22T22:33:41.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/58fc64748e8a502872329594258d63a2eea940cc
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        Retrieved ships' AME engines start working immediately instead of
+        waiting out the previous round's update timer.
+    - type: Fix
+      message: >-
+        Retrieved thrusters, hydroponics trays and power transmission units no
+        longer keep timers from the round the ship was stored in.
+  id: 90082
+  time: '2026-10-22T23:44:26.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/4bc1cc6361a46f59ab194bc248cde4005f97d5a8
