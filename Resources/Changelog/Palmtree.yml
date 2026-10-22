@@ -1302,3 +1302,19 @@ Entries:
   time: '2026-10-22T21:41:11.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/0a98b1fe4b95d5ffc720a41268e06f19084841fb
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        PDAs and ID cards stored with a ship keep their contents, names, jobs
+        and access, and the PDA still recognizes its ID card on retrieval.
+    - type: Fix
+      message: Saving a ship with a PDA no longer fails.
+    - type: Tweak
+      message: >-
+        forcedock moves everyone off the ship instead of refusing to store it,
+        and says how many were moved.
+  id: 90081
+  time: '2026-10-22T22:33:41.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/58fc64748e8a502872329594258d63a2eea940cc
