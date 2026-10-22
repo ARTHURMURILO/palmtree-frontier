@@ -594,8 +594,10 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
   the record the ship came back with no crew at all - no captain, nothing on the manifest. The Ship
   Registrar does the same at registration.
 - **Action cooldowns are cleared on save (`ResetRuntimeCooldowns`, 2026-10-19)**: use delays, gun
-  `NextFire` and melee `NextAttack` are absolute round times, and the round clock restarts every
-  round. Without the reset a ship stored late in a round came back with its buttons, switches and
+  `NextFire`, melee `NextAttack`, the AME controller's `LastUpdate`/`NextUpdate`/`EffectCooldown`
+  (a retrieved AME would not inject fuel until the old round time), thruster `NextFire`, hydro tray
+  `NextUpdate`/`LastCycle` and the power-transmission `NextDeposit` (+ `AccumulatedEnergy`) are
+  absolute round times, and the round clock restarts every round. Without the reset a ship stored late in a round came back with its buttons, switches and
   toolbelts still "on cooldown" for as long as the store happened into the round: left click and E
   silently do nothing while right-click verbs (which bypass `UseDelay`) still work. The save clears
   them; see `.ai/HAZARDS.md` section 27 for the full trap and the regression test

@@ -29,6 +29,15 @@ namespace Content.Server.Shuttles.Systems;
 
 public sealed class ThrusterSystem : EntitySystem
 {
+    /// <summary>
+    /// Palmtree: clears the thruster's damage cooldown (an absolute round time) so a retrieved ship's
+    /// thrusters behave like new. The bluespace dock calls this before saving and after loading a ship.
+    /// </summary>
+    public void ResetFireCooldown(ThrusterComponent component)
+    {
+        component.NextFire = TimeSpan.Zero;
+    }
+
     [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly SharedMapSystem _mapSystem = default!;
     [Dependency] private readonly AmbientSoundSystem _ambient = default!;

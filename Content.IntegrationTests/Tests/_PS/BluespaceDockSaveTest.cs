@@ -441,6 +441,11 @@ public sealed class BluespaceDockSaveTest
             var belt = entMan.SpawnEntity("ClothingBeltUtilityFilled", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
             var gun = entMan.SpawnEntity("PSWeaponRifleAk", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
 
+            // Ship machinery with its own round-clock timers: an AME, a thruster and a hydro tray.
+            var ame = entMan.SpawnEntity("AmeController", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            var thruster = entMan.SpawnEntity("Thruster", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            var tray = entMan.SpawnEntity("HydroponicsTrayEmpty", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+
             var player = entMan.SpawnEntity("MobHuman", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
 
             // Pretend the ship was stored late in a round: every cooldown is far in the future of a
@@ -456,11 +461,24 @@ public sealed class BluespaceDockSaveTest
                 }
             }
 
-            // NextFire is access-restricted to the gun systems; reflection is only used to fake the
-            // stale cooldown a real save would carry.
+            // These timers are access-restricted to their systems; reflection is only used to fake
+            // the stale values a real save would carry.
             typeof(GunComponent)
                 .GetField(nameof(GunComponent.NextFire))!
                 .SetValue(entMan.GetComponent<GunComponent>(gun), stale);
+
+            var ameComp = entMan.GetComponent<Content.Server.Ame.Components.AmeControllerComponent>(ame);
+            typeof(Content.Server.Ame.Components.AmeControllerComponent).GetField("LastUpdate")!.SetValue(ameComp, stale - TimeSpan.FromSeconds(10));
+            typeof(Content.Server.Ame.Components.AmeControllerComponent).GetField("NextUpdate")!.SetValue(ameComp, stale);
+            typeof(Content.Server.Ame.Components.AmeControllerComponent).GetField("EffectCooldown")!.SetValue(ameComp, stale);
+
+            typeof(Content.Server.Shuttles.Components.ThrusterComponent)
+                .GetField("NextFire")!
+                .SetValue(entMan.GetComponent<Content.Server.Shuttles.Components.ThrusterComponent>(thruster), stale);
+
+            var plantComp = entMan.GetComponent<Content.Server.Botany.Components.PlantHolderComponent>(tray);
+            plantComp.NextUpdate = stale;
+            plantComp.LastCycle = stale;
 
             Assert.That(useDelaySystem.IsDelayed(button), Is.True, "sanity: the button starts on cooldown");
             Assert.That(interaction.InteractionActivate(player, button), Is.False,
@@ -485,6 +503,9 @@ public sealed class BluespaceDockSaveTest
             EntityUid button = default;
             EntityUid belt = default;
             EntityUid gun = default;
+            EntityUid ame = default;
+            EntityUid thruster = default;
+            EntityUid tray = default;
             EntityUid player = default;
 
             var entities = new HashSet<EntityUid>();
@@ -502,6 +523,15 @@ public sealed class BluespaceDockSaveTest
                     case "PSWeaponRifleAk":
                         gun = uid;
                         break;
+                    case "AmeController":
+                        ame = uid;
+                        break;
+                    case "Thruster":
+                        thruster = uid;
+                        break;
+                    case "HydroponicsTrayEmpty":
+                        tray = uid;
+                        break;
                 }
             }
 
@@ -518,6 +548,26 @@ public sealed class BluespaceDockSaveTest
                 "The retrieved toolbelt is still on a cooldown from the previous round.");
             Assert.That(entMan.GetComponent<GunComponent>(gun).NextFire, Is.EqualTo(TimeSpan.Zero),
                 "The retrieved gun kept its shot cooldown from the previous round.");
+
+            Assert.That(ame.IsValid() && thruster.IsValid() && tray.IsValid(), Is.True,
+                "The retrieved ship is missing one of its machines.");
+
+            var ameComp = entMan.GetComponent<Content.Server.Ame.Components.AmeControllerComponent>(ame);
+            Assert.That(ameComp.LastUpdate, Is.EqualTo(TimeSpan.Zero),
+                "The retrieved AME kept its previous-round update time.");
+            Assert.That(ameComp.NextUpdate, Is.EqualTo(TimeSpan.Zero),
+                "The retrieved AME kept its next update in the previous round (it would not inject fuel).");
+            Assert.That(ameComp.EffectCooldown, Is.EqualTo(TimeSpan.Zero),
+                "The retrieved AME kept its alarm cooldown from the previous round.");
+
+            Assert.That(entMan.GetComponent<Content.Server.Shuttles.Components.ThrusterComponent>(thruster).NextFire,
+                Is.EqualTo(TimeSpan.Zero), "The retrieved thruster kept its damage cooldown from the previous round.");
+
+            var plantComp = entMan.GetComponent<Content.Server.Botany.Components.PlantHolderComponent>(tray);
+            Assert.That(plantComp.NextUpdate, Is.EqualTo(TimeSpan.Zero),
+                "The retrieved hydro tray kept its previous-round update time.");
+            Assert.That(plantComp.LastCycle, Is.EqualTo(TimeSpan.Zero),
+                "The retrieved hydro tray kept its previous-round cycle time.");
 
             // The click now goes through and the button's signal reaches the light.
             Assert.That(interaction.InteractionActivate(player, button), Is.True,

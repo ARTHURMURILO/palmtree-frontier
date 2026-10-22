@@ -7,6 +7,9 @@ using Content.Server._NF.Bank;
 using Content.Shared._NF.Bank;
 using Content.Server._NF.ShuttleRecords;
 using Content.Server.Cargo.Systems;
+using Content.Server.Ame.Components;
+using Content.Server.Ame.EntitySystems;
+using Content.Server.Botany.Components;
 using Content.Server.Chat.Managers;
 using Content.Server.Chat.Systems;
 using Content.Server.DeviceLinking.Components;
@@ -17,6 +20,7 @@ using Content.Server.StationEvents.Components;
 using Content.Server.StationRecords;
 using Content.Server.StationRecords.Systems;
 using Content.Server._NF.Shipyard.Systems;
+using Content.Server._NF.Power.Components;
 using Content.Server._NF.Station.Components;
 using Content.Server.Access.Systems;
 using Content.Server.Administration.Logs;
@@ -137,6 +141,8 @@ public sealed class BluespaceDockSystem : EntitySystem
     [Dependency] private readonly ExtensionCableSystem _extensionCable = default!;
     [Dependency] private readonly SmartFridgeSystem _smartFridge = default!;
     [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
+    [Dependency] private readonly AmeControllerSystem _ameController = default!;
+    [Dependency] private readonly ThrusterSystem _thruster = default!;
     [Dependency] private readonly GameTicker _gameTicker = default!;
     [Dependency] private readonly UserInterfaceSystem _ui = default!;
 
@@ -2164,6 +2170,31 @@ public sealed class BluespaceDockSystem : EntitySystem
 
             if (TryComp<GunComponent>(uid, out var gun))
                 _gunSystem.ResetCooldown((uid, gun));
+
+            // AME controllers gate fuel injection on an absolute NextUpdate; a ship stored mid-round
+            // came back with its AME idle until the new round clock caught up.
+            if (TryComp<AmeControllerComponent>(uid, out var ame))
+                _ameController.ResetTimers((uid, ame));
+
+            // Thrusters use an absolute NextFire for their damage ticks.
+            if (TryComp<ThrusterComponent>(uid, out var thruster))
+                _thruster.ResetFireCooldown(thruster);
+
+            // Hydroponics trays use absolute NextUpdate/LastCycle times; reset both so a retrieved
+            // tray does not wait out the rest of the previous round (LastCycle also gates cycles).
+            if (TryComp<PlantHolderComponent>(uid, out var plant))
+            {
+                plant.NextUpdate = TimeSpan.Zero;
+                plant.LastCycle = TimeSpan.Zero;
+            }
+
+            // Power transmission units pay out on an absolute NextDeposit; clear the timer and the
+            // accumulated energy so a retrieved unit pays for the next period, not twice.
+            if (TryComp<PowerTransmissionComponent>(uid, out var transmission))
+            {
+                transmission.NextDeposit = TimeSpan.Zero;
+                transmission.AccumulatedEnergy = 0f;
+            }
 
             if (TryComp<MeleeWeaponComponent>(uid, out var melee) && melee.NextAttack != TimeSpan.Zero)
             {

@@ -569,10 +569,15 @@ so these fail only in CI:
 - The symptom misleads: `InteractionActivate` (left click) and `UseInHandInteraction` (E) silently
   bail when `UseDelaySystem.IsDelayed`, while **right-click verbs bypass the check** - so a button
   could be toggled from its verb menu while normal clicks and E did nothing.
-- `BluespaceDockSystem.TrySaveShipFile` calls `ResetRuntimeCooldowns` (all `UseDelay` delays to zero,
-  `SharedGunSystem.ResetCooldown` for guns, melee `NextAttack`). **Any new component that stores an
-  absolute `TimeSpan`/`GameTick` and gates an action needs a reset there too.** Relative counters are
-  fine (`DoorComponent.SecondsUntilStateChange` stores a relative number of seconds).
+- `BluespaceDockSystem.TrySaveShipFile` calls `ResetRuntimeCooldowns` (on save *and* load): all
+  `UseDelay` delays, `SharedGunSystem.ResetCooldown` for guns, melee `NextAttack`,
+  **AME `LastUpdate`/`NextUpdate`/`EffectCooldown`** (`AmeControllerSystem.ResetTimers` - a retrieved
+  AME used to sit idle until the new round clock reached the old time), thruster `NextFire`
+  (`ThrusterSystem.ResetFireCooldown`), hydro tray `NextUpdate`/`LastCycle`, and power-transmission
+  `NextDeposit`/`AccumulatedEnergy`. **Any new component that stores an absolute `TimeSpan`/`GameTick`
+  and gates an action needs a reset there too.** Relative counters are fine
+  (`DoorComponent.SecondsUntilStateChange` stores a relative number of seconds). Note `Dirty()` must
+  not be called on non-networked components (the AME controller is one).
 - Regression test: `BluespaceDockSaveTest.SavedShipForgetsActionCooldowns` (fails without the reset).
 
 ## 28. Emote categories and chat triggers (2026-10)

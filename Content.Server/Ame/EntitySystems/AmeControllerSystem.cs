@@ -30,6 +30,19 @@ public sealed class AmeControllerSystem : EntitySystem
     [Dependency] private readonly UserInterfaceSystem _userInterfaceSystem = default!;
     [Dependency] private readonly ItemSlotsSystem _itemSlots = default!;
 
+    /// <summary>
+    /// Palmtree: clears the round-clock timers. A ship saved from a live grid keeps absolute times
+    /// (<c>LastUpdate</c>, <c>NextUpdate</c>, <c>EffectCooldown</c>); after a round restart those lie in
+    /// the future, so a retrieved AME refused to inject fuel until the new round clock caught up. The
+    /// bluespace dock calls this before saving a ship and after loading one.
+    /// </summary>
+    public void ResetTimers(Entity<AmeControllerComponent> ent)
+    {
+        ent.Comp.LastUpdate = TimeSpan.Zero;
+        ent.Comp.NextUpdate = TimeSpan.Zero;
+        ent.Comp.EffectCooldown = TimeSpan.Zero;
+    }
+
     public override void Initialize()
     {
         base.Initialize();
