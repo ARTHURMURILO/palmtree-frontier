@@ -81,6 +81,12 @@ public sealed class BluespaceDockResilienceTest
             var broken = entMan.SpawnEntity("APCBasic", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
             entMan.AddComponent<UnserializableTestComponent>(broken).Data = new UnserializableTestData();
 
+            // And an item inside the toolbox that cannot be serialized: it has to be re-created inside
+            // the same container on retrieval, not dropped or left on the floor.
+            var brokenDuck = entMan.SpawnEntity("ToyRubberDuck", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            entMan.AddComponent<UnserializableTestComponent>(brokenDuck).Data = new UnserializableTestData();
+            Assert.That(containers.Insert(brokenDuck, storage!), Is.True);
+
             var file = BluespaceDockSystem.GetShipFilePath("resilient-save-test");
             Assert.That(dock.TrySaveShipFile(grid, file, out var error), Is.True,
                 $"A ship with one unserializable entity must still be stored: {error}");
@@ -128,12 +134,20 @@ public sealed class BluespaceDockResilienceTest
             Assert.That(apcs, Is.EqualTo(1), "The machine that could not be serialized was not re-created.");
             Assert.That(toolboxes, Is.EqualTo(1), "The rest of the ship was not saved.");
 
-            // The kept toolbox still has its contents (the prune only removed references to the skipped
-            // entity, of which there were none in it).
+            // The kept toolbox still has its contents, including a fresh copy of the item that could
+            // not be serialized (re-inserted into the same container).
             var foundToolbox = entities.First(u => entMan.GetComponent<MetaDataComponent>(u).EntityPrototype?.ID == "ToolboxMechanicalFilled");
             var containers = server.System<ContainerSystem>();
             Assert.That(containers.TryGetContainer(foundToolbox, Content.Shared.Storage.StorageComponent.ContainerId, out var loadedStorage), Is.True);
             Assert.That(loadedStorage!.ContainedEntities.Count, Is.GreaterThan(0), "The toolbox lost its contents.");
+
+            var ducks = loadedStorage.ContainedEntities.Count(uid =>
+                entMan.GetComponent<MetaDataComponent>(uid).EntityPrototype?.ID == "ToyRubberDuck");
+            Assert.That(ducks, Is.EqualTo(1),
+                "The item inside the toolbox that could not be serialized was not re-created inside it.");
+            Assert.That(loadedStorage.ContainedEntities.All(uid =>
+                    !entMan.HasComponent<UnserializableTestComponent>(uid)),
+                "A re-created container item still carries the unserializable test component.");
         });
 
         await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));

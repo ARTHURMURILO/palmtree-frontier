@@ -103,7 +103,8 @@ public sealed class ForceDockCommand : IConsoleCommand
         }
 
         var value = dock.AppraiseShip(ship.Grid);
-        if (!dock.TryStoreShip(ship.Grid, ownerUserId, ownerName, value, payer: null, cost: 0, out var error))
+        if (!dock.TryStoreShip(ship.Grid, ownerUserId, ownerName, value, payer: null, cost: 0,
+                out var error, out var skipped))
         {
             shell.WriteError(Loc.GetString(error ?? "bluespace-dock-error-save-failed"));
             return;
@@ -113,6 +114,12 @@ public sealed class ForceDockCommand : IConsoleCommand
             $"{shell.Player?.Name ?? "Console"} force-docked ship {ship.Name} into the bluespace dock as {ownerName} ({ownerUserId})");
 
         shell.WriteLine($"Stored {ship.Name} for {ownerName} in the bluespace dock. No tax was charged.");
+
+        if (skipped > 0)
+        {
+            shell.WriteError($"{skipped} item(s) could not be saved with {ship.Name} and will come back " +
+                             "as fresh copies when the ship is retrieved (see the server log for which).");
+        }
     }
 
     public CompletionResult GetCompletion(IConsoleShell shell, string[] args)

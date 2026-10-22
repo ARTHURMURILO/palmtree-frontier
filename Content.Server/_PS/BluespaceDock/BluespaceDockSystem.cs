@@ -7,6 +7,7 @@ using Content.Server._NF.Bank;
 using Content.Shared._NF.Bank;
 using Content.Server._NF.ShuttleRecords;
 using Content.Server.Cargo.Systems;
+using Content.Server.Chat.Managers;
 using Content.Server.Chat.Systems;
 using Content.Server.DeviceLinking.Components;
 using Content.Server.DeviceLinking.Systems;
@@ -47,6 +48,7 @@ using Content.Shared.GameTicking;
 using Content.Shared.Ghost;
 using Content.Shared.Shuttles.Components;
 using Content.Shared.Shuttles.Systems;
+using Content.Shared.SmartFridge;
 using Content.Shared.Station;
 using Content.Shared.Station.Components;
 using Content.Shared.Mind.Components;
@@ -124,12 +126,14 @@ public sealed class BluespaceDockSystem : EntitySystem
     [Dependency] private readonly StationSystem _station = default!;
     [Dependency] private readonly SharedBluespaceDockSystem _dock = default!;
     [Dependency] private readonly ChatSystem _chat = default!;
+    [Dependency] private readonly IChatManager _chatManager = default!;
     [Dependency] private readonly SharedContainerSystem _containers = default!;
     [Dependency] private readonly DeviceLinkSystem _deviceLink = default!;
     [Dependency] private readonly DeviceNetworkSystem _deviceNetwork = default!;
     [Dependency] private readonly GunSystem _gunSystem = default!;
     [Dependency] private readonly SharedRadarConsoleSystem _radar = default!;
     [Dependency] private readonly ExtensionCableSystem _extensionCable = default!;
+    [Dependency] private readonly SmartFridgeSystem _smartFridge = default!;
     [Dependency] private readonly GameTicker _gameTicker = default!;
     [Dependency] private readonly UserInterfaceSystem _ui = default!;
 
@@ -637,7 +641,8 @@ public sealed class BluespaceDockSystem : EntitySystem
     /// save fails; a caller that does not pass a list leaves the ship stripped.
     /// </remarks>
     public bool TrySaveShipFile(EntityUid shuttleUid, string relativePath, out string? error,
-        List<(EntityUid Ent, EntityUid Station, bool Member, bool Bound)>? stripped = null)
+        List<(EntityUid Ent, EntityUid Station, bool Member, bool Bound)>? stripped = null,
+        List<string>? skipped = null)
     {
         error = null;
         var path = new ResPath($"{ShipDirectory}/{relativePath}");
@@ -672,7 +677,7 @@ public sealed class BluespaceDockSystem : EntitySystem
                                  "falling back to a save that skips them");
 
                 // The manifest is taken before the retry: positions do not change during a save.
-                var manifest = CollectTopLevelManifest(shuttleUid);
+                var manifest = CollectSaveManifest(shuttleUid);
 
                 if (!TrySaveGrid(shuttleUid, path, MissingEntityBehaviour.IncludeNullspace, EntityExceptionBehaviour.IgnoreEntityAndChildren)
                     && !TrySaveGrid(shuttleUid, path, MissingEntityBehaviour.Ignore, EntityExceptionBehaviour.IgnoreEntityAndChildren))
@@ -684,6 +689,8 @@ public sealed class BluespaceDockSystem : EntitySystem
                 var dropped = FindDroppedEntities(path, manifest);
                 if (dropped.Count > 0)
                 {
+                    skipped?.AddRange(dropped.Select(d => d.Prototype));
+
                     _sawmill.Warning($"Ship {ToPrettyString(shuttleUid)}: {dropped.Count} entity/entities could not be " +
                                      $"serialized and were skipped ({string.Join(", ", dropped.Select(d => d.Prototype))}); " +
                                      "a fresh copy of each is spawned when the ship is retrieved");
@@ -741,42 +748,96 @@ public sealed class BluespaceDockSystem : EntitySystem
 
     /// <summary>
     /// An entity that was saved as a fresh copy on retrieval because it could not be serialized.
+    /// Container contents carry the container they belong to (its top-level owner and container id)
+    /// so the copy can be put back where it came from; the owner is matched on retrieval by prototype
+    /// and grid-local position.
     /// </summary>
-    public readonly record struct DroppedShipEntity(string Prototype, Vector2 Position, Angle Rotation, bool Anchored);
+    public readonly record struct DroppedShipEntity(
+        string Prototype,
+        Vector2 Position,
+        Angle Rotation,
+        bool Anchored,
+        string? ContainerOwner = null,
+        Vector2 ContainerOwnerPosition = default,
+        string? ContainerId = null)
+    {
+        public bool InContainer => ContainerOwner != null && ContainerId != null;
+    }
 
     /// <summary>
-    /// Every top-level entity of a grid (its direct transform children only), as the manifest used to
-    /// find out which entities a resilient save had to skip. Mobs and ghosts are never recorded:
-    /// people and creatures are not re-created by loading a ship.
+    /// Every entity of a grid that can be re-created if a resilient save has to skip it: its top-level
+    /// entities, plus everything inside a container hosted by one of those (the contents of a fridge,
+    /// toolbox or machine). Mobs and ghosts are never recorded: people and creatures are not
+    /// re-created by loading a ship. Contents of nested containers (a toolbox inside a backpack) are
+    /// not covered - their owner is not top-level, so there is nothing stable to re-insert into.
     /// </summary>
-    private List<DroppedShipEntity> CollectTopLevelManifest(EntityUid grid)
+    private List<DroppedShipEntity> CollectSaveManifest(EntityUid grid)
     {
         var manifest = new List<DroppedShipEntity>();
         var xformQuery = GetEntityQuery<TransformComponent>();
         var metaQuery = GetEntityQuery<MetaDataComponent>();
-        var children = xformQuery.GetComponent(grid).ChildEnumerator;
 
+        // Top-level entities first: they anchor the containers whose contents are recorded below.
+        var topLevel = new Dictionary<EntityUid, DroppedShipEntity>();
+        var children = xformQuery.GetComponent(grid).ChildEnumerator;
         while (children.MoveNext(out var child))
         {
-            if (!xformQuery.TryGetComponent(child, out var xform)
-                || !metaQuery.TryGetComponent(child, out var meta)
-                || meta.EntityPrototype is not { } prototype)
+            if (!TryGetManifestEntry(child, xformQuery, metaQuery, out var entry))
+                continue;
+
+            topLevel[child] = entry;
+            manifest.Add(entry);
+        }
+
+        // Container contents are transform children of their container, so they are not found by the
+        // child walk. They are matched to their container's owner (which must itself be top-level).
+        var entities = new HashSet<EntityUid>();
+        GetEntitiesOnGrid(grid, entities);
+        foreach (var uid in entities)
+        {
+            if (uid == grid
+                || topLevel.ContainsKey(uid)
+                || !TryGetManifestEntry(uid, xformQuery, metaQuery, out var entry)
+                || !_containers.TryGetContainingContainer((uid, null, null), out var container)
+                || !topLevel.TryGetValue(container.Owner, out var ownerEntry))
             {
                 continue;
             }
 
-            if (HasComp<MobStateComponent>(child) || HasComp<GhostComponent>(child) || HasComp<MindContainerComponent>(child))
-                continue;
-
-            manifest.Add(new DroppedShipEntity(prototype.ID, xform.LocalPosition, xform.LocalRotation, xform.Anchored));
+            manifest.Add(entry with
+            {
+                ContainerOwner = ownerEntry.Prototype,
+                ContainerOwnerPosition = ownerEntry.Position,
+                ContainerId = container.ID,
+            });
         }
 
         return manifest;
     }
 
+    private bool TryGetManifestEntry(EntityUid uid, EntityQuery<TransformComponent> xformQuery,
+        EntityQuery<MetaDataComponent> metaQuery, out DroppedShipEntity entry)
+    {
+        entry = default;
+
+        if (!xformQuery.TryGetComponent(uid, out var xform)
+            || !metaQuery.TryGetComponent(uid, out var meta)
+            || meta.EntityPrototype is not { } prototype)
+        {
+            return false;
+        }
+
+        if (HasComp<MobStateComponent>(uid) || HasComp<GhostComponent>(uid) || HasComp<MindContainerComponent>(uid))
+            return false;
+
+        entry = new DroppedShipEntity(prototype.ID, xform.LocalPosition, xform.LocalRotation, xform.Anchored);
+        return true;
+    }
+
     /// <summary>
     /// Which of the manifest's entities the written file does not contain (matched by prototype and
-    /// local position). These are the ones the serializer had to skip.
+    /// local position; container contents are matched inside their owner's container). These are the
+    /// ones the serializer had to skip.
     /// </summary>
     private List<DroppedShipEntity> FindDroppedEntities(ResPath path, List<DroppedShipEntity> manifest)
     {
@@ -793,15 +854,49 @@ public sealed class BluespaceDockSystem : EntitySystem
             if (yaml.Documents.Count == 0 || yaml.Documents[0].RootNode.ToDataNode() is not MappingDataNode root)
                 return dropped;
 
-            var saved = ReadTopLevelEntityKeys(root);
+            var topLevel = new Dictionary<string, int>();
+            var topLevelUids = new Dictionary<string, Queue<string>>();
+            var children = new Dictionary<(string Owner, string Key), int>();
+            ReadFileEntityIndex(root, topLevel, topLevelUids, children);
 
-            // Multiset subtraction: each saved entity can account for at most one manifest entry.
+            // Pass 1: top-level entities. Multiset subtraction: each saved entity accounts for at most
+            // one manifest entry (duplicates at the same position are indistinguishable).
+            var droppedOwners = new HashSet<string>();
             foreach (var entry in manifest)
             {
+                if (entry.InContainer)
+                    continue;
+
                 var key = GetManifestKey(entry);
-                if (saved.TryGetValue(key, out var count) && count > 0)
+                if (topLevel.TryGetValue(key, out var count) && count > 0)
                 {
-                    saved[key] = count - 1;
+                    topLevel[key] = count - 1;
+                    continue;
+                }
+
+                dropped.Add(entry);
+                droppedOwners.Add(key);
+            }
+
+            // Pass 2: container contents. Skipped when their container itself was dropped (the fresh
+            // copy of the container comes back empty, so there is nothing to re-insert into).
+            foreach (var entry in manifest)
+            {
+                if (!entry.InContainer)
+                    continue;
+
+                if (droppedOwners.Contains(GetContainerOwnerKey(entry))
+                    || !topLevelUids.TryGetValue(GetContainerOwnerKey(entry), out var ownerUids)
+                    || ownerUids.Count == 0)
+                {
+                    continue;
+                }
+
+                var key = GetManifestKey(entry);
+                var childKey = (ownerUids.Peek(), key);
+                if (children.TryGetValue(childKey, out var count) && count > 0)
+                {
+                    children[childKey] = count - 1;
                     continue;
                 }
 
@@ -821,18 +916,27 @@ public sealed class BluespaceDockSystem : EntitySystem
         return $"{entity.Prototype}|{entity.Position.X:R}|{entity.Position.Y:R}";
     }
 
-    /// <summary>
-    /// The prototype + local position of every top-level entity declared in a ship file.
-    /// </summary>
-    private static Dictionary<string, int> ReadTopLevelEntityKeys(MappingDataNode root)
+    private static string GetContainerOwnerKey(DroppedShipEntity entity)
     {
-        var keys = new Dictionary<string, int>();
+        return $"{entity.ContainerOwner}|{entity.ContainerOwnerPosition.X:R}|{entity.ContainerOwnerPosition.Y:R}";
+    }
+
+    /// <summary>
+    /// Indexes every entity declared in a ship file: top-level entities (children of the grid) by
+    /// prototype + local position, with their yaml uids in file order, and every other entity by
+    /// (parent yaml uid, prototype + local position).
+    /// </summary>
+    private static void ReadFileEntityIndex(MappingDataNode root,
+        Dictionary<string, int> topLevel,
+        Dictionary<string, Queue<string>> topLevelUids,
+        Dictionary<(string Owner, string Key), int> children)
+    {
         if (!root.TryGet<SequenceDataNode>("grids", out var grids) || grids.Count == 0)
-            return keys;
+            return;
 
         var gridYamlUid = ((ValueDataNode) grids[0]).Value;
         if (!root.TryGet<SequenceDataNode>("entities", out var groups))
-            return keys;
+            return;
 
         foreach (var node in groups)
         {
@@ -847,17 +951,31 @@ public sealed class BluespaceDockSystem : EntitySystem
             {
                 if (entityNode is not MappingDataNode entity
                     || !TryGetTransform(entity, out var parent, out var position)
-                    || parent != gridYamlUid)
+                    || parent == null)
                 {
                     continue;
                 }
 
                 var key = $"{proto.Value}|{position.X:R}|{position.Y:R}";
-                keys[key] = keys.GetValueOrDefault(key) + 1;
+                if (parent == gridYamlUid)
+                {
+                    topLevel[key] = topLevel.GetValueOrDefault(key) + 1;
+
+                    if (entity.TryGet<ValueDataNode>("uid", out var uid))
+                    {
+                        if (!topLevelUids.TryGetValue(key, out var uids))
+                            topLevelUids[key] = uids = new Queue<string>();
+
+                        uids.Enqueue(uid.Value);
+                    }
+
+                    continue;
+                }
+
+                var childKey = (parent, key);
+                children[childKey] = children.GetValueOrDefault(childKey) + 1;
             }
         }
-
-        return keys;
     }
 
     /// <summary>
@@ -956,6 +1074,15 @@ public sealed class BluespaceDockSystem : EntitySystem
                     { "rotation", entry.Rotation.Theta.ToString(CultureInfo.InvariantCulture) },
                     { "anchored", entry.Anchored ? "true" : "false" },
                 };
+
+                if (entry.InContainer)
+                {
+                    node["containerOwner"] = new ValueDataNode(entry.ContainerOwner!);
+                    node["containerOwnerX"] = new ValueDataNode(entry.ContainerOwnerPosition.X.ToString(CultureInfo.InvariantCulture));
+                    node["containerOwnerY"] = new ValueDataNode(entry.ContainerOwnerPosition.Y.ToString(CultureInfo.InvariantCulture));
+                    node["containerId"] = new ValueDataNode(entry.ContainerId!);
+                }
+
                 droppedData.Add(node);
             }
 
@@ -2026,8 +2153,9 @@ public sealed class BluespaceDockSystem : EntitySystem
     /// <summary>
     /// Spawns a fresh copy of every entity the save had to skip (recorded under
     /// <c>droppedEntities</c> in the ship file), at the position, rotation and anchoring it was saved
-    /// with. The prototype comes back with its default contents: the failed entity could not be
-    /// serialized, so its state is unrecoverable, but the ship keeps the machine or item.
+    /// with. Entities that were inside a container are spawned at that container's tile and inserted
+    /// back into it. The prototype comes back with its default contents: the failed entity could not
+    /// be serialized, so its state is unrecoverable, but the ship keeps the machine or item.
     /// </summary>
     public void TrySpawnDroppedEntities(ResPath path, EntityUid grid)
     {
@@ -2046,6 +2174,8 @@ public sealed class BluespaceDockSystem : EntitySystem
 
             if (!root.TryGet<SequenceDataNode>("droppedEntities", out var dropped))
                 return;
+
+            var xformQuery = GetEntityQuery<TransformComponent>();
 
             foreach (var node in dropped)
             {
@@ -2069,24 +2199,99 @@ public sealed class BluespaceDockSystem : EntitySystem
                     continue;
                 }
 
-                var uid = Spawn(proto.Value, new EntityCoordinates(grid, new Vector2(x, y)));
-
-                if (entry.TryGet<ValueDataNode>("rotation", out var rotationNode)
-                    && float.TryParse(rotationNode.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var rotation))
+                // Entities that lived inside a container go back into it (spawned at the container's
+                // tile so they are not lost if the container cannot take them after all).
+                BaseContainer? container = null;
+                EntityUid? containerOwner = null;
+                if (TryGetDroppedContainer(entry, grid, xformQuery, out var owner, out var containerId))
                 {
-                    _transform.SetLocalRotation(uid, new Angle(rotation));
+                    containerOwner = owner;
+                    _containers.TryGetContainer(owner, containerId, out container);
+                    x = xformQuery.GetComponent(owner).LocalPosition.X;
+                    y = xformQuery.GetComponent(owner).LocalPosition.Y;
                 }
 
-                if (entry.TryGet<ValueDataNode>("anchored", out var anchoredNode) && anchoredNode.Value == "true")
-                    _transform.AnchorEntity(uid);
+                var uid = Spawn(proto.Value, new EntityCoordinates(grid, new Vector2(x, y)));
 
-                _sawmill.Info($"Recreated {proto.Value} ({ToPrettyString(uid)}) that could not be saved with its ship");
+                if (container == null)
+                {
+                    if (entry.TryGet<ValueDataNode>("rotation", out var rotationNode)
+                        && float.TryParse(rotationNode.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var rotation))
+                    {
+                        _transform.SetLocalRotation(uid, new Angle(rotation));
+                    }
+
+                    // Prototypes that are anchored by default (wall-mounted machines) are already
+                    // anchored on spawn; anchoring twice trips the engine's snap-grid assert.
+                    if (entry.TryGet<ValueDataNode>("anchored", out var anchoredNode)
+                        && anchoredNode.Value == "true"
+                        && xformQuery.TryGetComponent(uid, out var spawnedXform)
+                        && !spawnedXform.Anchored)
+                    {
+                        _transform.AnchorEntity(uid);
+                    }
+                }
+                else if (!_containers.Insert(uid, container))
+                {
+                    _sawmill.Warning($"Could not put re-created {proto.Value} ({ToPrettyString(uid)}) back into " +
+                                     $"{ToPrettyString(containerOwner!.Value)}'s {container.ID} container; it was left on the floor");
+                }
+                else if (containerOwner is { } ownerUid
+                         && TryComp<SmartFridgeComponent>(ownerUid, out var fridge))
+                {
+                    // The fridge rebuilds its entry cache on startup, before this re-insertion.
+                    _smartFridge.RebuildEntries((ownerUid, fridge));
+                }
+
+                _sawmill.Info($"Recreated {proto.Value} ({ToPrettyString(uid)}) that could not be saved with its ship" +
+                              (container == null ? string.Empty : $" inside {ToPrettyString(containerOwner!.Value)}"));
             }
         }
         catch (Exception e)
         {
             _sawmill.Error($"Could not recreate the entities skipped while saving {path}: {e}");
         }
+    }
+
+    /// <summary>
+    /// Resolves the top-level entity whose container held a skipped entity, from the container fields
+    /// recorded in the ship file.
+    /// </summary>
+    private bool TryGetDroppedContainer(MappingDataNode entry, EntityUid grid,
+        EntityQuery<TransformComponent> xformQuery, out EntityUid owner, out string containerId)
+    {
+        owner = EntityUid.Invalid;
+        containerId = string.Empty;
+
+        if (!entry.TryGet<ValueDataNode>("containerOwner", out var ownerProto)
+            || !entry.TryGet<ValueDataNode>("containerOwnerX", out var ownerXNode)
+            || !entry.TryGet<ValueDataNode>("containerOwnerY", out var ownerYNode)
+            || !entry.TryGet<ValueDataNode>("containerId", out var containerIdNode)
+            || !float.TryParse(ownerXNode.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var ownerX)
+            || !float.TryParse(ownerYNode.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var ownerY))
+        {
+            return false;
+        }
+
+        containerId = containerIdNode.Value;
+
+        var children = xformQuery.GetComponent(grid).ChildEnumerator;
+        while (children.MoveNext(out var child))
+        {
+            if (!TryComp<MetaDataComponent>(child, out var meta)
+                || meta.EntityPrototype?.ID != ownerProto.Value
+                || !xformQuery.TryGetComponent(child, out var xform)
+                || xform.LocalPosition != new Vector2(ownerX, ownerY))
+            {
+                continue;
+            }
+
+            owner = child;
+            return true;
+        }
+
+        _sawmill.Warning($"A re-created {ownerProto.Value} container was not found on the loaded ship; its contents were not restored");
+        return false;
     }
 
     /// <summary>
@@ -2238,13 +2443,20 @@ public sealed class BluespaceDockSystem : EntitySystem
         }
 
         var displayName = ShipyardSystem.GetFullName(deed);
-        if (!TryStoreShip(shuttleUid, userId, characterName, value, player, cost, out var error))
+        if (!TryStoreShip(shuttleUid, userId, characterName, value, player, cost, out var error, out var skipped))
         {
             Deny(consoleUid, component, player, error ?? "bluespace-dock-error-save-failed");
             return;
         }
 
         Popup(player, "bluespace-dock-stored", ("ship", displayName));
+
+        if (skipped > 0)
+        {
+            WarnChat(player, "bluespace-dock-warning-skipped", ("count", skipped));
+            _sawmill.Warning($"Bluespace dock: {skipped} entity/entities could not be saved with " +
+                             $"{displayName} and were re-created when it is retrieved");
+        }
         Announce(consoleUid, "bluespace-dock-announce-store", ("owner", characterName), ("vessel", displayName));
         PlayConfirm(consoleUid, component);
         _adminLogger.Add(LogType.Action, LogImpact.Medium,
@@ -2298,7 +2510,19 @@ public sealed class BluespaceDockSystem : EntitySystem
     public bool TryStoreShip(EntityUid shuttleUid, string ownerUserId, string ownerName, int value,
         EntityUid? payer, int cost, out string? error)
     {
+        return TryStoreShip(shuttleUid, ownerUserId, ownerName, value, payer, cost, out error, out _);
+    }
+
+    /// <summary>
+    /// The store mechanics, shared by the dock console and the admin force-dock command.
+    /// <paramref name="skipped"/> receives how many entities the save had to skip (they are re-created
+    /// as fresh copies on retrieval), so callers can warn the user.
+    /// </summary>
+    public bool TryStoreShip(EntityUid shuttleUid, string ownerUserId, string ownerName, int value,
+        EntityUid? payer, int cost, out string? error, out int skipped)
+    {
         error = null;
+        skipped = 0;
 
         if (!TryComp<ShuttleDeedComponent>(shuttleUid, out var deed))
         {
@@ -2356,11 +2580,14 @@ public sealed class BluespaceDockSystem : EntitySystem
 
             UndockShuttle(shuttleUid);
 
-            if (!TrySaveShipFile(shuttleUid, fileName, out error, stripped))
+            var skippedPrototypes = new List<string>();
+            if (!TrySaveShipFile(shuttleUid, fileName, out error, stripped, skippedPrototypes))
             {
                 RestoreStoreFailure(shuttleUid, shipStation, dockedTo, stripped, deed);
                 return false;
             }
+
+            skipped = skippedPrototypes.Count;
 
             if (cost > 0 && payer is { } who && !_bank.TryBankWithdraw(who, cost))
             {
@@ -2950,6 +3177,21 @@ public sealed class BluespaceDockSystem : EntitySystem
     {
         Popup(player, messageKey);
         PlayDeny(consoleUid, component);
+
+        // The popup is easy to miss with the console window open, so the reason is also written to
+        // the player's chat in red (a server message) - store failures must not be silent.
+        WarnChat(player, messageKey);
+    }
+
+    /// <summary>
+    /// Writes a red server message to the player's chat (private, not overhead speech).
+    /// </summary>
+    public void WarnChat(EntityUid player, string messageKey, params (string, object)[] args)
+    {
+        if (!_player.TryGetSessionByEntity(player, out var session))
+            return;
+
+        _chatManager.DispatchServerMessage(session, Loc.GetString(messageKey, args));
     }
 
     private void Popup(EntityUid player, string messageKey, params (string, object)[] args)

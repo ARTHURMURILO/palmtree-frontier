@@ -606,10 +606,19 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
   `EntityExceptionBehaviour.IgnoreEntityAndChildren`, writes the file without that entity (and its
   transform children - container contents are transform children of their container, so a dropped
   machine loses its contents), and records the skipped entities under `droppedEntities` in the file
-  (prototype, local position, rotation, anchored). `TryLoadShipFile` then spawns a **fresh copy** of
-  each at its saved position (`TrySpawnDroppedEntities`); mobs and ghosts are never recorded. The
-  rewritten file also prunes container/storage references to uids it no longer declares. Diagnostics:
+  (prototype, local position, rotation, anchored). Entities that lived **inside a container** (fridge,
+  toolbox, machine) are recorded with their container (`containerOwner` prototype + grid-local
+  position, `containerId`) and are re-inserted into it on load; contents of *nested* containers (a
+  toolbox inside a backpack) are not covered. `TryLoadShipFile` then spawns a **fresh copy** of each
+  (`TrySpawnDroppedEntities`) - at its saved position for top-level entities, at its container's tile
+  and inside the container for contents; mobs and ghosts are never recorded. The rewritten file also
+  prunes container/storage references to uids it no longer declares. Diagnostics:
   `grep "could not be serialized and were skipped"` in the server log.
+- **Store feedback (2026-10-22)**: every store denial from the console is a popup *and* a red server
+  message in that player's chat (`Deny` -> `WarnChat`, private `DispatchServerMessage`), and a store
+  that had to skip items also warns in chat with `bluespace-dock-warning-skipped` (and in the server
+  log). `forcedock` prints the same reason via `shell.WriteError` and the skip count as an error line
+  in the admin console.
 - **Failed stores restore the ship (2026-10-22)**: the store strips station references, the deed and
   the docking *before* saving, so any failure after that point must undo it. The `TryStoreShip`
   exception path now calls `RestoreStoreFailure` too (it used to just log), and the restore re-docks

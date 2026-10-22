@@ -620,9 +620,13 @@ so these fail only in CI:
     from real entity state (`SmartFridgeComponent.ContainedEntries` is rebuilt from the container).
 - **A save must never be the only copy of the store decision.** `TrySaveShipFile` falls back to
   `EntityExceptionBehaviour.IgnoreEntityAndChildren` and records what it skipped in the file's
-  `droppedEntities` section; loading spawns fresh copies (`TrySpawnDroppedEntities`). The strict
-  attempt still logs an ERRO (the engine does), so a "ship stored with skipped entities" shows up in
-  the log as `entity_serializer: Caught exception` followed by
+  `droppedEntities` section; loading spawns fresh copies (`TrySpawnDroppedEntities`). Container
+  contents are re-inserted into their original container (owner prototype + position + container id
+  are recorded); nested containers are not covered. When anchoring a re-created entity, check
+  `xform.Anchored` first - prototypes with an anchored Transform are already anchored on spawn and a
+  second `AnchorEntity` trips the engine's snap-grid assert. The strict attempt still logs an ERRO
+  (the engine does), so a "ship stored with skipped entities" shows up in the log as
+  `entity_serializer: Caught exception` followed by
   `bluespace_dock: ... falling back to a save that skips them`.
 - **The store strips before it knows the file is good.** Any new failure point after
   `StripStationReferences`/`UndockShuttle` must go through `RestoreStoreFailure` (station refs, deed,

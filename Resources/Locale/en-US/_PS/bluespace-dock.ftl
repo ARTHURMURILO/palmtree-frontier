@@ -42,3 +42,8 @@ bluespace-dock-error-file-corrupt = That ship's file is corrupt; the dock entry 
 bluespace-dock-error-save-failed = Failed to save the ship; nothing was charged.
 bluespace-dock-error-save-empty = Failed to save the ship (empty file); nothing was charged.
 bluespace-dock-error-load-failed = Failed to materialize the ship.
+bluespace-dock-warning-skipped =
+    { $count ->
+        [one] {$count} item could not be saved with the ship and will come back as a fresh copy.
+       *[other] {$count} items could not be saved with the ship and will come back as fresh copies.
+    }
