@@ -1234,3 +1234,25 @@ Entries:
   time: '2026-10-20T01:49:34.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/23c30784a245f3628937bbef2f40138ac31dcdcd
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: >-
+        Ported 116 SPLURT funny emotes under the new Funny emote category,
+        usable by every species via *triggers.
+    - type: Add
+      message: >-
+        Added the emotelist console command to list every emote trigger and its
+        text, three per line.
+    - type: Tweak
+      message: >-
+        Objection, HOLD IT and TAKE THAT now use separate male and female voice
+        lines.
+    - type: Fix
+      message: >-
+        Chat-triggered funny emotes now show their proper third-person text
+        instead of the raw trigger.
+  id: 90077
+  time: '2026-10-22T18:54:55.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/6d55dfd08059ba51b58c33c6d935db1fcbca178d
