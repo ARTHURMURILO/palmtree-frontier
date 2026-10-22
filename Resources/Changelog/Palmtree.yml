@@ -1287,3 +1287,18 @@ Entries:
   time: '2026-10-22T20:58:32.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/aacbf4d772142dcdb7c862976bf3c1c22e47dc39
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        Items that cannot be saved with a ship now come back inside the
+        container they were in (fridges, toolbelts, machines) instead of
+        disappearing.
+    - type: Tweak
+      message: >-
+        Bluespace dock store failures are shown in red in your chat, and skipped
+        items are called out when a ship is stored.
+  id: 90080
+  time: '2026-10-22T21:41:11.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/0a98b1fe4b95d5ffc720a41268e06f19084841fb
