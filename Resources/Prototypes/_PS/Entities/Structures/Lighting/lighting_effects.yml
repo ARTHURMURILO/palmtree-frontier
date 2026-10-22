@@ -1,0 +1,705 @@
+# Palmtree: flickering and rave light fixtures for dungeon decoration.
+# Flickering fixtures spawn a flickering bulb; rave fixtures carry RaveLight directly and spawn a rave bulb.
+# Rave variants pulse 100% -> 0% -> 100%; a screwdriver cycles the period through 0.5s, 1s and 2s.
+# Always-powered variants work without APC power and still contain a replaceable bulb.
+
+# Poweredlight
+- type: entity
+  parent: Poweredlight
+  id: PoweredlightFlickering
+  suffix: Flickering
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightTubeFlickering
+
+- type: entity
+  parent: Poweredlight
+  id: PoweredlightRave
+  suffix: Rave
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightTubeRave
+  - type: RaveLight
+    maxEnergy: 0.8
+
+- type: entity
+  parent: PoweredlightFlickering
+  id: AlwaysPoweredlightFlickering
+  suffix: Always Powered, Flickering
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+- type: entity
+  parent: PoweredlightRave
+  id: AlwaysPoweredlightRave
+  suffix: Always Powered, Rave
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+# PoweredlightLED
+- type: entity
+  parent: PoweredlightLED
+  id: PoweredlightLEDFlickering
+  suffix: Flickering
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LedLightTubeFlickering
+
+- type: entity
+  parent: PoweredlightLED
+  id: PoweredlightLEDRave
+  suffix: Rave
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LedLightTubeRave
+  - type: RaveLight
+    maxEnergy: 1
+
+- type: entity
+  parent: PoweredlightLEDFlickering
+  id: AlwaysPoweredLightLEDFlickering
+  suffix: Always Powered, Flickering
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+- type: entity
+  parent: PoweredlightLEDRave
+  id: AlwaysPoweredLightLEDRave
+  suffix: Always Powered, Rave
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+# PoweredlightExterior
+- type: entity
+  parent: PoweredlightExterior
+  id: PoweredlightExteriorFlickering
+  suffix: Flickering
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: ExteriorLightTubeFlickering
+
+- type: entity
+  parent: PoweredlightExterior
+  id: PoweredlightExteriorRave
+  suffix: Rave
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: ExteriorLightTubeRave
+  - type: RaveLight
+    maxEnergy: 4.5
+
+- type: entity
+  parent: PoweredlightExteriorFlickering
+  id: AlwaysPoweredLightExteriorFlickering
+  suffix: Always Powered, Flickering
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+- type: entity
+  parent: PoweredlightExteriorRave
+  id: AlwaysPoweredLightExteriorRave
+  suffix: Always Powered, Rave
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+# PoweredlightSodium
+- type: entity
+  parent: PoweredlightSodium
+  id: PoweredlightSodiumFlickering
+  suffix: Flickering
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: SodiumLightTubeFlickering
+
+- type: entity
+  parent: PoweredlightSodium
+  id: PoweredlightSodiumRave
+  suffix: Rave
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: SodiumLightTubeRave
+  - type: RaveLight
+    maxEnergy: 4
+
+- type: entity
+  parent: PoweredlightSodiumFlickering
+  id: AlwaysPoweredLightSodiumFlickering
+  suffix: Always Powered, Flickering
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+- type: entity
+  parent: PoweredlightSodiumRave
+  id: AlwaysPoweredLightSodiumRave
+  suffix: Always Powered, Rave
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+# PoweredSmallLight
+- type: entity
+  parent: PoweredSmallLight
+  id: PoweredSmallLightFlickering
+  suffix: Flickering
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightBulbFlickering
+
+- type: entity
+  parent: PoweredSmallLight
+  id: PoweredSmallLightRave
+  suffix: Rave
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightBulbRave
+  - type: RaveLight
+    maxEnergy: 1
+
+- type: entity
+  parent: PoweredSmallLightFlickering
+  id: AlwaysPoweredSmallLightFlickering
+  suffix: Always Powered, Flickering
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+- type: entity
+  parent: PoweredSmallLightRave
+  id: AlwaysPoweredSmallLightRave
+  suffix: Always Powered, Rave
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+# PoweredLEDSmallLight
+- type: entity
+  parent: PoweredLEDSmallLight
+  id: PoweredLEDSmallLightFlickering
+  suffix: Flickering
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LedLightBulbFlickering
+
+- type: entity
+  parent: PoweredLEDSmallLight
+  id: PoweredLEDSmallLightRave
+  suffix: Rave
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LedLightBulbRave
+  - type: RaveLight
+    maxEnergy: 1
+
+- type: entity
+  parent: PoweredLEDSmallLightFlickering
+  id: AlwaysPoweredLEDSmallLightFlickering
+  suffix: Always Powered, Flickering
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+- type: entity
+  parent: PoweredLEDSmallLightRave
+  id: AlwaysPoweredLEDSmallLightRave
+  suffix: Always Powered, Rave
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+# PoweredDimSmallLight
+- type: entity
+  parent: PoweredDimSmallLight
+  id: PoweredDimSmallLightFlickering
+  suffix: Flickering
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: DimLightBulbFlickering
+
+- type: entity
+  parent: PoweredDimSmallLight
+  id: PoweredDimSmallLightRave
+  suffix: Rave
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: DimLightBulbRave
+  - type: RaveLight
+    maxEnergy: 0.5
+
+- type: entity
+  parent: PoweredDimSmallLightFlickering
+  id: AlwaysPoweredDimSmallLightFlickering
+  suffix: Always Powered, Flickering
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+- type: entity
+  parent: PoweredDimSmallLightRave
+  id: AlwaysPoweredDimSmallLightRave
+  suffix: Always Powered, Rave
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+# PoweredWarmSmallLight
+- type: entity
+  parent: PoweredWarmSmallLight
+  id: PoweredWarmSmallLightFlickering
+  suffix: Flickering
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: WarmLightBulbFlickering
+
+- type: entity
+  parent: PoweredWarmSmallLight
+  id: PoweredWarmSmallLightRave
+  suffix: Rave
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: WarmLightBulbRave
+  - type: RaveLight
+    maxEnergy: 1
+
+- type: entity
+  parent: PoweredWarmSmallLightFlickering
+  id: AlwaysPoweredWarmSmallLightFlickering
+  suffix: Always Powered, Flickering
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+- type: entity
+  parent: PoweredWarmSmallLightRave
+  id: AlwaysPoweredWarmSmallLightRave
+  suffix: Always Powered, Rave
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+# PoweredlightCyan
+- type: entity
+  parent: PoweredlightCyan
+  id: PoweredlightCyanFlickering
+  suffix: Flickering
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightTubeCrystalCyanFlickering
+
+- type: entity
+  parent: PoweredlightCyan
+  id: PoweredlightCyanRave
+  suffix: Rave
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightTubeCrystalCyanRave
+  - type: RaveLight
+    maxEnergy: 3
+
+- type: entity
+  parent: PoweredlightCyanFlickering
+  id: AlwaysPoweredlightCyanFlickering
+  suffix: Always Powered, Flickering
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+- type: entity
+  parent: PoweredlightCyanRave
+  id: AlwaysPoweredlightCyanRave
+  suffix: Always Powered, Rave
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+# PoweredlightBlue
+- type: entity
+  parent: PoweredlightBlue
+  id: PoweredlightBlueFlickering
+  suffix: Flickering
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightTubeCrystalBlueFlickering
+
+- type: entity
+  parent: PoweredlightBlue
+  id: PoweredlightBlueRave
+  suffix: Rave
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightTubeCrystalBlueRave
+  - type: RaveLight
+    maxEnergy: 3
+
+- type: entity
+  parent: PoweredlightBlueFlickering
+  id: AlwaysPoweredlightBlueFlickering
+  suffix: Always Powered, Flickering
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+- type: entity
+  parent: PoweredlightBlueRave
+  id: AlwaysPoweredlightBlueRave
+  suffix: Always Powered, Rave
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+# PoweredlightYellow
+- type: entity
+  parent: PoweredlightYellow
+  id: PoweredlightYellowFlickering
+  suffix: Flickering
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightTubeCrystalYellowFlickering
+
+- type: entity
+  parent: PoweredlightYellow
+  id: PoweredlightYellowRave
+  suffix: Rave
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightTubeCrystalYellowRave
+  - type: RaveLight
+    maxEnergy: 3
+
+- type: entity
+  parent: PoweredlightYellowFlickering
+  id: AlwaysPoweredlightYellowFlickering
+  suffix: Always Powered, Flickering
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+- type: entity
+  parent: PoweredlightYellowRave
+  id: AlwaysPoweredlightYellowRave
+  suffix: Always Powered, Rave
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+# PoweredlightPink
+- type: entity
+  parent: PoweredlightPink
+  id: PoweredlightPinkFlickering
+  suffix: Flickering
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightTubeCrystalPinkFlickering
+
+- type: entity
+  parent: PoweredlightPink
+  id: PoweredlightPinkRave
+  suffix: Rave
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightTubeCrystalPinkRave
+  - type: RaveLight
+    maxEnergy: 3
+
+- type: entity
+  parent: PoweredlightPinkFlickering
+  id: AlwaysPoweredlightPinkFlickering
+  suffix: Always Powered, Flickering
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+- type: entity
+  parent: PoweredlightPinkRave
+  id: AlwaysPoweredlightPinkRave
+  suffix: Always Powered, Rave
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+# PoweredlightOrange
+- type: entity
+  parent: PoweredlightOrange
+  id: PoweredlightOrangeFlickering
+  suffix: Flickering
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightTubeCrystalOrangeFlickering
+
+- type: entity
+  parent: PoweredlightOrange
+  id: PoweredlightOrangeRave
+  suffix: Rave
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightTubeCrystalOrangeRave
+  - type: RaveLight
+    maxEnergy: 3
+
+- type: entity
+  parent: PoweredlightOrangeFlickering
+  id: AlwaysPoweredlightOrangeFlickering
+  suffix: Always Powered, Flickering
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+- type: entity
+  parent: PoweredlightOrangeRave
+  id: AlwaysPoweredlightOrangeRave
+  suffix: Always Powered, Rave
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+# PoweredlightBlack
+- type: entity
+  parent: PoweredlightBlack
+  id: PoweredlightBlackFlickering
+  suffix: Flickering
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightTubeCrystalBlackFlickering
+
+- type: entity
+  parent: PoweredlightBlack
+  id: PoweredlightBlackRave
+  suffix: Rave
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightTubeCrystalBlackRave
+  - type: RaveLight
+    maxEnergy: 1
+
+- type: entity
+  parent: PoweredlightBlackFlickering
+  id: AlwaysPoweredlightBlackFlickering
+  suffix: Always Powered, Flickering
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+- type: entity
+  parent: PoweredlightBlackRave
+  id: AlwaysPoweredlightBlackRave
+  suffix: Always Powered, Rave
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+# PoweredlightRed
+- type: entity
+  parent: PoweredlightRed
+  id: PoweredlightRedFlickering
+  suffix: Flickering
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightTubeCrystalRedFlickering
+
+- type: entity
+  parent: PoweredlightRed
+  id: PoweredlightRedRave
+  suffix: Rave
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightTubeCrystalRedRave
+  - type: RaveLight
+    maxEnergy: 3
+
+- type: entity
+  parent: PoweredlightRedFlickering
+  id: AlwaysPoweredlightRedFlickering
+  suffix: Always Powered, Flickering
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+- type: entity
+  parent: PoweredlightRedRave
+  id: AlwaysPoweredlightRedRave
+  suffix: Always Powered, Rave
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+# PoweredlightGreen
+- type: entity
+  parent: PoweredlightGreen
+  id: PoweredlightGreenFlickering
+  suffix: Flickering
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightTubeCrystalGreenFlickering
+
+- type: entity
+  parent: PoweredlightGreen
+  id: PoweredlightGreenRave
+  suffix: Rave
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightTubeCrystalGreenRave
+  - type: RaveLight
+    maxEnergy: 3
+
+- type: entity
+  parent: PoweredlightGreenFlickering
+  id: AlwaysPoweredlightGreenFlickering
+  suffix: Always Powered, Flickering
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+- type: entity
+  parent: PoweredlightGreenRave
+  id: AlwaysPoweredlightGreenRave
+  suffix: Always Powered, Rave
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+# PoweredlightUltraviolet
+- type: entity
+  parent: PoweredlightUltraviolet
+  id: PoweredlightUltravioletFlickering
+  suffix: Flickering
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightTubeUltravioletFlickering
+
+- type: entity
+  parent: PoweredlightUltraviolet
+  id: PoweredlightUltravioletRave
+  suffix: Rave
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightTubeUltravioletRave
+  - type: RaveLight
+    maxEnergy: 3
+
+- type: entity
+  parent: PoweredlightUltravioletFlickering
+  id: AlwaysPoweredlightUltravioletFlickering
+  suffix: Always Powered, Flickering
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+- type: entity
+  parent: PoweredlightUltravioletRave
+  id: AlwaysPoweredlightUltravioletRave
+  suffix: Always Powered, Rave
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+# PoweredLightPostSmall
+- type: entity
+  parent: PoweredLightPostSmall
+  id: PoweredLightPostSmallFlickering
+  suffix: Flickering
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightTubeFlickering
+
+- type: entity
+  parent: PoweredLightPostSmall
+  id: PoweredLightPostSmallRave
+  suffix: Rave
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightTubeRave
+  - type: RaveLight
+    maxEnergy: 0.8
+
+- type: entity
+  parent: PoweredLightPostSmallFlickering
+  id: AlwaysPoweredLightPostSmallFlickering
+  suffix: Always Powered, Flickering
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+- type: entity
+  parent: PoweredLightPostSmallRave
+  id: AlwaysPoweredLightPostSmallRave
+  suffix: Always Powered, Rave
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+# PoweredLEDLightPostSmall
+- type: entity
+  parent: PoweredLEDLightPostSmall
+  id: PoweredLEDLightPostSmallFlickering
+  suffix: Flickering
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LedLightTubeFlickering
+
+- type: entity
+  parent: PoweredLEDLightPostSmall
+  id: PoweredLEDLightPostSmallRave
+  suffix: Rave
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LedLightTubeRave
+  - type: RaveLight
+    maxEnergy: 1
+
+- type: entity
+  parent: PoweredLEDLightPostSmallFlickering
+  id: AlwaysPoweredLEDLightPostSmallFlickering
+  suffix: Always Powered, Flickering
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+- type: entity
+  parent: PoweredLEDLightPostSmallRave
+  id: AlwaysPoweredLEDLightPostSmallRave
+  suffix: Always Powered, Rave
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+# PoweredLightPostSmallRed
+- type: entity
+  parent: PoweredLightPostSmallRed
+  id: PoweredLightPostSmallRedFlickering
+  suffix: Flickering
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightTubeCrystalRedFlickering
+
+- type: entity
+  parent: PoweredLightPostSmallRed
+  id: PoweredLightPostSmallRedRave
+  suffix: Rave
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightTubeCrystalRedRave
+  - type: RaveLight
+    maxEnergy: 3
+
+- type: entity
+  parent: PoweredLightPostSmallRedFlickering
+  id: AlwaysPoweredLightPostSmallRedFlickering
+  suffix: Always Powered, Flickering
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+
+- type: entity
+  parent: PoweredLightPostSmallRedRave
+  id: AlwaysPoweredLightPostSmallRedRave
+  suffix: Always Powered, Rave
+  components:
+  - type: ApcPowerReceiver
+    needsPower: false
+

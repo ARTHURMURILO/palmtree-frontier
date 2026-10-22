@@ -1,0 +1,483 @@
+# Palmtree: flickering and rave bulbs. Insert one into any compatible light fixture.
+# Rave bulbs pulse 100% -> 0% -> 100%; a screwdriver cycles the period through 0.5s, 1s and 2s.
+
+# LightBulb
+- type: entity
+  parent: LightBulb
+  id: LightBulbFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: LightBulb
+  id: LightBulbRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 1
+
+# LedLightBulb
+- type: entity
+  parent: LedLightBulb
+  id: LedLightBulbFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: LedLightBulb
+  id: LedLightBulbRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 1
+
+# DimLightBulb
+- type: entity
+  parent: DimLightBulb
+  id: DimLightBulbFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: DimLightBulb
+  id: DimLightBulbRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 0.5
+
+# WarmLightBulb
+- type: entity
+  parent: WarmLightBulb
+  id: WarmLightBulbFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: WarmLightBulb
+  id: WarmLightBulbRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 1
+
+# LightBulbOld
+- type: entity
+  parent: LightBulbOld
+  id: LightBulbOldFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: LightBulbOld
+  id: LightBulbOldRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 0.3
+
+# ServiceLightBulb
+- type: entity
+  parent: ServiceLightBulb
+  id: ServiceLightBulbFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: ServiceLightBulb
+  id: ServiceLightBulbRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 0.45
+
+# LightTube
+- type: entity
+  parent: LightTube
+  id: LightTubeFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: LightTube
+  id: LightTubeRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 0.8
+
+# LightTubeOld
+- type: entity
+  parent: LightTubeOld
+  id: LightTubeOldFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: LightTubeOld
+  id: LightTubeOldRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 0.5
+
+# LedLightTube
+- type: entity
+  parent: LedLightTube
+  id: LedLightTubeFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: LedLightTube
+  id: LedLightTubeRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 1
+
+# ExteriorLightTube
+- type: entity
+  parent: ExteriorLightTube
+  id: ExteriorLightTubeFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: ExteriorLightTube
+  id: ExteriorLightTubeRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 4.5
+
+# SodiumLightTube
+- type: entity
+  parent: SodiumLightTube
+  id: SodiumLightTubeFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: SodiumLightTube
+  id: SodiumLightTubeRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 4
+
+# LightTubeCrystalCyan
+- type: entity
+  parent: LightTubeCrystalCyan
+  id: LightTubeCrystalCyanFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: LightTubeCrystalCyan
+  id: LightTubeCrystalCyanRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 3
+
+# LightTubeCrystalBlue
+- type: entity
+  parent: LightTubeCrystalBlue
+  id: LightTubeCrystalBlueFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: LightTubeCrystalBlue
+  id: LightTubeCrystalBlueRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 3
+
+# LightTubeCrystalYellow
+- type: entity
+  parent: LightTubeCrystalYellow
+  id: LightTubeCrystalYellowFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: LightTubeCrystalYellow
+  id: LightTubeCrystalYellowRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 3
+
+# LightTubeCrystalPink
+- type: entity
+  parent: LightTubeCrystalPink
+  id: LightTubeCrystalPinkFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: LightTubeCrystalPink
+  id: LightTubeCrystalPinkRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 3
+
+# LightTubeCrystalOrange
+- type: entity
+  parent: LightTubeCrystalOrange
+  id: LightTubeCrystalOrangeFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: LightTubeCrystalOrange
+  id: LightTubeCrystalOrangeRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 3
+
+# LightTubeCrystalBlack
+- type: entity
+  parent: LightTubeCrystalBlack
+  id: LightTubeCrystalBlackFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: LightTubeCrystalBlack
+  id: LightTubeCrystalBlackRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 1
+
+# LightTubeCrystalRed
+- type: entity
+  parent: LightTubeCrystalRed
+  id: LightTubeCrystalRedFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: LightTubeCrystalRed
+  id: LightTubeCrystalRedRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 3
+
+# LightTubeCrystalGreen
+- type: entity
+  parent: LightTubeCrystalGreen
+  id: LightTubeCrystalGreenFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: LightTubeCrystalGreen
+  id: LightTubeCrystalGreenRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 3
+
+# LightBulbCrystalCyan
+- type: entity
+  parent: LightBulbCrystalCyan
+  id: LightBulbCrystalCyanFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: LightBulbCrystalCyan
+  id: LightBulbCrystalCyanRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 1
+
+# LightBulbCrystalBlue
+- type: entity
+  parent: LightBulbCrystalBlue
+  id: LightBulbCrystalBlueFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: LightBulbCrystalBlue
+  id: LightBulbCrystalBlueRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 1
+
+# LightBulbCrystalYellow
+- type: entity
+  parent: LightBulbCrystalYellow
+  id: LightBulbCrystalYellowFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: LightBulbCrystalYellow
+  id: LightBulbCrystalYellowRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 1
+
+# LightBulbCrystalPink
+- type: entity
+  parent: LightBulbCrystalPink
+  id: LightBulbCrystalPinkFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: LightBulbCrystalPink
+  id: LightBulbCrystalPinkRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 1
+
+# LightBulbCrystalOrange
+- type: entity
+  parent: LightBulbCrystalOrange
+  id: LightBulbCrystalOrangeFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: LightBulbCrystalOrange
+  id: LightBulbCrystalOrangeRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 1
+
+# LightBulbCrystalBlack
+- type: entity
+  parent: LightBulbCrystalBlack
+  id: LightBulbCrystalBlackFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: LightBulbCrystalBlack
+  id: LightBulbCrystalBlackRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 1
+
+# LightBulbCrystalRed
+- type: entity
+  parent: LightBulbCrystalRed
+  id: LightBulbCrystalRedFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: LightBulbCrystalRed
+  id: LightBulbCrystalRedRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 1
+
+# LightBulbCrystalGreen
+- type: entity
+  parent: LightBulbCrystalGreen
+  id: LightBulbCrystalGreenFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: LightBulbCrystalGreen
+  id: LightBulbCrystalGreenRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 1
+
+# LightTubeUltraviolet
+- type: entity
+  parent: LightTubeUltraviolet
+  id: LightTubeUltravioletFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: LightTubeUltraviolet
+  id: LightTubeUltravioletRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 3
+
+# SodiumLightBulb
+- type: entity
+  parent: SodiumLightBulb
+  id: SodiumLightBulbFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: SodiumLightBulb
+  id: SodiumLightBulbRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 4
+
+# ExteriorLightBulb
+- type: entity
+  parent: ExteriorLightBulb
+  id: ExteriorLightBulbFlickering
+  suffix: Flickering
+  components:
+  - type: FlickeringLight
+
+- type: entity
+  parent: ExteriorLightBulb
+  id: ExteriorLightBulbRave
+  suffix: Rave
+  components:
+  - type: RaveLight
+    maxEnergy: 4.5
+

@@ -811,6 +811,26 @@ opening a preview replaces any existing one for that session (no camera accumula
   skipped empty tile (`ignoreEmpty` defaults to `true`), so a zoomed-out ghost looking at an FTL
   arrival visualizer over a mostly empty grid used to stack-overflow the client.
 
+## Dungeon lighting variants (flickering / rave)
+
+- Prototypes: `Resources/Prototypes/_PS/Entities/Structures/Lighting/lighting_effects.yml` and
+  `.../Objects/Power/lighting_effects.yml`. Every standard wall/small/post light and bulb has
+  `*Flickering` and `*Rave` variants. `AlwaysPowered...` variants set
+  `ApcPowerReceiver.needsPower: false`, so they light without an APC but still accept bulbs.
+- Flicker: `FlickeringLightComponent` marks the bulb. `Content.Server/_PS/Light/FlickeringLightSystem`
+  polls `PoweredLightComponent`s (the event bus only allows one subscription per component/event,
+  and the base system owns the container events) and drives the existing `IsBlinking` appearance
+  animation. It only turns blinking back off for lights it enabled itself, so the variation pass's
+  aged-tube flicker is preserved. Rave takes priority over flicker.
+- Rave: `RaveLightComponent` carries `Period` (0.5/1/2 s), optional `MaxEnergy` (peak point-light
+  energy) and `Phase`. The pulse is client-only (`Content.Client/_PS/Light/RaveLightSystem`) so the
+  server does not network `PointLight.Energy` every tick; it animates the point light and glow sprite
+  layer on a triangle wave (100% -> 0% -> 100%). Screwdriver cycles the period through
+  `SharedRaveLightSystem`; rave fixtures carry the component directly and their spawned rave bulbs
+  carry their own copy.
+- Tests: `Content.IntegrationTests/Tests/_PS/LightEffectsTest.cs` (flicker sync, always-power,
+  screwdriver cycle, client pulse).
+
 ## 2026-10 misc additions (walkman, UI sounds, editor QoL, RTG radiation)
 
 Small features that did not get their own section yet:
