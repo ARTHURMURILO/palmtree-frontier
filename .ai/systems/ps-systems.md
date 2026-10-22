@@ -915,11 +915,18 @@ Small features that did not get their own section yet:
 - **RPD + RCD improvements** (2026-10, ported from the old Coyote `palm3` code): the RPD tool
   (atmos build modes, 60 charges, radial categories), shuttle-wall RCD mode + cheap/fast shuttle
   wall deconstruct, instant-construction flag for the admeme `RCDExperimental`, and mirror
-  prototypes (gas mixer/filter flip with the placement flip key). RPD modes
-  `Resources/Prototypes/_PS/RCD/rpd.yml`, RCD modes `.../_PS/RCD/rcd.yml`, textures under
-  `Resources/Textures/_PS/...`, locale `Resources/Locale/en-US/_PS/rcd.ftl`. Details:
-  `.ai/PORTING.md` §24; traps: `.ai/HAZARDS.md` §26. The RPD deconstruct whitelist (`rpd: true`)
-  is wired on `GasPipeBase`, so the RPD removes atmos piping while the RCD stays off it.
+  prototypes (gas mixer/filter flip with the placement flip key). A second pass brought the rest of
+  Coyote's RPD: its own menu (`RPDMenu`, mode radial + an always-visible pipe colour strip on the
+  `RpdUiKey` UI key), functional pipe colouring from a YAML palette, layer-aware placement
+  (`AlignRPDAtmosPipeLayers` — click the middle of a tile for primary, either side for
+  secondary/tertiary, with the layer ghost preview and eye-rotation sync) and the last six modes
+  (`PipeHalf`, `ManifoldGas`, `PressureRegulator`, plus a `SensorsMonitors` category with air alarm,
+  air sensor and gas pipe sensor). RPD modes `Resources/Prototypes/_PS/RCD/rpd.yml`, RCD modes
+  `.../_PS/RCD/rcd.yml`, textures under `Resources/Textures/_PS/...`, locale
+  `Resources/Locale/en-US/_PS/rcd.ftl`. Details: `.ai/PORTING.md` §24-24a; traps:
+  `.ai/HAZARDS.md` §26. The RPD deconstruct whitelist (`rpd: true`) is wired on `GasPipeBase` plus
+  the air alarm, air sensor and gas pipe sensor, so the RPD removes what it builds while the RCD
+  stays off atmos entities.
 - **Salto expedition ship** (2026-10, ported from the old Coyote `_CS` code): `LL0 Salto`, a Small
   Expedition/AME ship, map `Resources/Maps/_CS/Shuttles/Expedition/salto.yml`, vessel prototype
   `Resources/Prototypes/_CS/Shipyard/Expedition/salto.yml`. Details and adaptations (dropped

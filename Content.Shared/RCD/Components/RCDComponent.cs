@@ -51,6 +51,28 @@ public sealed partial class RCDComponent : Component
     /// </summary>
     [DataField, AutoNetworkedField]
     public bool InstantConstruction { get; set; }
+
+    /// <summary>
+    /// Pipe colours the RPD's colour strip offers, keyed by palette name. Mirrors the spray
+    /// painter's pipe palette so an RPD-tinted pipe looks like a spray painted one.
+    /// </summary>
+    [DataField, AutoNetworkedField]
+    public Dictionary<string, Color> PipeColorPalette = new();
+
+    /// <summary>
+    /// The palette key of the pipe colour the RPD paints newly constructed pipes with.
+    /// "default" means the RPD does not paint at all.
+    /// </summary>
+    [DataField, AutoNetworkedField]
+    public string PipeColorKey = "default";
+
+    /// <summary>
+    /// The player eye rotation, forwarded by the RPD placement mode whenever it changes.
+    /// Eye rotation is not networked, so the server needs it to work out which pipe layer
+    /// a click on a tile was aimed at.
+    /// </summary>
+    [DataField, AutoNetworkedField]
+    public float? LastKnownEyeRotation { get; set; }
     // Palmtree end
 
     /// <summary>

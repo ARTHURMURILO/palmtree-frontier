@@ -26,6 +26,11 @@ using Robust.Shared.Prototypes;
 using Robust.Shared.Serialization;
 using System.Linq;
 using Robust.Shared.Audio;
+// Palmtree: RPD pipe colouring and pipe layer placement (ported from the old Coyote code)
+using System.Numerics;
+using Content.Shared.Atmos.Components;
+using Content.Shared.Atmos.EntitySystems;
+using Content.Shared.Atmos.Piping;
 
 namespace Content.Shared.RCD.Systems;
 
@@ -47,6 +52,15 @@ public sealed class RCDSystem : EntitySystem
     [Dependency] private readonly SharedMapSystem _mapSystem = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
     [Dependency] private readonly TagSystem _tags = default!;
+    // Palmtree: RPD pipe colouring and pipe layer placement
+    [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
+    [Dependency] private readonly SharedAtmosPipeLayersSystem _pipeLayers = default!;
+
+    /// <summary>
+    /// Palmtree: the atmos pipe layer the RPD should build onto. Resolved from where inside the
+    /// tile the player clicked, then consumed by <see cref="FinalizeRCDOperation"/>.
+    /// </summary>
+    private AtmosPipeLayer _currentLayer = AtmosPipeLayer.Primary;
 
     private readonly int _instantConstructionDelay = 0;
     private readonly EntProtoId _instantConstructionFx = "EffectRCDConstruct0";
@@ -68,6 +82,9 @@ public sealed class RCDSystem : EntitySystem
         SubscribeLocalEvent<RCDComponent, RCDSystemMessage>(OnRCDSystemMessage);
         SubscribeNetworkEvent<RCDConstructionGhostRotationEvent>(OnRCDconstructionGhostRotationEvent);
         SubscribeNetworkEvent<RCDConstructionGhostFlipEvent>(OnRCDConstructionGhostFlipEvent); // Palmtree: mirror prototype flip
+        // Palmtree: RPD pipe colouring and pipe layer placement
+        SubscribeLocalEvent<RCDComponent, RCDColorChangeMessage>(OnColorChange);
+        SubscribeNetworkEvent<RPDEyeRotationEvent>(OnRPDEyeRotationEvent);
     }
 
     #region Event handling
@@ -98,6 +115,21 @@ public sealed class RCDSystem : EntitySystem
 
         // Set the current RCD prototype to the one supplied
         component.ProtoId = args.ProtoId;
+        Dirty(uid, component);
+    }
+
+    // Palmtree: RPD pipe colour selection
+    private void OnColorChange(EntityUid uid, RCDComponent component, RCDColorChangeMessage args)
+    {
+        // Exit if the message didn't come from the entity it claims to be about
+        if (args.NetEntity != GetNetEntity(uid))
+            return;
+
+        // Only accept palette keys this RCD actually offers (plus the no-paint default)
+        if (args.Key != "default" && !component.PipeColorPalette.ContainsKey(args.Key))
+            return;
+
+        component.PipeColorKey = args.Key;
         Dirty(uid, component);
     }
 
@@ -147,6 +179,29 @@ public sealed class RCDSystem : EntitySystem
         }
         var tile = _mapSystem.GetTileRef(gridUid.Value, mapGrid, location);
         var position = _mapSystem.TileIndicesFor(gridUid.Value, mapGrid, location);
+
+        // Palmtree: work out which atmos pipe layer the click was aimed at, from its offset from
+        // the centre of the tile. Matches what AlignRPDAtmosPipeLayers previews on the client.
+        if (component.IsRpd && !prototype.NoLayers)
+        {
+            var tileSize = mapGrid.TileSize;
+            var tileCenter = new Vector2(tile.X + tileSize / 2, tile.Y + tileSize / 2);
+            var mouseCoordsDiff = args.ClickLocation.Position - tileCenter;
+            const float mouseDeadzoneRadius = 0.25f;
+
+            _currentLayer = AtmosPipeLayer.Primary;
+
+            if (mouseCoordsDiff.Length() > mouseDeadzoneRadius && component.LastKnownEyeRotation.HasValue)
+            {
+                var gridRotation = _transform.GetWorldRotation(gridUid.Value);
+                var angle = new Angle(mouseCoordsDiff);
+                var eyeRotation = new Angle(component.LastKnownEyeRotation.Value);
+                var direction = (angle + eyeRotation + gridRotation + Math.PI / 2).GetCardinalDir();
+                _currentLayer = (direction == Direction.North || direction == Direction.East)
+                    ? AtmosPipeLayer.Secondary
+                    : AtmosPipeLayer.Tertiary;
+            }
+        }
 
         if (!IsRCDOperationStillValid(uid, component, gridUid.Value, mapGrid, tile, position, args.Target, args.User))
             return;
@@ -358,6 +413,30 @@ public sealed class RCDSystem : EntitySystem
         Dirty(uid, rcd);
     }
     // Palmtree end
+
+    // Palmtree: the RPD placement mode forwards the local eye rotation, which is not networked,
+    // so the server can resolve the same pipe layer the client previewed.
+    private void OnRPDEyeRotationEvent(RPDEyeRotationEvent ev, EntitySessionEventArgs session)
+    {
+        var uid = GetEntity(ev.NetEntity);
+
+        // Only accept eye rotations for an RPD this player is actually holding
+        if (session.SenderSession.AttachedEntity is not { } player)
+            return;
+
+        if (_hands.GetActiveItem(player) != uid)
+            return;
+
+        if (!TryComp<RCDComponent>(uid, out var rcd))
+            return;
+
+        if (rcd.LastKnownEyeRotation == ev.EyeRotation)
+            return;
+
+        // Not dirtied: only the server needs this, to resolve the pipe layer in FinalizeRCDOperation,
+        // and network churn every time the player turns their head is not worth it.
+        rcd.LastKnownEyeRotation = ev.EyeRotation;
+    }
 
     #endregion
 
@@ -610,6 +689,17 @@ public sealed class RCDSystem : EntitySystem
                     ? prototype.MirrorPrototype
                     : prototype.Prototype;
 
+                // Palmtree: build onto the atmos pipe layer the player aimed at
+                if (component.IsRpd && !prototype.NoLayers && proto != null)
+                {
+                    if (_protoManager.TryIndex<EntityPrototype>(proto, out var layeredProto) &&
+                        layeredProto.TryGetComponent<AtmosPipeLayersComponent>(out var pipeLayers, EntityManager.ComponentFactory) &&
+                        _pipeLayers.TryGetAlternativePrototype(pipeLayers, _currentLayer, out var layeredProtoId))
+                    {
+                        proto = layeredProtoId;
+                    }
+                }
+
                 // Calculate rotation and apply it before spawning
                 var rotation = prototype.Rotation switch
                 {
@@ -624,6 +714,17 @@ public sealed class RCDSystem : EntitySystem
                 var mapCoords = _transform.ToMapCoordinates(entityCoords);
                 var ent = Spawn(proto, mapCoords, rotation: rotation);
                 // Palmtree end
+
+                // Palmtree: paint the new pipe with the RPD's selected colour
+                if (component.IsRpd && component.PipeColorPalette.TryGetValue(component.PipeColorKey, out var pipeColor))
+                {
+                    _appearance.SetData(ent, PipeColorVisuals.Color, pipeColor);
+
+                    // Let the server mirror the colour onto the functional pipe colour component,
+                    // so atmos monitoring consoles and the spray painter see the same colour.
+                    var colorEv = new RCDPipeColorAppliedEvent(pipeColor);
+                    RaiseLocalEvent(ent, ref colorEv);
+                }
 
                 _adminLogger.Add(LogType.RCD, LogImpact.High, $"{ToPrettyString(user):user} used RCD to spawn {ToPrettyString(ent)} at {position} on grid {gridUid}");
                 break;

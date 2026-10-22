@@ -558,6 +558,41 @@ so these fail only in CI:
   `EffectRCDConstruct0` fx, but validity/charge checks still run every tick (and it zeroes the
   delay on deconstruct operations too).
 
+### RPD second pass (pipe colours + pipe layers)
+
+- **Every new `rpd: true` entity needs an `fx:`.** The deconstruct path in `RCDSystem.OnAfterInteract`
+  does `effectPrototype = destructible.Effect`, and `RCDDeconstructableComponent.Effect` defaults to
+  null — `Spawn(null, ...)` on an fx-less target. The `GasPipeBase` block already sets
+  `fx: EffectRCDConstruct0`; the air alarm / air sensor / gas pipe sensor blocks added with the
+  sensor RPD modes do too.
+- **The RPD overrides `UserInterface.interfaces`, it does not extend it.** The `RPD` prototype
+  re-declares `- type: UserInterface` with only `enum.RpdUiKey.Key` and re-points
+  `ActivatableUI.key` off the RCD's `RcdUiKey`, otherwise the item keeps opening the RCD's radial.
+- **Pipe colours travel as a palette key, never as a tuple/`Color` payload.** Palette lives on the
+  entity (`pipeColorPalette:` on the `RCD` component, networked so the menu can draw swatches),
+  `RCDColorChangeMessage` carries the key, and the shared system resolves it. Applying the colour is
+  two-sided on purpose: the appearance datum (`PipeColorVisuals.Color`) drives the sprite, while
+  `RCDPipeColorAppliedEvent` → `AtmosPipeColorSystem.SetColor` updates `AtmosPipeColorComponent` for
+  the atmos monitoring console and the spray painter. Appearance alone leaves those two out of sync.
+- **`LastKnownEyeRotation` is server-only working state: do not `Dirty()` it on change.** The
+  placement mode forwards the local eye rotation (not networked) so the server can resolve the
+  layer; dirtying on every change would network the component each time the player turns.
+- **Server and client layer maths must use the same tile centre.** `AlignRPDAtmosPipeLayers`
+  compares the raw cursor position against the snapped tile centre; `RCDSystem.OnAfterInteract` must
+  do exactly the same with `args.ClickLocation`. Coyote's `- new Vector2(0.5f, 0.5f)` bias is
+  deliberately *not* ported: with `MapGridComponent.TileSize` being a scalar, it shifted the diff by
+  half a tile, so the server built on a different layer than the ghost previewed.
+- **`noLayers: true` is for modes with no layer to pick.** Mode entities need an
+  `AtmosPipeLayersComponent` whose `alternativePrototypes` actually vary; `GasPipeManifold` has
+  `pipeLayersLocked: true`, and wallmounts/sensors have no component at all. The ghost system also
+  gates the layered placer on `RcdMode.ConstructObject`, so deconstruct previews keep the plain
+  placer.
+- **Do not recreate the RPD placer every tick.** `AlignRPDAtmosPipeLayers` rewrites the placer's own
+  `CurrentPermission.EntityType` to the layer prototype, so `RCDConstructionGhostSystem` tracks the
+  *base* prototype it asked for (`_placerBaseProto`) — comparing against
+  `CurrentPermission.EntityType` (Coyote's check) is always unequal and rebuilt the placer at
+  60 Hz.
+
 ## 27. Absolute round-time cooldowns do not survive a round (2026-10-19)
 
 - `UseDelayInfo.EndTime`, `GunComponent.NextFire` and `MeleeWeaponComponent.NextAttack` are

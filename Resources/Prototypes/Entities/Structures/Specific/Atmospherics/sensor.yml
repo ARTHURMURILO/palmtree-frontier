@@ -92,6 +92,12 @@
         enum.PowerDeviceVisualLayers.Powered:
           True: { state: gsensor1 }
           False: { state: gsensor0 }
+  - type: RCDDeconstructable # Palmtree: RPD whitelist
+    deconstructable: false
+    rpd: true
+    cost: 1
+    delay: 0
+    fx: EffectRCDConstruct0
 
 - type: entity
   parent: BaseItem

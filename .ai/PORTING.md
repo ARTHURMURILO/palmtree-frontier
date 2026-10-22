@@ -770,6 +770,39 @@ this repo's newer client code.
   modes) — this repo already ships the newer Frontier pirate/shipyard RCDs. Only the four
   plastitanium modes required by `RCDExperimental` were taken.
 
+### 24a. 2026-10 RPD second pass: pipe colours, pipe layers, missing modes
+
+The first pass above only took the RPD's mode list. This pass brings the rest of Coyote's RPD
+(`b7a81c6e4a` "NEW SHINY RPD" plus the `palm3` follow-ups), which is what made that tool good:
+
+- **Pipe colours.** `RCDComponent.PipeColorPalette` (`Dictionary<string, Color>`, YAML
+  `pipeColorPalette:` on the `RPD`) + `PipeColorKey` (default `"default"` = no paint). The RPD's
+  own menu (`RPDMenu`) shows them as an always-visible strip along the bottom.
+  `RCDColorChangeMessage` carries only the palette **key**; the server resolves the colour from the
+  palette, so no tuple crosses the wire. Palmtree applies the colour *functionally*, not just
+  cosmetically: the shared system sets the `PipeColorVisuals.Color` appearance datum and raises
+  `RCDPipeColorAppliedEvent` on the spawned entity, which `AtmosPipeColorSystem` turns into
+  `AtmosPipeColorComponent.Color` — so atmos monitoring consoles and the spray painter agree.
+  Coyote only touched the appearance datum.
+- **Pipe layer placement.** `AlignRPDAtmosPipeLayers` (placement mode) picks the atmos pipe layer
+  from where the cursor sits inside the tile — the middle quarter (radius `0.25`) is `Primary`, and
+  the two halves either side are `Secondary`/`Tertiary` — previews it by swapping the placer's
+  `EntityType` to the layer prototype, and draws the three guide circles. `RCDSystem` repeats the
+  same computation in `OnAfterInteract` and substitutes the prototype in
+  `FinalizeRCDOperation` via `SharedAtmosPipeLayersSystem.TryGetAlternativePrototype`.
+  `RCDPrototype.NoLayers` (YAML `noLayers: true`) opts a mode out (modes whose entity has no
+  `AtmosPipeLayersComponent`: `ManifoldGas`, `Alarm`, `Sensor`).
+- **Six more modes**: `PipeHalf`, `ManifoldGas`, `PressureRegulator`, plus a new
+  `SensorsMonitors` category with `Alarm` (air alarm), `Sensor` (air sensor) and `SensorPipe` (gas
+  pipe sensor). Icons reuse the entity sprites, so no art was added.
+- **Own UI key.** `RpdUiKey` + `RPDMenuBoundUserInterface`/`RPDMenu`, so the RPD opens its own menu
+  (mode radial + colour strip) instead of the RCD's modern `SimpleRadialMenu`. The RPD entity
+  overrides `UserInterface.interfaces` and `ActivatableUI.key` off `RcdUiKey`.
+- **Deconstruct whitelist extended** to `AirAlarm` (cost 2), `AirSensor` and `GasPipeSensor`
+  (cost 1 each), so the RPD can also pull down what its new sensor modes build.
+
+See `.ai/HAZARDS.md` §26 for the traps this pass introduced.
+
 ## 25. 2026-10 Salto expedition ship (Coyote `_CS`)
 
 - Map: `Resources/Maps/_CS/Shuttles/Expedition/salto.yml` — the first `_CS` map this fork has

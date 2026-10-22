@@ -18,6 +18,7 @@ namespace Content.Client.RCD;
 public sealed class RCDConstructionGhostSystem : EntitySystem
 {
     private const string PlacementMode = nameof(AlignRCDConstruction);
+    private const string RpdPlacementMode = nameof(AlignRPDAtmosPipeLayers); // Palmtree: RPD pipe layer placement
 
     [Dependency] private readonly IPlayerManager _playerManager = default!;
     [Dependency] private readonly IPlacementManager _placementManager = default!;
@@ -26,6 +27,10 @@ public sealed class RCDConstructionGhostSystem : EntitySystem
     
     private Direction _placementDirection = default;
     private bool _useMirrorPrototype = false; // Palmtree: mirror prototype flip
+
+    // Palmtree: the prototype we asked the placer to place, ignoring the layer swap
+    // AlignRPDAtmosPipeLayers applies to the placer's own permission.
+    private string? _placerBaseProto;
 
     public override void Initialize()
     {
@@ -80,7 +85,6 @@ public sealed class RCDConstructionGhostSystem : EntitySystem
 
         // Get current placer data
         var placerEntity = _placementManager.CurrentPermission?.MobUid;
-        var placerProto = _placementManager.CurrentPermission?.EntityType;
         var placerIsRCD = HasComp<RCDComponent>(placerEntity);
 
         // Exit if erasing or the current placer is not an RCD (build mode is active)
@@ -116,8 +120,16 @@ public sealed class RCDConstructionGhostSystem : EntitySystem
             : prototype.Prototype;
 
         // If the placer has not changed, exit
-        if (heldEntity == placerEntity && useProto == placerProto)
+        if (heldEntity == placerEntity && useProto == _placerBaseProto)
             return;
+
+        // Palmtree: the RPD picks an atmos pipe layer from where the cursor sits inside the tile,
+        // so it needs its own placement mode (ported from the old Coyote code)
+        if (rcd.IsRpd && useProto != null && !prototype.NoLayers && prototype.Mode == RcdMode.ConstructObject)
+        {
+            CreateLayeredPlacer(heldEntity.Value, rcd, useProto);
+            return;
+        }
 
         // Create a new placer
         CreatePlacer(heldEntity.Value, rcd, useProto, prototype.Mode);
@@ -138,5 +150,27 @@ public sealed class RCDConstructionGhostSystem : EntitySystem
 
         _placementManager.Clear();
         _placementManager.BeginPlacing(newObjInfo);
+
+        _placerBaseProto = prototype;
+    }
+
+    // Palmtree: RPD pipe layer placement (ported from the old Coyote code)
+    private void CreateLayeredPlacer(EntityUid uid, RCDComponent component, string prototype)
+    {
+        var rcdProto = _protoManager.Index(component.ProtoId);
+        var newObjInfo = new PlacementInformation
+        {
+            MobUid = uid,
+            PlacementOption = RpdPlacementMode,
+            EntityType = prototype,
+            Range = (int) Math.Ceiling(SharedInteractionSystem.InteractionRange),
+            IsTile = rcdProto.Mode == RcdMode.ConstructTile,
+            UseEditorContext = false,
+        };
+
+        _placementManager.Clear();
+        _placementManager.BeginPlacing(newObjInfo);
+
+        _placerBaseProto = prototype;
     }
 }
