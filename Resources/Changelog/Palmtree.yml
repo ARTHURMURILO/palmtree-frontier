@@ -1270,3 +1270,20 @@ Entries:
   time: '2026-10-22T19:53:02.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/aec1b95a1899d0b580d4c0aec1717fb51dd0397e
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: Using a smart fridge no longer prevents a ship from being stored.
+    - type: Fix
+      message: >-
+        A ship with an item that cannot be saved is stored anyway; the item
+        comes back as a fresh copy on retrieval instead of the whole store
+        failing.
+    - type: Fix
+      message: >-
+        A failed ship store leaves the ship's power, machinery and deed working
+        instead of leaving it half-stripped.
+  id: 90079
+  time: '2026-10-22T20:58:32.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/aacbf4d772142dcdb7c862976bf3c1c22e47dc39
