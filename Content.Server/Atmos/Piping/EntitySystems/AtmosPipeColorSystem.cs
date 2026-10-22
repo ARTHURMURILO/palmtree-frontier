@@ -15,17 +15,15 @@ namespace Content.Server.Atmos.Piping.EntitySystems
 
             SubscribeLocalEvent<AtmosPipeColorComponent, ComponentStartup>(OnStartup);
             SubscribeLocalEvent<AtmosPipeColorComponent, ComponentShutdown>(OnShutdown);
-            SubscribeLocalEvent<RCDPipeColorAppliedEvent>(OnRCDPipeColorApplied); // Palmtree: RPD pipe colouring
+            // Palmtree: RPD pipe colouring
+            SubscribeLocalEvent<AtmosPipeColorComponent, RCDPipeColorAppliedEvent>(OnRCDPipeColorApplied);
         }
 
         // Palmtree: an RPD built a pipe with a colour selected, so adopt it as the functional colour.
         // The shared RCD system already set the appearance datum; this keeps the component (which atmos
         // monitoring consoles and the spray painter read) in sync with it.
-        private void OnRCDPipeColorApplied(EntityUid uid, ref RCDPipeColorAppliedEvent args)
+        private void OnRCDPipeColorApplied(EntityUid uid, AtmosPipeColorComponent component, ref RCDPipeColorAppliedEvent args)
         {
-            if (!TryComp<AtmosPipeColorComponent>(uid, out var component))
-                return;
-
             SetColor(uid, component, args.Color);
         }
 

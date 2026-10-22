@@ -71,7 +71,11 @@ public sealed partial class RCDComponent : Component
     /// Eye rotation is not networked, so the server needs it to work out which pipe layer
     /// a click on a tile was aimed at.
     /// </summary>
-    [DataField, AutoNetworkedField]
+    /// <remarks>
+    /// Server-only working state: it is never dirtied, so it deliberately stays out of the
+    /// component state. The client recomputes the layer locally in AlignRPDAtmosPipeLayers.
+    /// </remarks>
+    [ViewVariables(VVAccess.ReadOnly)]
     public float? LastKnownEyeRotation { get; set; }
     // Palmtree end
 

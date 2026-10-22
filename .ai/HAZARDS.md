@@ -565,18 +565,22 @@ so these fail only in CI:
   null — `Spawn(null, ...)` on an fx-less target. The `GasPipeBase` block already sets
   `fx: EffectRCDConstruct0`; the air alarm / air sensor / gas pipe sensor blocks added with the
   sensor RPD modes do too.
-- **The RPD overrides `UserInterface.interfaces`, it does not extend it.** The `RPD` prototype
-  re-declares `- type: UserInterface` with only `enum.RpdUiKey.Key` and re-points
+- **Which menu opens is decided by `ActivatableUI.key`, not by `UserInterface.interfaces`.** The
+  `RPD` prototype adds its own `UserInterface` entry for `enum.RpdUiKey.Key` and re-points
   `ActivatableUI.key` off the RCD's `RcdUiKey`, otherwise the item keeps opening the RCD's radial.
+  The inherited `RcdUiKey` mapping may still be merged into `interfaces` and is harmless —
+  `ActivatableUI` is what picks the menu.
 - **Pipe colours travel as a palette key, never as a tuple/`Color` payload.** Palette lives on the
   entity (`pipeColorPalette:` on the `RCD` component, networked so the menu can draw swatches),
   `RCDColorChangeMessage` carries the key, and the shared system resolves it. Applying the colour is
   two-sided on purpose: the appearance datum (`PipeColorVisuals.Color`) drives the sprite, while
   `RCDPipeColorAppliedEvent` → `AtmosPipeColorSystem.SetColor` updates `AtmosPipeColorComponent` for
   the atmos monitoring console and the spray painter. Appearance alone leaves those two out of sync.
-- **`LastKnownEyeRotation` is server-only working state: do not `Dirty()` it on change.** The
+- **`LastKnownEyeRotation` is server-only working state: do not network or `Dirty()` it.** The
   placement mode forwards the local eye rotation (not networked) so the server can resolve the
-  layer; dirtying on every change would network the component each time the player turns.
+  layer. The field is `[ViewVariables]`-only, deliberately not an `[AutoNetworkedField]`: dirtying
+  on every change would network the component each time the player turns, and no client code reads
+  it (the client recomputes the layer in `AlignRPDAtmosPipeLayers`).
 - **Server and client layer maths must use the same tile centre.** `AlignRPDAtmosPipeLayers`
   compares the raw cursor position against the snapped tile centre; `RCDSystem.OnAfterInteract` must
   do exactly the same with `args.ClickLocation`. Coyote's `- new Vector2(0.5f, 0.5f)` bias is

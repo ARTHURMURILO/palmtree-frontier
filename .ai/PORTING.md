@@ -790,14 +790,17 @@ The first pass above only took the RPD's mode list. This pass brings the rest of
   `EntityType` to the layer prototype, and draws the three guide circles. `RCDSystem` repeats the
   same computation in `OnAfterInteract` and substitutes the prototype in
   `FinalizeRCDOperation` via `SharedAtmosPipeLayersSystem.TryGetAlternativePrototype`.
-  `RCDPrototype.NoLayers` (YAML `noLayers: true`) opts a mode out (modes whose entity has no
-  `AtmosPipeLayersComponent`: `ManifoldGas`, `Alarm`, `Sensor`).
+  `RCDPrototype.NoLayers` (YAML `noLayers: true`) opts a mode out: either its entity has no
+  `AtmosPipeLayersComponent` at all (`Alarm`, `Sensor`) or it has one offering no alternative
+  prototypes (`ManifoldGas`, whose `AtmosPipeLayers` is `pipeLayersLocked: true`).
 - **Six more modes**: `PipeHalf`, `ManifoldGas`, `PressureRegulator`, plus a new
   `SensorsMonitors` category with `Alarm` (air alarm), `Sensor` (air sensor) and `SensorPipe` (gas
   pipe sensor). Icons reuse the entity sprites, so no art was added.
 - **Own UI key.** `RpdUiKey` + `RPDMenuBoundUserInterface`/`RPDMenu`, so the RPD opens its own menu
-  (mode radial + colour strip) instead of the RCD's modern `SimpleRadialMenu`. The RPD entity
-  overrides `UserInterface.interfaces` and `ActivatableUI.key` off `RcdUiKey`.
+  (mode radial + colour strip) instead of the RCD's modern `SimpleRadialMenu`. The RPD has its own
+  `UserInterface` entry for `RpdUiKey` and re-points `ActivatableUI.key` off the RCD's `RcdUiKey` —
+  that key is what decides which menu opens (the inherited `RcdUiKey` mapping may still be present
+  in `interfaces` and is harmless).
 - **Deconstruct whitelist extended** to `AirAlarm` (cost 2), `AirSensor` and `GasPipeSensor`
   (cost 1 each), so the RPD can also pull down what its new sensor modes build.
 

@@ -19,3 +19,4 @@ rpd-color-waste = Waste
 rpd-color-distro = Distro
 rpd-color-air = Air
 rpd-color-mix = Mix
+rpd-color-external = External
