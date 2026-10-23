@@ -1358,3 +1358,14 @@ Entries:
   time: '2026-10-23T03:49:28.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/636318847f55dc6d2bd195a0dfed8f5e09068585
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: >-
+        Added the September-October upstream content update from Frontier,
+        including Station AI changes, new species/clothing visuals, weapons,
+        admin shuttles and many fixes.
+  id: 90086
+  time: '2026-10-23T04:32:44.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/1352fe0805ba599c05fb3b607cd2cd139a66c3b9
