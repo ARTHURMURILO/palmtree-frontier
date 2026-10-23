@@ -1369,3 +1369,13 @@ Entries:
   time: '2026-10-23T04:32:44.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/1352fe0805ba599c05fb3b607cd2cd139a66c3b9
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        Painted doors, airlocks and other painted objects keep their paint when
+        a ship is stored and retrieved.
+  id: 90087
+  time: '2026-10-23T22:59:13.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/6b01a5ec38bf6927904cce6c175354bb6bf79e4e
