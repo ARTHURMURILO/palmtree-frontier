@@ -38,8 +38,11 @@ public sealed class AlignRPDAtmosPipeLayers : PlacementMode
     [Dependency] private readonly IStateManager _stateManager = default!;
     [Dependency] private readonly IEyeManager _eyeManager = default!;
     [Dependency] private readonly IEntityNetworkManager _entityNetwork = default!;
-    [Dependency] private readonly HandsSystem _hands = default!;
 
+    // Resolved through the entity system manager, not injected: HandsSystem carries no
+    // [RegisterDependency], so a [Dependency] field on it throws UnregisteredDependencyException
+    // when the placement manager constructs this mode. Same approach as AlignRCDConstruction.
+    private readonly HandsSystem _hands;
     private readonly SharedMapSystem _mapSystem;
     private readonly SharedTransformSystem _transformSystem;
     private readonly SharedAtmosPipeLayersSystem _pipeLayersSystem;
@@ -61,6 +64,7 @@ public sealed class AlignRPDAtmosPipeLayers : PlacementMode
     {
         IoCManager.InjectDependencies(this);
 
+        _hands = _entityManager.System<HandsSystem>();
         _mapSystem = _entityManager.System<SharedMapSystem>();
         _transformSystem = _entityManager.System<SharedTransformSystem>();
         _spriteSystem = _entityManager.System<SpriteSystem>();
@@ -112,7 +116,9 @@ public sealed class AlignRPDAtmosPipeLayers : PlacementMode
 
         CurrentTile = _mapSystem.GetTileRef(gridId.Value, mapGrid, MouseCoords);
 
-        var tileSize = mapGrid.TileSize;
+        // TileSize is a ushort, so this must be a float: with `var` the `/ 2` below is integer
+        // division and evaluates to 0, which snaps placement to the tile corner instead of its centre.
+        float tileSize = mapGrid.TileSize;
         GridDistancing = tileSize;
 
         MouseCoords = pManager.CurrentPermission!.IsTile

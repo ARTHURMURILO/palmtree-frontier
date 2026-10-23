@@ -803,6 +803,15 @@ The first pass above only took the RPD's mode list. This pass brings the rest of
   in `interfaces` and is harmless).
 - **Deconstruct whitelist extended** to `AirAlarm` (cost 2), `AirSensor` and `GasPipeSensor`
   (cost 1 each), so the RPD can also pull down what its new sensor modes build.
+- **Admin log**: the RPD no longer writes `LogType.RCD` entries — it is a routine atmospherics
+  construction tool and the entries were pure noise. The plain RCD still logs (construct tile/spawn,
+  deconstruct tile/object) via `var logToAdminLog = !component.IsRpd;` in
+  `RCDSystem.FinalizeRCDOperation`.
+
+Two bugs only surfaced on a live debug build, both recorded in `.ai/HAZARDS.md` §26: a
+`[Dependency]`-injected `HandsSystem` crashed the client when the placer was constructed, and a
+`var tileSize` (ushort integer division) snapped RPD placement to the tile corner instead of its
+centre — which also broke the pipe-layer deadzone.
 
 See `.ai/HAZARDS.md` §26 for the traps this pass introduced.
 

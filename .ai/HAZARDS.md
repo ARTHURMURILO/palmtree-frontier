@@ -581,11 +581,33 @@ so these fail only in CI:
   layer. The field is `[ViewVariables]`-only, deliberately not an `[AutoNetworkedField]`: dirtying
   on every change would network the component each time the player turns, and no client code reads
   it (the client recomputes the layer in `AlignRPDAtmosPipeLayers`).
-- **Server and client layer maths must use the same tile centre.** `AlignRPDAtmosPipeLayers`
-  compares the raw cursor position against the snapped tile centre; `RCDSystem.OnAfterInteract` must
-  do exactly the same with `args.ClickLocation`. Coyote's `- new Vector2(0.5f, 0.5f)` bias is
-  deliberately *not* ported: with `MapGridComponent.TileSize` being a scalar, it shifted the diff by
-  half a tile, so the server built on a different layer than the ghost previewed.
+- **`MapGridComponent.TileSize` is a `ushort`, so `tileSize / 2` is integer division and equals 0.**
+  `1 / 2 == 0`, so `CurrentTile.X + tileSize / 2` lands on the tile **corner**, not its centre. Every
+  placer in the engine writes `float tileSize = mapGrid.TileSize; //convert from ushort to float`
+  for exactly this reason (`AlignTileAny`, `AlignTileDense`, `AlignTileEmpty`, `AlignRCDConstruction`,
+  `AlignAtmosPipeLayers`). Writing `var tileSize = ...` compiles fine, passes every static check, and
+  then silently misplaces everything by half a tile at runtime — this shipped once and had to be
+  found by playtesting. It bites twice in the RPD: the ghost snaps to the corner, *and*
+  `RCDSystem.OnAfterInteract` measures the layer deadzone from the corner, so almost every click
+  reads as "off centre" and the tool silently prefers the secondary/tertiary layer. Check any new
+  `tileSize` with `grep -n "tileSize = mapGrid.TileSize"`.
+- **Coyote's `- new Vector2(0.5f, 0.5f)` bias in the layer diff was a workaround for the above**, not
+  a deliberate offset: with the integer-division bug the "centre" was the corner, and subtracting
+  another half tile nudged it back toward the middle. With `float tileSize` the tile centre is
+  genuinely `index + 0.5`, so the bias must stay **out**. The real requirement is that
+  `AlignRPDAtmosPipeLayers` (raw cursor vs snapped centre) and `RCDSystem.OnAfterInteract` (with
+  `args.ClickLocation`) compute the *same* centre; both use `tile.X + tileSize / 2` with a float
+  `tileSize`.
+- **`[Dependency]` works on a `PlacementMode` for managers only, never for a bare `EntitySystem`.**
+  `PlacementMode` instances are built through `PlacementManager.BeginPlacing` →
+  `CreateInstanceImpl`, and `IoCManager.InjectDependencies` throws `UnregisteredDependencyException`
+  for anything the container does not know about. `Content.Client.Hands.Systems.HandsSystem` carries
+  no `[RegisterDependency]`, so `[Dependency] readonly HandsSystem _hands` compiles and then crashes
+  the client the moment the placer is constructed. Resolve systems off the entity manager instead —
+  `_hands = _entityManager.System<HandsSystem>();` — as `AlignRCDConstruction` does. Managers
+  (`IEntityManager`, `IPrototypeManager`, `IPlayerManager`, `IEyeManager`, `IStateManager`, ...) are
+  fine as `[Dependency]`; a `Logger.GetSawmill(...)` static is the way to log from this class, since
+  there is no `Log` property outside `EntitySystem`.
 - **`noLayers: true` is for modes with no layer to pick.** Mode entities need an
   `AtmosPipeLayersComponent` whose `alternativePrototypes` actually vary; `GasPipeManifold` has
   `pipeLayersLocked: true`, and wallmounts/sensors have no component at all. The ghost system also

@@ -184,7 +184,9 @@ public sealed class RCDSystem : EntitySystem
         // the centre of the tile. Matches what AlignRPDAtmosPipeLayers previews on the client.
         if (component.IsRpd && !prototype.NoLayers)
         {
-            var tileSize = mapGrid.TileSize;
+            // TileSize is a ushort: this must be a float, or `/ 2` is integer division (1 / 2 == 0)
+            // and the deadzone ends up measured from the tile corner instead of its centre.
+            float tileSize = mapGrid.TileSize;
             var tileCenter = new Vector2(tile.X + tileSize / 2, tile.Y + tileSize / 2);
             var mouseCoordsDiff = args.ClickLocation.Position - tileCenter;
             const float mouseDeadzoneRadius = 0.25f;
@@ -675,11 +677,17 @@ public sealed class RCDSystem : EntitySystem
         if (prototype.Prototype == null)
             return;
 
+        // Palmtree: the RPD is a routine atmos construction tool, so its operations stay out of the
+        // admin log. The RCD keeps its entries, which cover structural and destructive operations.
+        var logToAdminLog = !component.IsRpd;
+
         switch (prototype.Mode)
         {
             case RcdMode.ConstructTile:
                 _mapSystem.SetTile(gridUid, mapGrid, position, new Tile(_tileDefMan[prototype.Prototype].TileId));
-                _adminLogger.Add(LogType.RCD, LogImpact.High, $"{ToPrettyString(user):user} used RCD to set grid: {gridUid} {position} to {prototype.Prototype}");
+
+                if (logToAdminLog)
+                    _adminLogger.Add(LogType.RCD, LogImpact.High, $"{ToPrettyString(user):user} used RCD to set grid: {gridUid} {position} to {prototype.Prototype}");
                 break;
 
             case RcdMode.ConstructObject:
@@ -726,7 +734,8 @@ public sealed class RCDSystem : EntitySystem
                     RaiseLocalEvent(ent, ref colorEv);
                 }
 
-                _adminLogger.Add(LogType.RCD, LogImpact.High, $"{ToPrettyString(user):user} used RCD to spawn {ToPrettyString(ent)} at {position} on grid {gridUid}");
+                if (logToAdminLog)
+                    _adminLogger.Add(LogType.RCD, LogImpact.High, $"{ToPrettyString(user):user} used RCD to spawn {ToPrettyString(ent)} at {position} on grid {gridUid}");
                 break;
 
             case RcdMode.Deconstruct:
@@ -736,12 +745,16 @@ public sealed class RCDSystem : EntitySystem
                     // Deconstruct tile (either converts the tile to lattice, or removes lattice)
                     var tileDef = (_turf.GetContentTileDefinition(tile).ID != "Lattice") ? new Tile(_tileDefMan["Lattice"].TileId) : Tile.Empty;
                     _mapSystem.SetTile(gridUid, mapGrid, position, tileDef);
-                    _adminLogger.Add(LogType.RCD, LogImpact.High, $"{ToPrettyString(user):user} used RCD to set grid: {gridUid} tile: {position} open to space");
+
+                    if (logToAdminLog)
+                        _adminLogger.Add(LogType.RCD, LogImpact.High, $"{ToPrettyString(user):user} used RCD to set grid: {gridUid} tile: {position} open to space");
                 }
                 else
                 {
                     // Deconstruct object
-                    _adminLogger.Add(LogType.RCD, LogImpact.High, $"{ToPrettyString(user):user} used RCD to delete {ToPrettyString(target):target}");
+                    if (logToAdminLog)
+                        _adminLogger.Add(LogType.RCD, LogImpact.High, $"{ToPrettyString(user):user} used RCD to delete {ToPrettyString(target):target}");
+
                     QueueDel(target);
                 }
 
