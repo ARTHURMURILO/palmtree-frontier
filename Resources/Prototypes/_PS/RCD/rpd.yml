@@ -226,3 +226,91 @@
   collisionMask: Impassable
   rotation: User
   fx: EffectRCDConstruct0
+
+# Palmtree: the modes below came over with the rest of the old Coyote RPD.
+# Their icons reuse the entity sprites, so no extra art was needed.
+- type: rcd
+  id: PipeHalf
+  category: Piping
+  sprite:
+    sprite: Structures/Piping/Atmospherics/pipe.rsi
+    state: pipeHalf
+  mode: ConstructObject
+  prototype: GasPipeHalf
+  cost: 1
+  delay: 0
+  collisionMask: Impassable
+  rotation: User
+  fx: EffectRCDConstruct0
+
+- type: rcd
+  id: ManifoldGas
+  category: Piping
+  sprite:
+    sprite: Structures/Piping/Atmospherics/manifold.rsi
+    state: pipeManifold
+  mode: ConstructObject
+  prototype: GasPipeManifold
+  cost: 1
+  delay: 0
+  collisionMask: Impassable
+  rotation: User
+  fx: EffectRCDConstruct0
+  noLayers: true
+
+- type: rcd
+  id: PressureRegulator
+  category: PumpsValves
+  sprite:
+    sprite: Structures/Piping/Atmospherics/pump.rsi
+    state: pumpPressureRegulator
+  mode: ConstructObject
+  prototype: GasPressureRegulator
+  cost: 2
+  delay: 0
+  collisionMask: Impassable
+  rotation: User
+  fx: EffectRCDConstruct0
+
+- type: rcd
+  id: Alarm
+  category: SensorsMonitors
+  sprite:
+    sprite: Structures/Wallmounts/air_monitors.rsi
+    state: alarmp
+  mode: ConstructObject
+  prototype: AirAlarm
+  cost: 2
+  delay: 0
+  rotation: User
+  fx: EffectRCDConstruct0
+  noLayers: true
+
+- type: rcd
+  id: Sensor
+  category: SensorsMonitors
+  sprite:
+    sprite: Structures/Specific/Atmospherics/sensor.rsi
+    state: gsensor1
+  mode: ConstructObject
+  prototype: AirSensor
+  cost: 1
+  delay: 0
+  collisionMask: Impassable
+  rotation: User
+  fx: EffectRCDConstruct0
+  noLayers: true
+
+- type: rcd
+  id: SensorPipe
+  category: SensorsMonitors
+  sprite:
+    sprite: Structures/Piping/Atmospherics/gas_pipe_sensor.rsi
+    state: base
+  mode: ConstructObject
+  prototype: GasPipeSensor
+  cost: 1
+  delay: 0
+  collisionMask: Impassable
+  rotation: User
+  fx: EffectRCDConstruct0

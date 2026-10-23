@@ -1,5 +1,6 @@
 using Content.Server.Atmos.Piping.Components;
 using Content.Shared.Atmos.Piping;
+using Content.Shared.RCD; // Palmtree: RPD pipe colouring
 using Robust.Server.GameObjects;
 
 namespace Content.Server.Atmos.Piping.EntitySystems
@@ -14,6 +15,16 @@ namespace Content.Server.Atmos.Piping.EntitySystems
 
             SubscribeLocalEvent<AtmosPipeColorComponent, ComponentStartup>(OnStartup);
             SubscribeLocalEvent<AtmosPipeColorComponent, ComponentShutdown>(OnShutdown);
+            // Palmtree: RPD pipe colouring
+            SubscribeLocalEvent<AtmosPipeColorComponent, RCDPipeColorAppliedEvent>(OnRCDPipeColorApplied);
+        }
+
+        // Palmtree: an RPD built a pipe with a colour selected, so adopt it as the functional colour.
+        // The shared RCD system already set the appearance datum; this keeps the component (which atmos
+        // monitoring consoles and the spray painter read) in sync with it.
+        private void OnRCDPipeColorApplied(EntityUid uid, AtmosPipeColorComponent component, ref RCDPipeColorAppliedEvent args)
+        {
+            SetColor(uid, component, args.Color);
         }
 
         private void OnStartup(EntityUid uid, AtmosPipeColorComponent component, ComponentStartup args)

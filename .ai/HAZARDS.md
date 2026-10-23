@@ -558,6 +558,67 @@ so these fail only in CI:
   `EffectRCDConstruct0` fx, but validity/charge checks still run every tick (and it zeroes the
   delay on deconstruct operations too).
 
+### RPD second pass (pipe colours + pipe layers)
+
+- **Every new `rpd: true` entity needs an `fx:`.** The deconstruct path in `RCDSystem.OnAfterInteract`
+  does `effectPrototype = destructible.Effect`, and `RCDDeconstructableComponent.Effect` defaults to
+  null — `Spawn(null, ...)` on an fx-less target. The `GasPipeBase` block already sets
+  `fx: EffectRCDConstruct0`; the air alarm / air sensor / gas pipe sensor blocks added with the
+  sensor RPD modes do too.
+- **Which menu opens is decided by `ActivatableUI.key`, not by `UserInterface.interfaces`.** The
+  `RPD` prototype adds its own `UserInterface` entry for `enum.RpdUiKey.Key` and re-points
+  `ActivatableUI.key` off the RCD's `RcdUiKey`, otherwise the item keeps opening the RCD's radial.
+  The inherited `RcdUiKey` mapping may still be merged into `interfaces` and is harmless —
+  `ActivatableUI` is what picks the menu.
+- **Pipe colours travel as a palette key, never as a tuple/`Color` payload.** Palette lives on the
+  entity (`pipeColorPalette:` on the `RCD` component, networked so the menu can draw swatches),
+  `RCDColorChangeMessage` carries the key, and the shared system resolves it. Applying the colour is
+  two-sided on purpose: the appearance datum (`PipeColorVisuals.Color`) drives the sprite, while
+  `RCDPipeColorAppliedEvent` → `AtmosPipeColorSystem.SetColor` updates `AtmosPipeColorComponent` for
+  the atmos monitoring console and the spray painter. Appearance alone leaves those two out of sync.
+- **`LastKnownEyeRotation` is server-only working state: do not network or `Dirty()` it.** The
+  placement mode forwards the local eye rotation (not networked) so the server can resolve the
+  layer. The field is `[ViewVariables]`-only, deliberately not an `[AutoNetworkedField]`: dirtying
+  on every change would network the component each time the player turns, and no client code reads
+  it (the client recomputes the layer in `AlignRPDAtmosPipeLayers`).
+- **`MapGridComponent.TileSize` is a `ushort`, so `tileSize / 2` is integer division and equals 0.**
+  `1 / 2 == 0`, so `CurrentTile.X + tileSize / 2` lands on the tile **corner**, not its centre. Every
+  placer in the engine writes `float tileSize = mapGrid.TileSize; //convert from ushort to float`
+  for exactly this reason (`AlignTileAny`, `AlignTileDense`, `AlignTileEmpty`, `AlignRCDConstruction`,
+  `AlignAtmosPipeLayers`). Writing `var tileSize = ...` compiles fine, passes every static check, and
+  then silently misplaces everything by half a tile at runtime — this shipped once and had to be
+  found by playtesting. It bites twice in the RPD: the ghost snaps to the corner, *and*
+  `RCDSystem.OnAfterInteract` measures the layer deadzone from the corner, so almost every click
+  reads as "off centre" and the tool silently prefers the secondary/tertiary layer. Check any new
+  `tileSize` with `grep -n "tileSize = mapGrid.TileSize"`.
+- **Coyote's `- new Vector2(0.5f, 0.5f)` bias in the layer diff was a workaround for the above**, not
+  a deliberate offset: with the integer-division bug the "centre" was the corner, and subtracting
+  another half tile nudged it back toward the middle. With `float tileSize` the tile centre is
+  genuinely `index + 0.5`, so the bias must stay **out**. The real requirement is that
+  `AlignRPDAtmosPipeLayers` (raw cursor vs snapped centre) and `RCDSystem.OnAfterInteract` (with
+  `args.ClickLocation`) compute the *same* centre; both use `tile.X + tileSize / 2` with a float
+  `tileSize`.
+- **`[Dependency]` works on a `PlacementMode` for managers only, never for a bare `EntitySystem`.**
+  `PlacementMode` instances are built through `PlacementManager.BeginPlacing` →
+  `CreateInstanceImpl`, and `IoCManager.InjectDependencies` throws `UnregisteredDependencyException`
+  for anything the container does not know about. `Content.Client.Hands.Systems.HandsSystem` carries
+  no `[RegisterDependency]`, so `[Dependency] readonly HandsSystem _hands` compiles and then crashes
+  the client the moment the placer is constructed. Resolve systems off the entity manager instead —
+  `_hands = _entityManager.System<HandsSystem>();` — as `AlignRCDConstruction` does. Managers
+  (`IEntityManager`, `IPrototypeManager`, `IPlayerManager`, `IEyeManager`, `IStateManager`, ...) are
+  fine as `[Dependency]`; a `Logger.GetSawmill(...)` static is the way to log from this class, since
+  there is no `Log` property outside `EntitySystem`.
+- **`noLayers: true` is for modes with no layer to pick.** Mode entities need an
+  `AtmosPipeLayersComponent` whose `alternativePrototypes` actually vary; `GasPipeManifold` has
+  `pipeLayersLocked: true`, and wallmounts/sensors have no component at all. The ghost system also
+  gates the layered placer on `RcdMode.ConstructObject`, so deconstruct previews keep the plain
+  placer.
+- **Do not recreate the RPD placer every tick.** `AlignRPDAtmosPipeLayers` rewrites the placer's own
+  `CurrentPermission.EntityType` to the layer prototype, so `RCDConstructionGhostSystem` tracks the
+  *base* prototype it asked for (`_placerBaseProto`) — comparing against
+  `CurrentPermission.EntityType` (Coyote's check) is always unequal and rebuilt the placer at
+  60 Hz.
+
 ## 27. Absolute round-time cooldowns do not survive a round (2026-10-19)
 
 - `UseDelayInfo.EndTime`, `GunComponent.NextFire` and `MeleeWeaponComponent.NextAttack` are

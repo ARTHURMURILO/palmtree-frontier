@@ -58,6 +58,12 @@
     guides:
     - AtmosphericNetworkMonitor
     - DeviceMonitoringAndControl
+  - type: RCDDeconstructable # Palmtree: RPD whitelist
+    deconstructable: false
+    rpd: true
+    cost: 1
+    delay: 0
+    fx: EffectRCDConstruct0
 
 - type: entity
   parent: GasPipeSensor

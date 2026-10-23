@@ -364,15 +364,35 @@
   components:
   - type: RCD
     isRpd: true
+    # Palmtree: colours offered by the RPD's colour strip. Same values as the
+    # spray painter's pipe palette, so RPD-painted pipes match spray painted ones.
+    pipeColorPalette:
+      red: '#FF1212FF'
+      yellow: '#B3A234FF'
+      brown: '#947507FF'
+      green: '#3AB334FF'
+      cyan: '#03FCD3FF'
+      blue: '#0335FCFF'
+      white: '#FFFFFFFF'
+      black: '#333333FF'
+      # standard atmos pipes
+      waste: '#990000'
+      distro: '#0055cc'
+      air: '#03fcd3'
+      mix: '#947507'
+      external: '#9955cc' # Frontier
     availablePrototypes:
     - PipeFourway
     - PipeStraight
     - PipeBend
     - PipeTJunction
+    - PipeHalf
+    - ManifoldGas
     - OutletInjector
     - ManualValve
     - VolumetricPump
     - PressurePump
+    - PressureRegulator
     - VentScrubber
     - PressureValve
     - DualPortVent
@@ -384,6 +404,9 @@
     - SignalValve
     - CanisterPort
     - FilterGas
+    - Alarm
+    - Sensor
+    - SensorPipe
     - Deconstruct
   - type: LimitedCharges
     maxCharges: 60
@@ -397,6 +420,14 @@
     quickEquip: false
     slots:
     - Belt
+  # Palmtree: the RPD opens its own menu, not the RCD radial
+  - type: UserInterface
+    interfaces:
+      enum.RpdUiKey.Key:
+        type: RPDMenuBoundUserInterface
+  - type: ActivatableUI
+    inHandsOnly: true
+    key: enum.RpdUiKey.Key
 
 - type: entity
   id: RPDEmpty
