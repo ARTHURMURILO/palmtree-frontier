@@ -20,6 +20,8 @@ using Content.Shared.Access.Components;
 using Content.Shared.Access.Systems;
 using Content.Shared.Hands.EntitySystems;
 using Content.Shared.PDA;
+using Content.Shared.SprayPainter.Components;
+using Content.Shared.SprayPainter.Prototypes;
 using Content.Shared.SmartFridge;
 using NUnit.Framework;
 using Robust.Server.Containers;
@@ -209,6 +211,72 @@ public sealed class BluespaceDockSaveTest
             // The entry list is rebuilt on startup, so the fridge can still dispense it.
             Assert.That(fridgeComp.ContainedEntries.Count, Is.EqualTo(1),
                 "The retrieved fridge's entry list was not rebuilt from its contents.");
+        });
+
+        await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));
+        await server.WaitRunTicks(2);
+        await server.WaitAssertion(() => server.System<SharedMapSystem>().DeleteMap(loadedMap));
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    /// The spray painter stores the chosen style only in the runtime appearance data, which is not
+    /// serialized: a painted door silently came back with its default paint after a store/retrieve.
+    /// The style is captured in <c>PaintableComponent.PaintedStyle</c> on save and re-applied on load.
+    /// </summary>
+    [Test]
+    public async Task PaintedDoorKeepsItsPaint()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+
+        EntityUid loadedGrid = default;
+        MapId loadedMap = default;
+        const string style = "AirlockCommand";
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var appearance = server.System<SharedAppearanceSystem>();
+            var grid = testMap.Grid.Owner;
+
+            var door = entMan.SpawnEntity("Airlock", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            Assert.That(entMan.HasComponent<PaintableComponent>(door), Is.True, "sanity: the airlock is paintable");
+
+            // What the spray painter does when it finishes painting.
+            appearance.SetData(door, PaintableVisuals.Prototype, style);
+
+            var path = BluespaceDockSystem.GetShipFilePath("paint-save-test");
+            Assert.That(dock.TrySaveShipFile(grid, path, out var error), Is.True, $"Saving failed: {error}");
+            Assert.That(dock.TryLoadShipFile(path, out var loaded), Is.True, "Loading the saved ship failed.");
+            loadedGrid = loaded!.Value;
+            loadedMap = entMan.GetComponent<TransformComponent>(loadedGrid).MapID;
+            dock.DeleteShipFile(path);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var appearance = server.System<SharedAppearanceSystem>();
+            var entities = new HashSet<EntityUid>();
+            dock.GetEntitiesOnGrid(loadedGrid, entities);
+
+            EntityUid? loadedDoor = null;
+            foreach (var uid in entities)
+            {
+                if (entMan.GetComponent<MetaDataComponent>(uid).EntityPrototype?.ID == "Airlock")
+                    loadedDoor = uid;
+            }
+
+            Assert.That(loadedDoor, Is.Not.Null, "The retrieved ship lost its airlock.");
+            Assert.That(entMan.GetComponent<PaintableComponent>(loadedDoor!.Value).PaintedStyle, Is.EqualTo(style),
+                "The painted style was not saved with the door.");
+            Assert.That(appearance.TryGetData<string>(loadedDoor.Value, PaintableVisuals.Prototype, out var painted)
+                        && painted == style,
+                Is.True, "The retrieved door lost its paint.");
         });
 
         await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));

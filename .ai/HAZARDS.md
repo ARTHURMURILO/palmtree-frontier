@@ -696,6 +696,14 @@ so these fail only in CI:
     entity. Saving a *grid* truncates the map (it is the grid's parent), and a reference to it makes
     the component serialization fail: every PDA (they all carry a Store) failed every strict save.
     Clear such fields before serializing and re-derive them on load (`ClearRuntimeMapReferences`).
+  - **Runtime appearance data is not serialized.** `AppearanceComponent.AppearanceData` is
+    `[ViewVariables]`; only the prototype-supplied `AppearanceDataInit` is (read from YAML). Anything
+    that paints/changes visuals by writing appearance data is lost on save unless the choice is also
+    stored in a `[DataField]` and re-applied on `ComponentStartup` (which runs for loaded entities):
+    the spray painter used to lose its styles that way, fixed with `PaintableComponent.PaintedStyle`
+    (`SharedSprayPainterSystem.OnPaintableStartup`), and the dock captures styles painted before the
+    field existed (`BluespaceDockSystem.CapturePaintStyles`). Note `PaintedComponent.DryTime` is an
+    absolute round time (reset by `ResetRuntimeCooldowns`).
   - **Session-scoped refs in persisted collections** (`NetEntity` sets/maps): even when they
     serialize, they describe a round. Prefer `[ViewVariables]`/`[AutoNetworkedField]` plus a rebuild
     from real entity state (`SmartFridgeComponent.ContainedEntries` is rebuilt from the container).

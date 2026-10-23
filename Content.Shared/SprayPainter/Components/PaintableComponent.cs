@@ -16,4 +16,17 @@ public sealed partial class PaintableComponent : Component
     /// </summary>
     [DataField(required: true)]
     public ProtoId<PaintableGroupPrototype>? Group;
+
+    /// <summary>
+    /// Palmtree: the style last applied with the spray painter (the entity prototype id written to
+    /// <see cref="PaintableVisuals.Prototype"/> in the appearance data).
+    /// </summary>
+    /// <remarks>
+    /// The chosen style lives in <c>AppearanceComponent.AppearanceData</c>, which is runtime-only and
+    /// not serialized: a painted door (or airlock, crate, canister, locker...) silently lost its paint
+    /// when the ship it was on was stored and retrieved. This field persists the choice; the style is
+    /// re-applied on startup (<see cref="SharedSprayPainterSystem"/>).
+    /// </remarks>
+    [DataField]
+    public string? PaintedStyle;
 }

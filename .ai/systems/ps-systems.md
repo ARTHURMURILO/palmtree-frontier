@@ -662,6 +662,13 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
   - Contents (card in the ID slot, pen, cartridges) are saved as container/slot contents. A card or
     PDA that still cannot be serialized is covered by the resilient save (fresh copy from its
     prototype, so a *customized* card loses its custom name/job/access in that case).
+- **Painted entities keep their paint (2026-10-23)**: the spray painter's style lives only in the
+  runtime appearance data (`AppearanceComponent.AppearanceData`, not serialized), so painted doors,
+  airlocks, crates, canisters and lockers lost their paint on retrieval. `PaintableComponent` now has
+  a `[DataField] PaintedStyle`, set when painting and re-applied on `ComponentStartup` (loaded ships
+  skip MapInit, so startup is the hook); `TrySaveShipFile` also captures the current appearance style
+  into that field before serializing, so entities painted before the field existed are preserved on
+  their next store. The fresh-paint `DryTime` timer is cleared with the other cooldowns.
 - **Retrieved ships get the shipyard's station (`GetShipStationConfig`, 2026-10-18)**: the station a
   ship lives on carries its capabilities, not the grid. Retrieval used to rebuild *every* ship with a
   plain `StandardFrontierVessel` station, which silently cost expedition ships their
@@ -941,3 +948,17 @@ Small features that did not get their own section yet:
   Expedition/AME ship, map `Resources/Maps/_CS/Shuttles/Expedition/salto.yml`, vessel prototype
   `Resources/Prototypes/_CS/Shipyard/Expedition/salto.yml`. Details and adaptations (dropped
   `CompanionInterview`, `[ 0, 0 ]` job slots): `.ai/PORTING.md` §25.
+
+## Jukebox tracks (2026-10)
+
+Copyrighted jukebox tracks live outside the git history. `Resources/Prototypes/_PS/Jukebox/` and
+`Resources/Audio/_PS/Jukebox/` are gitignored and must be uploaded to the live server separately; a
+local `attributions.yml` in the audio folder records the YouTube source of every file.
+
+- Track definitions: `Resources/Prototypes/_PS/Jukebox/Standard.yml`; the record prototype
+  (`PalmtreeRecord`) is `Resources/Prototypes/_PS/Jukebox/records.yml`.
+- `Content.Server/_PS/Audio/JukeboxLocalTracksSystem.cs` injects the record into every jukebox on
+  map init when the prototype is present, so clean checkouts and CI never reference missing audio.
+- Audio is downloaded with `dlx`, converted with `convertall` and re-encoded to mono Vorbis
+  (`-ac 1`), matching the other jukebox folders.
+

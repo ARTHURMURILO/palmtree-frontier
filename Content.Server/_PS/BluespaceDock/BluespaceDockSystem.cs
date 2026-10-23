@@ -52,6 +52,9 @@ using Content.Shared.GameTicking;
 using Content.Shared.Ghost;
 using Content.Shared.Shuttles.Components;
 using Content.Shared.Shuttles.Systems;
+using Content.Shared.SprayPainter;
+using Content.Shared.SprayPainter.Components;
+using Content.Shared.SprayPainter.Prototypes;
 using Content.Shared.SmartFridge;
 using Content.Shared.Station;
 using Content.Shared.Station.Components;
@@ -667,6 +670,10 @@ public sealed class BluespaceDockSystem : EntitySystem
 
         // Runtime references to the map cannot be carried by a grid file (see ClearRuntimeMapReferences).
         ClearRuntimeMapReferences(shuttleUid);
+
+        // Spray-painter styles only live in the (runtime-only) appearance data: copy them into the
+        // paintable component so the file can carry them (see CapturePaintStyles).
+        CapturePaintStyles(shuttleUid);
 
         var removed = StripStationReferences(shuttleUid);
         stripped?.AddRange(removed);
@@ -2196,6 +2203,14 @@ public sealed class BluespaceDockSystem : EntitySystem
                 transmission.AccumulatedEnergy = 0f;
             }
 
+            // Wet-paint sheen ends at an absolute round time; a retrieved ship should not still be
+            // dripping paint from the round it was stored in.
+            if (TryComp<PaintedComponent>(uid, out var painted) && painted.DryTime != TimeSpan.Zero)
+            {
+                painted.DryTime = TimeSpan.Zero;
+                Dirty(uid, painted);
+            }
+
             if (TryComp<MeleeWeaponComponent>(uid, out var melee) && melee.NextAttack != TimeSpan.Zero)
             {
                 melee.NextAttack = TimeSpan.Zero;
@@ -2346,6 +2361,31 @@ public sealed class BluespaceDockSystem : EntitySystem
 
         _sawmill.Warning($"A re-created {ownerProto.Value} container was not found on the loaded ship; its contents were not restored");
         return false;
+    }
+
+    /// <summary>
+    /// Copies the spray-painter style out of each entity's runtime appearance data into
+    /// <see cref="PaintableComponent.PaintedStyle"/>, which is serialized. The style itself lives only in
+    /// <c>AppearanceComponent.AppearanceData</c> (not a data field), so without this a painted door lost
+    /// its paint when the ship was stored. Entities painted before the field existed are captured here
+    /// too; the style is re-applied on load by <c>SharedSprayPainterSystem</c>.
+    /// </summary>
+    public void CapturePaintStyles(EntityUid grid)
+    {
+        var entities = new HashSet<EntityUid>();
+        GetEntitiesOnGrid(grid, entities);
+
+        foreach (var uid in entities)
+        {
+            if (!TryComp<PaintableComponent>(uid, out var paintable)
+                || paintable.PaintedStyle != null)
+            {
+                continue;
+            }
+
+            if (_appearance.TryGetData<string>(uid, PaintableVisuals.Prototype, out var style))
+                paintable.PaintedStyle = style;
+        }
     }
 
     /// <summary>
