@@ -1340,3 +1340,13 @@ Entries:
   time: '2026-10-23T00:33:28.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/0d02b9d4f52fdba275fbbbc095f767fc1d1f083f
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: All playable species now get hungry and thirsty; Synth remains exempt.
+    - type: Tweak
+      message: Hunger and thirst now decay twice as slowly as before.
+  id: 90084
+  time: '2026-10-23T03:22:45.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/ed5d8cefc0b5c13b1ce7de39bbccc5bd994e3152
