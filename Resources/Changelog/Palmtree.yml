@@ -1332,3 +1332,11 @@ Entries:
   time: '2026-10-22T23:44:26.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/4bc1cc6361a46f59ab194bc248cde4005f97d5a8
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: Ore veins now spawn on salvage expeditions again.
+  id: 90083
+  time: '2026-10-23T00:33:28.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/0d02b9d4f52fdba275fbbbc095f767fc1d1f083f
