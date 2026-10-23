@@ -789,7 +789,9 @@ The first pass above only took the RPD's mode list. This pass brings the rest of
   the two halves either side are `Secondary`/`Tertiary` — previews it by swapping the placer's
   `EntityType` to the layer prototype, and draws the three guide circles. `RCDSystem` repeats the
   same computation in `OnAfterInteract` and substitutes the prototype in
-  `FinalizeRCDOperation` via `SharedAtmosPipeLayersSystem.TryGetAlternativePrototype`.
+  `FinalizeRCDOperation` via `SharedAtmosPipeLayersSystem.TryGetAlternativePrototype`. The resolved
+  layer travels in `RCDDoAfterEvent.Layer`: the operation finishes a tick later, so keeping it in
+  system state let concurrent placements overwrite each other's layer (fixed after the merge).
   `RCDPrototype.NoLayers` (YAML `noLayers: true`) opts a mode out: either its entity has no
   `AtmosPipeLayersComponent` at all (`Alarm`, `Sensor`) or it has one offering no alternative
   prototypes (`ManifoldGas`, whose `AtmosPipeLayers` is `pipeLayersLocked: true`).
@@ -803,10 +805,10 @@ The first pass above only took the RPD's mode list. This pass brings the rest of
   in `interfaces` and is harmless).
 - **Deconstruct whitelist extended** to `AirAlarm` (cost 2), `AirSensor` and `GasPipeSensor`
   (cost 1 each), so the RPD can also pull down what its new sensor modes build.
-- **Admin log**: the RPD no longer writes `LogType.RCD` entries — it is a routine atmospherics
-  construction tool and the entries were pure noise. The plain RCD still logs (construct tile/spawn,
-  deconstruct tile/object) via `var logToAdminLog = !component.IsRpd;` in
-  `RCDSystem.FinalizeRCDOperation`.
+- **Admin log**: the RPD logs its operations exactly like the RCD (construct tile/spawn, deconstruct
+  tile/object), with the message naming the tool (`var toolName = component.IsRpd ? "RPD" : "RCD";`
+  in `RCDSystem.FinalizeRCDOperation`). The PR had removed RPD logging; it was restored with the
+  merge because pipe removal needs an audit trail.
 
 Two bugs only surfaced on a live debug build, both recorded in `.ai/HAZARDS.md` §26: a
 `[Dependency]`-injected `HandsSystem` crashed the client when the placer was constructed, and a

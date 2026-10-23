@@ -54,9 +54,20 @@ public sealed partial class RCDMenu : RadialMenu
 
     public void Refresh()
     {
-        var main = FindControl<RadialContainer>("Main");
-
         if (!_entManager.TryGetComponent<RCDComponent>(_owner, out var rcd))
+            return;
+
+        // Map the radial containers by name up front: a mode whose category has no container here
+        // is skipped, instead of FindControl throwing for an unknown name.
+        var categories = new Dictionary<string, RadialContainer>();
+
+        foreach (var child in Children)
+        {
+            if (child is RadialContainer container && container.Name != null)
+                categories[container.Name] = container;
+        }
+
+        if (!categories.TryGetValue("Main", out var main))
             return;
 
         foreach (var protoId in rcd.AvailablePrototypes)
@@ -67,10 +78,8 @@ public sealed partial class RCDMenu : RadialMenu
             if (proto.Mode == RcdMode.Invalid)
                 continue;
 
-            var parent = FindControl<RadialContainer>(proto.Category);
-
             // Skip categories this menu has no radial container for
-            if (parent == null)
+            if (!categories.TryGetValue(proto.Category, out var parent))
                 continue;
 
             var tooltip = Loc.GetString(proto.SetName);

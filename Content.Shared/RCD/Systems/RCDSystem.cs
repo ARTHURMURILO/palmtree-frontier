@@ -56,12 +56,6 @@ public sealed class RCDSystem : EntitySystem
     [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
     [Dependency] private readonly SharedAtmosPipeLayersSystem _pipeLayers = default!;
 
-    /// <summary>
-    /// Palmtree: the atmos pipe layer the RPD should build onto. Resolved from where inside the
-    /// tile the player clicked, then consumed by <see cref="FinalizeRCDOperation"/>.
-    /// </summary>
-    private AtmosPipeLayer _currentLayer = AtmosPipeLayer.Primary;
-
     private readonly int _instantConstructionDelay = 0;
     private readonly EntProtoId _instantConstructionFx = "EffectRCDConstruct0";
     private readonly ProtoId<RCDPrototype> _deconstructTileProto = "DeconstructTile";
@@ -182,7 +176,11 @@ public sealed class RCDSystem : EntitySystem
 
         // Palmtree: work out which atmos pipe layer the click was aimed at, from its offset from
         // the centre of the tile. Matches what AlignRPDAtmosPipeLayers previews on the client.
-        if (component.IsRpd && !prototype.NoLayers)
+        // The layer travels in the do-after event: the operation finishes on a later tick, so
+        // system-wide state would let concurrent placements overwrite each other's layer.
+        var layer = AtmosPipeLayer.Primary;
+
+        if (component.IsRpd && prototype.Mode == RcdMode.ConstructObject && !prototype.NoLayers)
         {
             // TileSize is a ushort: this must be a float, or `/ 2` is integer division (1 / 2 == 0)
             // and the deadzone ends up measured from the tile corner instead of its centre.
@@ -191,15 +189,13 @@ public sealed class RCDSystem : EntitySystem
             var mouseCoordsDiff = args.ClickLocation.Position - tileCenter;
             const float mouseDeadzoneRadius = 0.25f;
 
-            _currentLayer = AtmosPipeLayer.Primary;
-
             if (mouseCoordsDiff.Length() > mouseDeadzoneRadius && component.LastKnownEyeRotation.HasValue)
             {
                 var gridRotation = _transform.GetWorldRotation(gridUid.Value);
                 var angle = new Angle(mouseCoordsDiff);
                 var eyeRotation = new Angle(component.LastKnownEyeRotation.Value);
                 var direction = (angle + eyeRotation + gridRotation + Math.PI / 2).GetCardinalDir();
-                _currentLayer = (direction == Direction.North || direction == Direction.East)
+                layer = (direction == Direction.North || direction == Direction.East)
                     ? AtmosPipeLayer.Secondary
                     : AtmosPipeLayer.Tertiary;
             }
@@ -290,7 +286,7 @@ public sealed class RCDSystem : EntitySystem
 
         // Try to start the do after
         var effect = Spawn(effectPrototype, location);
-        var ev = new RCDDoAfterEvent(GetNetCoordinates(location), component.ConstructionDirection, component.ProtoId, cost, GetNetEntity(effect));
+        var ev = new RCDDoAfterEvent(GetNetCoordinates(location), component.ConstructionDirection, component.ProtoId, cost, GetNetEntity(effect), layer);
 
         var doAfterArgs = new DoAfterArgs(EntityManager, user, delay, ev, uid, target: args.Target, used: uid)
         {
@@ -369,7 +365,7 @@ public sealed class RCDSystem : EntitySystem
             return;
 
         // Finalize the operation (this should handle prediction properly)
-        FinalizeRCDOperation(uid, component, gridUid.Value, mapGrid, tile, position, args.Direction, args.Target, args.User);
+        FinalizeRCDOperation(uid, component, gridUid.Value, mapGrid, tile, position, args.Direction, args.Target, args.User, args.Layer);
 
         // Play audio and consume charges
         _audio.PlayPredicted(component.SuccessSound, uid, args.User);
@@ -437,6 +433,9 @@ public sealed class RCDSystem : EntitySystem
 
         // Not dirtied: only the server needs this, to resolve the pipe layer in FinalizeRCDOperation,
         // and network churn every time the player turns their head is not worth it.
+        if (ev.EyeRotation is { } rotation && !float.IsFinite(rotation))
+            return;
+
         rcd.LastKnownEyeRotation = ev.EyeRotation;
     }
 
@@ -667,7 +666,7 @@ public sealed class RCDSystem : EntitySystem
 
     #region Entity construction/deconstruction
 
-    private void FinalizeRCDOperation(EntityUid uid, RCDComponent component, EntityUid gridUid, MapGridComponent mapGrid, TileRef tile, Vector2i position, Direction direction, EntityUid? target, EntityUid user)
+    private void FinalizeRCDOperation(EntityUid uid, RCDComponent component, EntityUid gridUid, MapGridComponent mapGrid, TileRef tile, Vector2i position, Direction direction, EntityUid? target, EntityUid user, AtmosPipeLayer layer)
     {
         if (!_net.IsServer)
             return;
@@ -677,17 +676,14 @@ public sealed class RCDSystem : EntitySystem
         if (prototype.Prototype == null)
             return;
 
-        // Palmtree: the RPD is a routine atmos construction tool, so its operations stay out of the
-        // admin log. The RCD keeps its entries, which cover structural and destructive operations.
-        var logToAdminLog = !component.IsRpd;
+        // Palmtree: log RPD operations too, naming the tool so atmos construction stays auditable
+        var toolName = component.IsRpd ? "RPD" : "RCD";
 
         switch (prototype.Mode)
         {
             case RcdMode.ConstructTile:
                 _mapSystem.SetTile(gridUid, mapGrid, position, new Tile(_tileDefMan[prototype.Prototype].TileId));
-
-                if (logToAdminLog)
-                    _adminLogger.Add(LogType.RCD, LogImpact.High, $"{ToPrettyString(user):user} used RCD to set grid: {gridUid} {position} to {prototype.Prototype}");
+                _adminLogger.Add(LogType.RCD, LogImpact.High, $"{ToPrettyString(user):user} used {toolName} to set grid: {gridUid} {position} to {prototype.Prototype}");
                 break;
 
             case RcdMode.ConstructObject:
@@ -702,7 +698,7 @@ public sealed class RCDSystem : EntitySystem
                 {
                     if (_protoManager.TryIndex<EntityPrototype>(proto, out var layeredProto) &&
                         layeredProto.TryGetComponent<AtmosPipeLayersComponent>(out var pipeLayers, EntityManager.ComponentFactory) &&
-                        _pipeLayers.TryGetAlternativePrototype(pipeLayers, _currentLayer, out var layeredProtoId))
+                        _pipeLayers.TryGetAlternativePrototype(pipeLayers, layer, out var layeredProtoId))
                     {
                         proto = layeredProtoId;
                     }
@@ -734,8 +730,7 @@ public sealed class RCDSystem : EntitySystem
                     RaiseLocalEvent(ent, ref colorEv);
                 }
 
-                if (logToAdminLog)
-                    _adminLogger.Add(LogType.RCD, LogImpact.High, $"{ToPrettyString(user):user} used RCD to spawn {ToPrettyString(ent)} at {position} on grid {gridUid}");
+                _adminLogger.Add(LogType.RCD, LogImpact.High, $"{ToPrettyString(user):user} used {toolName} to spawn {ToPrettyString(ent)} at {position} on grid {gridUid}");
                 break;
 
             case RcdMode.Deconstruct:
@@ -745,16 +740,12 @@ public sealed class RCDSystem : EntitySystem
                     // Deconstruct tile (either converts the tile to lattice, or removes lattice)
                     var tileDef = (_turf.GetContentTileDefinition(tile).ID != "Lattice") ? new Tile(_tileDefMan["Lattice"].TileId) : Tile.Empty;
                     _mapSystem.SetTile(gridUid, mapGrid, position, tileDef);
-
-                    if (logToAdminLog)
-                        _adminLogger.Add(LogType.RCD, LogImpact.High, $"{ToPrettyString(user):user} used RCD to set grid: {gridUid} tile: {position} open to space");
+                    _adminLogger.Add(LogType.RCD, LogImpact.High, $"{ToPrettyString(user):user} used {toolName} to set grid: {gridUid} tile: {position} open to space");
                 }
                 else
                 {
                     // Deconstruct object
-                    if (logToAdminLog)
-                        _adminLogger.Add(LogType.RCD, LogImpact.High, $"{ToPrettyString(user):user} used RCD to delete {ToPrettyString(target):target}");
-
+                    _adminLogger.Add(LogType.RCD, LogImpact.High, $"{ToPrettyString(user):user} used {toolName} to delete {ToPrettyString(target):target}");
                     QueueDel(target);
                 }
 
@@ -795,15 +786,24 @@ public sealed partial class RCDDoAfterEvent : DoAfterEvent
     [DataField("fx")]
     public NetEntity? Effect { get; private set; }
 
+    /// <summary>
+    /// Palmtree: the atmos pipe layer the RPD resolved when the operation was started. Carried in
+    /// the event because the operation finishes on a later tick, when system-wide state could have
+    /// been overwritten by another placement.
+    /// </summary>
+    [DataField]
+    public AtmosPipeLayer Layer { get; private set; }
+
     private RCDDoAfterEvent() { }
 
-    public RCDDoAfterEvent(NetCoordinates location, Direction direction, ProtoId<RCDPrototype> startingProtoId, int cost, NetEntity? effect = null)
+    public RCDDoAfterEvent(NetCoordinates location, Direction direction, ProtoId<RCDPrototype> startingProtoId, int cost, NetEntity? effect = null, AtmosPipeLayer layer = AtmosPipeLayer.Primary)
     {
         Location = location;
         Direction = direction;
         StartingProtoId = startingProtoId;
         Cost = cost;
         Effect = effect;
+        Layer = layer;
     }
 
     public override DoAfterEvent Clone()

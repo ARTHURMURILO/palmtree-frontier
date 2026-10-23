@@ -618,6 +618,16 @@ so these fail only in CI:
   *base* prototype it asked for (`_placerBaseProto`) — comparing against
   `CurrentPermission.EntityType` (Coyote's check) is always unequal and rebuilt the placer at
   60 Hz.
+- **The resolved pipe layer belongs in the do-after event, not in system state.** `RCDDoAfterEvent`
+  completes on a later tick than `OnAfterInteract`, so a `RCDSystem` field would be overwritten by
+  another player's placement in between and silently build on the wrong layer. It is carried as
+  `RCDDoAfterEvent.Layer` and passed into `FinalizeRCDOperation`. The same applies to anything else
+  resolved per-click that is consumed at finalization (direction already worked this way).
+- **Client and server deadzone maths must use the same tile centre.** `AlignRPDAtmosPipeLayers`
+  measures the cursor offset from the *true* tile centre (`CurrentTile + tileSize / 2`), not from
+  the placement point that includes `PlacementOffset` — the server does not know the admin offset,
+  so using it made the ghost and the built pipe disagree when the `ps.placement.offset_*` CVars
+  were set.
 
 ## 27. Absolute round-time cooldowns do not survive a round (2026-10-19)
 

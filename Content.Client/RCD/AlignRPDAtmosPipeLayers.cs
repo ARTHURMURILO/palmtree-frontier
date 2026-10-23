@@ -121,14 +121,15 @@ public sealed class AlignRPDAtmosPipeLayers : PlacementMode
         float tileSize = mapGrid.TileSize;
         GridDistancing = tileSize;
 
-        MouseCoords = pManager.CurrentPermission!.IsTile
-            ? new EntityCoordinates(MouseCoords.EntityId, new Vector2(CurrentTile.X + tileSize / 2,
-                CurrentTile.Y + tileSize / 2))
-            : new EntityCoordinates(MouseCoords.EntityId, new Vector2(CurrentTile.X + tileSize / 2 + pManager.PlacementOffset.X,
-                CurrentTile.Y + tileSize / 2 + pManager.PlacementOffset.Y));
+        var tileCenter = new Vector2(CurrentTile.X + tileSize / 2, CurrentTile.Y + tileSize / 2);
 
-        // Work out the layer from the cursor offset from the centre of the tile
-        var mouseCoordsDiff = _mouseCoordsRaw.Position - MouseCoords.Position;
+        MouseCoords = pManager.CurrentPermission!.IsTile
+            ? new EntityCoordinates(MouseCoords.EntityId, tileCenter)
+            : new EntityCoordinates(MouseCoords.EntityId, tileCenter + pManager.PlacementOffset);
+
+        // Work out the layer from the cursor offset from the centre of the tile. Measure from the
+        // true centre, not the (admin-offset) placement point, to match the server's calculation.
+        var mouseCoordsDiff = _mouseCoordsRaw.Position - tileCenter;
         var newLayer = AtmosPipeLayer.Primary;
 
         if (mouseCoordsDiff.Length() > MouseDeadzoneRadius)

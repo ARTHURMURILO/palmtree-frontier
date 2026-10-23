@@ -67,9 +67,6 @@ public sealed partial class RPDMenu : RadialMenu
         if (colorList == null)
             return;
 
-        foreach (var child in colorList.Children.ToArray())
-            child.Dispose();
-
         colorList.RemoveAllChildren();
 
         foreach (var color in palette)
