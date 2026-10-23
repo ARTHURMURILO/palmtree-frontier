@@ -102,6 +102,7 @@
   recipes:
   - GyroscopeNfsdMachineCircuitboard
   - ThrusterNfsdMachineCircuitboard
+  - NFScreenTimerElectronics
 
 - type: latheRecipePack
   id: NfsdReportingStatic

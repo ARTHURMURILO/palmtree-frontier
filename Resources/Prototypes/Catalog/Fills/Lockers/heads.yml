@@ -297,7 +297,8 @@
     # - id: ProtolatheMachineCircuitboard # Frontier
     # - id: ResearchComputerCircuitboard # Frontier
     # - id: CargoRequestScienceComputerCircuitboard # Frontier
-    - id: RubberStampRd
+    # - id: StationAiFixerCircuitboard # Frontier
+    # - id: RubberStampRd # Frontier
     - id: ClothingHeadHatBeretResearchDirector # Palmtree: Sandstorm RD beret
 
 # Hardsuit table, used for suit storage as well

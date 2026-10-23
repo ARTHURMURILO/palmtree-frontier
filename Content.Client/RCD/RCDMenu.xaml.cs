@@ -116,7 +116,7 @@ public sealed partial class RCDMenu : RadialMenu
 
             foreach (var child in main.Children)
             {
-                if (child is not RadialMenuTextureButton castChild)
+                if (child is not RadialMenuButton castChild)
                     continue;
 
                 if (castChild.TargetLayerControlName != proto.Category)
@@ -196,7 +196,7 @@ public sealed partial class RCDMenu : RadialMenu
     }
 }
 
-public sealed class RCDMenuButton : RadialMenuTextureButtonWithSector
+public sealed class RCDMenuButton : RadialMenuButtonWithSector
 {
     public ProtoId<RCDPrototype> ProtoId { get; set; }
 }
