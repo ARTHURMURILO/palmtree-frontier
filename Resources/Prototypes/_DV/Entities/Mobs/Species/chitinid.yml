@@ -12,7 +12,7 @@
 
   # Palmtree: Coyote used the RPI Needs system; Hunger/Thirst are used instead.
   - type: Hunger
-    baseDecayRate: 0.0266 # Coyote: needs to eat more to survive (33% faster than the 0.0200 baseline)
+    baseDecayRate: 0.0266 # Palmtree: guidebook - 33% faster
   - type: Thirst
 
   - type: UnpoweredFlashlight # Frontier: https://github.com/DeltaV-Station/Delta-v/pull/2796 this was added back and need to be removed if we ever take DeltaV medical

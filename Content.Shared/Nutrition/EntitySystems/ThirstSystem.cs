@@ -170,7 +170,7 @@ public sealed class ThirstSystem : EntitySystem
         DirtyField(uid, component, nameof(ThirstComponent.LastThirstThreshold));
         DirtyField(uid, component, nameof(ThirstComponent.ActualDecayRate));
 
-        // Palmtree: global decay slowdown (2x by default).
+        // Palmtree: global decay slowdown (4x by default).
         var baseDecayRate = component.BaseDecayRate * PalmtreeNutrition.DecayRateMultiplier;
 
         switch (component.CurrentThirstThreshold)

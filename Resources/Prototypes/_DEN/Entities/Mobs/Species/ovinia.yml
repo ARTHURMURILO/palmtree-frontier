@@ -4,6 +4,10 @@
   id: MobOviniaBase
   abstract: true
   components:
+  - type: Hunger
+    baseDecayRate: 0.015 # Palmtree: guidebook - 25% slower
+  - type: Thirst
+    baseDecayRate: 0.075
   - type: Fixtures
     fixtures: # TODO: This needs a second fixture just for mob collisions.
       fix1:

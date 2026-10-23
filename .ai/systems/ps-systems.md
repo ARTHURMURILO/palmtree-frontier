@@ -374,12 +374,22 @@ system (`inventory: None`, `transferDamage/Name: true`, `revertOnDeath/Crit: tru
 
 ## Nutrition rate tuning (2026-10)
 
-- `Content.Shared/_PS/Nutrition/PalmtreeNutrition.cs` holds `DecayRateMultiplier = 1f / 2f`
-  (was `1f / 6f`, retuned to 2x slower).
+- `Content.Shared/_PS/Nutrition/PalmtreeNutrition.cs` holds `DecayRateMultiplier = 1f / 4f`
+  (`1f / 6f` -> `1f / 2f` -> `1f / 4f`; now 4x slower than stock and 2x slower than the previous
+  Vulpkanin baseline).
 - `HungerSystem.DoHungerThresholdEffects` and `ThirstSystem.UpdateEffects` multiply the computed
-  `ActualDecayRate` by it (marked `// Palmtree`), so every species and NPC - including the
-  per-species `baseDecayRate` overrides (Chitinid 33% faster, Avali/Resomi 2x, Diona and Sheleg,
-  etc.) - takes 2x longer to get hungry or thirsty.
+  `ActualDecayRate` by it (marked `// Palmtree`), so every species and NPC - including NPC
+  `baseDecayRate` overrides - takes 4x longer to get hungry or thirsty.
+- Anthropomorph, Ovinia, Rodentia, Tajaran and Gingerbread were missing `Hunger`/`Thirst`
+  entirely and now have both. Synth intentionally has neither, and Skeleton (non-roundstart, no
+  stomach) stays without.
+- Species rates follow their guidebook entries: Vulpkanin and most species use the default
+  `0.02` hunger / `0.1` thirst; Avali hunger is 2x (`0.04`); Ovinia is 25% slower (`0.015` /
+  `0.075`); Rodentia and Chitinid hunger is 33% faster (`0.0266`); Feroxi thirst is 2x (`0.2`);
+  Diona is slower (`0.0083`); Sheleg hunger is slower and thirst faster (`0.0165` / `0.15`);
+  Tajaran hunger is 25% faster (`0.025`). Resomi uses the default.
+- `Content.IntegrationTests/Tests/_PS/SpeciesNutritionTest.cs` guards that every round-start
+  species has `Hunger`/`Thirst`, with Synth as the only exception.
 - Change the one constant to retune; hunger and thirst share it.
 
 ## Weapon detector (2026-10)

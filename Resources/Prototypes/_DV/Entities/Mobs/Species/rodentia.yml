@@ -5,6 +5,9 @@
   id: BaseMobRodentia
   abstract: true
   components:
+  - type: Hunger
+    baseDecayRate: 0.0266 # Palmtree: guidebook - 33% faster
+  - type: Thirst
   - type: HumanoidAppearance
     species: Rodentia
   - type: ModifyUndies # Palmtree/Floof

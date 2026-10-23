@@ -268,16 +268,19 @@ Palmtree splash logo, non-`_PS` lobby backgrounds/music disabled.
 - **Species ports** (from Coyote, same file layout as `.ai/guides/adding-species.md`):
   - **Chitinid** (`_DV`): species/body/parts/organs/player/names, `Chitinid` radiation-absorbing
     C# (`Content.Server/_DV/Abilities/Chitinid`), the `Chitzite` item + `ActionChitzite` (uses the
-    already-ported `ItemCougherSystem`). Adaptations: `Needs` → `Hunger`/`Thirst` (33% faster),
+    already-ported `ItemCougherSystem`). Adaptations: `Needs` → `Hunger`/`Thirst` (33% faster
+    hunger, matching the guidebook),
     `AphrodisiacDrinks` metabolizer group dropped (not ported), custom Sprite layer block dropped,
     `chitinid0/1` typing states merged into `_DV/Effects/speech.rsi`.
   - **Ovinia** (`_DEN`): species/body/parts/mob/player (Coyote keeps the player mob under `_DV`),
     sound collections + baa/moo audio, `OviniaEmotes` tag + emote whitelists, typing indicator,
-    damage set. `minHeight`/`maxHeight` removed, `Needs` dropped, custom Sprite dropped.
+    damage set. `minHeight`/`maxHeight` removed, `Needs` → `Hunger`/`Thirst` (25% slower, matching
+    the guidebook), custom Sprite dropped.
   - **Avali + Resomi** (`_Starlight`): species/bodies/organs/mobs/players/dummies, names, voice,
     sound collections, tags, inventories, metabolizer types (`Avali`/`Resomi`), Avali blood reagents
     (`AvaliBlood`/`ResomiBlood`) and `Amoxla`. Dropped: the Coyote `Stasis`/Nanite Shell actions and
-    the Mono `FoodMeatResomi` (uses `FoodMeatHuman`). `Needs` → `Hunger`/`Thirst` (Avali 2x).
+    the Mono `FoodMeatResomi` (uses `FoodMeatHuman`). `Needs` → `Hunger`/`Thirst` (Avali 2x
+    hunger per the guidebook; Resomi default).
   - **Avali core reagent conditions** (ported into the shared reagent files): Ammonia heals Avali
     asphyxiation and is otherwise harmless to them, Iron poisons them, Dexalin/Dexalin+ are lethal
     to them, Saline burns them, and the DeltaV Feroxi saline nerf was ported in the same pass.

@@ -4,6 +4,9 @@
   id: MobTajaranBase
   abstract: true
   components:
+  - type: Hunger
+    baseDecayRate: 0.025 # Palmtree: guidebook - fast metabolism, 25% more food
+  - type: Thirst
   - type: Sprite
     netsync: false
     noRot: true
