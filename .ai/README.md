@@ -32,8 +32,8 @@ Read this file first, then the document that matches your task.
 - Maintainer constraints (see `.ai/HUMAN_CONTEXT.md`): engine must not be modified; new code goes
   under `_PS` folders; content ported from other forks keeps its original prefix for merge sanity.
 - Current branch: **`master`** (the `ps-erp` port branch was merged and deleted; Frontier base
-  `df24c19f08`, kept current with upstream merges). The port history and decisions are in
-  `.ai/PORTING.md`.
+  `df24c19f08`, last upstream sync `b40510417e` on 2026-10-23 — see
+  `.ai/guides/upstream-sync.md`). The port history and decisions are in `.ai/PORTING.md`.
 
 ## 2. Major architectural layers
 
@@ -113,6 +113,7 @@ Fork modules are folder/namespace prefixes:
 | `.ai/guides/adding-hotel-rooms.md` | Adding Hilbert's Hotel room maps + archetype prototypes |
 | `.ai/guides/adding-dungeons.md` | Adding dungeon rooms, themes/room packs, `dungeonConfig` wiring and rare boss arenas |
 | `.ai/guides/changelogs.md` | Changelog YAML authoring + `:cl:` automation for this fork |
+| `.ai/guides/upstream-sync.md` | Frontier/Wizden upstream sync: procedure, conflict bias, protected fork patches, sync log |
 | `.ai/ideas/README.md` | Feature designs: statuses range from unimplemented (`highroller-table.md`) to partially implemented (Fallout weapon backlog) and implemented (`bluespace-dock.md`) |
 
 ### Procedural guides

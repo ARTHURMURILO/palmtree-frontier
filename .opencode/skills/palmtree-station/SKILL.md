@@ -44,6 +44,8 @@ targeted port of Coyote/Floof ERP + marking systems. The old base lives in a sep
    `.ai/guides/porting-from-ss13.md`.
 5. For marking/ERP/species work, read `references/marking-and-erp.md` and
    `references/species-and-loadouts.md`.
+6. For an upstream sync, read `.ai/guides/upstream-sync.md` first; it records the current
+   Frontier merge point, conflict-resolution bias and protected fork patches.
 
 ## Workflows
 
