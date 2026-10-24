@@ -12,6 +12,7 @@ using Content.Server.Ame.EntitySystems;
 using Content.Server.Botany.Components;
 using Content.Server.Chat.Managers;
 using Content.Server.Chat.Systems;
+using Content.Server.Chemistry.Components;
 using Content.Server.DeviceLinking.Components;
 using Content.Server.DeviceLinking.Systems;
 using Content.Server.DeviceNetwork.Systems;
@@ -33,6 +34,7 @@ using Content.Server.Maps;
 using Content.Server.Shuttles.Components;
 using Content.Server.Shuttles.Systems;
 using Content.Server.Station.Systems;
+using Content.Server.Storage.Components;
 using Content.Server.Weapons.Ranged.Systems;
 using Content.Shared._NF.BindToStation;
 using Content.Shared._NF.CCVar;
@@ -43,6 +45,8 @@ using Content.Shared._NF.Shipyard.Prototypes;
 using Content.Shared._PS.BluespaceDock;
 using Content.Shared._PS.ShipRegistry;
 using Content.Shared.Access.Components;
+using Content.Shared.Chemistry;
+using Content.Shared.Containers.ItemSlots;
 using Content.Shared.Database;
 using Content.Shared.Chat;
 using Content.Shared.DeviceLinking;
@@ -56,6 +60,7 @@ using Content.Shared.SprayPainter;
 using Content.Shared.SprayPainter.Components;
 using Content.Shared.SprayPainter.Prototypes;
 using Content.Shared.SmartFridge;
+using Content.Shared.Storage.Components;
 using Content.Shared.Station;
 using Content.Shared.Station.Components;
 using Content.Shared.Store.Components;
@@ -65,6 +70,7 @@ using Content.Shared.PDA;
 using Content.Shared.Preferences;
 using Content.Shared.Projectiles;
 using Content.Shared.UserInterface;
+using Content.Shared.VendingMachines;
 using Content.Shared.Warps;
 using Content.Shared.Timing;
 using Content.Shared.Weapons.Melee;
@@ -139,6 +145,7 @@ public sealed class BluespaceDockSystem : EntitySystem
     [Dependency] private readonly SharedContainerSystem _containers = default!;
     [Dependency] private readonly DeviceLinkSystem _deviceLink = default!;
     [Dependency] private readonly DeviceNetworkSystem _deviceNetwork = default!;
+    [Dependency] private readonly ItemSlotsSystem _itemSlots = default!;
     [Dependency] private readonly GunSystem _gunSystem = default!;
     [Dependency] private readonly SharedRadarConsoleSystem _radar = default!;
     [Dependency] private readonly ExtensionCableSystem _extensionCable = default!;
@@ -1039,9 +1046,10 @@ public sealed class BluespaceDockSystem : EntitySystem
 
     /// <summary>
     /// Appends the skipped entities to the ship file so loading it can re-create a fresh copy of
-    /// each, and prunes container/storage references to uids the file no longer declares (the writer
-    /// only ever emits declared uids or <c>invalid</c>, so any other uid is a reference to a skipped
-    /// entity).
+    /// each, and prunes container/storage references to uids the file no longer declares. The
+    /// declared set is collected from every prototype group first: groups are ordered by prototype,
+    /// not by containment, so pruning group-by-group would delete valid references to entities in
+    /// later groups.
     /// </summary>
     private void TryRecordDroppedEntities(ResPath path, List<DroppedShipEntity> dropped)
     {
@@ -1058,19 +1066,30 @@ public sealed class BluespaceDockSystem : EntitySystem
                 root = mapping;
             }
 
+            // Entity YAML is grouped by prototype (alphabetically), not by containment. A container
+            // in an early group routinely holds an entity in a later group: an airlock's
+            // DoorElectronics, a techfab's stock parts, a satchel's contents. The set of declared uids
+            // therefore has to be built from every group before ANY reference is pruned - pruning
+            // group-by-group treats every reference to a later group as a reference to a skipped
+            // entity and deletes it (Charon LV-025 lost 691 container/storage references this way on
+            // 2026-10-24).
             var declared = new HashSet<string>();
             var droppedData = new SequenceDataNode();
             if (root.TryGet<SequenceDataNode>("entities", out var groups))
             {
                 foreach (var node in groups)
                 {
-                    if (node is not MappingDataNode group)
-                        continue;
+                    if (node is MappingDataNode group)
+                        CollectEntityUids(group, declared);
+                }
 
-                    CollectEntityUids(group, declared);
-
-                    if (!group.TryGet<SequenceDataNode>("entities", out var entities))
+                foreach (var node in groups)
+                {
+                    if (node is not MappingDataNode group
+                        || !group.TryGet<SequenceDataNode>("entities", out var entities))
+                    {
                         continue;
+                    }
 
                     foreach (var entityNode in entities)
                     {
@@ -2123,6 +2142,28 @@ public sealed class BluespaceDockSystem : EntitySystem
             _appearance.SetData(uid, PdaVisuals.IdCardInserted, true);
         }
 
+        // ReagentDispenserSystem.OnMapInit registers the beaker slot, and SharedVendingMachineSystem's
+        // MapInit registers the cash slot. Both components define the slot as a DataField but
+        // ItemSlotsComponent.Slots is read-only (never serialized), so a loaded machine had the
+        // container in the file but no registered item slot: the coffee machine could not accept,
+        // eject or dispense into a beaker, and the vending machine could not take cash. Register them
+        // here rather than re-raising MapInit, which would re-run StorageFill/ContainerFill.
+        if (TryComp<ReagentDispenserComponent>(uid, out var dispenser)
+            && (!HasComp<ItemSlotsComponent>(uid)
+                || !_itemSlots.TryGetSlot(uid, SharedReagentDispenser.OutputSlotName, out _)))
+        {
+            _itemSlots.AddItemSlot(uid, SharedReagentDispenser.OutputSlotName, dispenser.BeakerSlot);
+        }
+
+        if (TryComp<VendingMachineComponent>(uid, out var vending)
+            && vending.CashSlot is { } cashSlot
+            && !string.IsNullOrEmpty(vending.CashSlotName)
+            && (!HasComp<ItemSlotsComponent>(uid)
+                || !_itemSlots.TryGetSlot(uid, vending.CashSlotName, out _)))
+        {
+            _itemSlots.AddItemSlot(uid, vending.CashSlotName, cashSlot);
+        }
+
         // StoreSystem pins StartingMap on creation (it gates refunds/upgrades to the map the store was
         // made on). A loaded ship is on a new map, so pin the store to it again instead of leaving the
         // stale map uid the file carried (or none at all).
@@ -2216,6 +2257,19 @@ public sealed class BluespaceDockSystem : EntitySystem
                 melee.NextAttack = TimeSpan.Zero;
                 Dirty(uid, melee);
             }
+
+            // Ore bags, material silos/reclaimers and salvage magnets gate their scan on an absolute
+            // NextScan (MagnetPickupSystem.OnMapInit normally sets it to CurTime). A loaded ship skips
+            // MapInit, so the saved timestamp from the previous round survived and the magnet stayed
+            // dead until the new round clock reached it - values in live files ranged up to ~42 hours.
+            if (TryComp<MagnetPickupComponent>(uid, out var magnet))
+                magnet.NextScan = TimeSpan.Zero;
+
+            if (TryComp<MaterialStorageMagnetPickupComponent>(uid, out var storageMagnet))
+                storageMagnet.NextScan = TimeSpan.Zero;
+
+            if (TryComp<MaterialReclaimerMagnetPickupComponent>(uid, out var reclaimerMagnet))
+                reclaimerMagnet.NextScan = TimeSpan.Zero;
         }
     }
 

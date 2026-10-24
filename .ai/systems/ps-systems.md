@@ -252,8 +252,11 @@ the interaction/organ plumbing; `SynthTest` covers synth physiology (reboot, pre
 heat/shock/radiation, EMP lethality, built-in prying) and that bodies no longer rot.
 `BluespaceDockTest` covers the dock registry/ship-file round trip and its self-heal sweep,
 `BluespaceDockSaveTest` covers the save-side hazards (a used plant analyzer / an in-progress do-after
-must not fail a save, migrated files must not keep references to dropped contents, and radar targets
-must not outlive the ship they point at), `BluespaceDockPowerTest` covers APC power after a
+must not fail a save, migrated files must not keep references to dropped contents, retrieved
+dispensers/vending machines keep their beaker/cash item slots, a retrieved ore bag's magnet timer is
+cleared, and radar targets must not outlive the ship they point at), `BluespaceDockResilienceTest`
+covers the resilient save (a skipped entity is re-created empty and a normal container item whose
+prototype sorts after its container stays inside), `BluespaceDockPowerTest` covers APC power after a
 store/retrieve round trip and the load-time re-link, `BluespaceDockExpeditionTest` covers a retrieved
 expedition ship keeping its station's expedition data, `BluespaceDockShipSystemsTest` and
 `BluespaceDockDeviceLinkTest` cover the map-init registration (guns, emitters, device links,
@@ -606,12 +609,14 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
 - **Action cooldowns are cleared on save (`ResetRuntimeCooldowns`, 2026-10-19)**: use delays, gun
   `NextFire`, melee `NextAttack`, the AME controller's `LastUpdate`/`NextUpdate`/`EffectCooldown`
   (a retrieved AME would not inject fuel until the old round time), thruster `NextFire`, hydro tray
-  `NextUpdate`/`LastCycle` and the power-transmission `NextDeposit` (+ `AccumulatedEnergy`) are
-  absolute round times, and the round clock restarts every round. Without the reset a ship stored late in a round came back with its buttons, switches and
-  toolbelts still "on cooldown" for as long as the store happened into the round: left click and E
-  silently do nothing while right-click verbs (which bypass `UseDelay`) still work. The save clears
-  them; see `.ai/HAZARDS.md` section 27 for the full trap and the regression test
-  (`BluespaceDockSaveTest.SavedShipForgetsActionCooldowns`).
+  `NextUpdate`/`LastCycle`, the power-transmission `NextDeposit` (+ `AccumulatedEnergy`) and the
+  magnet pickups' `NextScan` (ore bags, material silos, reclaimers) are absolute round times, and the
+  round clock restarts every round. Without the reset a ship stored late in a round came back with
+  its buttons, switches and toolbelts still "on cooldown" for as long as the store happened into the
+  round: left click and E silently do nothing while right-click verbs (which bypass `UseDelay`) still
+  work; a retrieved ore bag's magnet stayed dead until the new round reached the old timestamp (live
+  files carried values up to ~42 hours). The save clears them; see `.ai/HAZARDS.md` section 27 for
+  the full trap and the regression test (`BluespaceDockSaveTest.SavedShipForgetsActionCooldowns`).
 - **One unserializable entity no longer fails a store (2026-10-22)**: the save first tries strictly
   (`IncludeNullspace` then `Ignore`). When something on the grid cannot be serialized at all (a
   component field the serializer has no data definition for), it retries with
@@ -624,8 +629,11 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
   toolbox inside a backpack) are not covered. `TryLoadShipFile` then spawns a **fresh copy** of each
   (`TrySpawnDroppedEntities`) - at its saved position for top-level entities, at its container's tile
   and inside the container for contents; mobs and ghosts are never recorded. The rewritten file also
-  prunes container/storage references to uids it no longer declares. Diagnostics:
-  `grep "could not be serialized and were skipped"` in the server log.
+  prunes container/storage references to uids it no longer declares. **The declared-uid set must be
+  collected from every prototype group before pruning anything** (2026-10-24): groups are ordered by
+  prototype, not containment, so a group-at-a-time prune deleted 691 valid references on Charon
+  LV-025 (loose contents, empty door boards, every door denying access). See `.ai/HAZARDS.md`
+  section 28. Diagnostics: `grep "could not be serialized and were skipped"` in the server log.
 - **Store feedback (2026-10-22)**: every store denial from the console is a popup *and* a red server
   message in that player's chat (`Deny` -> `WarnChat`, private `DispatchServerMessage`), and a store
   that had to skip items also warns in chat with `bluespace-dock-warning-skipped` (and in the server
@@ -696,8 +704,11 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
   emitter/A.P.E. bolts spawn with zero velocity and "stay in place"). `TryLoadShipFile` now calls
   `RestoreMapInitRegistration` after loading, which does *only* the registration: `ConnectDevice`
   for every auto-connecting `DeviceNetworkComponent`, `EnsureSinkPorts` for
-  `GunSignalControlComponent` (cannons), and `RefreshModifiers` for every `GunComponent`. Do **not**
-  replace this with a blanket MapInit re-raise - inventories depend on it. Also note device network
+  `GunSignalControlComponent` (cannons), and `RefreshModifiers` for every `GunComponent`; it also
+  re-registers the `beakerSlot` of reagent dispensers and the `cash_slot` of vending machines
+  (2026-10-24 - both are MapInit `AddItemSlot` calls and `ItemSlotsComponent.Slots` is not saved, so
+  retrieved coffee/vending machines could not use their slots). Do **not** replace this with a
+  blanket MapInit re-raise - inventories depend on it. Also note device network
   packets are processed **one tick later** (`DeviceNetworkSystem.SwapQueues`), so a button's effect
   is never visible in the same tick.
   **Fault tolerance (2026-10-18)**: the sweep is per entity in a `try`/`catch` (a single entity that
@@ -768,8 +779,8 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
 `UserData/bluespace_dock/` that no registry entry points at (retrieval keeps the file on purpose, and
 a crash can leave files behind). The tool:
 
-- lists orphans with their save time (`BluespaceDockSystem.GetOrphanedFiles`, `TryDeleteOrphanedFile`,
-  `TryMoveFile`),
+- lists orphans with their save time, newest first (`BluespaceDockSystem.GetOrphanedFiles`,
+  `TryDeleteOrphanedFile`, `TryMoveFile`),
 - previews one with `TryLoadOrphanedFile`, which loads it onto a **paused** map and opens the normal
   `ShipPreviewEui`; the grid and map are deleted when the preview window closes, when another file is
   previewed, when the tool closes, or after one minute as a safety net (`ShipPreviewEui` takes an

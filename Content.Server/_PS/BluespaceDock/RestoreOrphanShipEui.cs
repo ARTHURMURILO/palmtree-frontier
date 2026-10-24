@@ -1,3 +1,4 @@
+using System.Linq;
 using Content.Server._PS.BluespaceDock;
 using Content.Server._PS.ShipRegistry;
 using Content.Server.Administration.Managers;
@@ -93,7 +94,9 @@ public sealed partial class RestoreOrphanShipEui : BaseEui
     public override EuiStateBase GetNewState()
     {
         var ships = new List<OrphanShipEntry>();
-        foreach (var orphan in _dock.GetOrphanedFiles())
+        // The backing directory walk is alphabetical; admins want the ship they just stored first.
+        foreach (var orphan in _dock.GetOrphanedFiles()
+                     .OrderByDescending(orphan => orphan.Modified ?? DateTime.MinValue))
         {
             var modified = orphan.Modified?.ToString("yyyy-MM-dd HH:mm") ?? "?";
             ships.Add(new OrphanShipEntry(orphan.Name, modified));

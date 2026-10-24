@@ -141,10 +141,15 @@ public sealed class BluespaceDockResilienceTest
             Assert.That(containers.TryGetContainer(foundToolbox, Content.Shared.Storage.StorageComponent.ContainerId, out var loadedStorage), Is.True);
             Assert.That(loadedStorage!.ContainedEntities.Count, Is.GreaterThan(0), "The toolbox lost its contents.");
 
+            // One duck was a perfectly normal item inside the toolbox; the other could not be
+            // serialized and is re-created from its prototype. Both must be inside after loading:
+            // the normal duck is the regression check for the group-order prune bug (the duck's
+            // prototype sorts after the toolbox's, so a group-by-group prune deleted its reference
+            // and the duck loaded on the floor instead).
             var ducks = loadedStorage.ContainedEntities.Count(uid =>
                 entMan.GetComponent<MetaDataComponent>(uid).EntityPrototype?.ID == "ToyRubberDuck");
-            Assert.That(ducks, Is.EqualTo(1),
-                "The item inside the toolbox that could not be serialized was not re-created inside it.");
+            Assert.That(ducks, Is.EqualTo(2),
+                "The toolbox lost the item whose prototype sorts after it (or failed to re-create the skipped one).");
             Assert.That(loadedStorage.ContainedEntities.All(uid =>
                     !entMan.HasComponent<UnserializableTestComponent>(uid)),
                 "A re-created container item still carries the unserializable test component.");

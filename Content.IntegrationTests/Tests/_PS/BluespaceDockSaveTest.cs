@@ -13,14 +13,18 @@ using Content.Shared.Interaction;
 using Content.Shared.Light.Components;
 using Content.Shared.Shuttles.Components;
 using Content.Shared.Storage;
+using Content.Shared.Storage.Components;
 using Content.Shared.Timing;
 using Content.Shared.Weapons.Ranged.Components;
 using Content.Shared.DeviceLinking;
 using Content.Shared.Access.Components;
 using Content.Shared.Access.Systems;
+using Content.Shared.Chemistry;
+using Content.Shared.Containers.ItemSlots;
 using Content.Shared.Hands.EntitySystems;
 using Content.Shared.PDA;
 using Content.Shared.SprayPainter.Components;
+using Content.Shared.VendingMachines;
 using Content.Shared.SprayPainter.Prototypes;
 using Content.Shared.SmartFridge;
 using NUnit.Framework;
@@ -513,6 +517,7 @@ public sealed class BluespaceDockSaveTest
             var ame = entMan.SpawnEntity("AmeController", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
             var thruster = entMan.SpawnEntity("Thruster", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
             var tray = entMan.SpawnEntity("HydroponicsTrayEmpty", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            var oreBag = entMan.SpawnEntity("OreBag", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
 
             var player = entMan.SpawnEntity("MobHuman", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
 
@@ -548,6 +553,8 @@ public sealed class BluespaceDockSaveTest
             plantComp.NextUpdate = stale;
             plantComp.LastCycle = stale;
 
+            entMan.GetComponent<MagnetPickupComponent>(oreBag).NextScan = stale;
+
             Assert.That(useDelaySystem.IsDelayed(button), Is.True, "sanity: the button starts on cooldown");
             Assert.That(interaction.InteractionActivate(player, button), Is.False,
                 "sanity: a click on a cooldown-gated button must be dropped (this is the reported bug)");
@@ -574,6 +581,7 @@ public sealed class BluespaceDockSaveTest
             EntityUid ame = default;
             EntityUid thruster = default;
             EntityUid tray = default;
+            EntityUid oreBag = default;
             EntityUid player = default;
 
             var entities = new HashSet<EntityUid>();
@@ -600,6 +608,9 @@ public sealed class BluespaceDockSaveTest
                     case "HydroponicsTrayEmpty":
                         tray = uid;
                         break;
+                    case "OreBag":
+                        oreBag = uid;
+                        break;
                 }
             }
 
@@ -617,7 +628,7 @@ public sealed class BluespaceDockSaveTest
             Assert.That(entMan.GetComponent<GunComponent>(gun).NextFire, Is.EqualTo(TimeSpan.Zero),
                 "The retrieved gun kept its shot cooldown from the previous round.");
 
-            Assert.That(ame.IsValid() && thruster.IsValid() && tray.IsValid(), Is.True,
+            Assert.That(ame.IsValid() && thruster.IsValid() && tray.IsValid() && oreBag.IsValid(), Is.True,
                 "The retrieved ship is missing one of its machines.");
 
             var ameComp = entMan.GetComponent<Content.Server.Ame.Components.AmeControllerComponent>(ame);
@@ -636,6 +647,9 @@ public sealed class BluespaceDockSaveTest
                 "The retrieved hydro tray kept its previous-round update time.");
             Assert.That(plantComp.LastCycle, Is.EqualTo(TimeSpan.Zero),
                 "The retrieved hydro tray kept its previous-round cycle time.");
+
+            Assert.That(entMan.GetComponent<MagnetPickupComponent>(oreBag).NextScan, Is.EqualTo(TimeSpan.Zero),
+                "The retrieved ore bag kept its previous-round magnet scan time (the magnet stays dead).");
 
             // The click now goes through and the button's signal reaches the light.
             Assert.That(interaction.InteractionActivate(player, button), Is.True,
@@ -660,6 +674,79 @@ public sealed class BluespaceDockSaveTest
             Assert.That(light, Is.Not.Null, "The retrieved ship lost its light.");
             Assert.That(entMan.GetComponent<PoweredLightComponent>(light!.Value).On, Is.False,
                 "The retrieved button's click did not reach the linked light.");
+        });
+
+        await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));
+        await server.WaitRunTicks(2);
+        await server.WaitAssertion(() => server.System<SharedMapSystem>().DeleteMap(loadedMap));
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    /// Reagent dispensers and vending machines register their beaker/cash item slots in MapInit.
+    /// A loaded ship skips MapInit, so without the load-time registration the containers exist but
+    /// the item slots do not: the coffee machine cannot accept, eject or dispense into a beaker and
+    /// the vending machine cannot take cash.
+    /// </summary>
+    [Test]
+    public async Task RetrievedShipRestoresItemSlots()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+
+        EntityUid loadedGrid = default;
+        MapId loadedMap = default;
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var grid = testMap.Grid.Owner;
+
+            entMan.SpawnEntity("ImpCoffeeMachine", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            entMan.SpawnEntity("VendingMachineCoffee", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+
+            var path = BluespaceDockSystem.GetShipFilePath("item-slot-save-test");
+            Assert.That(dock.TrySaveShipFile(grid, path, out var error), Is.True, error);
+            Assert.That(dock.TryLoadShipFile(path, out var loaded), Is.True, "Loading the saved ship failed.");
+            loadedGrid = loaded!.Value;
+            loadedMap = entMan.GetComponent<TransformComponent>(loadedGrid).MapID;
+            dock.DeleteShipFile(path);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var itemSlots = server.System<ItemSlotsSystem>();
+
+            var entities = new HashSet<EntityUid>();
+            dock.GetEntitiesOnGrid(loadedGrid, entities);
+
+            EntityUid? coffee = null;
+            EntityUid? vending = null;
+            foreach (var uid in entities)
+            {
+                switch (entMan.GetComponent<MetaDataComponent>(uid).EntityPrototype?.ID)
+                {
+                    case "ImpCoffeeMachine":
+                        coffee = uid;
+                        break;
+                    case "VendingMachineCoffee":
+                        vending = uid;
+                        break;
+                }
+            }
+
+            Assert.That(coffee, Is.Not.Null, "The retrieved ship lost its coffee machine.");
+            Assert.That(itemSlots.TryGetSlot(coffee!.Value, SharedReagentDispenser.OutputSlotName, out _), Is.True,
+                "The retrieved coffee machine has no beaker slot (it cannot make coffee).");
+
+            Assert.That(vending, Is.Not.Null, "The retrieved ship lost its vending machine.");
+            var vendingComp = entMan.GetComponent<VendingMachineComponent>(vending!.Value);
+            Assert.That(itemSlots.TryGetSlot(vending.Value, vendingComp.CashSlotName!, out _), Is.True,
+                "The retrieved vending machine has no cash slot.");
         });
 
         await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));

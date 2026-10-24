@@ -487,7 +487,11 @@ so these fail only in CI:
   (fire rate, projectile speed, angles) stay at zero: **saved guns refuse to fire and emitter/
   A.P.E. bolts spawn with no velocity and freeze in place**. The bluespace dock compensates with
   `RestoreMapInitRegistration` in `BluespaceDockSystem` - extend that when a new
-  MapInit-registered ship system shows up.
+  MapInit-registered ship system shows up. Two more cases found on 2026-10-24: a reagent dispenser
+  (the spacepresso/coffee machine) registers its `beakerSlot` in MapInit and a vending machine
+  registers `cash_slot` there; `ItemSlotsComponent.Slots` is read-only and not serialized, so a
+  retrieved machine had the container but no item slot and could not use a beaker/cash. Both are
+  re-registered on load in `RestoreMapInitRegistration`.
 - **Never "fix" this by re-raising `MapInitEvent` on the loaded entities.** Live entities already
   had their spawn-time init; running it again re-fires every `StorageFill`/`ContainerFill` and
   duplicates (or spills) whatever players have in their containers. The bluespace dock test
@@ -659,7 +663,13 @@ so these fail only in CI:
   and gates an action needs a reset there too.** Relative counters are fine
   (`DoorComponent.SecondsUntilStateChange` stores a relative number of seconds). Note `Dirty()` must
   not be called on non-networked components (the AME controller is one).
-- Regression test: `BluespaceDockSaveTest.SavedShipForgetsActionCooldowns` (fails without the reset).
+- **Magnet pickups** (`MagnetPickupComponent`, `MaterialStorageMagnetPickupComponent`,
+  `MaterialReclaimerMagnetPickupComponent`) also gate on an absolute `NextScan`, set to
+  `CurTime`/`CurTime + 1s` in MapInit. A retrieved ore bag kept the previous round's timestamp (live
+  files had values up to ~42 hours), so its magnet never scanned. `ResetRuntimeCooldowns` now zeroes
+  all three.
+- Regression test: `BluespaceDockSaveTest.SavedShipForgetsActionCooldowns` (fails without the reset;
+  it sets a stale `OreBag` magnet too).
 
 ## 28. Emote categories and chat triggers (2026-10)
 
@@ -727,6 +737,16 @@ so these fail only in CI:
   (the engine does), so a "ship stored with skipped entities" shows up in the log as
   `entity_serializer: Caught exception` followed by
   `bluespace_dock: ... falling back to a save that skips them`.
+- **The resilient-save reference prune must use the complete uid set (2026-10-24).** Entity YAML is
+  grouped by prototype, not by containment. `TryRecordDroppedEntities` used to collect the
+  "declared" uids and prune each group inside the same loop, so a container in an early group
+  (`Airlock`, group 18) looked like it referenced a skipped entity when its item was in a later
+  group (`DoorElectronics`, group 219). Charon LV-025 lost **691** valid container/storage
+  references: contents loaded loose on the floor, door boards were empty (every door denied
+  everyone), and machines kept only their early-alphabet parts. There was no duplication - the
+  items were all still in the file, just no longer inserted. Always build the uid set from every
+  group first, then prune. `BluespaceDockResilienceTest` now asserts a normal item whose prototype
+  sorts after its container stays inside (and the skipped item is re-created beside it).
 - **The store strips before it knows the file is good.** Any new failure point after
   `StripStationReferences`/`UndockShuttle` must go through `RestoreStoreFailure` (station refs, deed,
   docking to the *grid it was docked to*). A stripped ship has no station member/bound components, so
