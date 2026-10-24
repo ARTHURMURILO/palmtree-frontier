@@ -237,6 +237,6 @@ public sealed class AlignRPDAtmosPipeLayers : PlacementMode
 
         var target = screen.GetClickedEntity(_transformSystem.ToMapCoordinates(_mouseCoordsRaw));
 
-        return _rcdSystem.IsRCDOperationStillValid(heldEntity, rcd, gridUid.Value, mapGrid, tile, posVector, target, player.Value, false);
+        return _rcdSystem.IsRCDOperationStillValid(heldEntity, rcd, gridUid.Value, mapGrid, tile, posVector, target, player.Value, false, _currentLayer);
     }
 }

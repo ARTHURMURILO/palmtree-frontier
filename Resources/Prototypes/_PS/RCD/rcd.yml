@@ -1,5 +1,32 @@
 # Palmtree: extra RCD construction modes (ported from the old Coyote code)
 
+# Diagonal wall variants for the wall types the RCD can build
+- type: rcd
+  id: WallSolidDiagonal
+  category: WallsAndFlooring
+  sprite: { sprite: _NF/Structures/Walls/solid_diagonal.rsi, state: state0 }
+  mode: ConstructObject
+  prototype: WallSolidDiagonal
+  cost: 4
+  delay: 2
+  collisionMask: FullTileMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: WallShuttleDiagonal
+  category: WallsAndFlooring
+  sprite: { sprite: Structures/Walls/shuttle_diagonal.rsi, state: state0 }
+  mode: ConstructObject
+  prototype: WallShuttleDiagonal
+  cost: 3
+  delay: 1
+  collisionMask: FullTileMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct2
+
 - type: rcd
   id: WallShuttle
   category: WallsAndFlooring

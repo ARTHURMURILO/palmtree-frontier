@@ -945,8 +945,8 @@
   - type: StaticPrice
     price: 100 # Frontier: 200<100 - makes some shuttles way more expensive otherwise
   - type: RCDDeconstructable #Frontier
-    cost: 6 #Frontier
-    delay: 8 #Frontier
+    cost: 3 #Palmtree
+    delay: 2 #Palmtree
     fx: EffectRCDDeconstruct8 #Frontier
 
 - type: entity
@@ -1106,6 +1106,10 @@
     graph: Girder
     node: diagonalWall
     # End Frontier
+  - type: RCDDeconstructable # Palmtree: RCD build/deconstruct parity with WallSolid
+    cost: 6
+    delay: 8
+    fx: EffectRCDDeconstruct8
 
 - type: entity
   parent: WallSolid

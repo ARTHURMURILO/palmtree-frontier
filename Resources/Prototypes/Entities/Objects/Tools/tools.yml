@@ -298,9 +298,14 @@
   description: The rapid construction device can be used to quickly place and remove various station structures and fixtures. Requires compressed matter to function.
   components:
   - type: RCD
+    speedMultiplier: 2 # Palmtree: twice as fast; var-edit higher for faster RCDs
     availablePrototypes:
     - WallSolid
+    - WallSolidDiagonal # Palmtree
     - WallShuttle # Palmtree
+    - WallShuttleDiagonal # Palmtree
+    - WallMining # Palmtree
+    - WallMiningDiagonal # Palmtree
     - FloorSteel
     - Plating
     - Catwalk
@@ -462,7 +467,9 @@
     instantConstruction: true
     availablePrototypes:
     - WallSolid
+    - WallSolidDiagonal # Palmtree
     - WallShuttle
+    - WallShuttleDiagonal # Palmtree
     - WallMining
     - WallMiningDiagonal
     - WallPlastitanium

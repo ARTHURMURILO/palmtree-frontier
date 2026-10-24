@@ -940,10 +940,12 @@ Small features that did not get their own section yet:
   (`PipeHalf`, `ManifoldGas`, `PressureRegulator`, plus a `SensorsMonitors` category with air alarm,
   air sensor and gas pipe sensor). RPD modes `Resources/Prototypes/_PS/RCD/rpd.yml`, RCD modes
   `.../_PS/RCD/rcd.yml`, textures under `Resources/Textures/_PS/...`, locale
-  `Resources/Locale/en-US/_PS/rcd.ftl`. Details: `.ai/PORTING.md` §24-24a; traps:
-  `.ai/HAZARDS.md` §26. The RPD deconstruct whitelist (`rpd: true`) is wired on `GasPipeBase` plus
-  the air alarm, air sensor and gas pipe sensor, so the RPD removes what it builds while the RCD
-  stays off atmos entities.
+  `Resources/Locale/en-US/_PS/rcd.ftl`. A follow-up pass added diagonal solid/shuttle wall modes
+  and mining walls, a per-tool `speedMultiplier` (the RCD ships at 2x), and per-layer
+  anti-stacking so the RPD cannot place a second pipe/vent on an occupied atmos layer. Details:
+  `.ai/PORTING.md` §24-24b; traps: `.ai/HAZARDS.md` §26. The RPD deconstruct whitelist (`rpd: true`)
+  is wired on `GasPipeBase` plus the air alarm, air sensor and gas pipe sensor, so the RPD removes
+  what it builds while the RCD stays off atmos entities.
 - **Salto expedition ship** (2026-10, ported from the old Coyote `_CS` code): `LL0 Salto`, a Small
   Expedition/AME ship, map `Resources/Maps/_CS/Shuttles/Expedition/salto.yml`, vessel prototype
   `Resources/Prototypes/_CS/Shipyard/Expedition/salto.yml`. Details and adaptations (dropped

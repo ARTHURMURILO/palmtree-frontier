@@ -53,6 +53,14 @@ public sealed partial class RCDComponent : Component
     public bool InstantConstruction { get; set; }
 
     /// <summary>
+    /// Palmtree: multiplier applied to RCD/RPD operation delays. 2 is twice as fast (half the
+    /// delay); var-edit it or set it per prototype for faster tools. Values at or below zero are
+    /// ignored.
+    /// </summary>
+    [DataField, ViewVariables(VVAccess.ReadWrite)]
+    public float SpeedMultiplier = 1f;
+
+    /// <summary>
     /// Pipe colours the RPD's colour strip offers, keyed by palette name. Mirrors the spray
     /// painter's pipe palette so an RPD-tinted pipe looks like a spray painted one.
     /// </summary>

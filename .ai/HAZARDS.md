@@ -628,6 +628,16 @@ so these fail only in CI:
   the placement point that includes `PlacementOffset` — the server does not know the admin offset,
   so using it made the ghost and the built pipe disagree when the `ps.placement.offset_*` CVars
   were set.
+- **`Unstackable` is the atmos no-stacking marker.** `RCDSystem.IsConstructionLocationValid`
+  applies the check only when the *built* prototype has the tag (all atmos piping via
+  `GasPipeSansLayers`, plus the devices) and compares
+  `AtmosPipeLayersComponent.CurrentPipeLayer`; entities without alternative prototypes count as
+  primary. Pipes have no fixtures, so the collision check cannot catch them — this is why the RCD
+  could "place one anyway" after the popup from `PipeRestrictOverlapSystem` (which only runs on
+  anchoring).
+- **`RCDComponent.SpeedMultiplier` divides delays, so >1 is faster.** It is applied in
+  `OnAfterInteract` to prototype and per-entity deconstruct delays; a non-positive value is ignored
+  (var-edit safety) and `InstantConstruction` still forces 0.
 
 ## 27. Absolute round-time cooldowns do not survive a round (2026-10-19)
 

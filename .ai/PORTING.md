@@ -820,6 +820,29 @@ centre — which also broke the pipe-layer deadzone.
 
 See `.ai/HAZARDS.md` §26 for the traps this pass introduced.
 
+### 24b. 2026-10 RCD pass: diagonal walls, mining walls, speed multiplier, atmos stacking
+
+Follow-up on the RCD/RPD after the second pass:
+
+- **Diagonal wall modes** (`_PS/RCD/rcd.yml`): `WallSolidDiagonal` and `WallShuttleDiagonal` join
+  the existing plastitanium/mining diagonals, using the standard diagonal collision bounds. The RCD
+  and the experimental RCD list them. `WallSolidDiagonal` gained an `RCDDeconstructable` (6/8) and
+  the shuttle diagonal was lowered to 3/2 like the straight shuttle wall (`#Palmtree`).
+- **Mining walls**: the RCD list now includes `WallMining`/`WallMiningDiagonal`; the `_NF` modes
+  moved from `PirateWallsAndFlooring` to `WallsAndFlooring` so they appear in the normal menu (the
+  pirate RCDs still include them).
+- **Speed multiplier**: `RCDComponent.SpeedMultiplier` (default 1, `ViewVariables` read-write)
+  divides every construction/deconstruction delay; the `RCD` prototype sets it to 2. Values at or
+  below zero are ignored, and `InstantConstruction` still forces a 0 delay.
+- **No atmos stacking**: `GasPipeSansLayers` now carries the `Unstackable` tag (plain pipes were
+  missing it), and `IsConstructionLocationValid` refuses a mode whose built prototype has that tag
+  when the tile already has an `Unstackable` entity on the *same* atmos layer. The layer comes from
+  the do-after event / placement mode, so secondary and tertiary pipes can still share a tile.
+  Pipes have no fixtures, which is why the old collision check let duplicates through (the overlap
+  popup came from `PipeRestrictOverlapSystem` after the spawn).
+- Test: `Content.IntegrationTests/Tests/_PS/RcdAtmosStackingTest.cs` (primary layer blocked, empty
+  tile allowed, another layer allowed).
+
 ## 25. 2026-10 Salto expedition ship (Coyote `_CS`)
 
 - Map: `Resources/Maps/_CS/Shuttles/Expedition/salto.yml` — the first `_CS` map this fork has

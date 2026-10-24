@@ -61,6 +61,7 @@ public sealed class RCDSystem : EntitySystem
     private readonly ProtoId<RCDPrototype> _deconstructTileProto = "DeconstructTile";
     private readonly ProtoId<RCDPrototype> _deconstructLatticeProto = "DeconstructLattice";
     private static readonly ProtoId<TagPrototype> CatwalkTag = "Catwalk";
+    private static readonly ProtoId<TagPrototype> UnstackableTag = "Unstackable"; // Palmtree: no stacking atmos pipes/devices
 
     private HashSet<EntityUid> _intersectingEntities = new();
 
@@ -201,7 +202,7 @@ public sealed class RCDSystem : EntitySystem
             }
         }
 
-        if (!IsRCDOperationStillValid(uid, component, gridUid.Value, mapGrid, tile, position, args.Target, args.User))
+        if (!IsRCDOperationStillValid(uid, component, gridUid.Value, mapGrid, tile, position, args.Target, args.User, layer: layer))
             return;
 
         // Frontier: grid-access restrictions
@@ -231,7 +232,7 @@ public sealed class RCDSystem : EntitySystem
 
         // Get the starting cost, delay, and effect from the prototype
         var cost = prototype.Cost;
-        var delay = component.InstantConstruction ? 0 : prototype.Delay; // Palmtree: instant construction
+        var delay = component.InstantConstruction ? 0 : GetSpeedAdjustedDelay(component, prototype.Delay); // Palmtree: instant construction + speed multiplier
         var effectPrototype = component.InstantConstruction ? _instantConstructionFx : prototype.Effect; // Palmtree: instant construction
 
         #region: Operation modifiers
@@ -247,7 +248,7 @@ public sealed class RCDSystem : EntitySystem
                     if (TryComp<RCDDeconstructableComponent>(args.Target, out var destructible))
                     {
                         cost = destructible.Cost;
-                        delay = component.InstantConstruction ? 0 : destructible.Delay; // Palmtree: instant construction
+                        delay = component.InstantConstruction ? 0 : GetSpeedAdjustedDelay(component, destructible.Delay); // Palmtree: instant construction + speed multiplier
                         effectPrototype = component.InstantConstruction ? _instantConstructionFx : destructible.Effect; // Palmtree: instant construction
                     }
                 }
@@ -261,7 +262,7 @@ public sealed class RCDSystem : EntitySystem
                     if (_protoManager.TryIndex(protoName, out var deconProto))
                     {
                         cost = deconProto.Cost;
-                        delay = component.InstantConstruction ? 0 : deconProto.Delay; // Palmtree: instant construction
+                        delay = component.InstantConstruction ? 0 : GetSpeedAdjustedDelay(component, deconProto.Delay); // Palmtree: instant construction + speed multiplier
                         effectPrototype = component.InstantConstruction ? _instantConstructionFx : deconProto.Effect; // Palmtree: instant construction
                     }
                 }
@@ -331,7 +332,7 @@ public sealed class RCDSystem : EntitySystem
         var tile = _mapSystem.GetTileRef(gridUid.Value, mapGrid, location);
         var position = _mapSystem.TileIndicesFor(gridUid.Value, mapGrid, location);
 
-        if (!IsRCDOperationStillValid(uid, component, gridUid.Value, mapGrid, tile, position, args.Event.Target, args.Event.User))
+        if (!IsRCDOperationStillValid(uid, component, gridUid.Value, mapGrid, tile, position, args.Event.Target, args.Event.User, layer: args.Event.Layer))
             args.Cancel();
     }
 
@@ -361,7 +362,7 @@ public sealed class RCDSystem : EntitySystem
         var position = _mapSystem.TileIndicesFor(gridUid.Value, mapGrid, location);
 
         // Ensure the RCD operation is still valid
-        if (!IsRCDOperationStillValid(uid, component, gridUid.Value, mapGrid, tile, position, args.Target, args.User))
+        if (!IsRCDOperationStillValid(uid, component, gridUid.Value, mapGrid, tile, position, args.Target, args.User, layer: args.Layer))
             return;
 
         // Finalize the operation (this should handle prediction properly)
@@ -443,7 +444,7 @@ public sealed class RCDSystem : EntitySystem
 
     #region Entity construction/deconstruction rule checks
 
-    public bool IsRCDOperationStillValid(EntityUid uid, RCDComponent component, EntityUid gridUid, MapGridComponent mapGrid, TileRef tile, Vector2i position, EntityUid? target, EntityUid user, bool popMsgs = true)
+    public bool IsRCDOperationStillValid(EntityUid uid, RCDComponent component, EntityUid gridUid, MapGridComponent mapGrid, TileRef tile, Vector2i position, EntityUid? target, EntityUid user, bool popMsgs = true, AtmosPipeLayer layer = AtmosPipeLayer.Primary)
     {
         var prototype = _protoManager.Index(component.ProtoId);
 
@@ -480,7 +481,7 @@ public sealed class RCDSystem : EntitySystem
         {
             case RcdMode.ConstructTile:
             case RcdMode.ConstructObject:
-                return IsConstructionLocationValid(uid, component, gridUid, mapGrid, tile, position, user, popMsgs);
+                return IsConstructionLocationValid(uid, component, gridUid, mapGrid, tile, position, user, popMsgs, layer);
             case RcdMode.Deconstruct:
                 return IsDeconstructionStillValid(uid, component, tile, target, user, popMsgs);
         }
@@ -488,7 +489,7 @@ public sealed class RCDSystem : EntitySystem
         return false;
     }
 
-    private bool IsConstructionLocationValid(EntityUid uid, RCDComponent component, EntityUid gridUid, MapGridComponent mapGrid, TileRef tile, Vector2i position, EntityUid user, bool popMsgs = true)
+    private bool IsConstructionLocationValid(EntityUid uid, RCDComponent component, EntityUid gridUid, MapGridComponent mapGrid, TileRef tile, Vector2i position, EntityUid user, bool popMsgs = true, AtmosPipeLayer layer = AtmosPipeLayer.Primary)
     {
         var prototype = _protoManager.Index(component.ProtoId);
 
@@ -550,6 +551,28 @@ public sealed class RCDSystem : EntitySystem
         var isWindow = prototype.ConstructionRules.Contains(RcdConstructionRule.IsWindow);
         var isCatwalk = prototype.ConstructionRules.Contains(RcdConstructionRule.IsCatwalk);
 
+        // Palmtree: atmos pipes/devices carry no fixtures, so the collision check below cannot see
+        // Palmtree: atmos pipes/devices carry no fixtures, so the collision check below cannot see
+        // them. Refuse to stack a new pipe/device on the same atmos layer (they share the
+        // `Unstackable` tag with the construction graphs, which have the same restriction).
+        var buildsUnstackable = false;
+        var builtLayer = AtmosPipeLayer.Primary;
+
+        if (prototype.Prototype != null &&
+            _protoManager.TryIndex<EntityPrototype>(prototype.Prototype, out var builtProto) &&
+            builtProto.TryGetComponent<TagComponent>(out var builtTags, EntityManager.ComponentFactory) &&
+            _tags.HasTag(builtTags, UnstackableTag))
+        {
+            buildsUnstackable = true;
+
+            // Entities without per-layer variants always spawn on the primary layer.
+            if (builtProto.TryGetComponent<AtmosPipeLayersComponent>(out var builtLayers, EntityManager.ComponentFactory) &&
+                builtLayers.AlternativePrototypes.Count > 0)
+            {
+                builtLayer = layer;
+            }
+        }
+
         _intersectingEntities.Clear();
         _lookup.GetLocalEntitiesIntersecting(gridUid, position, _intersectingEntities, -0.05f, LookupFlags.Uncontained);
 
@@ -557,6 +580,23 @@ public sealed class RCDSystem : EntitySystem
         {
             if (isWindow && HasComp<SharedCanBuildWindowOnTopComponent>(ent))
                 continue;
+
+            // Palmtree: no stacking pipes/devices on the same layer
+            if (buildsUnstackable && _tags.HasTag(ent, UnstackableTag))
+            {
+                var existingLayer = AtmosPipeLayer.Primary;
+
+                if (TryComp<AtmosPipeLayersComponent>(ent, out var existingLayers))
+                    existingLayer = existingLayers.CurrentPipeLayer;
+
+                if (existingLayer == builtLayer)
+                {
+                    if (popMsgs)
+                        _popup.PopupClient(Loc.GetString("rcd-component-cannot-build-on-occupied-tile-message"), uid, user);
+
+                    return false;
+                }
+            }
 
             if (isCatwalk && _tags.HasTag(ent, CatwalkTag))
             {
@@ -756,6 +796,15 @@ public sealed class RCDSystem : EntitySystem
     #endregion
 
     #region Utility functions
+
+    /// <summary>
+    /// Palmtree: applies <see cref="RCDComponent.SpeedMultiplier"/> to an operation delay.
+    /// Non-positive multipliers are ignored so a bad var-edit cannot break the do-after.
+    /// </summary>
+    private static float GetSpeedAdjustedDelay(RCDComponent component, float delay)
+    {
+        return component.SpeedMultiplier > 0f ? delay / component.SpeedMultiplier : delay;
+    }
 
     private bool DoesCustomBoundsIntersectWithFixture(PolygonShape boundingPolygon, Transform boundingTransform, EntityUid fixtureOwner, Fixture fixture)
     {
