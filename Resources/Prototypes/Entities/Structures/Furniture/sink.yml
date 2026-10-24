@@ -65,6 +65,9 @@
     range: 8
     sound:
       path: /Audio/Ambience/Objects/drain.ogg
+  - type: Construction # Palmtree: _HL plumbing construction
+    graph: Sink
+    node: sink
 
 
 - type: entity
@@ -98,6 +101,9 @@
       maxFillLevels: 1
       fillBaseName: sink_wide-fill-
       solutionName: drainBuffer
+    - type: Construction # Palmtree: _HL plumbing construction
+      graph: SinkWide
+      node: sinkWide
 
 #Stemless Sink
 
@@ -113,6 +119,9 @@
       - map: [ "enum.SolutionContainerLayers.Fill" ]
         state: sink-fill-1
         visible: false
+  - type: Construction # Palmtree: _HL plumbing construction
+    graph: SinkStemless
+    node: sinkStemless
 
 - type: entity
   name: sink

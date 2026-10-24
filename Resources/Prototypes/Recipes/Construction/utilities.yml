@@ -574,6 +574,18 @@
   conditions:
   - !type:NoUnstackableInTile
 
+# Palmtree: buildable directional fan (Coyote/HardLight)
+- type: construction
+  id: AtmosDeviceFanDirectional
+  graph: GasUnary
+  startNode: start
+  targetNode: tinygayfan
+  category: construction-category-utilities
+  placementMode: SnapgridCenter
+  canBuildInImpassable: false
+  conditions:
+  - !type:NoUnstackableInTile
+
 # ATMOS BINARY
 - type: construction
   id: GasPressurePump

@@ -1,7 +1,6 @@
 # Ported from coyote-frontier (Resources/Prototypes/_HL/Entities/Structures/Furniture/shower.yml).
-# The unfinished prototype inlines the sink base so the shower does not depend on
-# the _HL sink port, and the construction graph drops the plumbing node (this fork
-# has no plumbing assembly).
+# The shower uses the _HL sink base for its unfinished prototype and the plumbing
+# construction node (consumes a PlumbingAssembly).
 - type: entity
   name: shower
   id: Shower
@@ -69,35 +68,14 @@
 
 - type: entity
   id: ShowerUnfinished
-  parent: BaseStructureDynamic
+  parent: BaseSinkUnfinished
   name: unfinished shower
   description: A shower under construction
   components:
-  - type: Physics
-    bodyType: Dynamic
-    canCollide: false
-  - type: InteractionOutline
   - type: Sprite
     sprite: _HL/Structures/Furniture/shower.rsi
     drawdepth: WallMountedItems
     state: shower
-  - type: Destructible
-    thresholds:
-    - trigger:
-        !type:DamageTrigger
-        damage: 80
-      behaviors:
-      - !type:DoActsBehavior
-        acts: [ "Destruction" ]
-    - trigger:
-        !type:DamageTrigger
-        damage: 40
-      behaviors:
-      - !type:DoActsBehavior
-        acts: [ "Destruction" ]
-      - !type:PlaySoundBehavior
-        sound:
-          collection: MetalBreak
   - type: Construction
     graph: Shower
     node: body

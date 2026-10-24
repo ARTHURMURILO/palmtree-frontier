@@ -73,10 +73,10 @@
   notification sound option.
 - **Shower** (`_HL` prefix, from Coyote's HardLight content): `Shower`/`ShowerUnfinished`, the
   `Shower` construction graph/recipe, sprite (`_HL/Structures/Furniture/shower.rsi`) and toggle
-  audio (`_HL/Ambience/Shower/*`). Adaptations: the unfinished prototype inlines the `_HL` sink
-  base (no sink port needed) and the plumbing construction node was dropped (this fork has no
-  plumbing assembly). `Tools/convert_dmm_room.py` maps `/obj/machinery/shower` to `Shower`, so the
-  converted hotel rooms include working showers.
+  audio (`_HL/Ambience/Shower/*`). The unfinished prototype uses the `_HL` sink base and the graph
+  has its plumbing node; the rest of the `_HL` plumbing set (plumbing assembly, sinks, floor drain)
+  followed later — see §27. `Tools/convert_dmm_room.py` maps `/obj/machinery/shower` to `Shower`,
+  so the converted hotel rooms include working showers.
 
 ### 3.3 Sandstorm interaction panel (2026-10, `_PS`)
 
@@ -881,3 +881,35 @@ rather than scattered species categories.
   `_PS|EntityTest|CharacterCreationTest` integration tests and the headless client IL check all
   pass. Scratch integration coverage confirmed `*laugh2` produces "laughs like a king." in the
   client chat history, the male/female supplemental prototypes resolve, and `emotelist` runs.
+
+## 27. 2026-10 HardLight plumbing construction: shower, sinks, drains + directional fan
+
+The first `_HL` shower port dropped its plumbing node because the plumbing assembly did not exist
+here. This ports the rest of Coyote's HardLight plumbing set:
+
+- **`PlumbingAssembly`** (`_HL/Entities/Objects/Misc/machine_parts.yml`): the pipe/connector part
+  consumed by the plumbing construction step, plus the `PlumbingAssembly` tag. Lathe recipe
+  `PlumbingAssemblyRecipe` (`_HL/Recipes/Lathes/parts.yml`, Steel 800 + Plastic 100) in the
+  `CSPlumbingStatic` pack (`_CS/Recipes/Lathes/Packs/plumbing.yml`), added to the Autolathe, the
+  service techfab and the engineering techfab. No research gate (Coyote disabled the Plumbing tech).
+- **Shower**: the `Shower` construction graph has the `plumbing` node again (`PlumbingAssembly` in,
+  prying returns it) and `ShowerUnfinished` parents the ported `BaseSinkUnfinished`.
+- **Sinks**: `SinkEmpty`, `SinkWide` and `SinkStemless` got their Coyote `Construction` components
+  (nodes `sink`/`sinkWide`/`sinkStemless`); ported the `Sink`/`SinkStemless`/`SinkWide` construction
+  graphs, the unfinished sink prototypes + `SinkWideEmpty`
+  (`_HL/Entities/Structures/Furniture/sink.yml`) and their construction recipes.
+- **Floor drain**: `Construction` component on `FloorDrain`, plus `FloorDrainUnfinished`, the
+  `FloorDrain` graph and recipe.
+- **Directional fan**: `AtmosDeviceFanDirectional` is now constructible from 25 steel via the
+  `GasUnary` graph's `tinygayfan` node (welding to remove), and got its Coyote
+  `Damageable`/`Destructible` (75 damage, 20-25 steel back).
+- **`EmptySolution`** (`Content.Server/_HL/Construction/Completions/EmptySolution.cs`): Coyote's
+  custom graph action (empties a named solution, optionally spilling it into a puddle), used by the
+  sink/drain graphs when deconstructing with contents. `spill: true` tries
+  `PuddleSystem.TrySpillAt` first, then clears the solution either way.
+- Locale: `construction-graph-tag-plumbing-assembly`
+  (`Resources/Locale/en-US/_HL/recipes/tags.ftl`).
+- Not ported: the commented-out Plumbing research node and the commented-out gaslock nodes (both
+  disabled in Coyote).
+- Validation: full build, YAMLLinter `No errors found`, `Content.Tests`, integration
+  (`Construction|EntityTest|_PS|TechnologyTree`) and the headless client IL check.

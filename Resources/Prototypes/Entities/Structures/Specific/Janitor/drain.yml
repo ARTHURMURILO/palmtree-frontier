@@ -58,3 +58,6 @@
             - !type:PlaySoundBehavior
               sound:
                 collection: MetalBreak
+    - type: Construction # Palmtree: _HL plumbing construction
+      graph: FloorDrain
+      node: floorDrain
