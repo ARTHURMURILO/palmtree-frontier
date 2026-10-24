@@ -1403,3 +1403,11 @@ Entries:
   time: '2026-10-24T02:52:02.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/bd274b4bf6c1e8a2c32228ff674e88d0a0b7ae34
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Jukeboxes can now play locally-hosted Palmtree music tracks.
+  id: 90090
+  time: '2026-10-24T02:56:41.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/5f09801e7931d4ed35a0e7ad2f565a8ae124202c
