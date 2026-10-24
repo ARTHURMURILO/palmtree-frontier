@@ -1379,3 +1379,17 @@ Entries:
   time: '2026-10-23T22:59:13.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/6b01a5ec38bf6927904cce6c175354bb6bf79e4e
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: >-
+        Showers, sinks and floor drains can now be built with plumbing, and
+        directional fans can now be built from steel.
+    - type: Add
+      message: >-
+        Added the plumbing assembly part, printable from the autolathe and the
+        service and engineering techfabs.
+  id: 90088
+  time: '2026-10-24T02:08:48.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/df0e20df39fb224a672ae470ad8a17bca053cc87
