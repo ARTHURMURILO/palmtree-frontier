@@ -33,6 +33,7 @@ public sealed class AdminLogsEui : BaseEui
     private int _roundLogs;
     private CancellationTokenSource _logSendCancellation = new();
     private LogFilter _filter;
+    private bool _isPurging;
 
     private readonly DefaultObjectPool<List<SharedAdminLog>> _adminLogListPool =
         new(new ListPolicy<SharedAdminLog>());
@@ -139,6 +140,49 @@ public sealed class AdminLogsEui : BaseEui
                 SendLogs(false);
                 break;
             }
+            case DeleteOldLogsRequest:
+            {
+                if (!_adminManager.HasAdminFlag(Player, AdminFlags.Host))
+                {
+                    _sawmill.Warning($"Admin log purge request denied for admin with id {Player.UserId.UserId} and name {Player.Name}: missing host flag");
+                    SendMessage(new DeleteOldLogsResponse(OldLogsRetentionDays, 0, false));
+                    break;
+                }
+
+                _sawmill.Info($"Admin log purge request from admin with id {Player.UserId.UserId} and name {Player.Name}");
+
+                await PurgeOldLogs();
+                break;
+            }
+        }
+    }
+
+    private async Task PurgeOldLogs()
+    {
+        if (_isPurging)
+            return;
+
+        _isPurging = true;
+        try
+        {
+            var days = OldLogsRetentionDays;
+            var deleted = await _adminLogs.PurgeOldLogs(days);
+
+            _sawmill.Info($"Deleted {deleted} admin logs older than {days} days at the request of admin with id {Player.UserId.UserId} and name {Player.Name}");
+            _adminLogs.Add(LogType.AdminCommands,
+                LogImpact.High,
+                $"{Player.Name} ({Player.UserId.UserId}) deleted {deleted} admin logs older than {days} days.");
+
+            SendMessage(new DeleteOldLogsResponse(days, deleted, true));
+        }
+        catch (Exception e)
+        {
+            _sawmill.Error($"Failed to delete admin logs older than {OldLogsRetentionDays} days: {e}");
+            SendMessage(new DeleteOldLogsResponse(OldLogsRetentionDays, 0, false));
+        }
+        finally
+        {
+            _isPurging = false;
         }
     }
 

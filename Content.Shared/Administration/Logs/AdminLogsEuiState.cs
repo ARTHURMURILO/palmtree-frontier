@@ -25,6 +25,14 @@ public sealed class AdminLogsEuiState : EuiStateBase
 
 public static class AdminLogsEuiMsg
 {
+    /// <summary>
+    ///     How old admin logs must be before the "delete old logs" button removes them.
+    /// </summary>
+    /// <remarks>
+    ///     Keep the admin-logs-delete-old-* locale strings in sync when changing this.
+    /// </remarks>
+    public const int OldLogsRetentionDays = 30;
+
     [Serializable, NetSerializable]
     public sealed class SetLogFilter : EuiMessageBase
     {
@@ -100,5 +108,31 @@ public static class AdminLogsEuiMsg
     [Serializable, NetSerializable]
     public sealed class NextLogsRequest : EuiMessageBase
     {
+    }
+
+    /// <summary>
+    ///     Requests the deletion of admin logs older than <see cref="OldLogsRetentionDays"/>.
+    /// </summary>
+    [Serializable, NetSerializable]
+    public sealed class DeleteOldLogsRequest : EuiMessageBase
+    {
+    }
+
+    /// <summary>
+    ///     Result of a <see cref="DeleteOldLogsRequest"/>.
+    /// </summary>
+    [Serializable, NetSerializable]
+    public sealed class DeleteOldLogsResponse : EuiMessageBase
+    {
+        public DeleteOldLogsResponse(int days, int deleted, bool success)
+        {
+            Days = days;
+            Deleted = deleted;
+            Success = success;
+        }
+
+        public int Days { get; set; }
+        public int Deleted { get; set; }
+        public bool Success { get; set; }
     }
 }

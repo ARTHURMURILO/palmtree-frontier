@@ -1204,6 +1204,18 @@ INSERT INTO player_round (players_id, rounds_id) VALUES ({players[player]}, {id}
             return await db.DbContext.AdminLog.CountAsync(log => log.RoundId == round);
         }
 
+        public async Task<int> PurgeAdminLogsAsync(int days)
+        {
+            await using var db = await GetDb();
+
+            var cutoff = DateTime.UtcNow.Subtract(TimeSpan.FromDays(days));
+
+            // The admin_log_player rows are removed by the foreign key cascade.
+            return await db.DbContext.AdminLog
+                .Where(log => log.Date < cutoff)
+                .ExecuteDeleteAsync();
+        }
+
         #endregion
 
         #region Whitelist

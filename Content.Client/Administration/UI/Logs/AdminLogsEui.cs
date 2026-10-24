@@ -1,7 +1,9 @@
 ﻿using System.IO;
 using System.Linq;
+using Content.Client.Administration.Managers;
 using Content.Client.Administration.UI.CustomControls;
 using Content.Client.Eui;
+using Content.Shared.Administration;
 using Content.Shared.Administration.Logs;
 using Content.Shared.Eui;
 using JetBrains.Annotations;
@@ -19,6 +21,7 @@ public sealed class AdminLogsEui : BaseEui
     [Dependency] private readonly IUserInterfaceManager _uiManager = default!;
     [Dependency] private readonly IFileDialogManager _dialogManager = default!;
     [Dependency] private readonly ILogManager _log = default!;
+    [Dependency] private readonly IClientAdminManager _adminManager = default!;
 
     private const char CsvSeparator = ',';
     private const string CsvQuote = "\"";
@@ -39,6 +42,10 @@ public sealed class AdminLogsEui : BaseEui
         LogsControl.NextButton.OnPressed += _ => NextLogs();
         LogsControl.PopOutButton.OnPressed += _ => PopOut();
         LogsControl.ExportLogs.OnPressed += _ => ExportLogs();
+        LogsControl.DeleteOldLogsButton.OnPressed += _ => DeleteOldLogs();
+
+        // Deleting logs is irreversible, so only let hosts do it.
+        LogsControl.DeleteOldLogsButton.Visible = _adminManager.HasFlag(AdminFlags.Host);
 
         _sawmill = _log.GetSawmill("admin.logs.ui");
     }
@@ -87,6 +94,11 @@ public sealed class AdminLogsEui : BaseEui
         LogsControl.NextButton.Disabled = true;
         var request = new NextLogsRequest();
         SendMessage(request);
+    }
+
+    private void DeleteOldLogs()
+    {
+        SendMessage(new DeleteOldLogsRequest());
     }
 
     private async void ExportLogs()
@@ -234,6 +246,14 @@ public sealed class AdminLogsEui : BaseEui
 
                 if (setLogFilter.Types != null)
                     LogsControl.SetTypesSelection(setLogFilter.Types, setLogFilter.InvertTypes);
+
+                break;
+
+            case DeleteOldLogsResponse deleteOldLogs:
+                LogsControl.SetDeleteStatus(deleteOldLogs.Deleted, deleteOldLogs.Days, deleteOldLogs.Success);
+
+                if (deleteOldLogs.Success)
+                    RequestLogs();
 
                 break;
         }

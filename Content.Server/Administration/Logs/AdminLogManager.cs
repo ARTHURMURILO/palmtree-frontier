@@ -475,4 +475,9 @@ public sealed partial class AdminLogManager : SharedAdminLogManager, IAdminLogMa
     {
         return _db.CountAdminLogs(round);
     }
+
+    public Task<int> PurgeOldLogs(int days)
+    {
+        return _db.PurgeAdminLogsAsync(days);
+    }
 }

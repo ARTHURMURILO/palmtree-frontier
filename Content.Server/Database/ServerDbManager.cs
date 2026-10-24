@@ -259,6 +259,12 @@ namespace Content.Server.Database
         IAsyncEnumerable<JsonDocument> GetAdminLogsJson(LogFilter? filter = null);
         Task<int> CountAdminLogs(int round);
 
+        /// <summary>
+        ///     Deletes admin logs (and their player links) older than <paramref name="days"/> days.
+        /// </summary>
+        /// <returns>The number of deleted admin log entries.</returns>
+        Task<int> PurgeAdminLogsAsync(int days);
+
         #endregion
 
         #region Whitelist
@@ -809,6 +815,12 @@ namespace Content.Server.Database
         {
             DbReadOpsMetric.Inc();
             return RunDbCommand(() => _db.CountAdminLogs(round));
+        }
+
+        public Task<int> PurgeAdminLogsAsync(int days)
+        {
+            DbWriteOpsMetric.Inc();
+            return RunDbCommand(() => _db.PurgeAdminLogsAsync(days));
         }
 
         public Task<bool> GetWhitelistStatusAsync(NetUserId player)
