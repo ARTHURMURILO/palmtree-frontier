@@ -309,3 +309,8 @@ Resources/MapImages
 
 # Machine-specific paths for AI docs (see .ai/file_paths.md)
 .ai/file_paths.md
+
+# Palmtree: copyrighted jukebox audio and its prototypes. Keep them out of the
+# repo and upload the folders to the live server manually.
+Resources/Audio/_PS/Jukebox/
+Resources/Prototypes/_PS/Jukebox/
