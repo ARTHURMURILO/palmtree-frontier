@@ -1429,3 +1429,19 @@ Entries:
   time: '2026-10-24T03:24:44.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/fc9ba97534ab22789acfbaae7947ce8904b46619
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: The RCD can now build diagonal walls and mining walls.
+    - type: Tweak
+      message: >-
+        RCDs are twice as fast, and each tool has a speed multiplier that can be
+        adjusted for future variants.
+    - type: Fix
+      message: >-
+        The RPD no longer places a pipe or vent on top of an existing one on the
+        same atmos layer.
+  id: 90093
+  time: '2026-10-24T04:08:21.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/9eb23e8b3cdfdeac8e5911ba08b75d40913034f3
