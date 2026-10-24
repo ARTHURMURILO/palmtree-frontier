@@ -1411,3 +1411,13 @@ Entries:
   time: '2026-10-24T02:56:41.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/5f09801e7931d4ed35a0e7ad2f565a8ae124202c
+- author: xTheLifex
+  changes:
+    - type: Tweak
+      message: >-
+        The mothership sell-only shipyard consoles on Tinnia, Barriergate,
+        Courthouse and Bahama are now bluespace dock consoles.
+  id: 90091
+  time: '2026-10-24T03:20:36.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/da0f4caf720cdd767862f8cadffb49a825c937af
