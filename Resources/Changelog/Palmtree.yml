@@ -1421,3 +1421,11 @@ Entries:
   time: '2026-10-24T03:20:36.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/da0f4caf720cdd767862f8cadffb49a825c937af
+- author: xTheLifex
+  changes:
+    - type: Tweak
+      message: Tricordrazine now heals radiation damage as well.
+  id: 90092
+  time: '2026-10-24T03:24:44.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/fc9ba97534ab22789acfbaae7947ce8904b46619
