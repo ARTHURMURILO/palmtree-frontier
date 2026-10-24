@@ -1393,3 +1393,13 @@ Entries:
   time: '2026-10-24T02:08:48.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/df0e20df39fb224a672ae470ad8a17bca053cc87
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: >-
+        Added a Delete Old Logs button to the admin logs panel for hosts, which
+        removes logs older than 30 days.
+  id: 90089
+  time: '2026-10-24T02:52:02.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/bd274b4bf6c1e8a2c32228ff674e88d0a0b7ae34
