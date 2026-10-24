@@ -1445,3 +1445,24 @@ Entries:
   time: '2026-10-24T04:08:21.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/9eb23e8b3cdfdeac8e5911ba08b75d40913034f3
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        Storing a ship that has an un-serializable entity no longer deletes
+        valid container/storage references (the Charon LV-025 loose-contents and
+        broken-door bug).
+    - type: Fix
+      message: >-
+        Retrieved coffee machines can use their beaker slot and vending machines
+        can use their cash slot again.
+    - type: Fix
+      message: >-
+        Retrieved ore bags and material magnets no longer stay disabled with the
+        previous round's scan timestamp.
+    - type: Tweak
+      message: The restoreorphanship window lists the newest ship files first.
+  id: 90094
+  time: '2026-10-24T06:03:31.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/c8b6cda7bd8bc1221a34a3f7f78bb45f6be794e6
