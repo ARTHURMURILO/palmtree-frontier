@@ -6454,7 +6454,7 @@ entities:
     - type: CollisionWake
       enabled: False
     - type: Conveyed
-- proto: SellOnlyMothershipComputer
+- proto: ComputerBluespaceDock
   entities:
   - uid: 239
     components:
