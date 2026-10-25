@@ -1466,3 +1466,11 @@ Entries:
   time: '2026-10-24T06:03:31.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/c8b6cda7bd8bc1221a34a3f7f78bb45f6be794e6
+- author: xTheLifex
+  changes:
+    - type: Tweak
+      message: Synths no longer benefit from speed boots or any other speed boosts.
+  id: 90095
+  time: '2026-10-25T20:04:25.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/c194405a25f350ae3775c85bc48fc790f11fd4e4
