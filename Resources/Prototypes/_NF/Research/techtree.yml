@@ -1608,6 +1608,8 @@
   recipeUnlocks:
   - MiningDrill
   - MineralScannerEmpty
+  - Fulton # Palmtree
+  - FultonBeacon # Palmtree
   technologyPrerequisites:
   - NFSalvageGrapplingEquipment
   position: 1, 38

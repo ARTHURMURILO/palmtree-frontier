@@ -291,6 +291,8 @@
   - MiningDrill
   - WeaponGrapplingGun
   - MineralScannerEmpty
+  - Fulton # Palmtree
+  - FultonBeacon # Palmtree
   - OreProcessorMachineCircuitboard
   - OreProcessorIndustrialMachineCircuitboard
   - ClothingMaskWeldingGas
