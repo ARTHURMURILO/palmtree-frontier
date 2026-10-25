@@ -166,6 +166,12 @@ Properties:
 - **1.5x speed**: Synth legs carry `MovementBodyPart walkSpeed: 3.75 / sprintSpeed: 6.75` (human
   2.5/4.5). The `Body` system derives base speed from leg parts, so this must be done on the parts,
   not only on the mob's `MovementSpeedModifier`. (Higher values caused client prediction instability.)
+- **No speed boosts**: synths ignore every positive movement-speed modifier (speed boots, stimulants,
+  wieldable/held speed items, etc.). `MovementSpeedModifierSystem.RefreshMovementSpeedModifiers` sets
+  `RefreshMovementSpeedModifiersEvent.IgnoreSpeedBoosts` for entities with `SynthComponent`; the event
+  clamps each incoming multiplier to at most 1, so slowdowns (damage, carrying, puddles) still apply.
+  `SynthComponent` is networked so client-side movement prediction uses the same rule. The synth's
+  1.5x base leg speed is unaffected because it comes from the body parts, not this event.
 - **3x durability**: `MobThresholds` 300 Critical / 600 Dead (human 100/200); `SlowOnDamage` and gib
   thresholds scaled.
 - **IPC-like**: custom `Synth` damage container (Brute/Burn groups, Radiation/Bloodloss types),
@@ -249,7 +255,8 @@ Upstream actions/implants/inventory/equipment visuals, `ContentAudioSystem`/lobb
 
 `HilbertHotelTest` covers room-map loading and the hotel lifecycle; `InteractionPanelTest` covers
 the interaction/organ plumbing; `SynthTest` covers synth physiology (reboot, pressure immunity,
-heat/shock/radiation, EMP lethality, built-in prying) and that bodies no longer rot.
+heat/shock/radiation, EMP lethality, built-in prying, ignoring speed boots while still taking
+slowdowns) and that bodies no longer rot.
 `BluespaceDockTest` covers the dock registry/ship-file round trip and its self-heal sweep,
 `BluespaceDockSaveTest` covers the save-side hazards (a used plant analyzer / an in-progress do-after
 must not fail a save, migrated files must not keep references to dropped contents, retrieved
