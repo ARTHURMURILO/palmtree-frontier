@@ -1474,3 +1474,11 @@ Entries:
   time: '2026-10-25T20:04:25.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/c194405a25f350ae3775c85bc48fc790f11fd4e4
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Fultons and fulton beacons can now be researched under Mining Equipment.
+  id: 90096
+  time: '2026-10-25T22:03:49.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/cbf3a4bb43b4b74dbb279070421c3dbd6f4498e1
