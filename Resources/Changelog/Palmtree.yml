@@ -1482,3 +1482,14 @@ Entries:
   time: '2026-10-25T22:03:49.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/cbf3a4bb43b4b74dbb279070421c3dbd6f4498e1
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: >-
+        Roombas now vacuum loose trash into a replaceable internal trash bag;
+        click one with an empty hand to take the full bag and leave a fresh
+        empty one.
+  id: 90097
+  time: '2026-10-26T01:26:33.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/f9a23eb1a96a8cfe5888740f87bc9f807324a92a
