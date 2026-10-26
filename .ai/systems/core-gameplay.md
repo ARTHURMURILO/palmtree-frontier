@@ -44,8 +44,12 @@
   steers around them; if everything ahead is blocked it takes the least bad option and bumps, which
   is the roomba charm. Its fixtures use `SmallMobMask`/`SmallMobLayer` (like mice) and its sprite
   `drawdepth: SmallMobs`, so it rolls **under tables and chairs** and renders beneath them too. Cleaning happens underfoot: every 0.45 tiles it scrubs `Cleanable`
-  decals around itself (cum drips/ejaculate, grime, crayon — the space cleaner set) and mops puddles
-  on its tile, using the cleanbot's own water tank (sound rate-limited). `RoombaComponent` is
+  decals around itself (cum drips/ejaculate, grime, crayon — the space cleaner set), mops puddles
+  on its tile using the cleanbot's own water tank (sound rate-limited), and vacuums loose
+  `Trash`/`Cartridge`/`GoblinMade` items into a replaceable internal `TrashBag` (the bag itself
+  supplies the whitelist). Clicking the roomba with an empty hand while the bag has contents swaps
+  it for a fresh empty bag and gives the full one to the player; there is deliberately no manual
+  insertion path. `RoombaComponent` is
   **shared** and `SharedRoombaSystem` cancels `AttemptMobTargetCollideEvent` for it (the prone-mob
   trick), so it never shoves mobs on either side — clients predict their own pushes. It also talks:
   rare bump lines (25%, 6 s cooldown), very rare idle lines (90-240 s) and less rare comments when it

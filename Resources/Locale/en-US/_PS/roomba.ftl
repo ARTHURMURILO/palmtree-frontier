@@ -2,6 +2,11 @@ construction-graph-tag-mop = mop
 petting-success-roomba = You pet {THE($target)} on {POSS-ADJ($target)} dusty chassis. It chirps happily.
 petting-failure-roomba = You reach out to pet {THE($target)}, but {SUBJECT($target)} {CONJUGATE-BE($target)} busy vacuuming!
 
+# Taking the roomba's full internal trash bag.
+roomba-trash-bag-taken = You take the full trash bag. The roomba clicks in a fresh one.
+roomba-trash-bag-dropped = The full trash bag slips from your hands.
+roomba-trash-bag-needs-hand = You need a free hand to take the trash bag.
+
 # Bump lines: rare, and "Ouch, my circuit board" shares the pool with the others.
 roomba-say-bump-ouch = Ouch!
 roomba-say-bump-owie = Owie!

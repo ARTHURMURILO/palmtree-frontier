@@ -19,6 +19,9 @@ namespace Content.Shared._PS.Roomba;
 [RegisterComponent]
 public sealed partial class RoombaComponent : Component
 {
+    /// <summary>The container holding the roomba's replaceable internal trash bag.</summary>
+    public const string TrashBagContainerId = "roomba_trash_bag";
+
     /// <summary>How short a leg may be, in tiles.</summary>
     [DataField]
     public float MinLegDistance = 1f;
@@ -69,6 +72,18 @@ public sealed partial class RoombaComponent : Component
     /// <summary>Radius, in tiles, of the decal scrub pass around the roomba.</summary>
     [DataField]
     public float ScrubRadius = 0.75f;
+
+    /// <summary>Radius, in tiles, of the trash pickup pass around the roomba.</summary>
+    [DataField]
+    public float TrashPickupRadius = 0.75f;
+
+    /// <summary>Maximum number of trash items picked up in a single pass.</summary>
+    [DataField]
+    public int TrashPickupLimit = 10;
+
+    /// <summary>Sound played when the roomba vacuums up trash.</summary>
+    [DataField]
+    public SoundSpecifier TrashPickupSound = new SoundCollectionSpecifier("trashBagRustle");
 
     /// <summary>Water drained from the absorbent solution per decal scrubbed.</summary>
     [DataField]

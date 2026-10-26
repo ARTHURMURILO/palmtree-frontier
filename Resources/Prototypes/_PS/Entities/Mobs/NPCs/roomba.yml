@@ -5,7 +5,7 @@
   parent: MobCleanBot
   id: MobRoomba
   name: roomba
-  description: A disc-shaped vacuum bot. The creep of automation, now upgraded to hunt down every stain on the floor.
+  description: A disc-shaped vacuum bot. The creep of automation, now upgraded to hunt down every stain and loose piece of trash on the floor.
   components:
   - type: Sprite
     sprite: _PS/Mobs/Silicon/Bots/roomba.rsi
@@ -27,6 +27,16 @@
   # Short delay so mopping puddles while driving does not lag behind.
   - type: UseDelay
     delay: 0.5
+  # Internal trash bag. ContainerFill spawns the bag on MapInit; clicking with an empty hand swaps
+  # the full bag for a fresh one (RoombaSystem), so there is no way to insert items manually.
+  - type: ContainerContainer
+    containers:
+      roomba_trash_bag: !type:Container
+        ents: []
+  - type: ContainerFill
+    containers:
+      roomba_trash_bag:
+      - TrashBag
   # Small enough to roll under tables and chairs like a mouse, and it never shoves mobs around
   # (SharedRoombaSystem cancels the mob-collision target side for it).
   - type: Fixtures

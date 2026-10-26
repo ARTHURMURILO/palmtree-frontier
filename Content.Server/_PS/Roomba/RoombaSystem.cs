@@ -9,6 +9,7 @@ using Content.Shared.Decals;
 using Content.Shared.FixedPoint;
 using Content.Shared.Fluids;
 using Content.Shared.Fluids.Components;
+using Content.Shared.Hands.EntitySystems;
 using Content.Shared.Humanoid;
 using Content.Shared.Interaction;
 using Content.Shared.Inventory;
@@ -16,7 +17,11 @@ using Content.Shared.Maps;
 using Content.Shared.Mobs;
 using Content.Shared.Mobs.Components;
 using Content.Shared.NPC;
+using Content.Shared.Popups;
+using Content.Shared.Storage;
+using Content.Shared.Storage.EntitySystems;
 using Robust.Shared.Audio.Systems;
+using Robust.Shared.Containers;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
@@ -50,12 +55,16 @@ public sealed class RoombaSystem : EntitySystem
     [Dependency] private readonly InventorySystem _inventory = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
     [Dependency] private readonly NPCSteeringSystem _steering = default!;
+    [Dependency] private readonly SharedContainerSystem _container = default!;
+    [Dependency] private readonly SharedHandsSystem _hands = default!;
     [Dependency] private readonly SharedPhysicsSystem _physics = default!;
     [Dependency] private readonly SharedAbsorbentSystem _absorbent = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!;
     [Dependency] private readonly SharedInteractionSystem _interaction = default!;
     [Dependency] private readonly SharedMapSystem _map = default!;
+    [Dependency] private readonly SharedPopupSystem _popup = default!;
     [Dependency] private readonly SharedSolutionContainerSystem _solutions = default!;
+    [Dependency] private readonly SharedStorageSystem _storage = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
     [Dependency] private readonly TurfSystem _turf = default!;
 
@@ -98,12 +107,15 @@ public sealed class RoombaSystem : EntitySystem
     private readonly HashSet<Entity<HumanoidAppearanceComponent>> _humanoids = new();
     private readonly HashSet<EntityUid> _obstacles = new();
     private readonly HashSet<EntityUid> _touching = new();
+    private readonly HashSet<EntityUid> _trash = new();
 
     public override void Initialize()
     {
         base.Initialize();
         SubscribeLocalEvent<RoombaComponent, MapInitEvent>(OnMapInit);
         SubscribeLocalEvent<RoombaComponent, ComponentShutdown>(OnShutdown);
+        SubscribeLocalEvent<RoombaComponent, InteractHandEvent>(OnInteractHand,
+            before: new[] { typeof(InteractionPopupSystem) });
     }
 
     private void OnMapInit(EntityUid uid, RoombaComponent roomba, MapInitEvent args)
@@ -458,6 +470,8 @@ public sealed class RoombaSystem : EntitySystem
 
         roomba.LastScrubPosition = pos;
 
+        CollectTrash(uid, roomba, grid, pos);
+
         // Puddles first (same tank and use delay as the cleanbot).
         _puddles.Clear();
         var tile = _map.TileIndicesFor(grid, gridComp, new EntityCoordinates(grid, pos));
@@ -504,6 +518,104 @@ public sealed class RoombaSystem : EntitySystem
 
         roomba.NextScrubSound = _timing.CurTime + TimeSpan.FromSeconds(roomba.ScrubSoundCooldown);
         _audio.PlayPvs(roomba.ScrubSound, uid);
+    }
+
+    /// <summary>
+    /// Vacuums up loose trash around the roomba, using the same whitelist as a trash bag's area insert.
+    /// </summary>
+    private void CollectTrash(EntityUid uid, RoombaComponent roomba, EntityUid grid, Vector2 pos)
+    {
+        if (!TryGetTrashBagStorage(uid, out var bag))
+            return;
+
+        var half = new Vector2(roomba.TrashPickupRadius);
+        _trash.Clear();
+        _lookup.GetLocalEntitiesIntersecting(grid, new Box2(pos - half, pos + half), _trash,
+            LookupFlags.Uncontained);
+
+        var picked = 0;
+        foreach (var other in _trash)
+        {
+            if (other == uid || _container.IsEntityInContainer(other))
+                continue;
+
+            if (!_storage.CanInsert(bag.Owner, other, out _, bag.Comp))
+                continue;
+
+            if (!_storage.Insert(bag.Owner, other, out _, storageComp: bag.Comp, playSound: false))
+                continue;
+
+            picked++;
+            if (picked >= roomba.TrashPickupLimit)
+                break;
+        }
+
+        if (picked > 0)
+            _audio.PlayPvs(roomba.TrashPickupSound, uid);
+    }
+
+    private bool TryGetTrashBagStorage(EntityUid uid, out Entity<StorageComponent> bag)
+    {
+        bag = default;
+
+        if (!_container.TryGetContainer(uid, RoombaComponent.TrashBagContainerId, out var container))
+            return false;
+
+        foreach (var entity in container.ContainedEntities)
+        {
+            if (TryComp(entity, out StorageComponent? storage))
+            {
+                bag = (entity, storage);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Takes the full internal trash bag and puts a fresh empty one in its place. Only retrieval is
+    /// allowed: the bag is not a normal storage interaction, so players cannot insert items into it.
+    /// </summary>
+    private void OnInteractHand(EntityUid uid, RoombaComponent roomba, InteractHandEvent args)
+    {
+        if (args.Handled
+            || !TryGetTrashBagStorage(uid, out var bag)
+            || bag.Comp.Container.ContainedEntities.Count == 0)
+        {
+            return;
+        }
+
+        if (!_hands.TryGetEmptyHand(args.User, out _))
+        {
+            _popup.PopupEntity(Loc.GetString("roomba-trash-bag-needs-hand"), uid, args.User);
+            args.Handled = true;
+            return;
+        }
+
+        if (!_container.TryGetContainer(uid, RoombaComponent.TrashBagContainerId, out var container))
+            return;
+
+        _container.Remove(bag.Owner, container, force: true);
+
+        var newBag = Spawn("TrashBag", Transform(uid).Coordinates);
+        if (!_container.Insert(newBag, container))
+        {
+            Log.Error($"Failed to insert a fresh trash bag into {ToPrettyString(uid)}.");
+            _transform.AttachToGridOrMap(newBag);
+        }
+
+        if (!_hands.TryPickupAnyHand(args.User, bag.Owner))
+        {
+            _popup.PopupEntity(Loc.GetString("roomba-trash-bag-dropped"), uid, args.User);
+        }
+        else
+        {
+            _popup.PopupEntity(Loc.GetString("roomba-trash-bag-taken"), uid, args.User);
+        }
+
+        _audio.PlayPvs(roomba.TrashPickupSound, uid);
+        args.Handled = true;
     }
 
     private void ConsumeWater(EntityUid uid, RoombaComponent roomba, int decals)

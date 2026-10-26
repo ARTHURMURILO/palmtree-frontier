@@ -1,11 +1,16 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using Content.Server.Decals;
 using Content.Server.NPC.Systems;
 using Content.Shared._PS.Roomba;
+using Content.Shared.Hands.EntitySystems;
+using Content.Shared.Interaction;
 using Content.Shared.Maps;
 using Content.Shared.Movement.Systems;
+using Content.Shared.Storage;
 using Robust.Client.GameObjects;
+using Robust.Shared.Containers;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
@@ -18,8 +23,8 @@ namespace Content.IntegrationTests.Tests._PS;
 
 /// <summary>
 /// Palmtree: the roomba drives around like a real robot vacuum - it must keep moving, never leave
-/// its grid into space, and scrub cleanable decals (semen drips, grime, crayon) it drives over while
-/// leaving decals that are not cleanable alone.
+/// its grid into space, scrub cleanable decals (semen drips, grime, crayon) it drives over while
+/// leaving decals that are not cleanable alone, and vacuum loose trash into its dustbin.
 /// </summary>
 [TestFixture]
 public sealed class RoombaTest
@@ -109,6 +114,135 @@ public sealed class RoombaTest
             var position = entMan.GetComponent<TransformComponent>(roomba).LocalPosition;
             Assert.That((position - spawnCoords.Position).Length(), Is.GreaterThan(0.5f),
                 "the roomba should have driven around");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    /// The roomba vacuums loose trash into its internal dustbin, using the trash bag whitelist, but
+    /// leaves useful items alone.
+    /// </summary>
+    [Test]
+    public async Task VacuumsUpTrashButNotTools()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+
+        var coords = testMap.GridCoords.Offset(new Vector2(0.5f, 0.5f));
+
+        EntityUid roomba = default;
+        EntityUid trash = default;
+        EntityUid crowbar = default;
+
+        await server.WaitAssertion(() =>
+        {
+            var entMan = server.ResolveDependency<IEntityManager>();
+            var npc = server.System<NPCSystem>();
+
+            roomba = entMan.SpawnEntity("MobRoomba", coords);
+            npc.WakeNPC(roomba);
+            trash = entMan.SpawnEntity("TrashBananaPeel", coords);
+            crowbar = entMan.SpawnEntity("Crowbar", coords);
+
+            // Force a scrub pass on the next tick even though the roomba has nowhere to drive yet.
+            entMan.GetComponent<RoombaComponent>(roomba).LastScrubPosition = coords.Position + new Vector2(2f, 0f);
+        });
+
+        await server.WaitRunTicks(5);
+
+        await server.WaitAssertion(() =>
+        {
+            var entMan = server.ResolveDependency<IEntityManager>();
+            var containers = server.System<SharedContainerSystem>();
+
+            Assert.That(containers.TryGetContainer(roomba, RoombaComponent.TrashBagContainerId,
+                out var bagContainer), Is.True, "the roomba should have an internal trash bag");
+
+            var bag = bagContainer.ContainedEntities.Single();
+            var storage = entMan.GetComponent<StorageComponent>(bag);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(storage.Container.ContainedEntities, Does.Contain(trash),
+                    "the roomba should vacuum up trash");
+                Assert.That(storage.Container.ContainedEntities, Does.Not.Contain(crowbar),
+                    "the roomba should not vacuum up tools");
+            });
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    /// Taking the full bag with an empty hand gives it to the player and installs a fresh empty bag.
+    /// </summary>
+    [Test]
+    public async Task SwapsFullBagForEmptyOneOnClick()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+
+        var coords = testMap.GridCoords.Offset(new Vector2(0.5f, 0.5f));
+
+        EntityUid roomba = default;
+        EntityUid player = default;
+        EntityUid fullBag = default;
+        EntityUid trash = default;
+
+        await server.WaitAssertion(() =>
+        {
+            var entMan = server.ResolveDependency<IEntityManager>();
+            var npc = server.System<NPCSystem>();
+
+            roomba = entMan.SpawnEntity("MobRoomba", coords);
+            npc.WakeNPC(roomba);
+            player = entMan.SpawnEntity("MobHuman", coords);
+            trash = entMan.SpawnEntity("TrashBananaPeel", coords);
+
+            entMan.GetComponent<RoombaComponent>(roomba).LastScrubPosition =
+                coords.Position + new Vector2(2f, 0f);
+        });
+
+        await server.WaitRunTicks(5);
+
+        await server.WaitAssertion(() =>
+        {
+            var entMan = server.ResolveDependency<IEntityManager>();
+            var containers = server.System<SharedContainerSystem>();
+
+            Assert.That(containers.TryGetContainer(roomba, RoombaComponent.TrashBagContainerId,
+                out var bagContainer), Is.True, "the roomba should have an internal trash bag");
+
+            fullBag = bagContainer.ContainedEntities.Single();
+            Assert.That(entMan.GetComponent<StorageComponent>(fullBag).Container.ContainedEntities,
+                Does.Contain(trash), "the bag should contain the collected trash");
+
+            entMan.EventBus.RaiseLocalEvent(roomba, new InteractHandEvent(player, roomba));
+        });
+
+        await server.WaitRunTicks(2);
+
+        await server.WaitAssertion(() =>
+        {
+            var entMan = server.ResolveDependency<IEntityManager>();
+            var hands = server.System<SharedHandsSystem>();
+            var containers = server.System<SharedContainerSystem>();
+
+            Assert.That(hands.EnumerateHeld(player), Does.Contain(fullBag),
+                "the player should be holding the full bag");
+            Assert.That(entMan.GetComponent<StorageComponent>(fullBag).Container.ContainedEntities,
+                Does.Contain(trash), "the full bag should keep the trash it collected");
+
+            Assert.That(containers.TryGetContainer(roomba, RoombaComponent.TrashBagContainerId,
+                out var bagContainer), Is.True, "the roomba should have a replacement bag");
+
+            var replacement = bagContainer.ContainedEntities.Single();
+            Assert.That(replacement, Is.Not.EqualTo(fullBag), "the replacement must be a new bag");
+            Assert.That(entMan.GetComponent<StorageComponent>(replacement).Container.ContainedEntities,
+                Is.Empty, "the replacement bag must be empty");
         });
 
         await pair.CleanReturnAsync();
