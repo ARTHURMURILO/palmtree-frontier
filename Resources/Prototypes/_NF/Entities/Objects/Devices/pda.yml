@@ -29,6 +29,8 @@
       - MailMetricsCartridge
       - AppraisalCartridge
       - NetProbeCartridge
+      - NanoChatCartridge # Palmtree
+      - PSBankTransferCartridge # Palmtree
 
 - type: entity
   parent: BasePDA
@@ -164,6 +166,8 @@
     - AstroNavCartridge
     - WantedListCartridge
     - LedgerCartridge
+    - NanoChatCartridge # Palmtree
+    - PSBankTransferCartridge # Palmtree
 
 - type: entity
   parent: BaseSecurityPDA
@@ -388,6 +392,8 @@
     - AstroNavCartridge
     - LedgerCartridge
     - MailMetricsCartridge
+    - NanoChatCartridge # Palmtree
+    - PSBankTransferCartridge # Palmtree
 
 - type: entity
   parent: PiratePDA
@@ -546,6 +552,8 @@
     - AstroNavCartridge
     - LedgerCartridge
     - MedTekCartridge
+    - NanoChatCartridge # Palmtree
+    - PSBankTransferCartridge # Palmtree
 
 - type: entity
   parent: BasePDA
@@ -594,3 +602,5 @@
     - BountyContractsCartridge
     - AstroNavCartridge
     - LedgerCartridge
+    - NanoChatCartridge # Palmtree
+    - PSBankTransferCartridge # Palmtree

@@ -1,0 +1,4 @@
+# used by the NanoChat card numbers
+- type: nameIdentifierGroup
+  id: NanoChat
+  maxValue: 9999

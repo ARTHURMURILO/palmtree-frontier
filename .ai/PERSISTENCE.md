@@ -7,7 +7,7 @@
 
 | Area | Tables/columns | Notes |
 |---|---|---|
-| Preferences | `Preference` + `Profile` | Profile includes `Markings` (jsonb), nullable `VoiceBark` (Palmtree voice bark, `voice_bark` column), nullable `Genitals` (Palmtree genital organ selection string, `genitals` column, migration `GenitalOrgans`), `Height`/`Width` (`height`/`width` real columns, migration `HeightWidth`) and `LegStyle` (`leg_style` text column, migration `AddLegStyle`, default `Plantigrade`); `Preference.NsfwConsent` is a nullable bool (`nsfw_consent` column, migration `NsfwConsent`; null = age gate unanswered). `CharacterConsentFreetext` is **absent here** |
+| Preferences | `Preference` + `Profile` | Profile includes `Markings` (jsonb), nullable `VoiceBark` (Palmtree voice bark, `voice_bark` column), nullable `Genitals` (Palmtree genital organ selection string, `genitals` column, migration `GenitalOrgans`), `Height`/`Width` (`height`/`width` real columns, migration `HeightWidth`) and `LegStyle` (`leg_style` text column, migration `AddLegStyle`, default `Plantigrade`); `Preference.NsfwConsent` is a nullable bool (`nsfw_consent` column, migration `NsfwConsent`; null = age gate unanswered). `CharacterConsentFreetext` is **absent here**. Palmtree bank account numbers are derived at runtime from `NetUserId` + character slot (no DB column) |
 | Admin | `Admin`, `AdminRank`, notes, bans, role bans | `LogType` numeric values are load-bearing |
 | Playtime | playtime/role time tracking | Frontier/job requirements |
 | Whitelist / Patreon | whitelist, patreon tiers | server config dependent |

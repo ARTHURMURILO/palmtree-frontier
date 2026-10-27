@@ -17,6 +17,8 @@
     storedRotation: -90
   - type: Access
   - type: IdCard
+  - type: NanoChatCard # Palmtree/DeltaV: NanoChat number lives on the ID card
+  - type: BankAccountNumber # Palmtree: SpesoFlow Pay account number
   - type: StationRecordKeyStorage
   - type: Tag
     tags:

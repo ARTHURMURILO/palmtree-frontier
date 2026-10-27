@@ -11,4 +11,11 @@ public sealed partial class BankAccountComponent : Component
     [DataField, Access(typeof(SharedBankSystem))]
     [AutoNetworkedField]
     public int Balance;
+
+    /// <summary>
+    /// Palmtree: stable account number derived from the player's user id and character slot.
+    /// Used by the SpesoFlow Pay PDA cartridge to address transfers.
+    /// </summary>
+    [DataField, AutoNetworkedField]
+    public int AccountNumber;
 }

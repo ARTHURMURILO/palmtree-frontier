@@ -1,0 +1,20 @@
+- type: entity
+  parent: BaseItem
+  id: PSBankTransferCartridge
+  name: SpesoFlow Pay cartridge
+  description: A program for sending spesos to another bank account.
+  components:
+  - type: Sprite
+    sprite: _NF/Objects/Devices/cartridge.rsi
+    state: cart-ledger
+  - type: Icon
+    sprite: _NF/Objects/Devices/cartridge.rsi
+    state: cart-ledger
+  - type: UIFragment
+    ui: !type:PSBankTransferUi
+  - type: PSBankTransferCartridge
+  - type: Cartridge
+    programName: spesoflow-pay-program-name
+    icon:
+      sprite: _NF/Interface/icons.rsi
+      state: ledger

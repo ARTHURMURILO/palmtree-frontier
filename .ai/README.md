@@ -50,13 +50,14 @@ Fork modules are folder/namespace prefixes:
 | Prefix | Origin | Used here for |
 |---|---|---|
 | `_NF` | Frontier Station (parent) | Economy/bank, shipyard, sectors, salvage, cryo, pirates |
-| `_PS` | Palmtree (this repo) | Lobby screens/music, concealable clothing backpack implant, weapons/grenades, Synth species, Hilbert's Hotel, Bluespace Dock/Ship Registrar, interaction panel, genital organs |
+| `_PS` | Palmtree (this repo) | Lobby screens/music, concealable clothing backpack implant, weapons/grenades, Synth species, Hilbert's Hotel, Bluespace Dock/Ship Registrar, interaction panel, genital organs, SpesoFlow Pay bank transfers |
 | `_Floof` | Floofstation | Marking system extensions, `ModifyUndies` (ERP toggle verbs) |
 | `_CS` | Coyote Sector | Anthromorph species, undergarments, Coyote Bayou clothes (incl. latex), undies locale |
+| `_Funkystation` | Funky Station (via Dumont) | NanoChat group chats, emoji picker and emoji prototypes |
 | `_HL` | HardLight (via Coyote) | Ported shower (prototype, construction, sprite, audio) |
 | `_DEN` | TheDen | Clicker, foot protectors, Ovinia markings/sprites |
 | `_EE` | Einstein Engines | Tajaran species (ported), carrying |
-| `_DV` | Delta-V | Vulpkanin/Harpy/Rodentia species, abilities, markings |
+| `_DV` | Delta-V | Vulpkanin/Harpy/Rodentia species, abilities, markings, NanoChat messaging |
 | `_White` | White Dream | Eastern Dragon reptilian markings |
 | `_Starlight` / `_StarLight` | Starlight | Resomi markings (note both case spellings exist) |
 | others (`_CD`, `_Corvax`, `_EstacaoPirata`, `_Goobstation`, `_Harmony`, `_Impstation`, `_NC`, `_RMC14`) | various | inherited Frontier imports |

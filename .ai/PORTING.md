@@ -936,3 +936,79 @@ here. This ports the rest of Coyote's HardLight plumbing set:
   disabled in Coyote).
 - Validation: full build, YAMLLinter `No errors found`, `Content.Tests`, integration
   (`Construction|EntityTest|_PS|TechnologyTree`) and the headless client IL check.
+
+## 28. 2026-10 PDA apps: NanoChat + SpesoFlow Pay
+
+Two PDA apps were requested: messaging and paying people remotely.
+
+### 28.1 NanoChat (messaging)
+
+- **Source**: Delta-V's current NanoChat (newer than Coyote's copy: chat editing and per-chat
+  mute) merged with Dumont/Funkystation's group chats and emoji picker. Coyote's `_DeltaV` copy
+  was the reference, but its old location/namespace was replaced by Delta-V's `_DV` layout.
+- **Code**:
+  - Shared: `Content.Shared/_DV/NanoChat/` (`NanoChatCardComponent`,
+    `SharedNanoChatSystem`), `Content.Shared/_DV/CartridgeLoader/Cartridges/NanoChat*`.
+  - Server: `Content.Server/_DV/NanoChat/NanoChatSystem.cs` (per-card number allocation,
+    PDA/card tracking, microwave wiping/scrambling) and
+    `Content.Server/_DV/CartridgeLoader/Cartridges/NanoChatCartridgeSystem.cs`.
+  - Client: `Content.Client/_DV/NanoChat/`, `Content.Client/_DV/CartridgeLoader/Cartridges/`
+    (entry, lookup, message bubble, UI fragment, new/edit chat popups) and
+    `Content.Client/_Funkystation/NanoChat/` (group/emoji popups + emoji markup tag).
+- **Content**: `NanoChatCartridge` in `_DV/Entities/Objects/Devices/cartridges.yml`,
+  `NanoChatCard` on `IDCardStandard`, the `NanoChat` name-identifier group
+  (`_DV/name_identifier_groups.yml`), `_DV` program/cartridge/bell/edit icons and the
+  `_Funkystation` emoji/group assets. Locale is in `_DV/cartridge-loader/cartridges.ftl`,
+  `_DV/nanochat/components/` and `_Funkystation/nanochat/`.
+- **Delivery**: Palmtree uses Coyote's "long distance plan" behavior - send/receive radio events
+  are still checked, but there is no station/telecomms range requirement, so ships and
+  expeditions can message the sector. The contact lookup lists every opted-in card rather than
+  only the PDA's owning station.
+- **Integration**: the cartridge is preinstalled on the base PDA and every PDA that overrides
+  `CartridgeLoader.preinstalled` (`Resources/Prototypes/Entities/Objects/Devices/pda.yml`,
+  `_NF/Entities/Objects/Devices/pda.yml`).
+- **Admin tools (Coyote)**: the `nanochatadmin` command opens an EUI message monitor
+  (`Content.Server/Administration/UI/NanoChatAdminEui.cs`,
+  `Content.Client/Administration/UI/NanoChatAdminEui.cs` + window, shared state in
+  `Content.Shared/Administration/NanoChatAdminEuiState.cs`). It lists every card by owner,
+  current player, original owner and number, then shows per-conversation message history with
+  sender usernames. Messages that claim to be from a card's owner but were sent by a different
+  account are marked `[STOLEN]`.
+- **Original-owner tracking**: `NanoChatMessage.SenderUsername` records the account that sent
+  each message, and `NanoChatCardComponent.OriginalOwnerUsername` is captured when the card is
+  inserted into a PDA or on the first message. The admin viewer compares the two for the stolen
+  marker.
+- **Not ported**: the LogProbe NanoChat scanner (it needs LogProbe UI changes that were not part
+  of this port). Normal admin chat logs still record every message.
+- **Tests**: `Content.IntegrationTests/Tests/_PS/PdaAppsTest.cs` checks that a passenger PDA has
+  both new cartridges, that ID cards get NanoChat/bank-number components and the account-number
+  derivation; `NanoChatDeliveryTest.cs` verifies a message is delivered without any station or
+  telecomms server and that the sender/original-owner usernames are recorded.
+
+### 28.2 SpesoFlow Pay (remote payments)
+
+Coyote has no payment cartridge, so this is a Palmtree-original app built on Frontier's existing
+profile-backed bank (as agreed with the maintainer).
+
+- **Prototype**: `PSBankTransferCartridge` (`Resources/Prototypes/_PS/Entities/Objects/Devices/
+  cartridges.yml`), preinstalled alongside NanoChat on the same PDA lists. It is the companion app
+  to Frontier's read-only `LedgerCartridge` ("SpesoFlow Lite").
+- **Account numbers**: `BankAccountNumberComponent` (`Content.Shared/_PS/Bank`) is added to
+  `IDCardStandard`; `PSBankSystem` derives a stable 9-digit number from the player's `NetUserId`
+  and selected character slot. No DB migration or new profile field is needed. The number is
+  copied to `BankAccountComponent.AccountNumber` and to the carried ID card on spawn/reconnect.
+- **Transfer**: `PSBankSystem.TryTransfer` finds another online player by account number and uses
+  `BankSystem.TryBankWithdraw`/`TryBankDeposit`, refunding the sender if the deposit fails. Both
+  ends must be online because Frontier's balances live in loaded character profiles.
+- **UI**: `Content.Client/_PS/CartridgeLoader/Cartridges/PSBankTransferUi*` shows the local
+  account number, balance, target account and amount; results are localized in
+  `Resources/Locale/en-US/_PS/cartridge-loader/spesoflow-pay.ftl`. The server applies a one-second
+  cooldown and plays the cargo ping/deny sounds.
+- **Security/limits**: transfers require the sender's active session, reject self-transfers,
+  validate the amount server-side, and log successful transfers with `LogType.ATMUsage`. The
+  number is not a secret and grants no access without the owner's live session.
+- **Not included**: offline transfers, fees, PINs, and a separate bank/economy system. Those
+  belong to Dumont's `NanoBank` or Onyx's `BankCartridge`, which are built on their own economy
+  managers and were deliberately not ported.
+- Validation: full solution build, rebuilt `Content.YAMLLinter` (`No errors found`), `Content.Tests`,
+  `_PS|EntityTest|CharacterCreationTest` integration tests and the headless client IL check.
