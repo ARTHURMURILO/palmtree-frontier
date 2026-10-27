@@ -1543,3 +1543,17 @@ Entries:
   time: '2026-10-27T22:44:10.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/b9d8a51f22220d13430c0519fcde7d758fb48b78
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Fultons can now be attached to crates and downed mobs.
+    - type: Tweak
+      message: >-
+        Fultoned crates close automatically and cannot be opened until
+        extraction.
+    - type: Fix
+      message: Fultoned crates now carry their contents with them.
+  id: 90102
+  time: '2026-10-27T23:25:57.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/9872fd650ea8b23b3b3b82515358c6318fd4b39b
