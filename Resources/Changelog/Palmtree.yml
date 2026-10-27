@@ -1493,3 +1493,13 @@ Entries:
   time: '2026-10-26T01:26:33.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/f9a23eb1a96a8cfe5888740f87bc9f807324a92a
+- author: xTheLifex
+  changes:
+    - type: Tweak
+      message: >-
+        The Starjunk 95 record is now found in salvage wrecks instead of
+        spawning in every jukebox.
+  id: 90098
+  time: '2026-10-27T02:19:00.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/e191522e8ff4c3f3b7e436514121be84ce0373a0
