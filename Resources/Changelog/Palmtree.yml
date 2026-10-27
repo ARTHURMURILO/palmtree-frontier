@@ -1557,3 +1557,13 @@ Entries:
   time: '2026-10-27T23:25:57.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/9872fd650ea8b23b3b3b82515358c6318fd4b39b
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        Figurines and other items can once again be placed on battlemaps and
+        board games.
+  id: 90103
+  time: '2026-10-27T23:46:06.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/d8a5889263d1484f40670c0dbaed06356f0dde1b
