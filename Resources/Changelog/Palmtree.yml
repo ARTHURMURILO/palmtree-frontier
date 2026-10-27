@@ -1521,3 +1521,17 @@ Entries:
   time: '2026-10-27T02:20:20.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/0e0ba4e7a11f870f62a24a92d744f3f369020514
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        Subtle and subtle LOOC chat no longer reach admin ghosts or ghosts with
+        ghost hearing disabled.
+    - type: Fix
+      message: >-
+        Fixed a server startup crash caused by the Starjunk 95 jukebox record
+        injection.
+  id: 90100
+  time: '2026-10-27T22:32:12.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/e5aa4b5f09c1bc389cbf0e6bd5e995a4e27690ca
