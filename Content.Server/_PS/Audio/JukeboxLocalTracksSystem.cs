@@ -1,3 +1,5 @@
+using Content.Server.Spawners.Components;
+using Content.Server.Spawners.EntitySystems;
 using Content.Server.Storage.EntitySystems;
 using Content.Shared.Audio.Jukebox;
 using Content.Shared.Storage;
@@ -7,14 +9,15 @@ using Robust.Shared.Prototypes;
 namespace Content.Server._PS.Audio;
 
 /// <summary>
-/// Injects the Palmtree jukebox record into jukeboxes when the local track prototypes exist.
-/// The record, its jukebox definitions and the audio live in gitignored folders because they
-/// contain copyrighted music, so on a clean checkout the prototype simply is not indexed and
-/// this system does nothing.
+/// Handles the Palmtree jukebox records that live in gitignored folders.
+/// The Palm Record is injected into every jukebox, while the Starjunk record is added to the
+/// dungeon record spawner at runtime so clean checkouts stay free of copyrighted audio paths.
 /// </summary>
 public sealed class JukeboxLocalTracksSystem : EntitySystem
 {
-    private const string RecordPrototype = "PalmtreeRecord";
+    private const string DefaultRecordPrototype = "PalmtreeRecord";
+    private const string DungeonRecordPrototype = "StarjunkRecord";
+    private const string DungeonRecordSpawner = "NFJukeboxRecordSpawner";
 
     [Dependency] private readonly IPrototypeManager _prototypes = default!;
     [Dependency] private readonly StorageSystem _storage = default!;
@@ -24,25 +27,52 @@ public sealed class JukeboxLocalTracksSystem : EntitySystem
         base.Initialize();
 
         SubscribeLocalEvent<JukeboxComponent, MapInitEvent>(OnJukeboxMapInit);
+        SubscribeLocalEvent<RandomSpawnerComponent, MapInitEvent>(
+            OnRecordSpawnerMapInit,
+            before: new[] { typeof(ConditionalSpawnerSystem) });
     }
 
     private void OnJukeboxMapInit(Entity<JukeboxComponent> ent, ref MapInitEvent args)
     {
-        if (!_prototypes.HasIndex<EntityPrototype>(RecordPrototype))
+        if (!_prototypes.HasIndex<EntityPrototype>(DefaultRecordPrototype))
             return;
 
         if (!TryComp<StorageComponent>(ent, out var storage))
             return;
 
-        // Maps saved with the record already inside should not get a second one.
-        foreach (var contained in storage.Container.ContainedEntities)
+        if (ContainsRecord(storage, DefaultRecordPrototype))
+            return;
+
+        var record = Spawn(DefaultRecordPrototype, Transform(ent).Coordinates);
+        if (!_storage.Insert(ent, record, out _, playSound: false))
+            QueueDel(record);
+    }
+
+    private void OnRecordSpawnerMapInit(Entity<RandomSpawnerComponent> ent, ref MapInitEvent args)
+    {
+        if (MetaData(ent).EntityPrototype?.ID != DungeonRecordSpawner)
+            return;
+
+        if (!_prototypes.HasIndex<EntityPrototype>(DungeonRecordPrototype))
+            return;
+
+        foreach (var prototype in ent.Comp.Prototypes)
         {
-            if (MetaData(contained).EntityPrototype?.ID == RecordPrototype)
+            if (prototype.Id == DungeonRecordPrototype)
                 return;
         }
 
-        var record = Spawn(RecordPrototype, Transform(ent).Coordinates);
-        if (!_storage.Insert(ent, record, out _, playSound: false))
-            QueueDel(record);
+        ent.Comp.Prototypes.Add(DungeonRecordPrototype);
+    }
+
+    private bool ContainsRecord(StorageComponent storage, string recordPrototype)
+    {
+        foreach (var contained in storage.Container.ContainedEntities)
+        {
+            if (MetaData(contained).EntityPrototype?.ID == recordPrototype)
+                return true;
+        }
+
+        return false;
     }
 }

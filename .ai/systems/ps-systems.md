@@ -975,10 +975,13 @@ Copyrighted jukebox tracks live outside the git history. `Resources/Prototypes/_
 `Resources/Audio/_PS/Jukebox/` are gitignored and must be uploaded to the live server separately; a
 local `attributions.yml` in the audio folder records the YouTube source of every file.
 
-- Track definitions: `Resources/Prototypes/_PS/Jukebox/Standard.yml`; the record prototype
-  (`PalmtreeRecord`) is `Resources/Prototypes/_PS/Jukebox/records.yml`.
-- `Content.Server/_PS/Audio/JukeboxLocalTracksSystem.cs` injects the record into every jukebox on
-  map init when the prototype is present, so clean checkouts and CI never reference missing audio.
+- Track definitions: `Resources/Prototypes/_PS/Jukebox/Standard.yml`; the record prototypes
+  (`PalmtreeRecord`, shown as "Palm Record", and `StarjunkRecord`) are
+  `Resources/Prototypes/_PS/Jukebox/records.yml`.
+- `Content.Server/_PS/Audio/JukeboxLocalTracksSystem.cs` injects `PalmtreeRecord` into every
+  jukebox on map init and adds `StarjunkRecord` to the `NFJukeboxRecordSpawner` dungeon loot pool,
+  but only when the local prototypes are present, so clean checkouts and CI never reference missing
+  audio.
 - Audio is downloaded with `dlx`, converted with `convertall` and re-encoded to mono Vorbis
   (`-ac 1`), matching the other jukebox folders.
 
