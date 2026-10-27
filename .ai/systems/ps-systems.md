@@ -968,6 +968,15 @@ Small features that did not get their own section yet:
   Expedition/AME ship, map `Resources/Maps/_CS/Shuttles/Expedition/salto.yml`, vessel prototype
   `Resources/Prototypes/_CS/Shipyard/Expedition/salto.yml`. Details and adaptations (dropped
   `CompanionInterview`, `[ 0, 0 ]` job slots): `.ai/PORTING.md` §25.
+- **Battlemap/tabletop placement** (2026-10): `game.tabletop_place` defaults on. The old
+  `OnInteractUsing` checked the active item on the *board* instead of the user, so placement never
+  ran; it now uses `InteractUsingEvent.Used`. Placed items become a sanitized
+  `PalmtreeTabletopHologram` (`Resources/Prototypes/_PS/Entities/Objects/Fun/Tabletop/`) instead of
+  a copy of the item prototype; the source prototype id travels in
+  `TabletopItemVisuals.Prototype` and the client copies that prototype's `SpriteComponent` (never
+  its components). Cap: 50 pieces per board; placement/removal are admin-logged. Test:
+  `Content.IntegrationTests/Tests/_PS/TabletopPlacementTest.cs`. Upstream tracking: space-wizards
+  issue #34811 and open (conflicting) rewrite PR #44873.
 
 ## Jukebox tracks (2026-10)
 

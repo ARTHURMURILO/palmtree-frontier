@@ -14,6 +14,7 @@ using Robust.Client.UserInterface.CustomControls;
 using Robust.Shared.Input;
 using Robust.Shared.Input.Binding;
 using Robust.Shared.Map;
+using Robust.Shared.Prototypes;
 using Robust.Shared.Timing;
 using static Robust.Shared.Input.Binding.PointerInputCmdHandler;
 
@@ -29,6 +30,7 @@ namespace Content.Client.Tabletop
         [Dependency] private readonly AppearanceSystem _appearance = default!;
         [Dependency] private readonly SharedTransformSystem _transformSystem = default!;
         [Dependency] private readonly SpriteSystem _sprite = default!;
+        [Dependency] private readonly IPrototypeManager _prototypeManager = default!; // Palmtree
 
         // Time in seconds to wait until sending the location of a dragged entity to the server again
         private const float Delay = 1f / 10; // 10 Hz
@@ -38,6 +40,9 @@ namespace Content.Client.Tabletop
         private ScalingViewport? _viewport; // Viewport currently being used
         private DefaultWindow? _window; // Current open tabletop window (only allow one at a time)
         private EntityUid? _table; // The table entity of the currently open game session
+
+        // Palmtree: last source prototype whose sprite we copied onto a tabletop hologram.
+        private readonly Dictionary<EntityUid, string> _copiedPrototypes = new();
 
         public override void Initialize()
         {
@@ -56,6 +61,8 @@ namespace Content.Client.Tabletop
 
         private void HandleDraggableRemoved(EntityUid uid, TabletopDraggableComponent component, ComponentRemove args)
         {
+            _copiedPrototypes.Remove(uid);
+
             if (_draggedEntity == uid)
                 StopDragging(false);
         }
@@ -220,6 +227,21 @@ namespace Content.Client.Tabletop
         {
             if (args.Sprite == null)
                 return;
+
+            // Palmtree: placed pieces are sanitized dummy entities. Mirror the source item's
+            // prototype sprite instead of spawning a full copy of the item on the tabletop map.
+            if (_appearance.TryGetData<string>(uid, TabletopItemVisuals.Prototype, out var protoId, args.Component)
+                && (!_copiedPrototypes.TryGetValue(uid, out var copied) || copied != protoId))
+            {
+                _copiedPrototypes[uid] = protoId;
+
+                if (_prototypeManager.TryIndex<EntityPrototype>(protoId, out var proto)
+                    && proto.TryGetComponent(out SpriteComponent? protoSprite, Factory))
+                {
+                    args.Sprite.CopyFrom(protoSprite);
+                    args.Sprite.NoRotation = true;
+                }
+            }
 
             // TODO: maybe this can work more nicely, by maybe only having to set the item to "being dragged", and have
             //  the appearance handle the rest
