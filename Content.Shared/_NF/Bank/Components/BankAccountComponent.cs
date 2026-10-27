@@ -14,7 +14,7 @@ public sealed partial class BankAccountComponent : Component
 
     /// <summary>
     /// Palmtree: stable account number derived from the player's user id and character slot.
-    /// Used by the SpesoFlow Pay PDA cartridge to address transfers.
+    /// Used by the RIX PDA cartridge to address transfers.
     /// </summary>
     [DataField, AutoNetworkedField]
     public int AccountNumber;

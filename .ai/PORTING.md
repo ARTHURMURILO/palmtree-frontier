@@ -937,7 +937,7 @@ here. This ports the rest of Coyote's HardLight plumbing set:
 - Validation: full build, YAMLLinter `No errors found`, `Content.Tests`, integration
   (`Construction|EntityTest|_PS|TechnologyTree`) and the headless client IL check.
 
-## 28. 2026-10 PDA apps: NanoChat + SpesoFlow Pay
+## 28. 2026-10 PDA apps: NanoChat + RIX (Rouble PIX)
 
 Two PDA apps were requested: messaging and paying people remotely.
 
@@ -985,7 +985,7 @@ Two PDA apps were requested: messaging and paying people remotely.
   derivation; `NanoChatDeliveryTest.cs` verifies a message is delivered without any station or
   telecomms server and that the sender/original-owner usernames are recorded.
 
-### 28.2 SpesoFlow Pay (remote payments)
+### 28.2 RIX (Rouble PIX, remote payments)
 
 Coyote has no payment cartridge, so this is a Palmtree-original app built on Frontier's existing
 profile-backed bank (as agreed with the maintainer).
@@ -1002,7 +1002,7 @@ profile-backed bank (as agreed with the maintainer).
   ends must be online because Frontier's balances live in loaded character profiles.
 - **UI**: `Content.Client/_PS/CartridgeLoader/Cartridges/PSBankTransferUi*` shows the local
   account number, balance, target account and amount; results are localized in
-  `Resources/Locale/en-US/_PS/cartridge-loader/spesoflow-pay.ftl`. The server applies a one-second
+  `Resources/Locale/en-US/_PS/cartridge-loader/rix.ftl`. The server applies a one-second
   cooldown and plays the cargo ping/deny sounds.
 - **Security/limits**: transfers require the sender's active session, reject self-transfers,
   validate the amount server-side, and log successful transfers with `LogType.ATMUsage`. The

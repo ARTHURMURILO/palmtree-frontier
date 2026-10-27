@@ -1515,7 +1515,7 @@ Entries:
         detection.
     - type: Add
       message: >-
-        SpesoFlow Pay lets you send space roubles to another player's bank
+        RIX (Rouble PIX) lets you send space roubles to another player's bank
         account from your PDA.
   id: 90099
   time: '2026-10-27T02:20:20.0000000+00:00'

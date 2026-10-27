@@ -27,7 +27,7 @@ public sealed partial class PSBankTransferUiFragment : BoxContainer
     public void UpdateState(PSBankTransferUiState state)
     {
         AccountLabel.Text = $"#{state.AccountNumber:D9}";
-        BalanceLabel.Text = Loc.GetString("spesoflow-pay-balance", ("balance", BankSystemExtensions.ToSpesoString(state.Balance)));
+        BalanceLabel.Text = Loc.GetString("rix-balance", ("balance", BankSystemExtensions.ToSpesoString(state.Balance)));
         ResultLabel.Text = state.Result;
         ResultLabel.Modulate = state.Success ? Color.FromHex("#33ff33") : Color.FromHex("#cc3333");
         ResultLabel.Visible = !string.IsNullOrEmpty(state.Result);

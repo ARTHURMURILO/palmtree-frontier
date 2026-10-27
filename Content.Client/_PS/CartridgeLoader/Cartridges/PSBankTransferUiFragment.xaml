@@ -17,11 +17,13 @@
                              VerticalAlignment="Center"
                              MinSize="32 32"
                              Margin="8 0 0 0" />
-                <Label Text="{Loc spesoflow-pay-title}"
-                       StyleClasses="LabelHeading"
-                       HorizontalExpand="True"
-                       Margin="8 0"
-                       VerticalAlignment="Center" />
+                <BoxContainer Orientation="Vertical"
+                              HorizontalExpand="True"
+                              Margin="8 0"
+                              VerticalAlignment="Center">
+                    <Label Text="{Loc rix-title}" StyleClasses="LabelHeading" />
+                    <Label Text="{Loc rix-subtitle}" StyleClasses="LabelSubText" />
+                </BoxContainer>
                 <Label Name="AccountLabel"
                        Text="#000000000"
                        StyleClasses="LabelSubText"
@@ -32,30 +34,30 @@
 
         <PanelContainer Margin="0 6 0 0">
             <BoxContainer Orientation="Vertical" Margin="8">
-                <Label Text="{Loc spesoflow-pay-balance-label}" />
+                <Label Text="{Loc rix-balance-label}" />
                 <RichTextLabel Name="BalanceLabel" Text="..." />
             </BoxContainer>
         </PanelContainer>
 
         <PanelContainer Margin="0 6 0 0">
             <BoxContainer Orientation="Vertical" Margin="8">
-                <Label Text="{Loc spesoflow-pay-transfer-label}" StyleClasses="LabelHeading" />
+                <Label Text="{Loc rix-transfer-label}" StyleClasses="LabelHeading" />
                 <BoxContainer Orientation="Horizontal" HorizontalExpand="True" SeparationOverride="8" Margin="0 4 0 0">
-                    <Label Text="{Loc spesoflow-pay-target-label}" VerticalAlignment="Center" />
+                    <Label Text="{Loc rix-target-label}" VerticalAlignment="Center" />
                     <LineEdit Name="TargetInput"
-                              PlaceHolder="{Loc spesoflow-pay-target-placeholder}"
+                              PlaceHolder="{Loc rix-target-placeholder}"
                               HorizontalExpand="True"
                               MinWidth="120" />
                 </BoxContainer>
                 <BoxContainer Orientation="Horizontal" HorizontalExpand="True" SeparationOverride="8" Margin="0 4 0 0">
-                    <Label Text="{Loc spesoflow-pay-amount-label}" VerticalAlignment="Center" />
+                    <Label Text="{Loc rix-amount-label}" VerticalAlignment="Center" />
                     <LineEdit Name="AmountInput"
-                              PlaceHolder="{Loc spesoflow-pay-amount-placeholder}"
+                              PlaceHolder="{Loc rix-amount-placeholder}"
                               HorizontalExpand="True"
                               MinWidth="120" />
                 </BoxContainer>
                 <Button Name="SendButton"
-                        Text="{Loc spesoflow-pay-send}"
+                        Text="{Loc rix-send}"
                         Disabled="True"
                         HorizontalAlignment="Right"
                         MinSize="100 32"

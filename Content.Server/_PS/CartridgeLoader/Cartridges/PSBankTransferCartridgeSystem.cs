@@ -12,7 +12,7 @@ using Robust.Shared.Timing;
 namespace Content.Server._PS.CartridgeLoader.Cartridges;
 
 /// <summary>
-/// Palmtree: the SpesoFlow Pay PDA cartridge. It lets a player transfer spesos from their
+/// Palmtree: the RIX PDA cartridge. It lets a player transfer space roubles from their
 /// Frontier bank account to another online player by account number, without visiting an ATM.
 /// </summary>
 public sealed class PSBankTransferCartridgeSystem : EntitySystem
@@ -85,7 +85,7 @@ public sealed class PSBankTransferCartridgeSystem : EntitySystem
     private void SetResult(Entity<PSBankTransferCartridgeComponent> ent, string key, bool success, params (string, object)[] args)
     {
         ent.Comp.Success = success;
-        ent.Comp.Result = Loc.GetString($"spesoflow-pay-result-{key}", args);
+        ent.Comp.Result = Loc.GetString($"rix-result-{key}", args);
     }
 
     private EntityUid FindHolder(EntityUid loader)

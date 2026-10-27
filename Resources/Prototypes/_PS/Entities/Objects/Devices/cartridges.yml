@@ -1,8 +1,8 @@
 - type: entity
   parent: BaseItem
   id: PSBankTransferCartridge
-  name: SpesoFlow Pay cartridge
-  description: A program for sending spesos to another bank account.
+  name: RIX cartridge
+  description: A Rouble PIX program for sending space roubles to another bank account.
   components:
   - type: Sprite
     sprite: _NF/Objects/Devices/cartridge.rsi
@@ -14,7 +14,7 @@
     ui: !type:PSBankTransferUi
   - type: PSBankTransferCartridge
   - type: Cartridge
-    programName: spesoflow-pay-program-name
+    programName: rix-program-name
     icon:
       sprite: _NF/Interface/icons.rsi
       state: ledger

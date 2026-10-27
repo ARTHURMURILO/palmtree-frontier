@@ -3,7 +3,7 @@ using Robust.Shared.GameStates;
 namespace Content.Server._PS.CartridgeLoader.Cartridges;
 
 /// <summary>
-/// Palmtree: server-side state for the SpesoFlow Pay cartridge.
+/// Palmtree: server-side state for the RIX cartridge.
 /// </summary>
 [RegisterComponent, Access(typeof(PSBankTransferCartridgeSystem))]
 public sealed partial class PSBankTransferCartridgeComponent : Component

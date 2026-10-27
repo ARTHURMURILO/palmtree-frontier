@@ -50,7 +50,7 @@ Fork modules are folder/namespace prefixes:
 | Prefix | Origin | Used here for |
 |---|---|---|
 | `_NF` | Frontier Station (parent) | Economy/bank, shipyard, sectors, salvage, cryo, pirates |
-| `_PS` | Palmtree (this repo) | Lobby screens/music, concealable clothing backpack implant, weapons/grenades, Synth species, Hilbert's Hotel, Bluespace Dock/Ship Registrar, interaction panel, genital organs, SpesoFlow Pay bank transfers |
+| `_PS` | Palmtree (this repo) | Lobby screens/music, concealable clothing backpack implant, weapons/grenades, Synth species, Hilbert's Hotel, Bluespace Dock/Ship Registrar, interaction panel, genital organs, RIX (Rouble PIX) bank transfers |
 | `_Floof` | Floofstation | Marking system extensions, `ModifyUndies` (ERP toggle verbs) |
 | `_CS` | Coyote Sector | Anthromorph species, undergarments, Coyote Bayou clothes (incl. latex), undies locale |
 | `_Funkystation` | Funky Station (via Dumont) | NanoChat group chats, emoji picker and emoji prototypes |

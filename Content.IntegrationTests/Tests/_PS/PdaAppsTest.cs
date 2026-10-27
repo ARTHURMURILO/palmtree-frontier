@@ -22,7 +22,7 @@ namespace Content.IntegrationTests.Tests._PS;
 public sealed class PdaAppsTest
 {
     [Test]
-    public async Task PdasInstallNanoChatAndSpesoFlowPay()
+    public async Task PdasInstallNanoChatAndRix()
     {
         await using var pair = await PoolManager.GetServerClient(new PoolSettings { Connected = true });
         var server = pair.Server;
@@ -39,7 +39,7 @@ public sealed class PdaAppsTest
                 Assert.That(programs.Any(uid => entMan.HasComponent<NanoChatCartridgeComponent>(uid)),
                     Is.True, "The NanoChat cartridge should be preinstalled on a passenger PDA.");
                 Assert.That(programs.Any(uid => entMan.HasComponent<PSBankTransferCartridgeComponent>(uid)),
-                    Is.True, "The SpesoFlow Pay cartridge should be preinstalled on a passenger PDA.");
+                    Is.True, "The RIX cartridge should be preinstalled on a passenger PDA.");
             });
 
             var card = entMan.SpawnEntity("PassengerIDCard", map.GridCoords);

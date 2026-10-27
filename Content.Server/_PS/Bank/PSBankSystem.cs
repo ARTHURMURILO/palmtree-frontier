@@ -15,7 +15,7 @@ using Robust.Shared.Player;
 namespace Content.Server._PS.Bank;
 
 /// <summary>
-/// Palmtree: stable bank account numbers and the transfer primitive used by SpesoFlow Pay.
+/// Palmtree: stable bank account numbers and the transfer primitive used by RIX.
 /// The number is derived from the player's user id and character slot; it is not stored in the DB,
 /// so it survives round restarts but not deleting/recreating the character slot.
 /// </summary>
@@ -131,7 +131,7 @@ public sealed class PSBankSystem : EntitySystem
     }
 
     /// <summary>
-    /// Transfers spesos between two spawned players. Both ends must be online with loaded prefs,
+    /// Transfers space roubles between two spawned players. Both ends must be online with loaded prefs,
     /// which is what Frontier's profile-backed bank requires.
     /// </summary>
     public bool TryTransfer(EntityUid sender, int targetAccount, int amount, out string error)
@@ -198,7 +198,7 @@ public sealed class PSBankSystem : EntitySystem
 
         _adminLogger.Add(LogType.ATMUsage,
             LogImpact.Low,
-            $"{ToPrettyString(sender):actor} transferred {amount} spesos to account #{targetAccount} ({ToPrettyString(recipientUid)})");
+            $"{ToPrettyString(sender):actor} transferred {amount} space roubles to account #{targetAccount} ({ToPrettyString(recipientUid)})");
 
         return true;
     }
