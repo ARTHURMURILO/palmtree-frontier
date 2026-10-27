@@ -144,6 +144,13 @@ This engine revision (v267.3.0) differs from commonly documented SS14 APIs:
 `RaiseLocalEvent<T>(msg)` never calls `SubscribeLocalEvent<TComp,TEvent>` handlers. If a handler
 "doesn't fire", check the raise overload and whether the event is `[ComponentEvent]`.
 
+Directed component subscriptions are unique per `(component, event)` across **all** systems: a second
+`SubscribeLocalEvent<TComp, TEvent>` throws `Duplicate Subscriptions` during startup (this crashed
+the server when `JukeboxLocalTracksSystem` also subscribed to `RandomSpawnerComponent/MapInitEvent`,
+which `ConditionalSpawnerSystem` already owned). Subscribe on a different component (e.g.
+`MetaDataComponent`), use an earlier lifecycle event such as `ComponentInit`, or merge the handler.
+Ordering (`before`/`after`) does **not** make a duplicate legal.
+
 ## 9. Subscription lock
 
 Subscribe only in `Initialize()`. Subscribing later throws "Subscription locked." after startup. Use

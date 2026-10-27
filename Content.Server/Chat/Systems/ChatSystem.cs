@@ -628,8 +628,17 @@ public sealed partial class ChatSystem : SharedChatSystem
                 _adminLogger.Add(LogType.Chat, LogImpact.Low, $"Emote from {ToPrettyString(source):user}: {action}");
     }
 
+    // Palmtree/Floof: subtle chat is proximity-only and must never reach ghosts. Checking the
+    // component (not just ICChatRecipientData.Observer) also catches admin ghosts, which
+    // MessageRangeCheck's NoGhosts admin exemption would otherwise let through, and ghosts that
+    // toggled their ghost hearing off (they look like normal listeners to GetRecipients).
+    private bool IsGhostListener(ICommonSession session)
+    {
+        return session.AttachedEntity is { Valid: true } attached && HasComp<GhostComponent>(attached);
+    }
+
     // Palmtree/Floof: subtle emote, ported from Coyote. Only players right next to the source can
-    // see it, walls block it, and ghosts never receive it (ChatTransmitRange.NoGhosts).
+    // see it, walls block it, and ghosts never receive it (even admin ghosts).
     private void SendEntitySubtle(
         EntityUid source,
         string action,
@@ -653,6 +662,9 @@ public sealed partial class ChatSystem : SharedChatSystem
 
         foreach (var (session, data) in GetRecipients(source, SubtleRange, blockedByOcclusion: !SubtleGoesThroughWalls))
         {
+            if (data.Observer || IsGhostListener(session))
+                continue;
+
             var entRange = MessageRangeCheck(session, data, range);
             if (entRange == MessageRangeCheckResult.Disallowed)
                 continue;
@@ -672,7 +684,8 @@ public sealed partial class ChatSystem : SharedChatSystem
         }
     }
 
-    // Palmtree/Floof: subtle LOOC, ported from Coyote. Range- and wall-limited, never sent to ghosts.
+    // Palmtree/Floof: subtle LOOC, ported from Coyote. Range- and wall-limited, never sent to ghosts
+    // (including admin ghosts and ghosts with ghost hearing toggled off).
     private void SendSubtleLOOC(EntityUid source, ICommonSession player, string message, bool hideChat)
     {
         var name = FormattedMessage.EscapeText(Identity.Name(source, EntityManager));
@@ -693,6 +706,9 @@ public sealed partial class ChatSystem : SharedChatSystem
 
         foreach (var (session, data) in GetRecipients(source, SubtleLOOCRange, blockedByOcclusion: !SubtleLOOCGoesThroughWalls))
         {
+            if (data.Observer || IsGhostListener(session))
+                continue;
+
             if (MessageRangeCheck(session, data, ChatTransmitRange.NoGhosts) == MessageRangeCheckResult.Disallowed)
                 continue;
 

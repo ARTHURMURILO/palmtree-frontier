@@ -1,5 +1,4 @@
 using Content.Server.Spawners.Components;
-using Content.Server.Spawners.EntitySystems;
 using Content.Server.Storage.EntitySystems;
 using Content.Shared.Audio.Jukebox;
 using Content.Shared.Storage;
@@ -27,9 +26,11 @@ public sealed class JukeboxLocalTracksSystem : EntitySystem
         base.Initialize();
 
         SubscribeLocalEvent<JukeboxComponent, MapInitEvent>(OnJukeboxMapInit);
-        SubscribeLocalEvent<RandomSpawnerComponent, MapInitEvent>(
-            OnRecordSpawnerMapInit,
-            before: new[] { typeof(ConditionalSpawnerSystem) });
+        // Palmtree: use ComponentInit, not MapInit. ConditionalSpawnerSystem already owns the
+        // RandomSpawnerComponent/MapInitEvent subscription and this event bus allows only one
+        // directed subscription per component/event pair (a second one crashes server startup).
+        // ComponentInit runs before map init, so the loot pool is ready before the spawner rolls.
+        SubscribeLocalEvent<RandomSpawnerComponent, ComponentInit>(OnRecordSpawnerInit);
     }
 
     private void OnJukeboxMapInit(Entity<JukeboxComponent> ent, ref MapInitEvent args)
@@ -48,7 +49,7 @@ public sealed class JukeboxLocalTracksSystem : EntitySystem
             QueueDel(record);
     }
 
-    private void OnRecordSpawnerMapInit(Entity<RandomSpawnerComponent> ent, ref MapInitEvent args)
+    private void OnRecordSpawnerInit(Entity<RandomSpawnerComponent> ent, ref ComponentInit args)
     {
         if (MetaData(ent).EntityPrototype?.ID != DungeonRecordSpawner)
             return;
