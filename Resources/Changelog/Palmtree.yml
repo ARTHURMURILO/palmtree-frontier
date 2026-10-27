@@ -1503,3 +1503,21 @@ Entries:
   time: '2026-10-27T02:19:00.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/e191522e8ff4c3f3b7e436514121be84ce0373a0
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: >-
+        NanoChat is now preinstalled on PDAs, with contacts, group chats, emoji,
+        chat editing and per-chat mute.
+    - type: Add
+      message: >-
+        NanoChat admin viewer (`nanochatadmin`) and stolen-PDA original-owner
+        detection.
+    - type: Add
+      message: >-
+        SpesoFlow Pay lets you send space roubles to another player's bank
+        account from your PDA.
+  id: 90099
+  time: '2026-10-27T02:20:20.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/0e0ba4e7a11f870f62a24a92d744f3f369020514
