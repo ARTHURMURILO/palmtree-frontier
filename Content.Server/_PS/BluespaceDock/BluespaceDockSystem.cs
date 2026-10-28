@@ -17,6 +17,7 @@ using Content.Server.DeviceLinking.Components;
 using Content.Server.DeviceLinking.Systems;
 using Content.Server.DeviceNetwork.Systems;
 using Content.Server.GameTicking;
+using Content.Server.Station.Components;
 using Content.Server.StationEvents.Components;
 using Content.Server.StationRecords;
 using Content.Server.StationRecords.Systems;
@@ -1672,6 +1673,19 @@ public sealed class BluespaceDockSystem : EntitySystem
             return true;
         }
 
+        // A ship file cannot carry its station, but a shipyard vessel's grid keeps the
+        // BecomesStation id from the map it was built from. Recover the vessel identity (and with
+        // it the station's job slots) when an orphaned file is restored. Hand-built ships either
+        // have no BecomesStation or an id that is not a vessel/game-map pair, so they fall through.
+        if (TryComp<BecomesStationComponent>(shuttleUid, out var becomes)
+            && _prototype.TryIndex<VesselPrototype>(becomes.Id, out var vesselById)
+            && _prototype.TryIndex<GameMapPrototype>(becomes.Id, out var vesselMap)
+            && vesselMap.Stations.ContainsKey(becomes.Id))
+        {
+            info = new BluespaceDockVesselInfo(new ProtoId<VesselPrototype>(becomes.Id), vesselById.Group.ToString(), vesselById.Name);
+            return true;
+        }
+
         return false;
     }
 
@@ -3035,12 +3049,19 @@ public sealed class BluespaceDockSystem : EntitySystem
                 : entry.Name;
             var displayName = ShipNameHelper.BuildFullName(baseName, entry.Suffix);
 
-            var stationConfig = GetShipStationConfig(entry.Vessel);
+            // Orphan restores written before vessel recovery was added have Vessel=null even
+            // though the file still names its shipyard map in BecomesStation. Recover it here so
+            // an already-restored ship also gets its station's job slots back.
+            var vessel = entry.Vessel;
+            if (vessel == null && TryGetVesselInfo(grid, out var recoveredVessel))
+                vessel = recoveredVessel.Vessel;
+
+            var stationConfig = GetShipStationConfig(vessel);
             var shipStation = _station.InitializeNewStation(stationConfig, new List<EntityUid> { grid });
             _station.RenameStation(shipStation, displayName, loud: false);
             _metaData.SetEntityName(grid, displayName);
 
-            if (entry.Vessel is { } vesselId && _prototype.HasIndex<VesselPrototype>(vesselId))
+            if (vessel is { } vesselId && _prototype.HasIndex<VesselPrototype>(vesselId))
             {
                 var extra = EnsureComp<ExtraShuttleInformationComponent>(shipStation);
                 extra.Vessel = vesselId;
@@ -3064,7 +3085,7 @@ public sealed class BluespaceDockSystem : EntitySystem
             // A ship with no vessel prototype (an admin-restored orphan, for instance) has nothing
             // for the dock's civilian check to look at: give it the registered-vessel marker so it
             // counts as a civilian ship and can be stored again.
-            if (entry.Vessel == null)
+            if (vessel == null)
             {
                 var marker = EnsureComp<RegisteredVesselComponent>(grid);
                 if (string.IsNullOrEmpty(marker.Model) || marker.Model == "Unknown")

@@ -674,7 +674,9 @@ so these fail only in CI:
   `MaterialReclaimerMagnetPickupComponent`) also gate on an absolute `NextScan`, set to
   `CurTime`/`CurTime + 1s` in MapInit. A retrieved ore bag kept the previous round's timestamp (live
   files had values up to ~42 hours), so its magnet never scanned. `ResetRuntimeCooldowns` now zeroes
-  all three.
+  all three. The two material-machine systems also had their comparison **inverted** (`<` instead
+  of `>`); once the timer was zeroed that skipped every scan forever. Both now match
+  `MagnetPickupSystem` (`NextScan > currentTime` skips, then `NextScan = currentTime + ScanDelay`).
 - Regression test: `BluespaceDockSaveTest.SavedShipForgetsActionCooldowns` (fails without the reset;
   it sets a stale `OreBag` magnet too).
 

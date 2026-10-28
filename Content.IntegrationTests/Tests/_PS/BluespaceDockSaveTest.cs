@@ -4,16 +4,20 @@ using System.Numerics;
 using Content.Server._PS.BluespaceDock;
 using Content.Server.Botany.Components;
 using Content.Server.DeviceLinking.Systems;
+using Content.Server.Power.Components;
 using Content.Server.Shuttles.Systems;
+using Content.Server.Storage.Components;
 using Content.Shared._PS.BluespaceDock;
 using Content.Shared._NF.Shipyard.Components;
 using Content.Shared.Climbing.Components;
 using Content.Shared.DoAfter;
 using Content.Shared.Interaction;
 using Content.Shared.Light.Components;
+using Content.Shared.Materials;
 using Content.Shared.Shuttles.Components;
 using Content.Shared.Storage;
 using Content.Shared.Storage.Components;
+using Content.Shared.Storage.EntitySystems;
 using Content.Shared.Timing;
 using Content.Shared.Weapons.Ranged.Components;
 using Content.Shared.DeviceLinking;
@@ -29,11 +33,14 @@ using Content.Shared.SprayPainter.Prototypes;
 using Content.Shared.SmartFridge;
 using NUnit.Framework;
 using Robust.Server.Containers;
+using Robust.Shared.Containers;
 using Robust.Shared.ContentPack;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
 using Robust.Shared.Map;
 using Robust.Shared.Maths;
+using Robust.Shared.Physics.Components;
+using Robust.Shared.Physics.Systems;
 using Robust.Shared.Utility;
 
 namespace Content.IntegrationTests.Tests._PS;
@@ -747,6 +754,142 @@ public sealed class BluespaceDockSaveTest
             var vendingComp = entMan.GetComponent<VendingMachineComponent>(vending!.Value);
             Assert.That(itemSlots.TryGetSlot(vending.Value, vendingComp.CashSlotName!, out _), Is.True,
                 "The retrieved vending machine has no cash slot.");
+        });
+
+        await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));
+        await server.WaitRunTicks(2);
+        await server.WaitAssertion(() => server.System<SharedMapSystem>().DeleteMap(loadedMap));
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    /// Material magnets (lathes, silos/flatpackers and the material reclaimer/shredder) gate their
+    /// scan on an absolute round time. A loaded ship skips MapInit and the dock clears the saved
+    /// timestamp, so the scan gate itself has to treat zero as "scan now" - the old inverted
+    /// comparison skipped forever once the timer was zeroed.
+    /// </summary>
+    [Test]
+    [TestCase("Autolathe")]
+    [TestCase("MaterialReclaimer")]
+    public async Task RetrievedMaterialMagnetsPickUpItems(string proto)
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+
+        EntityUid loadedGrid = default;
+        MapId loadedMap = default;
+        EntityUid loadedMachine = default;
+        EntityUid loadedSheet = default;
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var grid = testMap.Grid.Owner;
+
+            var machine = entMan.SpawnEntity(proto, new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            if (entMan.TryGetComponent<MaterialStorageMagnetPickupComponent>(machine, out var storageMagnet))
+                storageMagnet.MagnetEnabled = true;
+            if (entMan.TryGetComponent<MaterialReclaimerMagnetPickupComponent>(machine, out var reclaimerMagnet))
+                reclaimerMagnet.MagnetEnabled = true;
+            if (entMan.TryGetComponent<MaterialReclaimerComponent>(machine, out var reclaimer))
+            {
+                // Access-restricted to SharedMaterialReclaimerSystem; fake the powered state a
+                // machine wired to an APC would have.
+                typeof(MaterialReclaimerComponent)
+                    .GetField(nameof(MaterialReclaimerComponent.Powered))!
+                    .SetValue(reclaimer, true);
+            }
+
+            var path = BluespaceDockSystem.GetShipFilePath($"material-magnet-save-test-{proto}");
+            Assert.That(dock.TrySaveShipFile(grid, path, out var error), Is.True, error);
+            Assert.That(dock.TryLoadShipFile(path, out var loaded), Is.True, "Loading the saved ship failed.");
+            loadedGrid = loaded!.Value;
+            loadedMap = entMan.GetComponent<TransformComponent>(loadedGrid).MapID;
+            dock.DeleteShipFile(path);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var entities = new HashSet<EntityUid>();
+            dock.GetEntitiesOnGrid(loadedGrid, entities);
+
+            foreach (var uid in entities)
+            {
+                if (entMan.GetComponent<MetaDataComponent>(uid).EntityPrototype?.ID == proto)
+                {
+                    loadedMachine = uid;
+                    break;
+                }
+            }
+
+            Assert.That(loadedMachine.IsValid(), Is.True, $"The retrieved ship lost its {proto}.");
+
+            // The magnet gate is what this test covers; detach the power receiver so the server
+            // material-storage override does not reject the insertion as unpowered.
+            entMan.RemoveComponent<ApcPowerReceiverComponent>(loadedMachine);
+
+            if (entMan.TryGetComponent<MaterialStorageMagnetPickupComponent>(loadedMachine, out var storageMagnet))
+                storageMagnet.MagnetEnabled = true;
+            if (entMan.TryGetComponent<MaterialReclaimerMagnetPickupComponent>(loadedMachine, out var reclaimerMagnet))
+                reclaimerMagnet.MagnetEnabled = true;
+            if (entMan.TryGetComponent<MaterialReclaimerComponent>(loadedMachine, out var reclaimer))
+            {
+                typeof(MaterialReclaimerComponent)
+                    .GetField(nameof(MaterialReclaimerComponent.Powered))!
+                    .SetValue(reclaimer, true);
+            }
+
+            // The reclaimer blacklists the Material component (it takes trash, not sheets), so use
+            // a banana peel there; the lathe takes a steel sheet.
+            var itemProto = proto == "MaterialReclaimer" ? "TrashBananaPeel" : "SheetSteel1";
+            loadedSheet = entMan.SpawnEntity(itemProto,
+                new EntityCoordinates(loadedMachine, new Vector2(0.1f, 0.1f)));
+        });
+
+        await server.WaitRunTicks(2);
+
+        await server.WaitAssertion(() =>
+        {
+            // The periodic magnet update may already have consumed the item during the two ticks
+            // above. If it is still there, force a scan synchronously with the body state set.
+            if (entMan.EntityExists(loadedSheet))
+            {
+                var physics = server.System<SharedPhysicsSystem>();
+                physics.SetBodyStatus(loadedSheet, entMan.GetComponent<PhysicsComponent>(loadedSheet), BodyStatus.OnGround);
+
+                if (proto == "Autolathe")
+                {
+                    var magnet = entMan.GetComponent<MaterialStorageMagnetPickupComponent>(loadedMachine);
+                    magnet.NextScan = TimeSpan.Zero;
+                    server.System<MaterialStorageMagnetPickupSystem>().Update(0f);
+                }
+                else
+                {
+                    var magnet = entMan.GetComponent<MaterialReclaimerMagnetPickupComponent>(loadedMachine);
+                    magnet.NextScan = TimeSpan.Zero;
+                    server.System<MaterialReclaimerMagnetPickupSystem>().Update(0f);
+                }
+            }
+
+            if (proto == "Autolathe")
+            {
+                var materialStorage = server.System<SharedMaterialStorageSystem>();
+                Assert.That(materialStorage.GetMaterialAmount(loadedMachine, "Steel"), Is.GreaterThan(0),
+                    "The retrieved autolathe's magnet did not pick up the steel sheet.");
+            }
+            else if (entMan.EntityExists(loadedSheet))
+            {
+                // The reclaimer may have finished processing the item by now; either it is in the
+                // active container or it has been consumed. An item still on the floor means the
+                // magnet never picked it up.
+                Assert.That(server.System<SharedContainerSystem>()
+                        .TryGetContainingContainer(loadedSheet, out _),
+                    Is.True, "The retrieved material reclaimer's magnet did not pick up the item.");
+            }
         });
 
         await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));

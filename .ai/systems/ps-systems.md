@@ -622,7 +622,10 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
   its buttons, switches and toolbelts still "on cooldown" for as long as the store happened into the
   round: left click and E silently do nothing while right-click verbs (which bypass `UseDelay`) still
   work; a retrieved ore bag's magnet stayed dead until the new round reached the old timestamp (live
-  files carried values up to ~42 hours). The save clears them; see `.ai/HAZARDS.md` section 27 for
+  files carried values up to ~42 hours). The material-storage/reclaimer systems also had their
+  `NextScan` comparison inverted; zeroing the timer would have disabled them permanently. They now
+  use the same `NextScan > currentTime` gate as the ore-bag magnet. The save clears them; see
+  `.ai/HAZARDS.md` section 27 for
   the full trap and the regression test (`BluespaceDockSaveTest.SavedShipForgetsActionCooldowns`).
 - **One unserializable entity no longer fails a store (2026-10-22)**: the save first tries strictly
   (`IncludeNullspace` then `Ignore`). When something on the grid cannot be serialized at all (a
@@ -684,6 +687,12 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
   skip MapInit, so startup is the hook); `TrySaveShipFile` also captures the current appearance style
   into that field before serializing, so entities painted before the field existed are preserved on
   their next store. The fresh-paint `DryTime` timer is cleared with the other cooldowns.
+- **Orphan restores recover shipyard vessel identity (2026-10-27)**: an orphaned ship file has no
+  registry entry carrying `Vessel`, but a shipyard vessel's grid keeps the `BecomesStation` id from
+  its game-map prototype. `TryGetVesselInfo` now falls back to that id when it names both a
+  `VesselPrototype` and a `GameMapPrototype` station, and `TryRetrieveShip` re-derives it for old
+  registry entries with `Vessel=null`. This restores the vessel's station config - including its
+  `StationJobs` slots - so the captain can manage jobs on the records computer again.
 - **Retrieved ships get the shipyard's station (`GetShipStationConfig`, 2026-10-18)**: the station a
   ship lives on carries its capabilities, not the grid. Retrieval used to rebuild *every* ship with a
   plain `StandardFrontierVessel` station, which silently cost expedition ships their
