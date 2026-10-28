@@ -21,6 +21,7 @@ using Robust.Shared.Map;
 using Robust.Shared.Maths;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Serialization;
+using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 using Robust.UnitTesting;
 
@@ -267,25 +268,29 @@ public sealed class InteractionPanelTest
             var drip = server.System<DrippingCumSystem>();
             receiver = entMan.SpawnEntity("MobHuman", testMap.GridCoords.Offset(new Vector2(0.5f, 0.5f)));
 
-            drip.AddSemen(receiver, 6);
-            Assert.That(drip.GetSemen(receiver), Is.EqualTo(6));
+            drip.AddSemen(receiver, 20); // two 10u drips
+            Assert.That(drip.GetSemen(receiver), Is.EqualTo(20));
         });
 
-        // Stored semen only drips once the mob moves or acts: an idle mob keeps everything inside.
+        // Stored semen only starts dripping once the mob moves or acts: an idle mob keeps everything inside.
         await server.WaitRunTicks(70);
 
         await server.WaitAssertion(() =>
         {
             var drip = server.System<DrippingCumSystem>();
-            Assert.That(drip.GetSemen(receiver), Is.EqualTo(6),
+            Assert.That(drip.GetSemen(receiver), Is.EqualTo(20),
                 "An idle mob must not drip.");
         });
 
-        // Walk back and forth (same tile) for a few seconds; the drip tick (1 unit/second) then drains.
-        await PokeMovement(server, receiver, 80);
+        // A brief movement starts the drip...
+        await PokeMovement(server, receiver, 10);
+
+        // ...and it must keep running while the mob stands still, 10 units per second.
+        await server.WaitRunTicks(300);
 
         await server.WaitAssertion(() =>
         {
+            var drip = server.System<DrippingCumSystem>();
             var xform = entMan.GetComponent<TransformComponent>(receiver);
             Assert.That(xform.GridUid, Is.Not.Null, "The receiver should be standing on a grid.");
 
@@ -295,14 +300,61 @@ public sealed class InteractionPanelTest
                 .GetDecalsInRange(xform.GridUid!.Value, query, 1f)
                 .ToList();
 
-            Assert.That(decals.Any(d => d.Decal.Id.StartsWith("SemenDrip")), Is.True,
-                "Dripping semen should place droplet decals on the ground.");
+            Assert.That(decals.Count(d => d.Decal.Id.StartsWith("SemenDrip")), Is.GreaterThanOrEqualTo(2),
+                "The drip must keep running while the mob stands still after it started.");
             Assert.That(decals.Any(d => d.Decal.Id.StartsWith("SemenPuddle")), Is.False,
                 "Drips must never escalate to the full cum decals.");
-            Assert.That(server.System<DrippingCumSystem>().GetSemen(receiver), Is.LessThan(6),
-                "Dripping should consume the stored semen.");
+            Assert.That(drip.GetSemen(receiver), Is.EqualTo(0),
+                "Two 10u drips should drain the 20u reservoir.");
 
             entMan.DeleteEntity(receiver);
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    /// Palmtree: each drip consumes 10u of stored semen.
+    /// </summary>
+    [Test]
+    public async Task DripConsumesTenUnits()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var timing = server.ResolveDependency<IGameTiming>();
+
+        EntityUid mob = default;
+
+        await server.WaitAssertion(() =>
+        {
+            var drip = server.System<DrippingCumSystem>();
+            mob = entMan.SpawnEntity("MobHuman", testMap.GridCoords.Offset(new Vector2(0.5f, 0.5f)));
+            drip.AddSemen(mob, 25);
+
+            // Start the drip without waiting for a movement tick so exactly one drip is due.
+            var comp = entMan.GetComponent<DrippingCumComponent>(mob);
+            comp.Ready = true;
+            comp.NextDrip = timing.CurTime;
+            comp.LastPosition = entMan.GetComponent<TransformComponent>(mob).LocalPosition;
+        });
+
+        await server.WaitRunTicks(2);
+
+        await server.WaitAssertion(() =>
+        {
+            var drip = server.System<DrippingCumSystem>();
+            Assert.That(drip.GetSemen(mob), Is.EqualTo(15),
+                "One drip should consume exactly 10 units.");
+
+            var xform = entMan.GetComponent<TransformComponent>(mob);
+            var decals = server.System<DecalSystem>()
+                .GetDecalsInRange(xform.GridUid!.Value, xform.LocalPosition, 1f)
+                .Count(d => d.Decal.Id.StartsWith("SemenDrip"));
+            Assert.That(decals, Is.EqualTo(1), "Only one drip should have happened in two ticks.");
+
+            entMan.DeleteEntity(mob);
         });
 
         await pair.CleanReturnAsync();
@@ -324,14 +376,15 @@ public sealed class InteractionPanelTest
             var decals = server.System<DecalSystem>();
 
             mob = entMan.SpawnEntity("MobHuman", testMap.GridCoords.Offset(new Vector2(0.5f, 0.5f)));
-            drip.AddSemen(mob, 5);
+            drip.AddSemen(mob, 20);
 
-            // Five drips already cover the tile the mob is standing on.
+            // Twenty drips already cover the tile the mob is standing on.
             var grid = entMan.GetComponent<TransformComponent>(mob).GridUid!.Value;
-            for (var i = 0; i < 5; i++)
+            for (var i = 0; i < 20; i++)
             {
                 Assert.That(decals.TryAddDecal("SemenDrip1",
-                    new EntityCoordinates(grid, new Vector2(0.05f + i * 0.1f, 0.05f)), out _, cleanable: true), Is.True);
+                    new EntityCoordinates(grid, new Vector2(0.05f + (i % 5) * 0.09f, 0.05f + (i / 5) * 0.09f)),
+                    out _, cleanable: true), Is.True);
             }
         });
 
@@ -345,17 +398,17 @@ public sealed class InteractionPanelTest
             var xform = entMan.GetComponent<TransformComponent>(mob);
             var grid = xform.GridUid!.Value;
 
-            Assert.That(drip.GetSemen(mob), Is.EqualTo(5),
+            Assert.That(drip.GetSemen(mob), Is.EqualTo(20),
                 "A full tile must not consume stored semen while the drip is paused.");
-            Assert.That(CountDripsOnTile(decals, grid, xform.LocalPosition), Is.EqualTo(5),
-                "No new drips may be placed on a tile that already has five.");
+            Assert.That(CountDripsOnTile(decals, grid, xform.LocalPosition), Is.EqualTo(20),
+                "No new drips may be placed on a tile that already has twenty.");
 
             // Clean up; the next drip check finds room again and resumes without losing fluid.
             foreach (var (index, _) in decals.GetDecalsInRange(grid, xform.LocalPosition, 1f).ToList())
                 decals.RemoveDecal(grid, index);
         });
 
-        await PokeMovement(server, mob, 40);
+        await PokeMovement(server, mob, 80);
 
         await server.WaitAssertion(() =>
         {
@@ -363,7 +416,7 @@ public sealed class InteractionPanelTest
             var decals = server.System<DecalSystem>();
             var xform = entMan.GetComponent<TransformComponent>(mob);
 
-            Assert.That(drip.GetSemen(mob), Is.LessThan(5), "The drip should resume once the tile is clear.");
+            Assert.That(drip.GetSemen(mob), Is.LessThan(20), "The drip should resume once the tile is clear.");
             Assert.That(CountDripsOnTile(decals, xform.GridUid!.Value, xform.LocalPosition), Is.GreaterThan(0));
 
             entMan.DeleteEntity(mob);
@@ -431,6 +484,115 @@ public sealed class InteractionPanelTest
 
             entMan.DeleteEntity(user);
             entMan.DeleteEntity(target);
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    /// Palmtree: "Clean yourself" wipes the stored semen and is only offered while there is any.
+    /// </summary>
+    [Test]
+    public async Task CleanYourselfClearsTheDrip()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+
+        EntityUid mob = default;
+
+        await server.WaitAssertion(() =>
+        {
+            var proto = server.ResolveDependency<IPrototypeManager>();
+            var interactions = server.System<InteractionPanelSystem>();
+            var drip = server.System<DrippingCumSystem>();
+
+            mob = entMan.SpawnEntity("MobHuman", testMap.GridCoords.Offset(new Vector2(0.5f, 0.5f)));
+            var clean = proto.Index<InteractionPrototype>("CleanYourself");
+
+            // Nothing stored: the action is not offered.
+            Assert.That(interactions.CanPerform(clean, mob, mob, false), Is.False);
+
+            drip.AddSemen(mob, 30);
+
+            // Make the drip overdue so a missed clear would visibly leave a droplet.
+            var comp = entMan.GetComponent<DrippingCumComponent>(mob);
+            comp.Ready = true;
+            comp.NextDrip = TimeSpan.Zero;
+
+            Assert.That(interactions.CanPerform(clean, mob, mob, false), Is.True);
+
+            Assert.That(interactions.TryPerform(mob, mob, clean), Is.True);
+            Assert.That(drip.GetSemen(mob), Is.EqualTo(0), "Cleaning should wipe the drip reservoir.");
+            Assert.That(interactions.CanPerform(clean, mob, mob, false), Is.False,
+                "The action disappears once there is nothing left to clean.");
+        });
+
+        // Give a ghost drip time to happen (the drip interval is one second).
+        await server.WaitRunTicks(120);
+
+        await server.WaitAssertion(() =>
+        {
+            var xform = entMan.GetComponent<TransformComponent>(mob);
+            var decals = server.System<DecalSystem>()
+                .GetDecalsInRange(xform.GridUid!.Value, xform.LocalPosition, 1f)
+                .Count(d => d.Decal.Id.StartsWith("SemenDrip"));
+            Assert.That(decals, Is.EqualTo(0), "Cleaning should stop the drip completely.");
+
+            entMan.DeleteEntity(mob);
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    /// Palmtree: breast-owner and thigh-owner variants of the boobjob/thighjob interactions.
+    /// </summary>
+    [Test]
+    public async Task BoobjobAndThighjobVariants()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+
+        await server.WaitAssertion(() =>
+        {
+            var proto = server.ResolveDependency<IPrototypeManager>();
+            var appearance = server.System<SharedHumanoidAppearanceSystem>();
+            var interactions = server.System<InteractionPanelSystem>();
+
+            var breasts = entMan.SpawnEntity("MobHuman", testMap.GridCoords.Offset(new Vector2(0.5f, 0.5f)));
+            var penis = entMan.SpawnEntity("MobHuman", testMap.GridCoords.Offset(new Vector2(1f, 0.5f)));
+
+            var breastsSettings = new GenitalOrganSettings();
+            breastsSettings.Set(GenitalType.Breasts, new GenitalOrganData { Prototype = "BreastsCoyote", Size = 2 });
+
+            var penisSettings = new GenitalOrganSettings();
+            penisSettings.Set(GenitalType.Penis, new GenitalOrganData { Prototype = "PenisHuman", Size = 2 });
+
+            appearance.LoadProfile(breasts,
+                HumanoidCharacterProfile.DefaultWithSpecies("Human").WithGenitals(breastsSettings));
+            appearance.LoadProfile(penis,
+                HumanoidCharacterProfile.DefaultWithSpecies("Human").WithGenitals(penisSettings));
+
+            var giveBoobjob = proto.Index<InteractionPrototype>("GiveBoobjob");
+            var thighjob = proto.Index<InteractionPrototype>("Thighjob");
+            var giveThighjob = proto.Index<InteractionPrototype>("GiveThighjob");
+
+            // The breast owner can start a boobjob on a penis owner, but not the reverse.
+            Assert.That(interactions.CanPerform(giveBoobjob, breasts, penis, false), Is.True);
+            Assert.That(interactions.CanPerform(giveBoobjob, penis, breasts, false), Is.False);
+
+            // Thighjobs work in both directions.
+            Assert.That(interactions.CanPerform(thighjob, penis, breasts, false), Is.True);
+            Assert.That(interactions.CanPerform(giveThighjob, breasts, penis, false), Is.True);
+            Assert.That(interactions.CanPerform(thighjob, breasts, penis, false), Is.False,
+                "Fucking someone's thighs needs a penis.");
+
+            entMan.DeleteEntity(breasts);
+            entMan.DeleteEntity(penis);
         });
 
         await pair.CleanReturnAsync();

@@ -95,8 +95,10 @@ content are intentionally not ported.
    uses `continueMessages` when provided.
 7. **Climax fluids / drip.** `InteractionPrototype.CumTarget` (`vagina`/`anus`/`mouth`/`exterior`)
    maps a climax: internal endings store the penis organ's `SemenVolume` in the partner's
-   `DrippingCumComponent` (1 u/s **droplet** decals while not wearing a jumpsuit; drips never grow
-   into the full puddle decals), exterior endings drop the full `SemenPuddle*` decals on the ground.
+   `DrippingCumComponent` (10 u/s **droplet** decals while not wearing a jumpsuit, 10u per drip;
+   the first movement/interaction starts the drip and it then keeps going while standing still;
+   drips never grow into the full puddle decals), exterior endings drop the full `SemenPuddle*`
+   decals on the ground.
    A null cum target (manual Climax with no recent interaction) is treated as an exterior climax on
    the actor. Receiver-side acts (`Ride`, `TakeAnal`) reuse the same cum target for the **target's**
    climax, so the penetrator finishing fills the actor. Each interaction can define

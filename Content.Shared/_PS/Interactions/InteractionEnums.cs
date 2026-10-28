@@ -66,6 +66,9 @@ public enum InteractionRequirements : uint
     /// <summary>Any of the exposure-capable genitals (penis, balls, vagina, breasts, anus) is exposed.</summary>
     AnyGenitalExposed = 1 << 12,
 
+    /// <summary>Palmtree: the participant has stored semen that can still drip (Clean yourself).</summary>
+    HasStoredCum = 1 << 13,
+
     /// <summary>Any state (exposed or not) is acceptable for this genital.</summary>
     AnyPenis = PenisExposed | PenisUnexposed,
     AnyVagina = VaginaExposed | VaginaUnexposed,

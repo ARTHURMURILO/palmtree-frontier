@@ -330,6 +330,13 @@ public sealed partial class InteractionPanelSystem : EntitySystem
         if (requirements.HasFlag(InteractionRequirements.Hands) && !HasComp<HandsComponent>(subject))
             return FailRequirement(actor, subject, popup, isTarget, "hands");
 
+        // Palmtree: "Clean yourself" only appears when there is actually stored semen to clean up.
+        if (requirements.HasFlag(InteractionRequirements.HasStoredCum) &&
+            (!TryComp<DrippingCumComponent>(subject, out var dripComp) || dripComp.Amount <= 0))
+        {
+            return FailRequirement(actor, subject, popup, isTarget, "cum");
+        }
+
         // Palmtree: any one exposed genital is enough (used by the manual Climax action so it is
         // unavailable while fully clothed, matching the other lewd interactions).
         if (requirements.HasFlag(InteractionRequirements.AnyGenitalExposed))
@@ -462,6 +469,11 @@ public sealed partial class InteractionPanelSystem : EntitySystem
         if (applyCooldown)
             state.LastInteractionTime = now;
 
+        // Palmtree: "Clean yourself" wipes the stored semen so the drip stops. Clear before the
+        // activity notification so the removed reservoir cannot be reactivated.
+        if (proto.ClearsStoredCum)
+            _drip.ClearSemen(user);
+
         // Palmtree: moving or acting is what makes stored cum start to drip (both participants are
         // active during an interaction, including the receiving one).
         _drip.NotifyActivity(user);
@@ -527,7 +539,9 @@ public sealed partial class InteractionPanelSystem : EntitySystem
 
         PlayInteractionSound(user, proto.Sound, proto.Volume, proto.InteractionType == InteractionType.Lewd, proto.NonSexual);
 
-        ApplyInteractionArousal(user, target, proto);
+        // Palmtree: cleanup actions (Clean yourself) do not arouse anyone or add lust.
+        if (!proto.ClearsStoredCum)
+            ApplyInteractionArousal(user, target, proto);
 
         // Palmtree: log the start of an interaction (auto-repeat continuations are not logged again).
         if (!continuing)

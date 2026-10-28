@@ -344,6 +344,70 @@
     - interaction-breastfuck-continue
     - interaction-breastfuck-continue-two
 
+# Female-initiated boobjob: the user wraps their breasts around the target's penis.
+- type: interaction
+  id: GiveBoobjob
+  name: interaction-giveboobjob-name
+  interactionType: Lewd
+  flags:
+    - Adjacent
+    - OocConsent
+  userRequirements:
+    - BreastsExposed
+  targetRequirements:
+    - PenisExposed
+  cumTarget: exterior
+  cumMessages:
+    - interaction-cum-breastfuck
+  sound:
+    collection: LewdBang
+  messages:
+    - interaction-giveboobjob-message
+  continueMessages:
+    - interaction-giveboobjob-continue
+    - interaction-giveboobjob-continue-two
+
+# The user slides their penis between the target's thighs.
+- type: interaction
+  id: Thighjob
+  name: interaction-thighjob-name
+  interactionType: Lewd
+  flags:
+    - Adjacent
+    - OocConsent
+  userRequirements:
+    - PenisExposed
+  cumTarget: exterior
+  cumMessages:
+    - interaction-cum-thighjob
+  sound:
+    collection: LewdBang
+  messages:
+    - interaction-thighjob-message
+  continueMessages:
+    - interaction-thighjob-continue
+    - interaction-thighjob-continue-two
+
+# Thigh-side equivalent of GiveBoobjob: the user squeezes their thighs around the target's penis.
+- type: interaction
+  id: GiveThighjob
+  name: interaction-givethighjob-name
+  interactionType: Lewd
+  flags:
+    - Adjacent
+    - OocConsent
+  targetRequirements:
+    - PenisExposed
+  cumTarget: exterior
+  cumMessages:
+    - interaction-cum-thighjob
+  sound:
+    collection: LewdBang
+  messages:
+    - interaction-givethighjob-message
+  continueMessages:
+    - interaction-givethighjob-continue
+
 - type: interaction
   id: Frotting
   name: interaction-frotting-name
@@ -554,6 +618,22 @@
     - interaction-masturbate-breasts-message
   continueMessages:
     - interaction-masturbate-breasts-continue
+
+# Self cleanup: wipes the stored semen so the drip stops. Only listed while there is semen left.
+- type: interaction
+  id: CleanYourself
+  name: interaction-cleanyourself-name
+  interactionType: Lewd
+  flags:
+    - UserIsTarget
+    - OocConsent
+  userRequirements:
+    - HasStoredCum
+  clearsStoredCum: true
+  lust: 0
+  messages:
+    - interaction-cleanyourself-message
+    - interaction-cleanyourself-message-two
 
 - type: interaction
   id: Climax

@@ -111,7 +111,7 @@ queries).
 | Piece | Path | Notes |
 |---|---|---|
 | Reagent | `Resources/Prototypes/_PS/Reagents/semen.yml` | `Semen`, white, viscous; no longer used for puddles/overlays (kept for future fluid work) |
-| Drip | `Content.Shared/_PS/Organs/DrippingCumComponent.cs`, `Content.Server/_PS/Organs/DrippingCumSystem.cs` | stores units; 1 u/s into **droplet** decals (`SemenDrip1..5` only), pausing while a jumpsuit is worn |
+| Drip | `Content.Shared/_PS/Organs/DrippingCumComponent.cs`, `Content.Server/_PS/Organs/DrippingCumSystem.cs` | stores units; 10 u/s into **droplet** decals (`SemenDrip1..5` only), 10u per drip, pausing while a jumpsuit is worn |
 | Ejaculation decals | `DrippingCumSystem.SpawnCumDecals` | drops `SemenPuddle1..4` scaled by `SemenVolume`; each climax adds a new decal (never replaces) |
 | Decal sprites/prototypes | `Resources/Textures/_PS/Effects/decals/semen.rsi` (ported from SPLURT `effects.dmi`), `Resources/Prototypes/_PS/Decals/semen.yml` | cleanable with space cleaner; no reagent puddles |
 | Washing | — | decals are removed by space cleaner (`CleanDecalsReaction`) or by the Palmtree roomba's decal-scrubbing HTN operators (`Content.Server/_PS/Roomba`); the character overlay feature was removed |
@@ -121,13 +121,14 @@ queries).
   ever place the small droplet decals (`SemenDrip1..5`); the full cum decals are reserved for actual
   ejaculation. The receiver gets a private popup ("trickle" or "pool, held back by your clothes"
   while a jumpsuit is worn).
-- **Drip activity gate (Palmtree):** a filled mob does not drip on its own. The drip only runs after
-  the mob **moved** (its position changed since the last drip check) or **performed an interaction**
-  (`DrippingCumSystem.NotifyActivity`, called for both participants by `TryPerform`). A drip consumes
-  the flag, so an idle mob keeps every unit inside and walking keeps the drip going. `AddSemen`
-  records the mob's position, so spawning where they were filled does not count as movement.
+- **Drip activity gate (Palmtree):** a filled mob does not drip on its own. The drip **starts**
+  when the mob first **moves** (its position changed since the last check) or performs an interaction
+  (`DrippingCumSystem.NotifyActivity`, called for both participants by `TryPerform`). That starter is
+  a latch: it is never consumed by a drip, so the mob keeps dripping every second while standing
+  still until the reservoir is empty. Each drip drains 10u (`DripAmount`). `AddSemen` records the
+  mob's position, so spawning where they were filled does not count as movement.
 - **Tile limit (Palmtree):** dripping pauses while the mob's tile already has
-  `MaxDripsPerTile = 5` drip decals on it. The pause never consumes stored semen; it resumes when
+  `MaxDripsPerTile = 20` drip decals on it. The pause never consumes stored semen; it resumes when
   the mob moves to a clear tile or the floor is cleaned. Decals are counted by the tile their center
   falls in (the stored coordinate is the decal's bottom-left corner).
 - **Receive capacity (Palmtree):** the reservoir holds at most
