@@ -1567,3 +1567,17 @@ Entries:
   time: '2026-10-27T23:46:06.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/d8a5889263d1484f40670c0dbaed06356f0dde1b
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        Material reclaimers, shredders, lathes, silos and flatpackers pick up
+        items with their magnets again after a bluespace dock retrieval.
+    - type: Fix
+      message: >-
+        Orphan-restored shipyard ships recover their job slots, so captains can
+        manage jobs on the records computer again.
+  id: 90104
+  time: '2026-10-28T00:58:39.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/073d57e3e256dc6865876ccdd2355a52e084945e
