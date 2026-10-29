@@ -169,9 +169,6 @@ public sealed partial class GunSystem : SharedGunSystem
                     //in the situation when user == null, means that the cannon fires on its own (via signals). And we need the gun to not fire by itself in this case
                     var lastUser = user ?? gunUid;
 
-                    // Palmtree: ship weapon effects are broadcast over the ship combat range.
-                    var shipWeaponEffects = HasComp<ShipWeaponComponent>(gunUid);
-
                     if (hitscan.Reflective != ReflectType.None)
                     {
                         for (var reflectAttempt = 0; reflectAttempt < 3; reflectAttempt++)
@@ -215,7 +212,7 @@ public sealed partial class GunSystem : SharedGunSystem
                             var hit = result.HitEntity;
                             lastHit = hit;
 
-                            FireEffects(fromEffect, result.Distance, dir.Normalized().ToAngle(), hitscan, hit, shipWeaponEffects);
+                            FireEffects(fromEffect, result.Distance, dir.Normalized().ToAngle(), hitscan, hit);
 
                             var ev = new HitScanReflectAttemptEvent(user, gunUid, hitscan.Reflective, dir, false);
                             RaiseLocalEvent(hit, ref ev);
@@ -284,7 +281,7 @@ public sealed partial class GunSystem : SharedGunSystem
                     }
                     else
                     {
-                        FireEffects(fromEffect, hitscan.MaxLength, dir.ToAngle(), hitscan, shipWeapon: shipWeaponEffects);
+                        FireEffects(fromEffect, hitscan.MaxLength, dir.ToAngle(), hitscan);
                     }
 
                     Audio.PlayPredicted(gun.SoundGunshotModified, gunUid, user);
@@ -432,12 +429,7 @@ public sealed partial class GunSystem : SharedGunSystem
     // TODO: Pseudo RNG so the client can predict these.
     #region Hitscan effects
 
-    // Palmtree: ship combat is larger scale than the PVS bubble (net.pvs_range, 25 tiles by default),
-    // so ship weapon hitscan effects are broadcast to everyone inside the ship combat range (~600
-    // tiles) instead of only players whose PVS covers the shot.
-    private const float ShipWeaponPvsRangeMultiplier = 24f;
-
-    private void FireEffects(EntityCoordinates fromCoordinates, float distance, Angle angle, HitscanPrototype hitscan, EntityUid? hitEntity = null, bool shipWeapon = false)
+    private void FireEffects(EntityCoordinates fromCoordinates, float distance, Angle angle, HitscanPrototype hitscan, EntityUid? hitEntity = null)
     {
         // Lord
         // Forgive me for the shitcode I am about to do
@@ -449,15 +441,7 @@ public sealed partial class GunSystem : SharedGunSystem
         // Look you could probably optimise this a bit with redundant transforms at this point.
 
         var gridUid = fromXform.GridUid;
-
-        // Palmtree: ship weapon effects are based on the map instead of the firing grid. A client far
-        // outside the shooter's PVS does not know that grid, so it could not resolve or draw them;
-        // map coordinates are always resolvable. The angle stays a world angle for the same reason.
-        if (shipWeapon && fromXform.MapUid is { } effectMapUid)
-        {
-            fromCoordinates = new EntityCoordinates(effectMapUid, TransformSystem.ToMapCoordinates(fromCoordinates).Position);
-        }
-        else if (gridUid != fromCoordinates.EntityId && TryComp(gridUid, out TransformComponent? gridXform))
+        if (gridUid != fromCoordinates.EntityId && TryComp(gridUid, out TransformComponent? gridXform))
         {
             var (_, gridRot, gridInvMatrix) = TransformSystem.GetWorldPositionRotationInvMatrix(gridXform);
             var map = TransformSystem.ToMapCoordinates(fromCoordinates);
@@ -498,15 +482,10 @@ public sealed partial class GunSystem : SharedGunSystem
 
         if (sprites.Count > 0)
         {
-            // Palmtree: ship weapons broadcast their effects over the whole ship combat range.
-            var filter = shipWeapon
-                ? Filter.Pvs(TransformSystem.ToMapCoordinates(fromCoordinates), ShipWeaponPvsRangeMultiplier)
-                : Filter.Pvs(fromCoordinates, entityMan: EntityManager);
-
             RaiseNetworkEvent(new HitscanEvent
             {
                 Sprites = sprites,
-            }, filter);
+            }, Filter.Pvs(fromCoordinates, entityMan: EntityManager));
         }
     }
 

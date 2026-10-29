@@ -9,7 +9,7 @@ public sealed partial class ShipTorpedoComponent : Component
 {
     /// <summary>Cruise speed, in tiles per second.</summary>
     [DataField]
-    public float Speed = 10f;
+    public float Speed = 20f;
 
     /// <summary>Maximum turn rate, in degrees per second.</summary>
     [DataField]
@@ -25,7 +25,7 @@ public sealed partial class ShipTorpedoComponent : Component
 
     /// <summary>Distance at which the incoming-torpedo alarm starts, in tiles.</summary>
     [DataField]
-    public float AlarmRange = 800f;
+    public float AlarmRange = 200f;
 
     /// <summary>Heading error above this many degrees counts as a miss (alarm stays silent).</summary>
     [DataField]

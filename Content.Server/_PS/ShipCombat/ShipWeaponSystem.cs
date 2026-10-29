@@ -22,6 +22,7 @@ using Robust.Shared.Map.Components;
 using Robust.Shared.Physics;
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Physics.Systems;
+using Robust.Server.GameStates;
 using Robust.Shared.Random;
 using Robust.Shared.Timing;
 
@@ -57,6 +58,7 @@ public sealed class ShipWeaponSystem : EntitySystem
     [Dependency] private readonly SharedPhysicsSystem _physics = default!;
     [Dependency] private readonly SharedPopupSystem _popup = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!;
+    [Dependency] private readonly PvsOverrideSystem _pvs = default!;
     [Dependency] private readonly MobStateSystem _mobState = default!;
     [Dependency] private readonly IConfigurationManager _cfg = default!;
 
@@ -296,6 +298,36 @@ public sealed class ShipWeaponSystem : EntitySystem
             : xform.Coordinates.Offset(xform.LocalRotation.ToWorldVec() * 100f);
 
         _gun.AttemptShoot(uid, uid, gun, to);
+
+        // Beams are instant: spawn a bright impact flash at whatever the shot hits, with a global PVS
+        // override so the ship being shot at sees where the beam landed even far outside PVS. (The
+        // vanilla hitscan line stays PVS-local.)
+        if (HasComp<HitscanBatteryAmmoProviderComponent>(uid))
+            SpawnBeamImpact(uid, xform, to);
+    }
+
+    /// <summary>
+    /// Spawns the map-wide beam impact flash at the first thing the shot hits.
+    /// </summary>
+    private void SpawnBeamImpact(EntityUid uid, TransformComponent xform, EntityCoordinates target)
+    {
+        var from = _transform.GetMapCoordinates(xform).Position;
+        var to = _transform.ToMapCoordinates(target).Position;
+        var delta = to - from;
+        var distance = delta.Length();
+        if (distance < 0.5f)
+            return;
+
+        var direction = delta / distance;
+        var mask = (int) (CollisionGroup.Impassable | CollisionGroup.BulletImpassable);
+        var ray = new CollisionRay(from, direction, mask);
+        foreach (var hit in _physics.IntersectRay(xform.MapID, ray, distance, uid, true))
+        {
+            var position = from + direction * hit.Distance;
+            var flash = Spawn("ShipBeamImpact", new MapCoordinates(position, xform.MapID));
+            _pvs.AddGlobalOverride(flash);
+            break;
+        }
     }
 
     private static bool IsArmed(ShipWeaponMode mode, ShipWeaponComponent weapon, ShipWeaponMode? group)
@@ -517,7 +549,8 @@ public sealed class ShipWeaponSystem : EntitySystem
         if (distance < 0.01f)
             return null;
 
-        var ray = new CollisionRay(from.Position, direction.Normalized(), (int) CollisionGroup.Opaque);
+        var ray = new CollisionRay(from.Position, direction.Normalized(),
+            (int) (CollisionGroup.Impassable | CollisionGroup.BulletImpassable));
         foreach (var hit in _physics.IntersectRay(from.MapId, ray, distance, uid, false))
         {
             if (hit.HitEntity.IsValid() && Transform(hit.HitEntity).GridUid == gridUid)

@@ -37,7 +37,7 @@ public sealed class ShipTorpedoSystem : EntitySystem
     private static readonly TimeSpan AlarmScanInterval = TimeSpan.FromSeconds(0.25);
 
     /// <summary>Distance under which the alarm switches to the fast close beep.</summary>
-    private const float CloseAlarmRange = 200f;
+    private const float CloseAlarmRange = 64f;
 
     private TimeSpan _nextAlarmScan;
 

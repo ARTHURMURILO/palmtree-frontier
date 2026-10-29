@@ -34,6 +34,11 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
     /// <summary>How often consoles rescan the grids in their range.</summary>
     private const float ContactScanInterval = 1f;
 
+    /// <summary>How often open windows refresh (torpedo blips move, so this is much faster).</summary>
+    private const float OpenWindowRefreshInterval = 0.25f;
+
+    private TimeSpan _nextWindowRefresh;
+
     /// <summary>Longest target name shown in the window's TARGET line.</summary>
     private const int MaxTargetNameLength = 24;
 
@@ -70,6 +75,18 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
     public override void Update(float frameTime)
     {
         base.Update(frameTime);
+
+        // Open windows refresh four times a second so torpedo blips move smoothly.
+        if (_timing.CurTime >= _nextWindowRefresh)
+        {
+            _nextWindowRefresh = _timing.CurTime + TimeSpan.FromSeconds(OpenWindowRefreshInterval);
+            var open = EntityQueryEnumerator<ShipTargetingConsoleComponent>();
+            while (open.MoveNext(out var uid, out var console))
+            {
+                if (_ui.IsUiOpen(uid, TacticalConsoleUiKey.Key))
+                    UpdateState(uid, console);
+            }
+        }
 
         if (_timing.CurTime < _nextContactScan)
             return;

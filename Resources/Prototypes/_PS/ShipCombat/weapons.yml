@@ -23,7 +23,8 @@
           bounds: "-0.2,-0.2,0.2,0.2"
         hard: false
         mask:
-        - Opaque
+        - Impassable
+        - BulletImpassable
   - type: Projectile
     damage:
       types:
@@ -53,13 +54,33 @@
           bounds: "-0.2,-0.2,0.2,0.2"
         hard: false
         mask:
-        - Opaque
+        - Impassable
+        - BulletImpassable
   - type: Projectile
     damage:
       types:
         Heat: 25
   - type: TimedDespawn
     lifetime: 6
+
+# Bright flash spawned where a ship beam lands; the server gives it a global PVS override so the
+# ship being shot at sees it even from far outside PVS.
+- type: entity
+  id: ShipBeamImpact
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    layers:
+    - state: impact_beam_heavy
+      shader: unshaded
+  - type: PointLight
+    radius: 3
+    energy: 4
+    color: "#ff5555"
+    castShadows: false
+  - type: TimedDespawn
+    lifetime: 0.3
 
 # Beam turret hitscan: a long-range laser beam (ship combat range matches the console radar).
 - type: hitscan

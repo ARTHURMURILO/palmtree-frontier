@@ -1,7 +1,7 @@
 using System.Numerics;
 using Content.Server._PS.ShipCombat;
-using Content.Server.Power.Components;
 using Content.Shared._PS.ShipCombat;
+using Content.Shared._PS.ShipCombat.Components;
 using Content.Shared.Audio;
 using Content.Shared.Light.Components;
 using NUnit.Framework;
@@ -48,9 +48,7 @@ public sealed class ShipConditionDevicesTest
             light = entMan.SpawnEntity("PoweredlightShipCombat",
                 new EntityCoordinates(grid, new Vector2(2.5f, 0.5f)));
 
-            // The test grid has no APC, so treat the sirens as powered (their power gate is separate).
-            entMan.RemoveComponent<ApcPowerReceiverComponent>(redSiren);
-            entMan.RemoveComponent<ApcPowerReceiverComponent>(yellowSiren);
+
 
             server.System<ShipCombatSystem>().TryEnsureShipCombat(grid, out _);
         });
@@ -70,7 +68,8 @@ public sealed class ShipConditionDevicesTest
             // YELLOW: only the yellow siren sounds, the battle light stays on.
             combat.SetCondition(state, ShipCondition.Yellow);
             Assert.That(GetAmbient(entMan, redSiren).Enabled, Is.False, "The red siren must be off at YELLOW.");
-            Assert.That(GetAmbient(entMan, yellowSiren).Enabled, Is.True, "The yellow siren must sound at YELLOW.");
+            Assert.That(GetAmbient(entMan, yellowSiren).Enabled, Is.True,
+                "The yellow siren must sound at YELLOW.");
             Assert.That(GetLight(entMan, light).On, Is.True, "The battle light must stay on at YELLOW.");
 
             // RED: the red siren takes over and the battle light cuts out.

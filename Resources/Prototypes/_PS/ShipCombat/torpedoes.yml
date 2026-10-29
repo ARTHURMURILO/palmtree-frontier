@@ -22,11 +22,22 @@
           bounds: "-0.2,-0.2,0.2,0.2"
         hard: false
         mask:
-        - Opaque
+        - Impassable
+        - BulletImpassable
   - type: Projectile
     damage:
       types:
         Heat: 150
+  # Explodes violently on impact (a syndicate-bomb scale blast); shields still absorb it first.
+  - type: TriggerOnCollide
+    fixtureID: projectile
+  - type: ExplodeOnTrigger
+  - type: Explosive
+    explosionType: Default
+    totalIntensity: 500
+    intensitySlope: 8
+    maxIntensity: 50
+    canCreateVacuum: false
   - type: ShipTorpedo
   - type: TimedDespawn
     lifetime: 120
@@ -43,7 +54,7 @@
   categories: [ HideSpawnMenu ]
   components:
   - type: ShipTorpedo
-    speed: 20
+    speed: 40
     turnRate: 45
     steeringDelay: 0.5
     steeringRamp: 3.5
@@ -57,6 +68,12 @@
     damage:
       types:
         Heat: 300
+  - type: Explosive
+    explosionType: Default
+    totalIntensity: 900
+    intensitySlope: 9
+    maxIntensity: 60
+    canCreateVacuum: false
   - type: PointLight
     radius: 2.5
     energy: 3

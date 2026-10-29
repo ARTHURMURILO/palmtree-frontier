@@ -1,9 +1,9 @@
-using Content.Server.Power.Components;
 using Content.Shared._PS.ShipCombat;
 using Content.Shared._PS.ShipCombat.Components;
 using Content.Shared.Audio;
 using Content.Shared.Power;
 using Robust.Server.GameObjects;
+using Robust.Shared.Timing;
 
 namespace Content.Server._PS.ShipCombat;
 
@@ -19,23 +19,40 @@ public sealed class ShipConditionSirenSystem : EntitySystem
 {
     [Dependency] private readonly SharedAmbientSoundSystem _ambient = default!;
     [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
+    [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly PointLightSystem _pointLight = default!;
+
+    private static readonly TimeSpan PowerRefreshInterval = TimeSpan.FromSeconds(1);
+
+    private TimeSpan _nextPowerRefresh;
 
     public override void Initialize()
     {
         base.Initialize();
 
         SubscribeLocalEvent<ShipConditionSirenComponent, MapInitEvent>(OnMapInit);
-        SubscribeLocalEvent<ShipConditionSirenComponent, PowerChangedEvent>(OnPowerChanged);
         SubscribeLocalEvent<ShipCombatConditionChangedEvent>(OnConditionChanged);
     }
 
-    private void OnMapInit(EntityUid uid, ShipConditionSirenComponent component, MapInitEvent args)
+    public override void Update(float frameTime)
     {
-        UpdateSiren(uid, component);
+        base.Update(frameTime);
+
+        // Sirens are remotely powered by the ship's bypass, so re-check power once a second: that
+        // turns them on when the bypass spins up and off in a brownout.
+        if (_timing.CurTime < _nextPowerRefresh)
+            return;
+
+        _nextPowerRefresh = _timing.CurTime + PowerRefreshInterval;
+
+        var sirens = EntityQueryEnumerator<ShipConditionSirenComponent>();
+        while (sirens.MoveNext(out var uid, out var siren))
+        {
+            UpdateSiren(uid, siren);
+        }
     }
 
-    private void OnPowerChanged(EntityUid uid, ShipConditionSirenComponent component, ref PowerChangedEvent args)
+    private void OnMapInit(EntityUid uid, ShipConditionSirenComponent component, MapInitEvent args)
     {
         UpdateSiren(uid, component);
     }
@@ -61,7 +78,8 @@ public sealed class ShipConditionSirenSystem : EntitySystem
             ? combat.Condition
             : ShipCondition.Green;
 
-        var powered = !TryComp<ApcPowerReceiverComponent>(uid, out var receiver) || receiver.Powered;
+        // Remotely powered by the bypass; devices without the component count as powered.
+        var powered = !TryComp<BluespacePoweredComponent>(uid, out var bluespace) || bluespace.Powered;
         var active = powered && condition == siren.ActiveCondition;
 
         _appearance.SetData(uid, ShipConditionSirenVisuals.Active, active);
