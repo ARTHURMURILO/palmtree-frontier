@@ -153,17 +153,23 @@ Both consoles are machines with parts (tactical lock speed uses `Capacitor`).
 - Stationary weapons (M7): emitter placeholder sprites, exposed space (muzzle tile must be space),
   fire straight along their facing when the target is ahead (placeholder ±45° check), collide with
   their own grid, and a ship's own weapons bypass its own shields.
-- Torpedo launchers: exposed space (reuse `NozzleExposed`-style check), remote power, never
-  auto-fire; ripple-fire from the `FIRE TORPEDOES` button.
-- Torpedoes: `ProjectileComponent`-based (the dock's `DeleteProjectiles` cleans them up on save),
-  slow limited steering at the grid captured at launch, long lifetime. Photon torpedo: 2× speed,
-  steering starts at 0.5 s and ramps to max by 4 s, red tesla sprite + singularity distortion.
+- Torpedo launchers (M8): exposed space (muzzle tile must be space), remote power, never
+  auto-fire; `FIRE TORPEDOES` fires one torpedo from every ready launcher (ripple), each launcher
+  with its own cooldown and no ammo limit. Needs a set lock, a non-GREEN condition and a non-MASTER
+  SAFE weapon mode. Torpedoes launch 1.5 tiles in front of the launcher with the launcher as their
+  shooter (so they ignore it on the way out and a misfire at our own ship bypasses our shields).
+- Torpedoes (M8): `ProjectileComponent`-based (the dock's `DeleteProjectiles` cleans them up on
+  save), steered every tick towards the grid captured at launch with a limited turn rate (10 tiles/s,
+  20°/s, 120 s lifetime, 150 heat). Photon torpedo (separate upgraded launcher): 20 tiles/s, 45°/s,
+  steering starts at 0.5 s and ramps to full by 4 s, 300 heat, red glow. The limited turn rate means
+  a manoeuvring target can make them miss.
 - Torpedoes render on the tactical IFF as diamonds: **red** for torpedoes from other ships,
-  **green** for the console's own ship (server-driven blips in the console state so long-range
-  torpedoes are visible beyond PVS).
-- Incoming alarms per grid: `alert14.ogg` once when first detected under 800 tiles, looping
-  `alert19.ogg` (800–200) then the fast beep `alert18.ogg` (<200); >30° deviation = miss,
-  silence; `MSL: YES` while inbound.
+  **green** for the console's own ship (server-driven map-space blips in the console state so
+  long-range torpedoes are visible beyond PVS).
+- Incoming alarms per grid (M8): `alert14.ogg` once when a torpedo is first detected inbound under
+  800 tiles, then repeated `alert19.ogg` (800-200) or the fast `alert18.ogg` beep (<200); a torpedo
+  whose heading is more than 30° off counts as a miss and stays silent; `MSL: YES` while inbound.
+  All torpedo alarms respect the console's Silent checkbox.
 - Weapon groups come from device-link sink ports `ShipWeaponPrimary/Secondary/Aux`; the tactical
   console carries the `ShipWeaponLink` source port. Firing is gated by GREEN, MASTER SAFE, power and
   (for turrets) the firing arc; the `Automatic Fire` checkbox fires the selected group at the lock
@@ -233,7 +239,11 @@ existing `BluespaceDock*` tests. Automatic prototype validation via `EntityTest`
 6. **M6** Shielding console: sliders, locks, presets, arrows, mini-bars, `(!)` alerts
 7. **M7** Weapons: turrets, stationary, group linking, auto/manual fire
 8. **M8** Torpedoes: launchers, torpedo, photon, incoming alarms
-9. **M9** Alarms & Condition Sirens (condition sirens and battle lights done; damage/critical alarms pending)
+9. **M9** Alarms & Condition Sirens: condition sirens and battle lights done (see the decisions
+   table); shield alarms done (`damagealarm2` per facing collapse at most every 2 s, `damagealarm`
+   once when every facing is down, a restored beep when a facing re-arms, on every shielding
+   console, Silent-aware) and `critical.ogg` every 5 s on every tactical console while the ship is
+   out of peacetime with no powered weapon or torpedo launcher. Per-facing mini-bars still pending.
 10. **M10** `PSShipCombat` research discipline + boards + lathe recipes
 11. **M11** Dock round-trip tests, `.ai` docs, full validation pipeline
 

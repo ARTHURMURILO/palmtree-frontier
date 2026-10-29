@@ -1,3 +1,4 @@
+using System.Numerics;
 using Content.Shared.Shuttles.BUIStates;
 using Robust.Shared.Serialization;
 
@@ -59,6 +60,12 @@ public sealed class TacticalConsoleBoundUserInterfaceState : BoundUserInterfaceS
     /// </summary>
     public List<TacticalContactState> Contacts { get; }
 
+    /// <summary>
+    /// Torpedoes visible on the console's IFF: green diamonds for this ship's own torpedoes, red for
+    /// everyone else's. Sent as map positions so long-range torpedoes show even outside PVS.
+    /// </summary>
+    public List<TacticalTorpedoState> Torpedoes { get; }
+
     public TacticalConsoleBoundUserInterfaceState(
         NavInterfaceState navState,
         ShipCondition condition,
@@ -74,7 +81,8 @@ public sealed class TacticalConsoleBoundUserInterfaceState : BoundUserInterfaceS
         bool weaponsBlocked,
         NetEntity? lockTarget,
         string? targetName,
-        List<TacticalContactState> contacts)
+        List<TacticalContactState> contacts,
+        List<TacticalTorpedoState> torpedoes)
     {
         NavState = navState;
         Condition = condition;
@@ -91,6 +99,30 @@ public sealed class TacticalConsoleBoundUserInterfaceState : BoundUserInterfaceS
         LockTarget = lockTarget;
         TargetName = targetName;
         Contacts = contacts;
+        Torpedoes = torpedoes;
+    }
+}
+
+/// <summary>
+/// Palmtree: one torpedo on the tactical IFF.
+/// </summary>
+[Serializable, NetSerializable]
+public sealed class TacticalTorpedoState
+{
+    /// <summary>Map position of the torpedo.</summary>
+    public Vector2 Position { get; set; }
+
+    /// <summary>True when this ship launched it (green), false for other ships (red).</summary>
+    public bool Friendly { get; set; }
+
+    public TacticalTorpedoState()
+    {
+    }
+
+    public TacticalTorpedoState(Vector2 position, bool friendly)
+    {
+        Position = position;
+        Friendly = friendly;
     }
 }
 

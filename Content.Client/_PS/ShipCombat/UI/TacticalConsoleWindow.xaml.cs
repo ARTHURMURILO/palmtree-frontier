@@ -49,6 +49,9 @@ public sealed partial class TacticalConsoleWindow : FancyWindow
     /// <summary>Raised when the player presses MANUAL FIRE.</summary>
     public event Action? OnManualFireRequested;
 
+    /// <summary>Raised when the player presses FIRE TORPEDOES.</summary>
+    public event Action? OnFireTorpedoesRequested;
+
     /// <summary>Raised when the player toggles the console's Silent checkbox.</summary>
     public event Action<bool>? OnSilentChanged;
 
@@ -127,6 +130,7 @@ public sealed partial class TacticalConsoleWindow : FancyWindow
 
         ClearLockButton.OnPressed += _ => OnClearLockRequested?.Invoke();
         FireButton.OnPressed += _ => OnManualFireRequested?.Invoke();
+        FireTorpedoesButton.OnPressed += _ => OnFireTorpedoesRequested?.Invoke();
         SilentCheck.OnToggled += args => OnSilentChanged?.Invoke(args.Pressed);
     }
 
@@ -182,7 +186,12 @@ public sealed partial class TacticalConsoleWindow : FancyWindow
             : null;
 
         _overlay.LockCursors.Clear();
+        _overlay.Torpedoes.Clear();
         _hostileGrids.Clear();
+
+        // Torpedo blips: green diamonds for our own, red for everyone else's.
+        foreach (var torpedo in state.Torpedoes)
+            _overlay.Torpedoes.Add(new TacticalTorpedoBlip(torpedo.Position, torpedo.Friendly));
 
         foreach (var contact in state.Contacts)
         {

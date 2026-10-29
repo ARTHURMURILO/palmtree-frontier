@@ -65,6 +65,22 @@ public sealed partial class ShipTargetingConsoleComponent : Component
     [DataField]
     public SoundSpecifier ConditionRaisedSound = new SoundPathSpecifier("/Audio/_PS/ShipCombat/alert14.ogg");
 
+    /// <summary>Played once when a torpedo is first detected inbound (under 800 tiles).</summary>
+    [DataField]
+    public SoundSpecifier MissileDetectedSound = new SoundPathSpecifier("/Audio/_PS/ShipCombat/alert14.ogg");
+
+    /// <summary>Beeped while a torpedo is inbound from 800 to 200 tiles.</summary>
+    [DataField]
+    public SoundSpecifier MissileWarningSound = new SoundPathSpecifier("/Audio/_PS/ShipCombat/alert19.ogg");
+
+    /// <summary>Beeped faster while a torpedo is inbound closer than 200 tiles.</summary>
+    [DataField]
+    public SoundSpecifier MissileCloseSound = new SoundPathSpecifier("/Audio/_PS/ShipCombat/alert18.ogg");
+
+    /// <summary>Played every five seconds while the ship is armed but has no operational weapons.</summary>
+    [DataField]
+    public SoundSpecifier WeaponsCriticalSound = new SoundPathSpecifier("/Audio/_PS/ShipCombat/critical.ogg");
+
     /// <summary>
     /// When true the console plays no sounds (the Silent checkbox at the bottom of the window).
     /// </summary>

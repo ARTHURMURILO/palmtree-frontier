@@ -24,6 +24,7 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
     [Dependency] private readonly ShipCombatSystem _combat = default!;
     [Dependency] private readonly ShipTargetingSystem _targeting = default!;
     [Dependency] private readonly ShipWeaponSystem _weapons = default!;
+    [Dependency] private readonly ShipTorpedoSystem _torpedoes = default!;
     [Dependency] private readonly ShuttleConsoleSystem _shuttleConsole = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
@@ -61,6 +62,7 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
         SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleLockRequestMessage>(OnLockRequest);
         SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleClearLockMessage>(OnClearLock);
         SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleManualFireMessage>(OnManualFire);
+        SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleFireTorpedoesMessage>(OnFireTorpedoes);
         SubscribeLocalEvent<ShipCombatConditionChangedEvent>(OnConditionChanged);
         SubscribeLocalEvent<ShipCombatStateChangedEvent>(OnStateChanged);
     }
@@ -239,6 +241,11 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
         _weapons.TryManualFire(uid);
     }
 
+    private void OnFireTorpedoes(EntityUid uid, ShipTargetingConsoleComponent component, TacticalConsoleFireTorpedoesMessage args)
+    {
+        _torpedoes.TryLaunch(uid);
+    }
+
     /// <summary>
     /// Refreshes the window of every tactical console on a grid.
     /// </summary>
@@ -292,12 +299,13 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
             combat.AutomaticRetaliation,
             silent: silent,
             beingLocked: combat.IncomingLocks.Count > 0,
-            incomingMissile: false, // M8: torpedo alarms
+            incomingMissile: combat.IncomingMissile,
             hasLock: hasLock,
             weaponsBlocked: combat.WeaponsBlocked,
             lockTarget: hasLock ? GetNetEntity(combat.LockTarget) : null,
             targetName: hasLock ? GetTargetDisplayName(combat.LockTarget!.Value) : null,
-            contacts: BuildContacts(uid, combat));
+            contacts: BuildContacts(uid, combat),
+            torpedoes: BuildTorpedoes(combat));
     }
 
     /// <summary>
@@ -317,6 +325,29 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
         }
 
         return contacts;
+    }
+
+    /// <summary>
+    /// Torpedoes on the console's map, as map-space blips (green for this ship's own, red for
+    /// everyone else's) so long-range torpedoes render even outside PVS.
+    /// </summary>
+    private List<TacticalTorpedoState> BuildTorpedoes(ShipCombatComponent combat)
+    {
+        var torpedoes = new List<TacticalTorpedoState>();
+
+        if (!TryComp<TransformComponent>(combat.Owner, out var shipXform))
+            return torpedoes;
+
+        var query = EntityQueryEnumerator<ShipTorpedoComponent, TransformComponent>();
+        while (query.MoveNext(out _, out var torpedo, out var xform))
+        {
+            if (xform.MapID != shipXform.MapID)
+                continue;
+
+            torpedoes.Add(new TacticalTorpedoState(_transform.GetWorldPosition(xform), torpedo.Source == combat.Owner));
+        }
+
+        return torpedoes;
     }
 
     /// <summary>

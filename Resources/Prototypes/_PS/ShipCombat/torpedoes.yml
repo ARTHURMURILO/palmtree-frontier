@@ -1,0 +1,126 @@
+# Palmtree: ship torpedoes and their launchers.
+
+- type: entity
+  parent: BaseBullet
+  id: ShipTorpedo
+  name: torpedo
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: Structures/Power/Generation/Singularity/emitter.rsi # Placeholder until torpedoes get their own art.
+    layers:
+    - state: projectile
+      shader: unshaded
+  - type: Ammo
+    muzzleFlash: null
+  - type: Physics
+  - type: Fixtures
+    fixtures:
+      projectile:
+        shape:
+          !type:PhysShapeAabb
+          bounds: "-0.2,-0.2,0.2,0.2"
+        hard: false
+        mask:
+        - Opaque
+  - type: Projectile
+    damage:
+      types:
+        Heat: 150
+  - type: ShipTorpedo
+  - type: TimedDespawn
+    lifetime: 120
+  - type: PointLight
+    radius: 1.5
+    energy: 2
+    color: "#66ccff"
+    castShadows: false
+
+- type: entity
+  parent: ShipTorpedo
+  id: ShipTorpedoPhoton
+  name: photon torpedo
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: ShipTorpedo
+    speed: 20
+    turnRate: 45
+    steeringDelay: 0.5
+    steeringRamp: 3.5
+  - type: Sprite
+    sprite: Structures/Power/Generation/Singularity/emitter.rsi
+    color: "#ff5555"
+    layers:
+    - state: projectile
+      shader: unshaded
+  - type: Projectile
+    damage:
+      types:
+        Heat: 300
+  - type: PointLight
+    radius: 2.5
+    energy: 3
+    color: "#ff3333"
+    castShadows: false
+
+- type: entity
+  parent: BaseStructureDynamic
+  id: ShipTorpedoLauncher
+  name: torpedo launcher
+  description: Fires homing torpedoes at the tactical console's locked target. Needs a set lock and exposed space in front, and never fires automatically.
+  suffix: Palmtree
+  placement:
+    mode: SnapgridCenter
+  components:
+  - type: Transform
+    anchored: true
+  - type: Physics
+    bodyType: Static
+  - type: Fixtures
+    fixtures:
+      fix1:
+        shape:
+          !type:PhysShapeAabb
+          bounds: "-0.45,-0.45,0.45,0.45"
+        density: 190
+        mask:
+        - MachineMask
+        layer:
+        - MachineLayer
+  - type: Rotatable
+    rotateWhileAnchored: true
+  - type: Sprite
+    sprite: Structures/Power/Generation/Singularity/emitter.rsi # Placeholder until launchers get their own art.
+    layers:
+    - state: emitter0
+  - type: ShipTorpedoLauncher
+  - type: BluespacePowered
+    pool: Weapons
+    ratedPower: 15000
+  - type: ApcPowerReceiver
+    needsPower: false
+    powerDisabled: true
+    powerLoad: 0
+  - type: Damageable
+    damageContainer: StructuralInorganic
+    damageModifierSet: Electronic
+  - type: Destructible
+    thresholds:
+    - trigger:
+        !type:DamageTrigger
+        damage: 300
+      behaviors:
+      - !type:DoActsBehavior
+        acts: ["Destruction"]
+  - type: StaticPrice
+    price: 2000
+
+- type: entity
+  parent: ShipTorpedoLauncher
+  id: ShipTorpedoLauncherPhoton
+  name: photon torpedo launcher
+  description: "Fires upgraded photon torpedoes: faster, harder hitting and with delayed steering that ramps up to full turn rate."
+  components:
+  - type: ShipTorpedoLauncher
+    torpedo: ShipTorpedoPhoton
+    fireCooldown: 9

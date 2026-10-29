@@ -1,6 +1,8 @@
 using System.Numerics;
 using Content.Shared._PS.ShipCombat;
 using Content.Shared._PS.ShipCombat.Components;
+using Robust.Shared.Audio;
+using Robust.Shared.Audio.Systems;
 using Content.Shared.Damage;
 using Robust.Shared.Map;
 using Robust.Shared.Physics.Components;
@@ -32,6 +34,7 @@ public sealed class ShipShieldSystem : EntitySystem
     [Dependency] private readonly ShipCombatSystem _combat = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
+    [Dependency] private readonly SharedAudioSystem _audio = default!;
 
     private ISawmill _sawmill = default!;
 
@@ -132,6 +135,29 @@ public sealed class ShipShieldSystem : EntitySystem
             shield.Facings[index] = 0f;
             shield.Up[index] = false;
             _sawmill.Info($"{ToPrettyString(grid)} {facing} shields collapsed");
+
+            if (_timing.CurTime >= shield.NextCollapseSound)
+            {
+                shield.NextCollapseSound = _timing.CurTime + TimeSpan.FromSeconds(2);
+                PlayShieldingAlarm(grid, ShieldAlarm.Collapse);
+            }
+
+            // All facings down: the heavy alarm, once per blackout.
+            var allDown = true;
+            foreach (var up in shield.Up)
+            {
+                if (up)
+                {
+                    allDown = false;
+                    break;
+                }
+            }
+
+            if (allDown && !shield.AllDown)
+            {
+                shield.AllDown = true;
+                PlayShieldingAlarm(grid, ShieldAlarm.AllDown);
+            }
         }
 
         return true;
@@ -258,8 +284,39 @@ public sealed class ShipShieldSystem : EntitySystem
             if (!shield.Up[i] && value > max * shield.ReArmFraction)
             {
                 shield.Up[i] = true;
+                shield.AllDown = false;
                 _sawmill.Info($"{ToPrettyString(grid)} {(ShieldFacing) i} shields re-armed");
+                PlayShieldingAlarm(grid, ShieldAlarm.Restored);
             }
+        }
+    }
+
+    private enum ShieldAlarm : byte
+    {
+        Collapse,
+        AllDown,
+        Restored,
+    }
+
+    /// <summary>
+    /// Plays a shield alarm on every shielding console of the ship (silent consoles stay quiet).
+    /// </summary>
+    private void PlayShieldingAlarm(EntityUid grid, ShieldAlarm alarm)
+    {
+        var query = EntityQueryEnumerator<ShipShieldingConsoleComponent, TransformComponent>();
+        while (query.MoveNext(out var uid, out var console, out var xform))
+        {
+            if (xform.GridUid != grid || console.Silent)
+                continue;
+
+            var sound = alarm switch
+            {
+                ShieldAlarm.Collapse => console.FacingCollapseSound,
+                ShieldAlarm.AllDown => console.AllShieldsDownSound,
+                _ => console.ShieldRestoredSound,
+            };
+
+            _audio.PlayPvs(sound, uid);
         }
     }
 

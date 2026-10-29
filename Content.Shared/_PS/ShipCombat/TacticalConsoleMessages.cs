@@ -69,6 +69,12 @@ public sealed class TacticalConsoleClearLockMessage : BoundUserInterfaceMessage;
 public sealed class TacticalConsoleManualFireMessage : BoundUserInterfaceMessage;
 
 /// <summary>
+/// Palmtree: fires one torpedo from every ready launcher (the FIRE TORPEDOES button).
+/// </summary>
+[Serializable, NetSerializable]
+public sealed class TacticalConsoleFireTorpedoesMessage : BoundUserInterfaceMessage;
+
+/// <summary>
 /// Palmtree: silences (or unsilences) the console.
 /// </summary>
 [Serializable, NetSerializable]

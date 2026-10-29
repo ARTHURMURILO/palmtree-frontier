@@ -106,6 +106,18 @@ public sealed partial class ShipCombatComponent : Component
     /// </summary>
     public bool WeaponsBlocked;
 
+    /// <summary>True while at least one hostile torpedo is inbound (runtime).</summary>
+    public bool IncomingMissile;
+
+    /// <summary>True after the first-detection torpedo alarm played (runtime).</summary>
+    public bool MissileWarningPlayed;
+
+    /// <summary>When the next incoming-torpedo beep may play (runtime).</summary>
+    public TimeSpan NextMissileBeep;
+
+    /// <summary>When the next no-operational-weapons critical alarm may play (runtime).</summary>
+    public TimeSpan NextCriticalBeep;
+
     /// <summary>The entity on the locked grid the weapons currently aim at, if any (runtime).</summary>
     public EntityUid? AimTarget;
 

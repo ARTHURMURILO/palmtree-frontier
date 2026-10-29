@@ -16,6 +16,7 @@ using Content.Shared.Mobs.Systems;
 using Content.Shared.Damage.Systems;
 using Content.Shared.DeviceLinking;
 using Content.Shared.Projectiles;
+using Robust.Shared.Physics.Components;
 using Content.Server.Shuttles.Components;
 using NUnit.Framework;
 using Robust.Shared.GameObjects;
@@ -622,6 +623,91 @@ public sealed class ShipWeaponsTest
             var rotation = entMan.GetComponent<TransformComponent>(turret).LocalRotation.Degrees;
             Assert.That(rotation, Is.LessThan(startRotation - 5d),
                 $"The turret should track the locked target (was {startRotation}, now {rotation}).");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task TorpedoesLaunchSteerAndShowOnTheConsole()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var mapSystem = server.System<SharedMapSystem>();
+        var mapMan = server.ResolveDependency<IMapManager>();
+        var xform = server.System<SharedTransformSystem>();
+
+        EntityUid console = default;
+        EntityUid grid = default;
+        EntityUid targetGrid = default;
+
+        await server.WaitPost(() =>
+        {
+            var gridEnt = mapMan.CreateGridEntity(testMap.MapId);
+            grid = gridEnt.Owner;
+            for (var x = 0; x < 3; x++)
+                mapSystem.SetTile(grid, gridEnt.Comp, new Vector2i(x, 0), new Tile(1));
+
+            entMan.SpawnEntity("BluespacePowerSink", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            console = entMan.SpawnEntity("ComputerTacticalConsole", new EntityCoordinates(grid, new Vector2(1.5f, 0.5f)));
+
+            // A launcher at the east edge, its muzzle facing open space.
+            var launcher = entMan.SpawnEntity("ShipTorpedoLauncher", new EntityCoordinates(grid, new Vector2(2.5f, 0.5f)));
+            xform.SetLocalRotationNoLerp(launcher, Angle.FromDegrees(90));
+
+            var target = mapMan.CreateGridEntity(testMap.MapId);
+            targetGrid = target.Owner;
+            mapSystem.SetTile(targetGrid, target.Comp, new Vector2i(0, 0), new Tile(1));
+            // South of the launcher, so the torpedo has to steer after launching east.
+            xform.SetWorldPosition(targetGrid, new Vector2(20f, -20f));
+        });
+
+        await pair.RunTicksSync(10);
+
+        await server.WaitAssertion(() =>
+        {
+            var combat = server.System<ShipCombatSystem>();
+            var torpedoes = server.System<ShipTorpedoSystem>();
+            Assert.That(combat.TryGetShipCombat(grid, out var state), Is.True);
+            combat.SetCondition(state, ShipCondition.Yellow);
+            state.Comp.WeaponMode = ShipWeaponMode.All;
+
+            // No firing at all without a set lock.
+            state.Comp.LockTarget = targetGrid;
+            state.Comp.LockInProgress = true;
+            Assert.That(torpedoes.TryLaunch(console), Is.False, "Torpedoes need a set lock.");
+            state.Comp.LockInProgress = false;
+
+            Assert.That(torpedoes.TryLaunch(console), Is.True, "The launcher should fire.");
+
+            // The launcher's cooldown holds back an immediate second volley.
+            Assert.That(torpedoes.TryLaunch(console), Is.False, "Each launcher has its own cooldown.");
+
+            // The console shows a friendly torpedo blip.
+            var consoleState = server.System<ShipTargetingConsoleSystem>().BuildState(console, state.Comp);
+            Assert.That(consoleState.Torpedoes, Has.Count.EqualTo(1), "The torpedo should be on the IFF.");
+            Assert.That(consoleState.Torpedoes[0].Friendly, Is.True);
+        });
+
+        // Steering: the torpedo was launched east but must turn towards the target to the south east.
+        await pair.RunTicksSync(60);
+
+        await server.WaitAssertion(() =>
+        {
+            EntityUid torpedo = default;
+            var query = entMan.EntityQueryEnumerator<Content.Shared._PS.ShipCombat.Components.ShipTorpedoComponent>();
+            Assert.That(query.MoveNext(out torpedo, out var torpedoComp), Is.True, "A torpedo should exist.");
+            Assert.That(torpedoComp.Target, Is.EqualTo(targetGrid));
+            Assert.That(torpedoComp.Source, Is.EqualTo(grid));
+
+            var velocity = entMan.GetComponent<PhysicsComponent>(torpedo).LinearVelocity;
+            Assert.That(velocity.Length(), Is.GreaterThan(0.5f), "The torpedo should be moving.");
+
+            // East is Angle.FromDegrees(90); steering south puts the heading well away from it.
+            Assert.That(Math.Abs(velocity.ToWorldAngle().Degrees - 90d), Is.GreaterThan(10d),
+                "The torpedo should steer towards the target.");
         });
 
         await pair.CleanReturnAsync();

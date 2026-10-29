@@ -14,6 +14,7 @@ using Content.Shared.Physics;
 using Content.Shared.Popups;
 using Content.Shared.Mobs.Components;
 using Content.Server.Shuttles.Components;
+using Robust.Shared.Audio.Systems;
 using Robust.Shared.Configuration;
 using Robust.Shared.Map;
 using Robust.Shared.Maths;
@@ -55,6 +56,7 @@ public sealed class ShipWeaponSystem : EntitySystem
     [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly SharedPhysicsSystem _physics = default!;
     [Dependency] private readonly SharedPopupSystem _popup = default!;
+    [Dependency] private readonly SharedAudioSystem _audio = default!;
     [Dependency] private readonly MobStateSystem _mobState = default!;
     [Dependency] private readonly IConfigurationManager _cfg = default!;
 
@@ -234,6 +236,53 @@ public sealed class ShipWeaponSystem : EntitySystem
         }
 
         combat.WeaponsBlocked = weaponsBlocked;
+        UpdateCriticalAlarm(grid, combat);
+    }
+
+    /// <summary>
+    /// While the ship is out of peacetime but has no operational weapon at all, every tactical
+    /// console beeps critical.ogg every five seconds.
+    /// </summary>
+    private void UpdateCriticalAlarm(EntityUid grid, ShipCombatComponent combat)
+    {
+        if (combat.Condition == ShipCondition.Green || HasOperationalWeapon(grid))
+            return;
+
+        if (_timing.CurTime < combat.NextCriticalBeep)
+            return;
+
+        combat.NextCriticalBeep = _timing.CurTime + TimeSpan.FromSeconds(5);
+
+        var consoles = EntityQueryEnumerator<ShipTargetingConsoleComponent, TransformComponent>();
+        while (consoles.MoveNext(out var uid, out var console, out var xform))
+        {
+            if (xform.GridUid != grid || console.Silent)
+                continue;
+
+            _audio.PlayPvs(console.WeaponsCriticalSound, uid);
+        }
+    }
+
+    /// <summary>
+    /// True when the ship has at least one powered weapon or torpedo launcher.
+    /// </summary>
+    private bool HasOperationalWeapon(EntityUid grid)
+    {
+        var weapons = EntityQueryEnumerator<ShipWeaponComponent, BluespacePoweredComponent, TransformComponent>();
+        while (weapons.MoveNext(out _, out _, out var powered, out var xform))
+        {
+            if (xform.GridUid == grid && powered.Powered)
+                return true;
+        }
+
+        var launchers = EntityQueryEnumerator<ShipTorpedoLauncherComponent, BluespacePoweredComponent, TransformComponent>();
+        while (launchers.MoveNext(out _, out _, out var powered, out var xform))
+        {
+            if (xform.GridUid == grid && powered.Powered)
+                return true;
+        }
+
+        return false;
     }
 
     private void TryFire(EntityUid uid, ShipWeaponComponent weapon, TransformComponent xform, EntityCoordinates target)

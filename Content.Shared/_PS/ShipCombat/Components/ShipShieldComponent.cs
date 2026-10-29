@@ -29,6 +29,12 @@ public sealed partial class ShipShieldComponent : Component
     /// <summary>When the facings may be redistributed again.</summary>
     public TimeSpan NextRedistribution;
 
+    /// <summary>When the facing-collapse alarm may play again (runtime).</summary>
+    public TimeSpan NextCollapseSound;
+
+    /// <summary>True while every facing was already down (runtime).</summary>
+    public bool AllDown;
+
     /// <summary>True once the first working generator has filled the facings.</summary>
     public bool Initialized;
 }
