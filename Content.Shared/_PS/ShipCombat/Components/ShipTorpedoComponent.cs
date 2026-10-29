@@ -47,6 +47,12 @@ public sealed partial class ShipTorpedoComponent : Component
     /// <summary>True once the torpedo has contacted something and started its fuse (runtime).</summary>
     public bool Detonating;
 
+    /// <summary>True once the torpedo has actually detonated (runtime).</summary>
+    public bool Detonated;
+
+    /// <summary>Last tick's world position, for contact raycasts (runtime).</summary>
+    public System.Numerics.Vector2? LastPosition;
+
     /// <summary>The grid that launched it (runtime).</summary>
     public EntityUid? Source;
 

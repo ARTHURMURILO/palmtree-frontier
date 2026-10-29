@@ -2,12 +2,14 @@ using System.Numerics;
 using Content.Shared._PS.ShipCombat;
 using Content.Shared._PS.ShipCombat.Components;
 using Content.Shared.Maps;
+using Content.Shared.Physics;
 using Content.Shared.Projectiles;
 using Content.Shared.Trigger;
 using Robust.Shared.Audio.Systems;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Maths;
+using Robust.Shared.Physics;
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Physics.Systems;
 using Robust.Shared.Timing;
@@ -73,6 +75,7 @@ public sealed class ShipTorpedoSystem : EntitySystem
         base.Update(frameTime);
 
         ProcessRipples();
+        DetonateOnContact();
         DetonateDue();
         StartContactFuses();
         Steer(frameTime);
@@ -224,11 +227,49 @@ public sealed class ShipTorpedoSystem : EntitySystem
     }
 
     /// <summary>
+    /// Detonates a torpedo that swept into a wall, window or machine since the last tick. This is
+    /// independent of the projectile hit event, so a torpedo can never pass through a wall.
+    /// </summary>
+    private void DetonateOnContact()
+    {
+        var query = EntityQueryEnumerator<ShipTorpedoComponent, TransformComponent>();
+        while (query.MoveNext(out var uid, out var torpedo, out var xform))
+        {
+            if (torpedo.Detonating)
+                continue;
+
+            var position = _transform.GetWorldPosition(xform);
+            if (torpedo.LastPosition is { } last)
+            {
+                var delta = position - last;
+                if (delta.LengthSquared() > 0.0001f)
+                {
+                    var ray = new CollisionRay(last, delta.Normalized(),
+                        (int) (CollisionGroup.Impassable | CollisionGroup.BulletImpassable));
+                    foreach (var hit in _physics.IntersectRay(xform.MapID, ray, delta.Length(), uid, true))
+                    {
+                        Detonate(uid, torpedo);
+                        break;
+                    }
+                }
+            }
+
+            torpedo.LastPosition = position;
+        }
+    }
+
+    /// <summary>
     /// Detonates a torpedo: a ship with its shields up absorbs the whole torpedo, otherwise it
     /// explodes with its full blast.
     /// </summary>
     private void Detonate(EntityUid uid, ShipTorpedoComponent torpedo)
     {
+        if (Deleted(uid) || torpedo.Detonated)
+            return;
+
+        torpedo.Detonated = true;
+        torpedo.Detonating = true;
+
         if (torpedo.Target is { } target
             && TryComp<ShipShieldComponent>(target, out var shield)
             && _shields.TryAbsorb(target, shield, _transform.GetWorldPosition(uid), torpedo.ShieldDamage))
