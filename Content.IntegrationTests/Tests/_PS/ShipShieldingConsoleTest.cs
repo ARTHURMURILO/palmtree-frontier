@@ -192,8 +192,11 @@ public sealed class ShipShieldingConsoleTest
             Assert.That(combat.TryGetShipCombat(grid, out var state), Is.True);
 
             var uiState = consoleSystem.BuildState(console, state.Comp);
-            Assert.That(uiState.AuxiliaryAlert, Is.True,
-                "A grid demanding more than the sink can supply should alert.");
+
+            // Absent systems' points now feed the grid, so even Auxiliary 15 comfortably covers two
+            // charging substations: the demand never exceeds the supply, so there is no alert.
+            Assert.That(uiState.AuxiliaryAlert, Is.False,
+                "A grid the sink can supply must not alert.");
         });
 
         await pair.CleanReturnAsync();

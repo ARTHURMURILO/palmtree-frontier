@@ -46,6 +46,12 @@ public sealed class ShipTorpedoSystem : EntitySystem
 
     private TimeSpan _nextAlarmScan;
 
+    /// <summary>Stagger between two launchers of a ripple volley, in seconds.</summary>
+    private const float RippleDelay = 0.25f;
+
+    /// <summary>Queued ripple volleys per ship (runtime).</summary>
+    private readonly Dictionary<EntityUid, List<(EntityUid Launcher, TimeSpan At)>> _pending = new();
+
     public override void Initialize()
     {
         base.Initialize();
@@ -58,20 +64,17 @@ public sealed class ShipTorpedoSystem : EntitySystem
         if (torpedo.Detonating)
             return;
 
-        // Contact: hold position for the fuse (0.75 s), then detonate. If the torpedo penetrated the
-        // hull it explodes inside the ship.
-        torpedo.Detonating = true;
-        torpedo.DetonateAt = _timing.CurTime + ContactFuse;
-
-        if (TryComp<PhysicsComponent>(uid, out var physics))
-            _physics.SetLinearVelocity(uid, Vector2.Zero, body: physics);
+        // A direct hit detonates on impact.
+        Detonate(uid, torpedo);
     }
 
     public override void Update(float frameTime)
     {
         base.Update(frameTime);
 
+        ProcessRipples();
         DetonateDue();
+        StartContactFuses();
         Steer(frameTime);
 
         if (_timing.CurTime < _nextAlarmScan)
@@ -85,6 +88,11 @@ public sealed class ShipTorpedoSystem : EntitySystem
     /// Fires one torpedo from every ready launcher on the ship (the console's FIRE TORPEDOES button).
     /// Requires a set lock, an armed weapon mode and a non-GREEN condition; each launcher respects
     /// its own cooldown and must have exposed space in front.
+    /// </summary>
+    /// <summary>
+    /// Fires a staggered volley (ripple) from every ready launcher on the ship. Requires a set lock,
+    /// an armed weapon mode and a non-GREEN condition; each launcher respects its own cooldown and
+    /// must have exposed space in front.
     /// </summary>
     public bool TryLaunch(EntityUid console)
     {
@@ -106,12 +114,15 @@ public sealed class ShipTorpedoSystem : EntitySystem
             return false;
         }
 
-        var fired = false;
+        // Already rippling: one press per volley.
+        if (_pending.ContainsKey(grid))
+            return false;
+
+        var queue = new List<(EntityUid Launcher, TimeSpan At)>();
         var query = EntityQueryEnumerator<ShipTorpedoLauncherComponent, BluespacePoweredComponent, TransformComponent>();
         while (query.MoveNext(out var uid, out var launcher, out var powered, out var xform))
         {
             if (xform.GridUid != grid
-                || xform.MapUid is not { } mapUid
                 || !powered.Powered
                 || _timing.CurTime < launcher.NextFire
                 || !IsExposed(xform))
@@ -119,51 +130,120 @@ public sealed class ShipTorpedoSystem : EntitySystem
                 continue;
             }
 
-            launcher.NextFire = _timing.CurTime + launcher.FireCooldown;
-
-            // Launch from the exposed muzzle, in front of the launcher.
-            var from = _transform.GetMapCoordinates(xform).Position + xform.LocalRotation.ToWorldVec() * 1.5f;
-            var torpedo = Spawn(launcher.Torpedo.Id, new MapCoordinates(from, xform.MapID));
-
-            if (!TryComp<ShipTorpedoComponent>(torpedo, out var torpedoComp))
-                continue;
-
-            // The launcher is the shooter: torpedoes ignore it on the way out and a misfire at our
-            // own ship counts as our own weapon (bypassing our own shields).
-            if (TryComp<ProjectileComponent>(torpedo, out var projectile))
-                _projectiles.SetShooter(torpedo, projectile, uid);
-
-            torpedoComp.Target = target;
-            torpedoComp.Source = grid;
-
-            // Torpedoes aim at the same thing the weapons were aiming at; CREW falls back to the hull.
-            if (combat.Comp.TargetMode != ShipTargetMode.Crew && combat.Comp.AimTarget is { } aimEntity && Exists(aimEntity))
-                torpedoComp.TargetEntity = aimEntity;
-            torpedoComp.LaunchTime = _timing.CurTime;
-
-            var aim = GridCenter(target);
-            var direction = aim - from;
-            if (direction.LengthSquared() > 0.01f)
-            {
-                var heading = direction.ToWorldAngle();
-                if (TryComp<PhysicsComponent>(torpedo, out var physics))
-                    _physics.SetLinearVelocity(torpedo, heading.ToWorldVec() * torpedoComp.Speed, body: physics);
-
-                _transform.SetWorldRotationNoLerp(torpedo, heading);
-            }
-
-            if (launcher.LaunchSound != null)
-                _audio.PlayPvs(launcher.LaunchSound, torpedo);
-
-            fired = true;
+            queue.Add((uid, _timing.CurTime + TimeSpan.FromSeconds(queue.Count * RippleDelay)));
         }
 
-        return fired;
+        if (queue.Count == 0)
+            return false;
+
+        _pending[grid] = queue;
+        return true;
     }
 
     /// <summary>
-    /// Detonates torpedoes whose contact fuse has run out. Shields absorb the whole torpedo; without
-    /// shields it explodes with its full blast.
+    /// Fires queued ripple launches when their staggered times come up.
+    /// </summary>
+    private void ProcessRipples()
+    {
+        if (_pending.Count == 0)
+            return;
+
+        List<EntityUid>? finished = null;
+        foreach (var (grid, queue) in _pending)
+        {
+            while (queue.Count > 0 && _timing.CurTime >= queue[0].At)
+            {
+                var (launcherUid, _) = queue[0];
+                queue.RemoveAt(0);
+
+                if (TryComp<ShipTorpedoLauncherComponent>(launcherUid, out var launcher)
+                    && TryComp<TransformComponent>(launcherUid, out var xform)
+                    && TryComp<ShipCombatComponent>(grid, out var combat)
+                    && combat.LockTarget is { } target
+                    && Exists(target))
+                {
+                    LaunchOne(launcherUid, launcher, xform, target, combat);
+                }
+            }
+
+            if (queue.Count == 0)
+                (finished ??= new List<EntityUid>()).Add(grid);
+        }
+
+        if (finished == null)
+            return;
+
+        foreach (var grid in finished)
+            _pending.Remove(grid);
+    }
+
+    /// <summary>
+    /// Spawns one torpedo from a launcher, aimed like the weapons are.
+    /// </summary>
+    private void LaunchOne(EntityUid uid, ShipTorpedoLauncherComponent launcher, TransformComponent xform,
+        EntityUid target, ShipCombatComponent combat)
+    {
+        if (xform.MapUid is not { } mapUid || _timing.CurTime < launcher.NextFire || !IsExposed(xform))
+            return;
+
+        launcher.NextFire = _timing.CurTime + launcher.FireCooldown;
+
+        // Launch from the exposed muzzle, in front of the launcher.
+        var from = _transform.GetMapCoordinates(xform).Position + xform.LocalRotation.ToWorldVec() * 1.5f;
+        var torpedo = Spawn(launcher.Torpedo.Id, new MapCoordinates(from, xform.MapID));
+
+        if (!TryComp<ShipTorpedoComponent>(torpedo, out var torpedoComp))
+            return;
+
+        // The launcher is the shooter: torpedoes ignore it on the way out and a misfire at our
+        // own ship counts as our own weapon (bypassing our own shields).
+        if (TryComp<ProjectileComponent>(torpedo, out var projectile))
+            _projectiles.SetShooter(torpedo, projectile, uid);
+
+        torpedoComp.Target = target;
+        torpedoComp.Source = combat.Owner;
+        torpedoComp.LaunchTime = _timing.CurTime;
+
+        // Torpedoes aim at the same thing the weapons were aiming at; CREW falls back to the hull.
+        if (combat.TargetMode != ShipTargetMode.Crew && combat.AimTarget is { } aimEntity && Exists(aimEntity))
+            torpedoComp.TargetEntity = aimEntity;
+
+        var aim = GridCenter(target);
+        var direction = aim - from;
+        if (direction.LengthSquared() > 0.01f)
+        {
+            var heading = direction.ToWorldAngle();
+            if (TryComp<PhysicsComponent>(torpedo, out var physics))
+                _physics.SetLinearVelocity(torpedo, heading.ToWorldVec() * torpedoComp.Speed, body: physics);
+
+            _transform.SetWorldRotationNoLerp(torpedo, heading);
+        }
+
+        if (launcher.LaunchSound != null)
+            _audio.PlayPvs(launcher.LaunchSound, torpedo);
+    }
+
+    /// <summary>
+    /// Detonates a torpedo: a ship with its shields up absorbs the whole torpedo, otherwise it
+    /// explodes with its full blast.
+    /// </summary>
+    private void Detonate(EntityUid uid, ShipTorpedoComponent torpedo)
+    {
+        if (torpedo.Target is { } target
+            && TryComp<ShipShieldComponent>(target, out var shield)
+            && _shields.TryAbsorb(target, shield, _transform.GetWorldPosition(uid), torpedo.ShieldDamage))
+        {
+            QueueDel(uid);
+            return;
+        }
+
+        var trigger = new TriggerEvent();
+        RaiseLocalEvent(uid, ref trigger);
+        QueueDel(uid);
+    }
+
+    /// <summary>
+    /// Detonates torpedoes whose contact fuse has run out.
     /// </summary>
     private void DetonateDue()
     {
@@ -173,20 +253,43 @@ public sealed class ShipTorpedoSystem : EntitySystem
             if (!torpedo.Detonating || _timing.CurTime < torpedo.DetonateAt)
                 continue;
 
-            if (torpedo.Target is { } target
-                && TryComp<ShipShieldComponent>(target, out var shield)
-                && _shields.TryAbsorb(target, shield, _transform.GetWorldPosition(uid), torpedo.ShieldDamage))
-            {
-                // The deflector ate it: no hull damage at all.
-                QueueDel(uid);
-                continue;
-            }
-
-            // ExplodeOnTrigger on the prototype runs the blast.
-            var trigger = new TriggerEvent();
-            RaiseLocalEvent(uid, ref trigger);
-            QueueDel(uid);
+            Detonate(uid, torpedo);
         }
+    }
+
+    /// <summary>
+    /// A torpedo flying over the target's tiles without hitting anything starts its 0.75 s fuse, so
+    /// it detonates inside the hull.
+    /// </summary>
+    private void StartContactFuses()
+    {
+        var query = EntityQueryEnumerator<ShipTorpedoComponent, TransformComponent>();
+        while (query.MoveNext(out var uid, out var torpedo, out var xform))
+        {
+            if (torpedo.Detonating || torpedo.Target is not { } target || !Exists(target))
+                continue;
+
+            if (!IsOverGrid(xform, target))
+                continue;
+
+            torpedo.Detonating = true;
+            torpedo.DetonateAt = _timing.CurTime + ContactFuse;
+
+            if (TryComp<PhysicsComponent>(uid, out var physics))
+                _physics.SetLinearVelocity(uid, Vector2.Zero, body: physics);
+        }
+    }
+
+    /// <summary>
+    /// True when the entity's position is inside the grid's bounds.
+    /// </summary>
+    private bool IsOverGrid(TransformComponent xform, EntityUid grid)
+    {
+        if (!TryComp<MapGridComponent>(grid, out var mapGrid))
+            return false;
+
+        var local = Vector2.Transform(_transform.GetWorldPosition(xform), _transform.GetInvWorldMatrix(grid));
+        return mapGrid.LocalAABB.Contains(local);
     }
 
     /// <summary>

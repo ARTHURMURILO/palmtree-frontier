@@ -12,5 +12,5 @@ public sealed partial class BluespacePowerSinkComponent : Component
     /// The power budget the engineering console's sliders distribute, in watts.
     /// </summary>
     [DataField]
-    public float RatedThroughput = 30000f;
+    public float RatedThroughput = 60000f;
 }

@@ -299,6 +299,21 @@ public sealed class ShipPowerSystem : EntitySystem
             args.PushMarkup(Loc.GetString("bluespace-power-sink-examine-same-net"));
     }
 
+    /// <summary>
+    /// True when the grid has at least one device with <typeparamref name="T"/>.
+    /// </summary>
+    private bool HasDevice<T>(EntityUid grid) where T : Component
+    {
+        var query = EntityQueryEnumerator<T, TransformComponent>();
+        while (query.MoveNext(out _, out var xform))
+        {
+            if (xform.GridUid == grid)
+                return true;
+        }
+
+        return false;
+    }
+
     private bool IsInputOutputSameNet(EntityUid uid)
     {
         if (!TryComp<NodeContainerComponent>(uid, out var container))
@@ -414,7 +429,41 @@ public sealed class ShipPowerSystem : EntitySystem
 
         // Whatever the Auxiliary pool holds is fed back to the ship's power net by the sink's
         // PowerSupplier, limited to what the battery can actually cover this tick (brownout).
-        var auxShare = GetPool(combat, ShipPowerPool.Auxiliary) / (float) PoolTotal;
+        // Pools with no devices on the ship feed the grid instead of being reserved: a ship without
+        // shields or bluespace thrusters gets that share as auxiliary power.
+        combat.ShieldPoolActive = HasDevice<ShieldGeneratorComponent>(grid);
+        combat.WeaponPoolActive = HasDevice<ShipWeaponComponent>(grid) || HasDevice<ShipTorpedoLauncherComponent>(grid);
+        combat.ThrusterPoolActive = HasDevice<BluespaceThrusterComponent>(grid);
+
+        // If the engineering console is unpowered, fall back to an auxiliary-heavy distribution so
+        // the ship's grid gets what the sink can give.
+        var consoleUnpowered = false;
+        var consoles = EntityQueryEnumerator<ShipShieldingConsoleComponent, ApcPowerReceiverComponent, TransformComponent>();
+        while (consoles.MoveNext(out _, out _, out var consoleReceiver, out var consoleXform))
+        {
+            if (consoleXform.GridUid == grid && !consoleReceiver.Powered)
+                consoleUnpowered = true;
+        }
+
+        if (consoleUnpowered && !combat.EmergencyAuxSet)
+        {
+            combat.EmergencyAuxSet = true;
+            SetPool((grid, combat), ShipPowerPool.Auxiliary, ShipPowerConstants.PoolMax);
+        }
+        else if (!consoleUnpowered)
+        {
+            combat.EmergencyAuxSet = false;
+        }
+
+        var auxPoints = GetPool(combat, ShipPowerPool.Auxiliary);
+        if (!combat.ShieldPoolActive)
+            auxPoints += GetPool(combat, ShipPowerPool.Shields);
+        if (!combat.WeaponPoolActive)
+            auxPoints += GetPool(combat, ShipPowerPool.Weapons);
+        if (!combat.ThrusterPoolActive)
+            auxPoints += GetPool(combat, ShipPowerPool.Thrusters);
+
+        var auxShare = auxPoints / (float) PoolTotal;
         var auxUsed = 0f;
         foreach (var (sinkUid, sink, battery) in sinks)
         {

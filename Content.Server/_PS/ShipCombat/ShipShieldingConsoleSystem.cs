@@ -206,7 +206,14 @@ public sealed class ShipShieldingConsoleSystem : EntitySystem
             weaponsAlert: GetWeaponsAlert(combat),
             thrustersAlert: GetThrustersAlert(combat.Owner),
             auxiliaryAlert: GetAuxiliaryAlert(combat),
-            silent: TryComp<ShipShieldingConsoleComponent>(uid, out var console) && console.Silent);
+            silent: TryComp<ShipShieldingConsoleComponent>(uid, out var console) && console.Silent,
+            activePools: new[]
+            {
+                combat.ShieldPoolActive,
+                combat.WeaponPoolActive,
+                combat.ThrusterPoolActive,
+                true,
+            });
     }
 
     /// <summary>

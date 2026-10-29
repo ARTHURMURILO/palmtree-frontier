@@ -685,10 +685,6 @@ public sealed class ShipWeaponsTest
             // The launcher's cooldown holds back an immediate second volley.
             Assert.That(torpedoes.TryLaunch(console), Is.False, "Each launcher has its own cooldown.");
 
-            // The console shows a friendly torpedo blip.
-            var consoleState = server.System<ShipTargetingConsoleSystem>().BuildState(console, state.Comp);
-            Assert.That(consoleState.Torpedoes, Has.Count.EqualTo(1), "The torpedo should be on the IFF.");
-            Assert.That(consoleState.Torpedoes[0].Friendly, Is.True);
         });
 
         // Steering: the torpedo was launched east but must turn towards the target to the south east.
@@ -701,6 +697,13 @@ public sealed class ShipWeaponsTest
             Assert.That(query.MoveNext(out torpedo, out var torpedoComp), Is.True, "A torpedo should exist.");
             Assert.That(torpedoComp.Target, Is.EqualTo(targetGrid));
             Assert.That(torpedoComp.Source, Is.EqualTo(grid));
+
+            // The console shows a friendly torpedo blip.
+            var combat = server.System<ShipCombatSystem>();
+            Assert.That(combat.TryGetShipCombat(grid, out var state), Is.True);
+            var consoleState = server.System<ShipTargetingConsoleSystem>().BuildState(console, state.Comp);
+            Assert.That(consoleState.Torpedoes, Has.Count.EqualTo(1), "The torpedo should be on the IFF.");
+            Assert.That(consoleState.Torpedoes[0].Friendly, Is.True);
 
             var velocity = entMan.GetComponent<PhysicsComponent>(torpedo).LinearVelocity;
             Assert.That(velocity.Length(), Is.GreaterThan(0.5f), "The torpedo should be moving.");

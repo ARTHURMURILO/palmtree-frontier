@@ -47,6 +47,12 @@ public sealed class ShieldingConsoleBoundUserInterfaceState : BoundUserInterface
     /// <summary>True when the console is muted (no sounds).</summary>
     public bool Silent { get; }
 
+    /// <summary>
+    /// Which power pools have devices on the ship, indexed by <see cref="ShipPowerPool"/>. Absent
+    /// pools are greyed out and their points feed the grid instead.
+    /// </summary>
+    public bool[] ActivePools { get; }
+
     public ShieldingConsoleBoundUserInterfaceState(
         NavInterfaceState navState,
         ShipCondition condition,
@@ -66,7 +72,8 @@ public sealed class ShieldingConsoleBoundUserInterfaceState : BoundUserInterface
         bool weaponsAlert,
         bool thrustersAlert,
         bool auxiliaryAlert,
-        bool silent)
+        bool silent,
+        bool[] activePools)
     {
         NavState = navState;
         Condition = condition;
@@ -87,5 +94,6 @@ public sealed class ShieldingConsoleBoundUserInterfaceState : BoundUserInterface
         ThrustersAlert = thrustersAlert;
         AuxiliaryAlert = auxiliaryAlert;
         Silent = silent;
+        ActivePools = activePools;
     }
 }
