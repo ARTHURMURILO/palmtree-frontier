@@ -1581,3 +1581,17 @@ Entries:
   time: '2026-10-28T00:58:39.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/073d57e3e256dc6865876ccdd2355a52e084945e
+- author: TheLife
+  changes:
+    - type: Tweak
+      message: >-
+        Roombas now arrive switched off. Click one to switch it on or off, and
+        use the right-click menu to toggle trash collection, mute its voice, or
+        take a full trash bag.
+    - type: Fix
+      message: >-
+        Roombas no longer vacuum up items resting on tables or other furniture.
+        Their chatter is now an overhead speech bubble only and no longer
+        appears in chat.
+  id: 90105
+  time: '2026-10-28T23:27:49.0000000+00:00'

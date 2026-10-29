@@ -9,15 +9,26 @@
   components:
   - type: Sprite
     sprite: _PS/Mobs/Silicon/Bots/roomba.rsi
-    state: roomba
     # SmallMobs so the roomba renders underneath tables it rolls under (like mice), instead of the
     # BaseMob default of Mobs, which draws over furniture.
     drawdepth: SmallMobs
+    layers:
+    - state: roomba
+      map: ["enum.RoombaVisualLayers.Base"]
+  - type: Appearance
+  - type: GenericVisualizer
+    visuals:
+      # Dim the robot while it is switched off (click it to toggle power).
+      enum.RoombaVisuals.Enabled:
+        enum.RoombaVisualLayers.Base:
+          True: { color: "#FFFFFF" }
+          False: { color: "#6E6E6E" }
   - type: Construction
     graph: Roomba
     node: bot
   # RoombaSystem drives and cleans; the HTN task only keeps the NPC awake.
   - type: Roomba
+    enabled: false
   - type: HTN
     rootTask:
       task: RoombaIdleCompound
@@ -27,8 +38,8 @@
   # Short delay so mopping puddles while driving does not lag behind.
   - type: UseDelay
     delay: 0.5
-  # Internal trash bag. ContainerFill spawns the bag on MapInit; clicking with an empty hand swaps
-  # the full bag for a fresh one (RoombaSystem), so there is no way to insert items manually.
+  # Internal trash bag. ContainerFill spawns the bag on MapInit; the right-click "take full trash bag"
+  # verb swaps it for a fresh one (RoombaSystem), so there is no way to insert items manually.
   - type: ContainerContainer
     containers:
       roomba_trash_bag: !type:Container
@@ -51,5 +62,7 @@
         layer:
         - SmallMobLayer
   - type: InteractionPopup
-    interactSuccessString: petting-success-roomba
-    interactFailureString: petting-failure-roomba
+    # Clicking toggles power (RoombaSystem handles InteractHandEvent); there is no petting popup.
+    interactSuccessString: null
+    interactFailureString: null
+    interactSuccessSound: null

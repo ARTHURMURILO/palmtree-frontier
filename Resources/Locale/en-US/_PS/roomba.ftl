@@ -1,8 +1,28 @@
 construction-graph-tag-mop = mop
-petting-success-roomba = You pet {THE($target)} on {POSS-ADJ($target)} dusty chassis. It chirps happily.
-petting-failure-roomba = You reach out to pet {THE($target)}, but {SUBJECT($target)} {CONJUGATE-BE($target)} busy vacuuming!
+
+# Power and right-click controls.
+roomba-power-on = You switch the roomba on. It whirs to life.
+roomba-power-off = You switch the roomba off. It winds down.
+roomba-verb-power-on = Turn on
+roomba-verb-power-off = Turn off
+roomba-verb-trash-on = Enable trash collection
+roomba-verb-trash-off = Disable trash collection
+roomba-trash-collection-enabled = Trash collection enabled.
+roomba-trash-collection-disabled = Trash collection disabled. It still scrubs the floor.
+roomba-verb-mute = Mute speech
+roomba-verb-unmute = Unmute speech
+roomba-speech-muted = The roomba's voice module goes quiet.
+roomba-speech-unmuted = The roomba's voice module beeps back to life.
+
+# Examine text.
+roomba-examine-on = It is switched on.
+roomba-examine-off = It is switched off. Click it to turn it on.
+roomba-examine-trash-on = Trash collection is enabled.
+roomba-examine-trash-off = Trash collection is disabled.
+roomba-examine-muted = Its voice module is muted.
 
 # Taking the roomba's full internal trash bag.
+roomba-verb-take-trash-bag = Take full trash bag
 roomba-trash-bag-taken = You take the full trash bag. The roomba clicks in a fresh one.
 roomba-trash-bag-dropped = The full trash bag slips from your hands.
 roomba-trash-bag-needs-hand = You need a free hand to take the trash bag.

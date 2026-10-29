@@ -47,14 +47,19 @@
   decals around itself (cum drips/ejaculate, grime, crayon — the space cleaner set), mops puddles
   on its tile using the cleanbot's own water tank (sound rate-limited), and vacuums loose
   `Trash`/`Cartridge`/`GoblinMade` items into a replaceable internal `TrashBag` (the bag itself
-  supplies the whitelist). Clicking the roomba with an empty hand while the bag has contents swaps
-  it for a fresh empty bag and gives the full one to the player; there is deliberately no manual
-  insertion path. `RoombaComponent` is
+  supplies the whitelist). Items overlapping a `PlaceableSurface` (tables, beds, crates) are
+  skipped: SS14 has no z-levels, so "on the table" is the only way to tell them apart from the
+  floor. **Roombas spawn switched off**; left-clicking (or activating) toggles power (`Appearance`
+  + `GenericVisualizer` dim the sprite, and the NPC is slept while off). Right-click verbs toggle
+  **trash collection** (decals/puddles keep being cleaned when off) and **mute** the voice module,
+  and take a full bag. `RoombaComponent` is
   **shared** and `SharedRoombaSystem` cancels `AttemptMobTargetCollideEvent` for it (the prone-mob
   trick), so it never shoves mobs on either side — clients predict their own pushes. It also talks:
   rare bump lines (25%, 6 s cooldown), very rare idle lines (90-240 s) and less rare comments when it
   sees a character without a jumpsuit or outer clothing (`Resources/Locale/en-US/_PS/roomba.ftl`).
-  The entity's HTN is only a wait loop that keeps the NPC awake. Crafted in the utilities
+  Speech is sent with `hideChat`/`hideLog`, so it appears as an overhead speech bubble but never in
+  chat history (the vending-machine pattern). The entity's HTN is only a wait loop that keeps the
+  NPC awake. Crafted in the utilities
   construction menu with the cleanbot parts plus a mop.
 - `RandomHumanoidSpawner` markers self-delete on MapInit; for preset looks use static mobs with
   `HumanoidAppearance.initial`.
