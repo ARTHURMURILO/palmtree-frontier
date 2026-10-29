@@ -185,6 +185,5 @@
   - type: ShipTorpedoLauncher
     torpedo: ShipTorpedoUranium
     fireCooldown: 9
-    # TODO: romulan_torpedo.ogg once the file is added to Resources/Audio/_PS/ShipCombat/.
     launchSound:
-      path: /Audio/_PS/ShipCombat/tng_torpedo_clean.ogg
+      path: /Audio/_PS/ShipCombat/romulan_torpedo.ogg

@@ -284,9 +284,8 @@
   description: A console-driven turret firing disruptor bolts. 45-degree arc, powered by the bluespace power bypass.
   components:
   - type: Gun
-    # TODO: tng_disruptor_clean.ogg once the file is added to Resources/Audio/_PS/ShipCombat/.
     soundGunshot:
-      path: /Audio/Weapons/Guns/Gunshots/laser3.ogg
+      path: /Audio/_PS/ShipCombat/tng_disruptor_clean.ogg
   - type: BasicEntityAmmoProvider
     proto: ShipTurretDisruptorBolt
 
