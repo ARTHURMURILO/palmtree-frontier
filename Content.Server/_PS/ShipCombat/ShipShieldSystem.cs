@@ -29,7 +29,7 @@ public sealed class ShipShieldSystem : EntitySystem
     public const float HardnessPerPoint = 0.002f;
 
     /// <summary>Cooldown between instant shield redistributions.</summary>
-    public static readonly TimeSpan RedistributionCooldown = TimeSpan.FromSeconds(10);
+    public static readonly TimeSpan RedistributionCooldown = TimeSpan.FromSeconds(25);
 
     [Dependency] private readonly ShipCombatSystem _combat = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
@@ -199,13 +199,30 @@ public sealed class ShipShieldSystem : EntitySystem
         else
         {
             var index = (int) facing;
+
+            // Only take what the target facing is missing, spread over the other facings; never
+            // overdraw and never throw energy away.
+            var needed = MathF.Max(0f, max - shield.Facings[index]);
+            var available = 0f;
             for (var i = 0; i < 4; i++)
             {
                 if (i != index)
-                    shield.Facings[i] = 0f;
+                    available += shield.Facings[i];
             }
 
-            shield.Facings[index] = MathF.Min(total, max);
+            var take = MathF.Min(needed, available);
+            if (take > 0f)
+            {
+                for (var i = 0; i < 4; i++)
+                {
+                    if (i == index || available <= 0f)
+                        continue;
+
+                    shield.Facings[i] = MathF.Max(0f, shield.Facings[i] - take * (shield.Facings[i] / available));
+                }
+
+                shield.Facings[index] += take;
+            }
         }
 
         // Redistributing into a downed facing can bring it back above the re-arm threshold.
@@ -306,7 +323,7 @@ public sealed class ShipShieldSystem : EntitySystem
         var query = EntityQueryEnumerator<ShipShieldingConsoleComponent, TransformComponent>();
         while (query.MoveNext(out var uid, out var console, out var xform))
         {
-            if (xform.GridUid != grid || console.Silent)
+            if (xform.GridUid != grid || console.Muted)
                 continue;
 
             var sound = alarm switch

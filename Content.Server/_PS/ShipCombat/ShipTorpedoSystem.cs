@@ -3,6 +3,7 @@ using Content.Shared._PS.ShipCombat;
 using Content.Shared._PS.ShipCombat.Components;
 using Content.Shared.Maps;
 using Content.Shared.Projectiles;
+using Content.Shared.Trigger;
 using Robust.Shared.Audio.Systems;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
@@ -32,6 +33,10 @@ public sealed class ShipTorpedoSystem : EntitySystem
     [Dependency] private readonly SharedProjectileSystem _projectiles = default!;
     [Dependency] private readonly TurfSystem _turf = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
+    [Dependency] private readonly ShipShieldSystem _shields = default!;
+
+    /// <summary>Delay between the torpedo contacting the target and detonating.</summary>
+    private static readonly TimeSpan ContactFuse = TimeSpan.FromSeconds(0.75);
 
     /// <summary>How often the incoming-torpedo scan runs.</summary>
     private static readonly TimeSpan AlarmScanInterval = TimeSpan.FromSeconds(0.25);
@@ -41,10 +46,32 @@ public sealed class ShipTorpedoSystem : EntitySystem
 
     private TimeSpan _nextAlarmScan;
 
+    public override void Initialize()
+    {
+        base.Initialize();
+
+        SubscribeLocalEvent<ShipTorpedoComponent, ProjectileHitEvent>(OnProjectileHit);
+    }
+
+    private void OnProjectileHit(EntityUid uid, ShipTorpedoComponent torpedo, ref ProjectileHitEvent args)
+    {
+        if (torpedo.Detonating)
+            return;
+
+        // Contact: hold position for the fuse (0.75 s), then detonate. If the torpedo penetrated the
+        // hull it explodes inside the ship.
+        torpedo.Detonating = true;
+        torpedo.DetonateAt = _timing.CurTime + ContactFuse;
+
+        if (TryComp<PhysicsComponent>(uid, out var physics))
+            _physics.SetLinearVelocity(uid, Vector2.Zero, body: physics);
+    }
+
     public override void Update(float frameTime)
     {
         base.Update(frameTime);
 
+        DetonateDue();
         Steer(frameTime);
 
         if (_timing.CurTime < _nextAlarmScan)
@@ -108,6 +135,10 @@ public sealed class ShipTorpedoSystem : EntitySystem
 
             torpedoComp.Target = target;
             torpedoComp.Source = grid;
+
+            // Torpedoes aim at the same thing the weapons were aiming at; CREW falls back to the hull.
+            if (combat.Comp.TargetMode != ShipTargetMode.Crew && combat.Comp.AimTarget is { } aimEntity && Exists(aimEntity))
+                torpedoComp.TargetEntity = aimEntity;
             torpedoComp.LaunchTime = _timing.CurTime;
 
             var aim = GridCenter(target);
@@ -131,6 +162,34 @@ public sealed class ShipTorpedoSystem : EntitySystem
     }
 
     /// <summary>
+    /// Detonates torpedoes whose contact fuse has run out. Shields absorb the whole torpedo; without
+    /// shields it explodes with its full blast.
+    /// </summary>
+    private void DetonateDue()
+    {
+        var query = EntityQueryEnumerator<ShipTorpedoComponent>();
+        while (query.MoveNext(out var uid, out var torpedo))
+        {
+            if (!torpedo.Detonating || _timing.CurTime < torpedo.DetonateAt)
+                continue;
+
+            if (torpedo.Target is { } target
+                && TryComp<ShipShieldComponent>(target, out var shield)
+                && _shields.TryAbsorb(target, shield, _transform.GetWorldPosition(uid), torpedo.ShieldDamage))
+            {
+                // The deflector ate it: no hull damage at all.
+                QueueDel(uid);
+                continue;
+            }
+
+            // ExplodeOnTrigger on the prototype runs the blast.
+            var trigger = new TriggerEvent();
+            RaiseLocalEvent(uid, ref trigger);
+            QueueDel(uid);
+        }
+    }
+
+    /// <summary>
     /// Turns every torpedo towards its target grid, limited by its turn rate.
     /// </summary>
     private void Steer(float frameTime)
@@ -150,7 +209,10 @@ public sealed class ShipTorpedoSystem : EntitySystem
                 : Math.Clamp((float) ((age - torpedo.SteeringDelay) / torpedo.SteeringRamp), 0f, 1f);
 
             var position = _transform.GetWorldPosition(xform);
-            var toTarget = GridCenter(target) - position;
+            var aim = torpedo.TargetEntity is { } aimEntity && Exists(aimEntity)
+                ? _transform.GetWorldPosition(aimEntity)
+                : GridCenter(target);
+            var toTarget = aim - position;
             if (toTarget.LengthSquared() < 0.01f)
                 continue;
 
@@ -241,7 +303,7 @@ public sealed class ShipTorpedoSystem : EntitySystem
         var query = EntityQueryEnumerator<ShipTargetingConsoleComponent, TransformComponent>();
         while (query.MoveNext(out var uid, out var console, out var xform))
         {
-            if (xform.GridUid != grid || console.Silent)
+            if (xform.GridUid != grid || console.Muted)
                 continue;
 
             var sound = alarm switch

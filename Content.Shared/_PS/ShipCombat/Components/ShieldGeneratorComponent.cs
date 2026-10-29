@@ -13,5 +13,5 @@ public sealed partial class ShieldGeneratorComponent : Component
 
     /// <summary>Shield restored to every facing per six-second pulse at 100% power.</summary>
     [DataField]
-    public float RegenPerPulse = 30f;
+    public float RegenPerPulse = 20f;
 }

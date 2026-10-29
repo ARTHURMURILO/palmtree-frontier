@@ -25,12 +25,11 @@
         - Impassable
         - BulletImpassable
   - type: Projectile
+    deleteOnCollide: false
     damage:
       types:
         Heat: 150
   # Explodes violently on impact (a syndicate-bomb scale blast); shields still absorb it first.
-  - type: TriggerOnCollide
-    fixtureID: projectile
   - type: ExplodeOnTrigger
   - type: Explosive
     explosionType: Default
@@ -56,6 +55,7 @@
   - type: ShipTorpedo
     speed: 40
     turnRate: 45
+    shieldDamage: 280
     steeringDelay: 0.5
     steeringRamp: 3.5
   - type: Sprite
@@ -113,7 +113,7 @@
   - type: ShipTorpedoLauncher
   - type: BluespacePowered
     pool: Weapons
-    ratedPower: 15000
+    ratedPower: 7500
   - type: ApcPowerReceiver
     needsPower: false
     powerDisabled: true

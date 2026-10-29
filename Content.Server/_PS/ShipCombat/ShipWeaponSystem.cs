@@ -258,7 +258,7 @@ public sealed class ShipWeaponSystem : EntitySystem
         var consoles = EntityQueryEnumerator<ShipTargetingConsoleComponent, TransformComponent>();
         while (consoles.MoveNext(out var uid, out var console, out var xform))
         {
-            if (xform.GridUid != grid || console.Silent)
+            if (xform.GridUid != grid || console.Muted)
                 continue;
 
             _audio.PlayPvs(console.WeaponsCriticalSound, uid);

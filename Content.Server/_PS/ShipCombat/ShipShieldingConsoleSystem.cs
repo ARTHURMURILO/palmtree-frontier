@@ -3,6 +3,7 @@ using Content.Server.Power.NodeGroups;
 using Content.Server.Shuttles.Systems;
 using Content.Shared._PS.ShipCombat;
 using Content.Shared._PS.ShipCombat.Components;
+using Content.Shared.Power;
 using Robust.Server.GameObjects;
 using Robust.Shared.Timing;
 
@@ -31,6 +32,7 @@ public sealed class ShipShieldingConsoleSystem : EntitySystem
         base.Initialize();
 
         SubscribeLocalEvent<ShipShieldingConsoleComponent, MapInitEvent>(OnMapInit);
+        SubscribeLocalEvent<ShipShieldingConsoleComponent, PowerChangedEvent>(OnPowerChanged);
         SubscribeLocalEvent<ShipShieldingConsoleComponent, BoundUIOpenedEvent>(OnUiOpened);
         SubscribeLocalEvent<ShipShieldingConsoleComponent, ShipConsoleSetConditionMessage>(OnSetCondition);
         SubscribeLocalEvent<ShipShieldingConsoleComponent, ShieldingConsoleSetPoolMessage>(OnSetPool);
@@ -64,6 +66,11 @@ public sealed class ShipShieldingConsoleSystem : EntitySystem
     {
         _combat.TryEnsureShipCombat(uid, out _);
         UpdateState(uid, component);
+    }
+
+    private void OnPowerChanged(EntityUid uid, ShipShieldingConsoleComponent component, ref PowerChangedEvent args)
+    {
+        component.Unpowered = !args.Powered;
     }
 
     private void OnUiOpened(EntityUid uid, ShipShieldingConsoleComponent component, ref BoundUIOpenedEvent args)

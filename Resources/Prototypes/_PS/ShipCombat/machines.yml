@@ -78,7 +78,7 @@
     powerLoad: 0
   - type: BluespacePowered
     pool: Thrusters
-    ratedPower: 10000
+    ratedPower: 5000
   - type: BluespaceThruster
 
 - type: entity
@@ -106,6 +106,6 @@
     powerLoad: 0
   - type: BluespacePowered
     pool: Shields
-    ratedPower: 15000
+    ratedPower: 7500
   - type: StaticPrice
     price: 2500

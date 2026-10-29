@@ -313,7 +313,7 @@ public sealed class ShipTargetingSystem : EntitySystem
         var query = EntityQueryEnumerator<ShipTargetingConsoleComponent, TransformComponent>();
         while (query.MoveNext(out var uid, out var console, out var xform))
         {
-            if (xform.GridUid != grid || console.Silent)
+            if (xform.GridUid != grid || console.Muted)
                 continue;
 
             _audio.PlayPvs(console.ConditionRaisedSound, uid);
@@ -372,7 +372,7 @@ public sealed class ShipTargetingSystem : EntitySystem
     {
         if (source != null && TryComp<ShipTargetingConsoleComponent>(source, out var sourceConsole))
         {
-            if (!sourceConsole.Silent)
+            if (!sourceConsole.Muted)
                 _audio.PlayPvs(GetSound(sourceConsole, sound), source.Value);
 
             return;
@@ -381,7 +381,7 @@ public sealed class ShipTargetingSystem : EntitySystem
         var query = EntityQueryEnumerator<ShipTargetingConsoleComponent, TransformComponent>();
         while (query.MoveNext(out var uid, out var console, out var xform))
         {
-            if (xform.GridUid != grid || console.Silent)
+            if (xform.GridUid != grid || console.Muted)
                 continue;
 
             _audio.PlayPvs(GetSound(console, sound), uid);

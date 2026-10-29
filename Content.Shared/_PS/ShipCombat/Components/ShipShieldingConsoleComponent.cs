@@ -27,6 +27,12 @@ public sealed partial class ShipShieldingConsoleComponent : Component
     /// </summary>
     [DataField]
     public bool Silent;
+
+    /// <summary>True while the console has no power (runtime). Unpowered consoles are silent.</summary>
+    public bool Unpowered;
+
+    /// <summary>True when the console must play no sounds at all.</summary>
+    public bool Muted => Silent || Unpowered;
 }
 
 [Serializable, NetSerializable]

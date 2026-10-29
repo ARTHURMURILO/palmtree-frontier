@@ -31,8 +31,21 @@ public sealed partial class ShipTorpedoComponent : Component
     [DataField]
     public float InboundDeviation = 30f;
 
+    /// <summary>Damage a ship's shields take when they absorb this torpedo.</summary>
+    [DataField]
+    public float ShieldDamage = 200f;
+
     /// <summary>The grid this torpedo was launched at (runtime).</summary>
     public EntityUid? Target;
+
+    /// <summary>The subsystem the weapons were aiming at, if any (runtime).</summary>
+    public EntityUid? TargetEntity;
+
+    /// <summary>When the contact fuse fires (runtime).</summary>
+    public TimeSpan DetonateAt;
+
+    /// <summary>True once the torpedo has contacted something and started its fuse (runtime).</summary>
+    public bool Detonating;
 
     /// <summary>The grid that launched it (runtime).</summary>
     public EntityUid? Source;

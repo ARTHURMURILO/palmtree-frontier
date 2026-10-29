@@ -192,11 +192,22 @@ public sealed class ShipShieldTest
             var shields = server.System<ShipShieldSystem>();
             var shield = entMan.GetComponent<ShipShieldComponent>(grid);
 
+            var totalBefore = 0f;
+            foreach (var value in shield.Facings)
+                totalBefore += value;
+
             Assert.That(shields.TryRedistribute(grid, ShieldFacing.Fore), Is.True);
             Assert.That(shield.Facings[(int) ShieldFacing.Fore], Is.EqualTo(300f).Within(1f),
                 "The focused facing fills up to its maximum.");
-            Assert.That(shield.Facings[(int) ShieldFacing.Port], Is.EqualTo(0f),
-                "The other facings are drained.");
+
+            var totalAfter = 0f;
+            foreach (var value in shield.Facings)
+                totalAfter += value;
+
+            Assert.That(totalAfter, Is.EqualTo(totalBefore).Within(1f),
+                "Redistribution must not create or throw away shield energy.");
+            Assert.That(shield.Facings[(int) ShieldFacing.Port], Is.GreaterThan(0f),
+                "The other facings keep the energy the focused facing did not need.");
 
             // The redistribution has a cooldown.
             Assert.That(shields.TryRedistribute(grid, ShieldFacing.All), Is.False,

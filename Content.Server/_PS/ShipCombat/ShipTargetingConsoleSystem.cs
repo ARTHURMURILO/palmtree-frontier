@@ -3,6 +3,7 @@ using Content.Server.Shuttles.Components;
 using Content.Server.Shuttles.Systems;
 using Content.Shared._PS.ShipCombat;
 using Content.Shared._PS.ShipCombat.Components;
+using Content.Shared.Power;
 using Content.Shared.Shuttles.Components;
 using Robust.Server.GameObjects;
 using Robust.Shared.Audio.Systems;
@@ -55,6 +56,7 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
         base.Initialize();
 
         SubscribeLocalEvent<ShipTargetingConsoleComponent, MapInitEvent>(OnMapInit);
+        SubscribeLocalEvent<ShipTargetingConsoleComponent, PowerChangedEvent>(OnPowerChanged);
         SubscribeLocalEvent<ShipTargetingConsoleComponent, ComponentShutdown>(OnShutdown);
         SubscribeLocalEvent<ShipTargetingConsoleComponent, BoundUIOpenedEvent>(OnUiOpened);
         SubscribeLocalEvent<ShipTargetingConsoleComponent, ShipConsoleSetConditionMessage>(OnSetCondition);
@@ -124,6 +126,11 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
         // A console on a grid turns the grid into a ship with combat state.
         _combat.TryEnsureShipCombat(uid, out _);
         UpdateState(uid, component);
+    }
+
+    private void OnPowerChanged(EntityUid uid, ShipTargetingConsoleComponent component, ref PowerChangedEvent args)
+    {
+        component.Unpowered = !args.Powered;
     }
 
     private void OnShutdown(EntityUid uid, ShipTargetingConsoleComponent component, ComponentShutdown args)
@@ -460,7 +467,7 @@ public sealed class ShipTargetingConsoleSystem : EntitySystem
         // The window's contact list (armed state, lock cursors) changed.
         UpdateState(uid, console);
 
-        if (console.Silent)
+        if (console.Muted)
             return;
 
         if (_nextContactSound.TryGetValue(uid, out var next) && _timing.CurTime < next)

@@ -286,8 +286,8 @@ public sealed class ShipPowerSystem : EntitySystem
         if (TryComp<BatteryComponent>(uid, out var battery))
         {
             args.PushMarkup(Loc.GetString("bluespace-power-sink-examine-charge",
-                ("charge", battery.CurrentCharge / 1000f),
-                ("max", battery.MaxCharge / 1000f)));
+                ("charge", MathF.Ceiling(battery.CurrentCharge / 1000f)),
+                ("max", MathF.Ceiling(battery.MaxCharge / 1000f))));
         }
 
         args.PushMarkup(Loc.GetString("bluespace-power-sink-examine-budget",
