@@ -248,6 +248,11 @@ public sealed class ShipTorpedoSystem : EntitySystem
                         (int) (CollisionGroup.Impassable | CollisionGroup.BulletImpassable));
                     foreach (var hit in _physics.IntersectRay(xform.MapID, ray, delta.Length(), uid, true))
                     {
+                        // The launching ship's own hull never counts: a torpedo that has to turn
+                        // away from the tube must be able to leave its own ship first.
+                        if (hit.HitEntity.IsValid() && Transform(hit.HitEntity).GridUid == torpedo.Source)
+                            continue;
+
                         Detonate(uid, torpedo);
                         break;
                     }
