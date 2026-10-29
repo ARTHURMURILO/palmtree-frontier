@@ -463,6 +463,14 @@ so these fail only in CI:
   (`ClothingOuterHardsuitBase` must repeat `storagebase` from `ClothingArmorPlate`). Fixed families:
   hardsuit/EVA `storagebase`, wrapped lollipop `food` solution, `_CS` PDA blip cartridge
   (`BlipCartridgeSystem` now inits on `MapInit`).
+- **The directed event bus allows only one subscription per component/event pair** (`EntAddSubscription`
+  throws `Duplicate Subscriptions for comp=..., event=...`). If a component's `MapInitEvent` is
+  already taken (e.g. `ConditionalSpawnerSystem` owns `RandomSpawnerComponent/MapInitEvent`), do not
+  fall back to `ComponentInit` just to mutate serialized data - that fails `UninitializedSaveTest`.
+  Subscribe to `MetaDataComponent/MapInitEvent` instead, invoke with
+  `before: new[] { typeof(OwnerSystem) }`, and check `HasComp`/`TryComp` for the real component.
+  All subscriptions a system makes to the same event must declare identical ordering
+  (`JukeboxLocalTracksSystem` needed the same `before` on its jukebox handler).
 - **`ItemSpriteTest.AllItemsHaveSpritesTest`** requires every non-abstract prototype with
   `ItemComponent` to have a sprite. Body-part entities that are never held should not inherit
   `BaseItem` (the `_PS` genital organs); real items need a sprite or a visual parent
@@ -474,6 +482,10 @@ so these fail only in CI:
 - **`FailAndStartPresetTest`** readies up; the Palmtree NSFW consent gate blocks `toggleready` until
   the prompt is answered, so the test answers it via `IClientPreferencesManager.UpdateNsfwConsent`
   first.
+- **Deleting a grid while a mover is still relative to it** makes `SharedMoverController.OnMoverGetState`
+  call `GetNetEntity` on a dead uid, which logs `Can't resolve MetaDataComponent` and fails the
+  suite under `NUnit.MapWarningTo=Failed`. The fork guards the state with `Exists(relative)` and
+  sends a null relative entity (triggered by bluespace dock ship storage/evacuation).
 - **`RSI Validator` / `RGA schema validator`** (separate workflows) allow only the CC/CC0 set
   (RSI: no `Custom`; attributions: `Custom` is allowed if the copyright describes the license, and
   `source` may be `"NA"`). Run them locally:

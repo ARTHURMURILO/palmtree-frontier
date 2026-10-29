@@ -2569,7 +2569,14 @@ public sealed class BluespaceDockSystem : EntitySystem
             return _transform.GetMapCoordinates(partner);
         }
 
-        return new MapCoordinates(Vector2.Zero, _gameTicker.DefaultMap);
+        // The default map is created by the game ticker; if the round has not started or the map
+        // was deleted, fall back to the map the ship itself is on instead of throwing while trying
+        // to evacuate its occupants.
+        var mapId = _map.MapExists(_gameTicker.DefaultMap)
+            ? _gameTicker.DefaultMap
+            : Transform(grid).MapID;
+
+        return new MapCoordinates(Vector2.Zero, mapId);
     }
 
     #endregion Ship state helpers

@@ -133,10 +133,15 @@ namespace Content.Shared.Movement.Systems
 
         private void OnMoverGetState(Entity<InputMoverComponent> entity, ref ComponentGetState args)
         {
+            // Palmtree: a mover can outlive the entity its movement is relative to (for example when
+            // a ship grid is stored/deleted while a passenger is being evacuated). Serializing the
+            // dangling uid makes EntityManager.GetNetEntity log "Can't resolve MetaDataComponent",
+            // which CI treats as a test failure; send no relative entity instead.
+            var relative = entity.Comp.RelativeEntity;
             args.State = new InputMoverComponentState()
             {
                 CanMove = entity.Comp.CanMove,
-                RelativeEntity = GetNetEntity(entity.Comp.RelativeEntity),
+                RelativeEntity = Exists(relative) ? GetNetEntity(relative) : null,
                 LerpTarget = entity.Comp.LerpTarget,
                 HeldMoveButtons = entity.Comp.HeldMoveButtons,
                 RelativeRotation = entity.Comp.RelativeRotation,

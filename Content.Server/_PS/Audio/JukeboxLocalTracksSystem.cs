@@ -1,4 +1,5 @@
 using Content.Server.Spawners.Components;
+using Content.Server.Spawners.EntitySystems;
 using Content.Server.Storage.EntitySystems;
 using Content.Shared.Audio.Jukebox;
 using Content.Shared.Storage;
@@ -25,12 +26,15 @@ public sealed class JukeboxLocalTracksSystem : EntitySystem
     {
         base.Initialize();
 
-        SubscribeLocalEvent<JukeboxComponent, MapInitEvent>(OnJukeboxMapInit);
-        // Palmtree: use ComponentInit, not MapInit. ConditionalSpawnerSystem already owns the
-        // RandomSpawnerComponent/MapInitEvent subscription and this event bus allows only one
-        // directed subscription per component/event pair (a second one crashes server startup).
-        // ComponentInit runs before map init, so the loot pool is ready before the spawner rolls.
-        SubscribeLocalEvent<RandomSpawnerComponent, ComponentInit>(OnRecordSpawnerInit);
+        SubscribeLocalEvent<JukeboxComponent, MapInitEvent>(OnJukeboxMapInit,
+            before: new[] { typeof(ConditionalSpawnerSystem) });
+        // Palmtree: RandomSpawnerComponent/MapInitEvent is already taken by ConditionalSpawnerSystem
+        // (the directed event bus only allows one subscription per component/event pair). Subscribe
+        // through MetaDataComponent instead and run before the spawner's own MapInit handler, so the
+        // loot pool is extended on real map init without touching prototype data on uninitialized
+        // maps (which would fail PrototypeSaveTest).
+        SubscribeLocalEvent<MetaDataComponent, MapInitEvent>(OnRecordSpawnerInit,
+            before: new[] { typeof(ConditionalSpawnerSystem) });
     }
 
     private void OnJukeboxMapInit(Entity<JukeboxComponent> ent, ref MapInitEvent args)
@@ -49,21 +53,24 @@ public sealed class JukeboxLocalTracksSystem : EntitySystem
             QueueDel(record);
     }
 
-    private void OnRecordSpawnerInit(Entity<RandomSpawnerComponent> ent, ref ComponentInit args)
+    private void OnRecordSpawnerInit(Entity<MetaDataComponent> ent, ref MapInitEvent args)
     {
-        if (MetaData(ent).EntityPrototype?.ID != DungeonRecordSpawner)
+        if (ent.Comp.EntityPrototype?.ID != DungeonRecordSpawner)
             return;
 
         if (!_prototypes.HasIndex<EntityPrototype>(DungeonRecordPrototype))
             return;
 
-        foreach (var prototype in ent.Comp.Prototypes)
+        if (!TryComp<RandomSpawnerComponent>(ent.Owner, out var spawner))
+            return;
+
+        foreach (var prototype in spawner.Prototypes)
         {
             if (prototype.Id == DungeonRecordPrototype)
                 return;
         }
 
-        ent.Comp.Prototypes.Add(DungeonRecordPrototype);
+        spawner.Prototypes.Add(DungeonRecordPrototype);
     }
 
     private bool ContainsRecord(StorageComponent storage, string recordPrototype)
