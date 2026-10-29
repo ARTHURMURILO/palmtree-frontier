@@ -34,8 +34,8 @@
 - type: entity
   parent: BaseComputer
   id: ComputerShieldingConsole
-  name: shielding console
-  description: Engineering console for the ship's power distribution and directional shields.
+  name: engineering console
+  description: Controls the ship's power distribution and directional shields.
   suffix: Palmtree
   components:
   - type: ShipShieldingConsole

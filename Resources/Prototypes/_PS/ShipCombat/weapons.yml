@@ -87,7 +87,7 @@
   id: ShipTurretBase
   abstract: true
   name: ship turret
-  description: A console-driven turret with a 45-degree firing arc. Powered by the bluespace power sink.
+  description: A console-driven turret with a 45-degree firing arc. Powered by the bluespace power bypass.
   suffix: Palmtree
   placement:
     mode: SnapgridCenter
@@ -148,7 +148,7 @@
   parent: ShipTurretBase
   id: ShipTurret
   name: ship turret (bolt)
-  description: A console-driven turret firing travelling energy bolts. 45-degree arc, powered by the bluespace power sink.
+  description: A console-driven turret firing travelling energy bolts. 45-degree arc, powered by the bluespace power bypass.
   components:
   - type: Gun
     fireRate: 1
@@ -170,7 +170,7 @@
   parent: ShipTurretBase
   id: ShipTurretBeam
   name: ship turret (beam)
-  description: A console-driven turret firing an instant laser beam. 45-degree arc, powered by the bluespace power sink.
+  description: A console-driven turret firing an instant laser beam. 45-degree arc, powered by the bluespace power bypass.
   components:
   - type: Gun
     fireRate: 0.5

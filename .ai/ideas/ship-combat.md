@@ -25,7 +25,9 @@ alarms and Condition Sirens, plus the `PSShipCombat` research line.
 | Power effects | Weapons damage `(p+100)/200` (torpedoes unaffected, STO rule); shields regen pulse ×`p/50` and hardness 0.2%/pt damage negation; thrusters thrust `1 + (p−50)×1%`; Aux shares `p/200` of throughput to the ship's grid. Offline below 25 points with the `(!)` alert. |
 | Shields | 4 facings. `Up` absorbs while charge > 0; at 0 → `Down` (no absorption from that side); re-arms above 20% of max (restored beep `input_ok_1_clean.ogg`). Regen pulse every 6 s adds `ratedRegen × (p/50)` to **each** facing (STO). Arrows = instant energy redistribution: click a facing to drain the other three into it (up to cap), `ALL` evens out; 10 s cooldown. Placeholder blue hit effect. |
 | Alarms | `damagealarm2.ogg` one-shot when a facing collapses (2 s cooldown between collapses); `damagealarm.ogg` on the transition that takes all facings down; every shielding console plays them. `critical.ogg` every 5 s on every tactical console while condition ∈ {YELLOW, RED} and the grid has no powered/intact ship weapon. `consolewarning.ogg` on being locked; `processing*.ogg` during lock; `computerbeep_35.ogg` clear lock; `denybeep1.ogg` denied lock; `computerbeep_71/72.ogg` contacts entering/leaving range (2 s cooldown, only grids **with a shuttle console** count as ships; asteroids/wrecks do not beep but stay lockable). Every console sound plays at the console and is audible to anyone nearby, whether or not the window is open. `alert14/19/18.ogg` torpedo alarms (alert14 one-shot on detection <800; alert19 loops 800→200; alert18, the fast beep, loops <200). |
-| Condition Sirens | Powered strobe-light variants (rotating light + looping ambient), active while the grid's condition is RED, constructible and in the tech tree: Voyager (`voy_redalert.ogg`), Buzz (`alert10.ogg`), Soft (`alert09.ogg`), TNG (`tng_red_alert1.ogg`), Deep (`alertklaxon_clean2.ogg`). |
+| Condition Sirens | Powered strobe-light variants (strong rotating red light + looping ambient). Each variant is tied to one condition and stays off otherwise; unpowered sirens stay off. Suffix naming: `[YELLOW]` (`alert09.ogg`), `[RED, TOS]` (`alert10.ogg`), `[RED, VOYAGER]` (`voy_redalert.ogg`), `[RED, TNG]` (`tng_red_alert1.ogg`), `[RED, DEEP]` (`alertklaxon_clean2.ogg`). Constructible and in the tech tree (M10). |
+| Battle light | A `Poweredlight` variant that switches itself off at RED and back on at YELLOW or GREEN, so ships can black out for battle stations. |
+| Display names | The shielding console is displayed as the **engineering console** (no other engineering console exists, so the tactical console keeps its name) and the bluespace power sink as the **bluespace power bypass**. Prototype ids are unchanged for bluespace dock save compatibility. |
 | Research | New `PSShipCombat` tech discipline + nodes, machine/computer boards and lathe recipes for every new machine. |
 | Assets | Console rsi copied from `_NF` blackmarket shipyard states (tactical plain, shielding tinted yellow); torpedo = copied `_NF` `frag-emp`; photon = red tesla sprite + `SingularityDistortionComponent`; launch sound `tng_torpedo_clean.ogg`. |
 
@@ -231,7 +233,7 @@ existing `BluespaceDock*` tests. Automatic prototype validation via `EntityTest`
 6. **M6** Shielding console: sliders, locks, presets, arrows, mini-bars, `(!)` alerts
 7. **M7** Weapons: turrets, stationary, group linking, auto/manual fire
 8. **M8** Torpedoes: launchers, torpedo, photon, incoming alarms
-9. **M9** Alarms & Condition Sirens
+9. **M9** Alarms & Condition Sirens (condition sirens and battle lights done; damage/critical alarms pending)
 10. **M10** `PSShipCombat` research discipline + boards + lathe recipes
 11. **M11** Dock round-trip tests, `.ai` docs, full validation pipeline
 

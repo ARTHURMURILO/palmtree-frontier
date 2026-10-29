@@ -36,7 +36,7 @@ tactical-console-auto-condition = Automatic Condition
 tactical-console-auto-retaliation = Automatic Retaliation
 tactical-console-clear-lock = CLEAR LOCK
 
-shielding-console-window-title = Shielding Console
+shielding-console-window-title = Engineering Console
 shielding-console-shields = Shields
 shielding-console-power = Power
 shielding-console-pool-shields = Shields

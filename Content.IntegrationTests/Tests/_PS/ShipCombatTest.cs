@@ -128,6 +128,10 @@ public sealed class ShipCombatTest
         await server.WaitAssertion(() =>
         {
             var combat = server.System<ShipCombatSystem>();
+
+            // The listener is a pooled server-wide system; other tests may have changed conditions.
+            listener.ConditionChanges.Clear();
+
             Assert.That(combat.TryEnsureShipCombat(grid, out _), Is.True);
 
             Assert.That(combat.TrySetCondition(grid, ShipCondition.Yellow), Is.True);
