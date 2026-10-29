@@ -1,4 +1,4 @@
 - files: ["Emotes/*.png", "admin.png", "deadmin.png", "invite.png", "members.png"]
-  license: "AGPL-3.0-or-later"
-  copyright: "Funky Station NanoChat contributors (Evaisa, EvaisaDev)"
+  license: "Custom"
+  copyright: "Funky Station NanoChat contributors (Evaisa, EvaisaDev); the source repository publishes its assets under AGPL-3.0-or-later."
   source: "https://github.com/funky-station/funky-station"
