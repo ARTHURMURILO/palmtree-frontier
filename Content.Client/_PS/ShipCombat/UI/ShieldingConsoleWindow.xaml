@@ -64,14 +64,18 @@
                 <Label Name="RedistributeCooldownLabel"
                        HorizontalAlignment="Center"
                        Margin="3"/>
-                <GridContainer Columns="2" Margin="3">
+                <GridContainer Columns="3" Margin="3">
                     <Label Text="{Loc 'shielding-console-facing-fore'}"/>
+                    <ProgressBar Name="FacingForeBar" MinValue="0" MaxValue="1" MinSize="80 10" Margin="4 0"/>
                     <Label Name="FacingForeLabel" HorizontalExpand="True" Align="Right"/>
                     <Label Text="{Loc 'shielding-console-facing-starboard'}"/>
+                    <ProgressBar Name="FacingStarboardBar" MinValue="0" MaxValue="1" MinSize="80 10" Margin="4 0"/>
                     <Label Name="FacingStarboardLabel" HorizontalExpand="True" Align="Right"/>
                     <Label Text="{Loc 'shielding-console-facing-aft'}"/>
+                    <ProgressBar Name="FacingAftBar" MinValue="0" MaxValue="1" MinSize="80 10" Margin="4 0"/>
                     <Label Name="FacingAftLabel" HorizontalExpand="True" Align="Right"/>
                     <Label Text="{Loc 'shielding-console-facing-port'}"/>
+                    <ProgressBar Name="FacingPortBar" MinValue="0" MaxValue="1" MinSize="80 10" Margin="4 0"/>
                     <Label Name="FacingPortLabel" HorizontalExpand="True" Align="Right"/>
                 </GridContainer>
 

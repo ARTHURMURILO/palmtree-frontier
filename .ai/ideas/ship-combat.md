@@ -242,10 +242,14 @@ existing `BluespaceDock*` tests. Automatic prototype validation via `EntityTest`
 9. **M9** Alarms & Condition Sirens: condition sirens and battle lights done (see the decisions
    table); shield alarms done (`damagealarm2` per facing collapse at most every 2 s, `damagealarm`
    once when every facing is down, a restored beep when a facing re-arms, on every shielding
-   console, Silent-aware) and `critical.ogg` every 5 s on every tactical console while the ship is
-   out of peacetime with no powered weapon or torpedo launcher. Per-facing mini-bars still pending.
-10. **M10** `PSShipCombat` research discipline + boards + lathe recipes
-11. **M11** Dock round-trip tests, `.ai` docs, full validation pipeline
+   console, Silent-aware), `critical.ogg` every 5 s on every tactical console while the ship is out
+   of peacetime with no powered weapon or torpedo launcher, and per-facing mini-bars on the
+   engineering console.
+10. **M10** `PSShipCombat` research discipline and tech tree done (six technologies, all icons from
+    existing prototypes). Devices stay admin-spawn only for now, so circuit boards and lathe recipes
+    are deferred until they get their own art.
+11. **M11** Docs and the full validation pipeline are done for every milestone so far. Extending the
+    bluespace dock round-trip tests with the new consoles/devices/sirens is the one item left.
 
 ## Open questions
 

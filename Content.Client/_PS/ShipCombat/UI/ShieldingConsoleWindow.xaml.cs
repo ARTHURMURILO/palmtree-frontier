@@ -117,10 +117,10 @@ public sealed partial class ShieldingConsoleWindow : FancyWindow
         SetPool(ShipPowerPool.Auxiliary, state.AuxiliaryPower, state.AuxiliaryLocked, state.AuxiliaryAlert);
 
         // Facings: charge / maximum, with a DOWN marker for collapsed ones.
-        SetFacing(FacingForeLabel, state, ShieldFacing.Fore);
-        SetFacing(FacingStarboardLabel, state, ShieldFacing.Starboard);
-        SetFacing(FacingAftLabel, state, ShieldFacing.Aft);
-        SetFacing(FacingPortLabel, state, ShieldFacing.Port);
+        SetFacing(FacingForeLabel, FacingForeBar, state, ShieldFacing.Fore);
+        SetFacing(FacingStarboardLabel, FacingStarboardBar, state, ShieldFacing.Starboard);
+        SetFacing(FacingAftLabel, FacingAftBar, state, ShieldFacing.Aft);
+        SetFacing(FacingPortLabel, FacingPortBar, state, ShieldFacing.Port);
 
         RedistributeCooldownLabel.Text = state.RedistributionCooldown > 0f
             ? Loc.GetString("shielding-console-redistribute-cooldown", ("seconds", (int) MathF.Ceiling(state.RedistributionCooldown)))
@@ -169,11 +169,15 @@ public sealed partial class ShieldingConsoleWindow : FancyWindow
         _lockChecks[pool].Pressed = locked;
     }
 
-    private static void SetFacing(Label label, ShieldingConsoleBoundUserInterfaceState state, ShieldFacing facing)
+    private static void SetFacing(Label label, ProgressBar bar, ShieldingConsoleBoundUserInterfaceState state, ShieldFacing facing)
     {
         var index = (int) facing;
         var charge = (int) state.Facings[index];
         var max = (int) state.MaxPerFacing;
+
+        // Mini-bar: how much of the facing's capacity is left.
+        bar.MaxValue = MathF.Max(1f, state.MaxPerFacing);
+        bar.Value = state.Facings[index];
 
         label.Text = state.FacingsUp[index]
             ? $"{charge} / {max}"

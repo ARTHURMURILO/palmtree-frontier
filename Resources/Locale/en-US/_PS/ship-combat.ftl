@@ -67,3 +67,12 @@ signal-port-name-ship-weapon-aux = Auxiliary weapons
 signal-port-description-ship-weapon-aux = Weapons linked on this port fire with the AUX group.
 signal-port-name-ship-weapon-link = Ship weapon
 signal-port-description-ship-weapon-link = Links the tactical console to a ship weapon.
+
+# Research
+ps-research-discipline-ship-combat = Ship Combat
+ps-research-technology-ship-consoles = Ship Combat Consoles
+ps-research-technology-ship-power = Bluespace Power Distribution
+ps-research-technology-ship-shields = Directional Ship Shields
+ps-research-technology-ship-weapons = Ship Weapons
+ps-research-technology-ship-torpedoes = Torpedoes
+ps-research-technology-ship-alarms = Condition Sirens
