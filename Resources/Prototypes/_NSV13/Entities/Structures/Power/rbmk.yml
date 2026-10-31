@@ -82,6 +82,10 @@
       output:
         !type:CableDeviceNode
         nodeGroupID: HVPower
+  # Without a board the machine carries an empty `machine_board` container: deconstructing a mapped
+  # or admin-spawned reactor could not give the circuitboard back, even though its recipe exists.
+  - type: Machine
+    board: RbmkReactorMachineCircuitboard
   - type: RbmkReactor
 
   # The machine has to survive its own failure. BaseMachine's Destructible thresholds delete the

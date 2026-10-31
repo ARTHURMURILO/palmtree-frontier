@@ -141,7 +141,10 @@ public sealed partial class SupermatterEntryContainer : BoxContainer
                     var proto = atmosphereSystem.GetGas(gas);
                     var name = proto.Name;
                     var color = Color.FromHex(proto.Color.StartsWith("#") ? proto.Color : $"#{proto.Color}");
-                    var value = GetStoredGas(gas, focusData) / focusData.Value.AbsorbedMoles * 100;
+                    // A fresh or idle crystal has absorbed nothing; dividing by zero put NaN into
+                    // every bar.
+                    var absorbed = focusData.Value.AbsorbedMoles;
+                    var value = absorbed <= 0f ? 0f : GetStoredGas(gas, focusData) / absorbed * 100;
 
                     //Log.Debug(string.Format("{0:N2}", value));
 

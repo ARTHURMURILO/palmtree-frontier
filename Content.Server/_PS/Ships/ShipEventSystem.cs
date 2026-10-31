@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 using System.Diagnostics.CodeAnalysis;
-using Content.Server.Chat.Managers;
 using Content.Server._NF.Shipyard.Systems;
 using Content.Server.Light.EntitySystems;
 using Content.Server.Power.Components;
@@ -10,7 +9,6 @@ using Content.Server.Radio.EntitySystems;
 using Content.Server.Stunnable;
 using Content.Shared._NF.Shipyard.Components;
 using Content.Shared.Camera;
-using Content.Shared.Gravity;
 using Content.Shared.Light.Components;
 using Content.Shared.Radio;
 using Content.Shared.Radio.Components;
@@ -49,7 +47,6 @@ namespace Content.Server._PS.Ships;
 /// </remarks>
 public sealed class ShipEventSystem : EntitySystem
 {
-    [Dependency] private readonly SharedGravitySystem _gravity = default!;
     [Dependency] private readonly PoweredLightSystem _poweredLight = default!;
     [Dependency] private readonly RadioSystem _radio = default!;
     [Dependency] private readonly SharedPhysicsSystem _physics = default!;
@@ -58,15 +55,10 @@ public sealed class ShipEventSystem : EntitySystem
     [Dependency] private readonly EntityLookupSystem _lookup = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
-    [Dependency] private readonly IChatManager _chat = default!;
     [Dependency] private readonly IPlayerManager _players = default!;
     [Dependency] private readonly ThrowingSystem _throwing = default!;
-    [Dependency] private readonly IPrototypeManager _proto = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly SharedCameraRecoilSystem _recoil = default!;
-
-    /// <summary>Default alarm channel. The supermatter uses the same one.</summary>
-    public static readonly ProtoId<RadioChannelPrototype> DefaultChannel = "Common";
 
     /// <summary>
     ///     Channel every engine alarm is broadcast on: the Shortband (<c>Traffic</c>).
@@ -147,81 +139,6 @@ public sealed class ShipEventSystem : EntitySystem
     }
 
     /// <summary>
-    ///     Send a ship-identified alarm: over the radio, and directly to everyone aboard who is not
-    ///     already listening to that channel.
-    /// </summary>
-    /// <remarks>
-    ///     <para>
-    ///     Radio is the right channel for a distress call - a neighbouring ship overhearing it is
-    ///     exactly the emergent gameplay we want. But radio needs a headset tuned to the channel,
-    ///     and an engine alarm must never be silent because the engineer took their ears off, so
-    ///     anyone on the grid who cannot hear the radio gets the same text straight to chat.
-    ///     </para>
-    ///     <para>
-    ///     The two paths are mutually exclusive per player. Sending both - which an earlier version
-    ///     did - shows every crew member the line twice, which reads as spam even when the alarm is
-    ///     a legitimate one-off.
-    ///     </para>
-    /// </remarks>
-    public void Announce(EntityUid source, string message, ProtoId<RadioChannelPrototype>? channel = null)
-    {
-        ProtoId<RadioChannelPrototype> channelId = channel ?? DefaultChannel;
-        var text = Loc.GetString("ship-event-announcement", ("ship", GetShipName(source)), ("message", message));
-
-        _radio.SendRadioMessage(source, text, channelId, source);
-
-        if (!TryGetGrid(source, out var grid))
-            return;
-
-        // RadioSystem drops short-range traffic unless a powered telecomms server carries the channel
-        // on this map. That check is private, so it is mirrored here: without it the fallback below
-        // would consider every headset-wearing crew member "served" on a ship with no telecomms, and
-        // the alarm would be completely silent - the exact failure the fallback exists to prevent.
-        var channelPrototype = _proto.Index(channelId);
-        var relayAvailable = channelPrototype.LongRange || HasActiveTelecomServer(Transform(source).MapID, channelId);
-
-        foreach (var session in _players.Sessions)
-        {
-            if (session.AttachedEntity is not { } body || Transform(body).GridUid != grid)
-                continue;
-
-            if (CanHearRadio(body, source, channelPrototype, relayAvailable))
-                continue;
-
-            _chat.DispatchServerMessage(session, text);
-        }
-    }
-
-    /// <summary>
-    ///     Announce, unless the same machine already announced something recently.
-    /// </summary>
-    /// <param name="nextAlert">
-    ///     The machine's own cooldown clock - one per reactor, exactly like the DM <c>can_alert</c>
-    ///     var, so two reactors on one ship complain independently.
-    /// </param>
-    /// <param name="urgent">
-    ///     Bypass the cooldown. The DM original used this for "the core is overheating" and "the
-    ///     rods have failed" so those can never be swallowed by an ongoing rod-integrity report.
-    /// </param>
-    /// <returns>True when the message was actually sent.</returns>
-    public bool TryAnnounce(
-        EntityUid source,
-        string message,
-        ref TimeSpan nextAlert,
-        bool urgent = false,
-        ProtoId<RadioChannelPrototype>? channel = null)
-    {
-        var now = _timing.CurTime;
-
-        if (!urgent && now < nextAlert)
-            return false;
-
-        nextAlert = now + DefaultAlertCooldown;
-        Announce(source, message, channel);
-        return true;
-    }
-
-    /// <summary>
     ///     Broadcast an engine alarm on the Shortband, and nowhere else.
     /// </summary>
     /// <remarks>
@@ -257,114 +174,6 @@ public sealed class ShipEventSystem : EntitySystem
         nextAlert = now + DefaultAlertCooldown;
         EngineAnnounce(source, message);
         return true;
-    }
-
-    /// <summary>
-    ///     Would this body receive a radio message on <paramref name="channel"/> sent from
-    ///     <paramref name="source"/>? Mirrors the delivery test in <see cref="RadioSystem"/> closely
-    ///     enough to decide whether the direct chat fallback is needed.
-    /// </summary>
-    /// <remarks>
-    ///     A normal headset puts <see cref="ActiveRadioComponent"/> on the <em>item</em>, not on the
-    ///     wearer (see <c>HeadsetSystem.UpdateRadioChannels</c>); only an implanted radio puts it on
-    ///     the body. Checking the body alone would classify every ordinary crew member as deaf and
-    ///     send them the fallback on top of the radio line, i.e. the duplicate this helper exists to
-    ///     avoid.
-    /// </remarks>
-    private bool CanHearRadio(
-        EntityUid body,
-        EntityUid source,
-        RadioChannelPrototype channel,
-        bool relayAvailable)
-    {
-        if (!TryGetActiveRadio(body, out var radio))
-            return false;
-
-        if (!radio.ReceiveAllChannels && !radio.Channels.Contains(channel.ID))
-            return false;
-
-        var sourceXform = Transform(source);
-        var bodyXform = Transform(body);
-
-        if (!channel.LongRange && !radio.GlobalReceive && bodyXform.MapID != sourceXform.MapID)
-            return false;
-
-        if (channel.MaxRange is { } maxRange && maxRange > 0 &&
-            (_transform.GetWorldPosition(bodyXform) - _transform.GetWorldPosition(sourceXform)).Length() > maxRange)
-        {
-            return false;
-        }
-
-        // Mirrors RadioSystem's `needServer` gate.
-        if (!channel.LongRange &&
-            !HasComp<TelecomExemptComponent>(source) &&
-            !relayAvailable)
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-    /// <summary>
-    ///     The body's own radio, or the one on the headset it is wearing. Returns false when the
-    ///     body has no working receiver at all.
-    /// </summary>
-    private bool TryGetActiveRadio(EntityUid body, [NotNullWhen(true)] out ActiveRadioComponent? radio)
-    {
-        if (TryComp(body, out radio))
-            return true;
-
-        if (TryComp<WearingHeadsetComponent>(body, out var wearing) &&
-            TryComp(wearing.Headset, out radio))
-        {
-            return true;
-        }
-
-        radio = null;
-        return false;
-    }
-
-    /// <summary>
-    ///     Mirrors <c>RadioSystem.HasActiveServer</c>, which is private: a short-range channel only
-    ///     leaves the radio when a powered telecomms server on the same map carries its encryption
-    ///     key. Kept in sync with the engine implementation deliberately.
-    /// </summary>
-    private bool HasActiveTelecomServer(MapId mapId, ProtoId<RadioChannelPrototype> channelId)
-    {
-        var servers = EntityQueryEnumerator<TelecomServerComponent, EncryptionKeyHolderComponent, ApcPowerReceiverComponent>();
-
-        while (servers.MoveNext(out var serverUid, out _, out var keys, out var power))
-        {
-            if (!power.Powered)
-                continue;
-
-            if (Transform(serverUid).MapID != mapId)
-                continue;
-
-            if (!keys.Channels.Contains(channelId.Id))
-                continue;
-
-            return true;
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    ///     Shake the ship. The client only kicks the camera of players whose grid matches, so
-    ///     this is grid-scoped for free.
-    /// </summary>
-    /// <remarks>
-    ///     Do not use this for machinery: a reactor that hisses once every two seconds must not
-    ///     rattle a ship the size of a town. <see cref="ShakeLocal"/> is the machine-scoped version.
-    /// </remarks>
-    public void Shake(EntityUid source)
-    {
-        if (!TryGetGrid(source, out var grid) || !HasComp<GravityComponent>(grid))
-            return;
-
-        _gravity.StartGridShake(grid);
     }
 
     /// <summary>

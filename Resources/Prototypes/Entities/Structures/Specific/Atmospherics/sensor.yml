@@ -27,7 +27,7 @@
       Frezon: danger
       Respiron: ignore # Frontier
       Helium: stationHe # Frontier
-      # Gases the NSV13 reactor work added. Without an entry here the alarm has no threshold for
+      # NSV13: gases the reactor work added. Without an entry here the alarm has no threshold for
       # them, and the client used to throw KeyNotFoundException the moment one appeared in the air.
       BZ: danger
       Nitryl: danger

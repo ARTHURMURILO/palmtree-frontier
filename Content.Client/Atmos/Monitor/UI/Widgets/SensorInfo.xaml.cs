@@ -59,7 +59,7 @@ public sealed partial class SensorInfo : BoxContainer
             ProtoId<GasPrototype> gasProtoId = atmosphereSystem.GetGas(gas);
             var gasName = _prototypeManager.Index(gasProtoId).Name;
 
-            // Sensors report EVERY gas in the tile but only carry a threshold entry for the ones the
+            // Palmtree: sensors report EVERY gas in the tile but only carry a threshold entry for the ones the
             // air alarm prototype configures. Indexing the dictionary directly threw
             // KeyNotFoundException for any other gas the moment one appeared in the air (BZ here),
             // which took the whole window down. Fall back to a neutral threshold instead.

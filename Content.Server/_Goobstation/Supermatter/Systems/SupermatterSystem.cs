@@ -3,6 +3,7 @@
 using System.Linq;
 using Content.Shared._Goobstation.Supermatter.Components;
 using Content.Shared._Goobstation.Supermatter.Events;
+using Content.Shared._Goobstation.Supermatter.Monitor;
 using Content.Shared._Goobstation.Supermatter.Systems;
 using Content.Server._PS.Ships;
 using Content.Server.Atmos.EntitySystems;
@@ -22,6 +23,7 @@ using Content.Shared.Mobs.Components;
 using Content.Shared.Projectiles;
 using Content.Shared.Radiation.Components;
 using Robust.Server.GameObjects;
+using Robust.Shared.Audio;
 using Robust.Shared.Audio.Systems;
 using Robust.Shared.Containers;
 using Robust.Shared.Physics;
@@ -135,6 +137,7 @@ public sealed partial class SupermatterSystem : SharedSupermatterSystem
         if (sm.Damage >= sm.DelaminationPoint || sm.Delamming)
             HandleDelamination(uid, sm);
 
+        UpdateStatus(sm);
         HandleSoundLoop(uid, sm);
 
         if (sm.ZapAccumulator >= sm.ZapTimer)
@@ -529,9 +532,7 @@ public sealed partial class SupermatterSystem : SharedSupermatterSystem
     ///     not. No direct chat fallback: that path looks like a server announcement, which is the
     ///     thing this change exists to remove.
     /// </remarks>
-    /// <param name="global">Retained for call-site clarity; the relay always broadcasts.</param>
-    /// <param name="customSender">Retained for call-site clarity; the relay signs with the machine.</param>
-    public void SupermatterAnnouncement(EntityUid uid, string message, bool global = false, string? customSender = null)
+    public void SupermatterAnnouncement(EntityUid uid, string message)
     {
         // HandleAnnouncements calls this with an empty message on every yell tick where the crystal
         // is taking damage but has not reached the warning point. The old implementation sent an
@@ -541,6 +542,28 @@ public sealed partial class SupermatterSystem : SharedSupermatterSystem
             return;
 
         _shipEvent.EngineAnnounce(uid, message);
+    }
+
+    /// <summary>
+    ///     Publish the crystal's condition for the monitoring console.
+    /// </summary>
+    /// <remarks>
+    ///     The console reads <see cref="SupermatterComponent.Status"/> for its list entry, and nothing
+    ///     ever wrote it, so every crystal on a monitoring console read "inactive" no matter how close
+    ///     to failure it was. The bands follow the same points the alarm thresholds use.
+    /// </remarks>
+    private static void UpdateStatus(SupermatterComponent sm)
+    {
+        sm.Status = sm switch
+        {
+            { HasDelaminated: true } => SupermatterStatusType.Error,
+            { Delamming: true } => SupermatterStatusType.Delaminating,
+            { Damage: var d } when d >= sm.DelaminationPoint => SupermatterStatusType.Emergency,
+            { Damage: var d } when d >= sm.EmergencyPoint => SupermatterStatusType.Danger,
+            { Damage: var d } when d >= sm.WarningPoint => SupermatterStatusType.Warning,
+            { Damage: var d } when d > 0f => SupermatterStatusType.Caution,
+            _ => SupermatterStatusType.Normal,
+        };
     }
 
     /// <summary>
@@ -682,24 +705,37 @@ public sealed partial class SupermatterSystem : SharedSupermatterSystem
         }
     }
 
+    /// <summary>
+    ///     Play the delamination alarm while the crystal is counting down, and stop it otherwise.
+    /// </summary>
+    /// <remarks>
+    ///     The crystal has two audio states: `calm.ogg`, which the AmbientSound component on the
+    ///     prototype owns, and the delamination alarm. This used to compute the right state, stop the
+    ///     old stream and record the new one - without ever starting anything - so the alarm asset was
+    ///     dead weight and a failing crystal made no sound at all.
+    /// </remarks>
     private void HandleSoundLoop(EntityUid uid, SupermatterComponent sm)
     {
-        var isAggressive = sm.Damage > sm.WarningPoint;
-        var isDelamming = sm.Damage > sm.DelaminationPoint;
+        // "Delamming" starts at the countdown, not at the explosion: that is the part the crew is
+        // meant to react to.
+        var alarming = sm.Delamming || sm.Damage >= sm.DelaminationPoint;
 
-        if (!isAggressive && !isDelamming)
+        if (!alarming)
         {
+            if (sm.SmSound == null)
+                return;
+
             sm.AudioStream = _audio.Stop(sm.AudioStream);
+            sm.SmSound = null;
             return;
         }
 
-        var smSound = isDelamming ? SuperMatterSound.Delam : SuperMatterSound.Aggressive;
-
-        if (sm.SmSound == smSound)
+        if (sm.SmSound == SuperMatterSound.Delam)
             return;
 
         sm.AudioStream = _audio.Stop(sm.AudioStream);
-        sm.SmSound = smSound;
+        sm.SmSound = SuperMatterSound.Delam;
+        sm.AudioStream = _audio.PlayPvs(sm.DelamSound, uid, AudioParams.Default.WithLoop(true))?.Entity;
     }
 
     #endregion

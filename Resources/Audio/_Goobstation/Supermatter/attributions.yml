@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Ported with the Goobstation supermatter. Copied verbatim from that repository's own attribution
+# file rather than re-deriving it.
+
+- files: ["calm.ogg"]
+  license: "CC-BY-3.0"
+  copyright: "Unknown"
+  source: "https://forums.goobstation.com"
+
+- files: ["delamming.ogg"]
+  license: "CC-BY-3.0"
+  copyright: "Unknown"
+  source: "https://forums.goobstation.com"

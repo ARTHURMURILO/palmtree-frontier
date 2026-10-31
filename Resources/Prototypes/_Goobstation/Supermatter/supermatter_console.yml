@@ -9,7 +9,7 @@
   - type: Computer
     board: SupermatterComputerCircuitboard
   - type: Sprite
-    sprite: Structures/Supermatter/computers.rsi
+    sprite: _Goobstation/Supermatter/computers.rsi
     layers:
     - map: ["computerLayerBody"]
       state: computer
