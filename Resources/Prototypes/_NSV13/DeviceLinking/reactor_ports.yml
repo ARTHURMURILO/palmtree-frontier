@@ -1,0 +1,16 @@
+# Palmtree: the multitool link between a reactor console and its reactor.
+#
+# The console is the source (it drives), the reactor is the sink (it is driven). The link is
+# deliberately not a signal: it only carries the binding, which is why both ports share one name.
+# `defaultLinks` lets the multitool's "Link defaults" button make the connection in one click.
+
+- type: sourcePort
+  id: ReactorControl
+  name: signal-port-name-reactor-control
+  description: signal-port-description-reactor-control
+  defaultLinks: [ ReactorControl ]
+
+- type: sinkPort
+  id: ReactorControl
+  name: signal-port-name-reactor-control
+  description: signal-port-description-reactor-control

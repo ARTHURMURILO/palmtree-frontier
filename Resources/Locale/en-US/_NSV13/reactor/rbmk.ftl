@@ -36,4 +36,5 @@ rbmk-examine-worn = The seals are intact but slightly worn. No visible cracks ye
 rbmk-examine-cracked = The vessel is cracked. It needs welding before the seals can be patched.
 rbmk-examine-failing = The vessel is badly degraded. This thing is on borrowed time.
 
-rbmk-examine-ports = The coolant inlet is on its west face, the coolant outlet on its east face, and the moderator feed on its north face.
+rbmk-examine-ports = The coolant inlet is on its [color=cyan]{$inlet}[/color] face, the coolant outlet on its [color=red]{$outlet}[/color] face, and the moderator feed on its [color=purple]{$moderator}[/color] face.
+rbmk-examine-power = An HV take-off runs from its centre tile - lay HV cable under the reactor.

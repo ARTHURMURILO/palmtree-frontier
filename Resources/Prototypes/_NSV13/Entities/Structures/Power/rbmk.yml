@@ -22,9 +22,11 @@
   placement:
     mode: SnapgridCenter
   components:
+  # No `noRot`: the reactor's pipe and cable ports turn with the hull, so the art has to turn with
+  # them. A screen-upright sprite on a turning ship pointed at ports that were no longer where they
+  # were drawn.
   - type: Sprite
     sprite: _NSV13/Objects/Structures/Power/rbmk.rsi
-    noRot: true
     layers:
     - state: reactor_off
       map: ["core"]
@@ -116,6 +118,11 @@
     loadNode: output
     sprite: Structures/Power/power.rsi
     state: generator
+  # A control console has to be wired to the reactor with a multitool before it will drive it. The
+  # console's link points at this sink port; proximity alone no longer binds anything.
+  - type: DeviceLinkSink
+    ports:
+      - ReactorControl
   # Engine alarms are broadcast on the Shortband. That channel is short-range, so RadioSystem
   # refuses to carry it without a powered telecomms server; the reactor has no relay of its own, so
   # without this exemption a meltdown on a ship with no telecomms would be completely silent.

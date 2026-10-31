@@ -10,6 +10,7 @@ using Content.Shared.DoAfter;
 using Content.Shared.Interaction;
 using Content.Shared.Popups;
 using Content.Server.Radiation.Systems;
+using Content.Shared.Radiation.Components;
 using Robust.Server.GameObjects;
 using Robust.Shared.Audio.Systems;
 using Robust.Shared.Containers;
@@ -65,7 +66,13 @@ public sealed class StormdriveRodSystem : EntitySystem
         if (!args.IsInDetailsRange)
             return;
 
-        args.PushMarkup(Loc.GetString("stormdrive-examine-ports"));
+        // Screen sides, not compass points: the camera counter-rotates with the hull, so the crew
+        // sees the drive in its own frame no matter which way the ship is pointing.
+        var rotation = Transform(uid).LocalRotation;
+        args.PushMarkup(Loc.GetString("stormdrive-examine-ports",
+            ("fuel", ReactorExamine.ScreenSide(rotation, Direction.East)),
+            ("waste", ReactorExamine.ScreenSide(rotation, Direction.West))));
+        args.PushMarkup(Loc.GetString("stormdrive-examine-power"));
     }
 
     /// <summary>The bay's container, created on first use.</summary>
@@ -240,6 +247,12 @@ public sealed class StormdriveRodSystem : EntitySystem
         if (!HasComp<ControlRodComponent>(args.Entity) || comp.ControlRods.Contains(args.Entity))
             return;
 
+        // A rod sitting in the bay is shielded by the core, exactly as the RBMK's fuel rods are
+        // (see RbmkReactorSystem.OnRodInserted). Without this, five 3-rad rods stack on the reactor
+        // tile and the drive reads 15 rads before its own source is even counted.
+        if (TryComp<RadiationSourceComponent>(args.Entity, out var rodRadiation))
+            rodRadiation.Enabled = false;
+
         comp.ControlRods.Add(args.Entity);
         _stormdrive.RecalculateRods(comp);
         _stormdrive.UpdateVisuals(uid, comp);
@@ -253,6 +266,10 @@ public sealed class StormdriveRodSystem : EntitySystem
 
         if (!comp.ControlRods.Remove(args.Entity))
             return;
+
+        // Pulled back out: the rod is unshielded again and has to read as the hot item it is.
+        if (TryComp<RadiationSourceComponent>(args.Entity, out var rodRadiation))
+            rodRadiation.Enabled = true;
 
         _stormdrive.RecalculateRods(comp);
         _stormdrive.UpdateVisuals(uid, comp);

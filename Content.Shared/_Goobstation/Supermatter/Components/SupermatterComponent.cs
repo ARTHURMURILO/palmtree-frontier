@@ -107,6 +107,20 @@ public sealed partial class SupermatterComponent : Component
     [DataField("radiationOutputFactor")]
     [ViewVariables(VVAccess.ReadWrite)]
     public float RadiationOutputFactor = 0.03f;
+
+    /// <summary>
+    ///     Ceiling on the crystal's own radiation output, in rads per second.
+    /// </summary>
+    /// <remarks>
+    ///     SS14 hands <see cref="Content.Shared.Radiation.Components.RadiationSourceComponent.Intensity"/>
+    ///     straight to the damage system every second, so Goob's raw figure - power times the output
+    ///     factor, which on a hot crystal is well over a hundred - deleted a crewman before the
+    ///     Geiger counter finished a tick. Eight is the same ceiling the RBMK and the stormdrive use:
+    ///     a place you enter in a radsuit, not an instant death field.
+    /// </remarks>
+    [DataField("maxRadiation")]
+    [ViewVariables(VVAccess.ReadWrite)]
+    public float MaxRadiation = 8f;
     #endregion SM Base
 
     #region SM Sound

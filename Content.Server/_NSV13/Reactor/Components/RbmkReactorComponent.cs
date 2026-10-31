@@ -229,8 +229,14 @@ public sealed partial class RbmkReactorComponent : Component
     public float MaxCriticality = 3f;
 
     /// <summary>Turns the reactor's kilowatts into something usable.</summary>
+    /// <remarks>
+    ///     Palmtree: doubled from 8000. The moderator gate destroys every mole fed to it each tick,
+    ///     which was balanced against stations with gas miners on tap. A ship buys its plasma by the
+    ///     canister, so the same watt now costs half the moderator gas - the reactor is exactly as
+    ///     hungry for coolant, but twice as efficient with what it burns.
+    /// </remarks>
     [DataField]
-    public float BasePowerModifier = 8000f;
+    public float BasePowerModifier = 16000f;
 
     /// <summary>Ticks the core survives without coolant before it starts eating itself.</summary>
     [DataField]
@@ -394,11 +400,11 @@ public sealed partial class RbmkReactorComponent : Component
     ///     radiation is a slow accumulator with its own scale. SS14 has no such accumulator: the
     ///     <see cref="RadiationSourceComponent"/> intensity is handed straight to the damage system
     ///     once a second, so the same number read directly is instantly lethal. A running core at
-    ///     ~700 °C has to land in the "you can hear it ticking" range of 1-2 rads per second, which
-    ///     is what this factor is for.
+    ///     ~1000 °C reads about 4 rads per second, which is the "you can hear it ticking" band the
+    ///     crew can work next to for a while; the cap below catches a runaway.
     /// </remarks>
     [DataField]
-    public float RadiationPerDegree = 0.0025f;
+    public float RadiationPerDegree = 0.004f;
 
     /// <summary>
     ///     Ceiling on the core's own output, in rads per second. Without it a runaway core reads
@@ -414,11 +420,12 @@ public sealed partial class RbmkReactorComponent : Component
     ///     SS14 hands <c>Intensity - Slope * distance</c> straight to the damage system once a second,
     ///     so this number <em>is</em> damage per second at the core. It is not the DM/BYOND scale:
     ///     a human has ~100 health, so anything in the hundreds kills instantly with no time to say
-    ///     anything. 25 rads is "you have a few seconds, and the Geiger counter is screaming", and
-    ///     radiation sources add up, so the room reads a little higher than the core alone.
+    ///     anything. 8 rads is the same ceiling as a live core: a slagged core is a place you visit
+    ///     in a radsuit, not one that kills you before you can read the Geiger counter, and the
+    ///     corium chunks thrown around add their own contamination on top.
     /// </remarks>
     [DataField]
-    public float MeltdownRadiation = 25f;
+    public float MeltdownRadiation = 8f;
 
     #endregion
 }

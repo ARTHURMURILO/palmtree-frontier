@@ -3,6 +3,8 @@
 using Content.Server._NSV13.Reactor.Components;
 using Content.Server._PS.Ships;
 using Content.Shared._NSV13.Reactor;
+using Content.Shared.DeviceLinking;
+using Content.Shared.DeviceLinking.Events;
 using Content.Shared.Radiation.Components;
 using Robust.Server.GameObjects;
 using Robust.Shared.Audio.Systems;
@@ -45,6 +47,8 @@ public sealed class RbmkConsoleSystem : EntitySystem
         SubscribeLocalEvent<RbmkConsoleComponent, BoundUIOpenedEvent>(OnUiOpened);
         SubscribeLocalEvent<RbmkConsoleComponent, RbmkConsoleSetTargetMessage>(OnSetTarget);
         SubscribeLocalEvent<RbmkConsoleComponent, RbmkConsoleEjectRodMessage>(OnEjectRod);
+        SubscribeLocalEvent<RbmkConsoleComponent, NewLinkEvent>(OnNewLink);
+        SubscribeLocalEvent<RbmkConsoleComponent, PortDisconnectedEvent>(OnPortDisconnected);
     }
 
     private void OnMapInit(EntityUid uid, RbmkConsoleComponent console, MapInitEvent args)
@@ -54,7 +58,7 @@ public sealed class RbmkConsoleSystem : EntitySystem
 
     private void OnUiOpened(EntityUid uid, RbmkConsoleComponent console, BoundUIOpenedEvent args)
     {
-        // A console built after the reactor, or one whose reactor was moved, gets another chance.
+        // A console whose reactor was moved, or one that was linked while closed, gets another look.
         if (console.Reactor is null)
             ResolveReactor(uid, console);
 
@@ -62,9 +66,14 @@ public sealed class RbmkConsoleSystem : EntitySystem
     }
 
     /// <summary>
-    ///     Find the reactor this console should drive. Never leaves the console's own grid: a
-    ///     console aboard one ship must not reach the reactor of another flying in formation.
+    ///     Bind this console to the reactor the multitool link points at.
     /// </summary>
+    /// <remarks>
+    ///     Proximity alone no longer binds anything: a ship can carry several reactors, and the crew
+    ///     has to say which console drives which one. The link is a normal <c>DeviceLink</c> between
+    ///     the console's <c>ReactorControl</c> source port and the reactor's matching sink port, so it
+    ///     survives a save and can be cleared from the multitool window.
+    /// </remarks>
     public void ResolveReactor(EntityUid uid, RbmkConsoleComponent console)
     {
         if (console.Reactor is { } current)
@@ -75,31 +84,47 @@ public sealed class RbmkConsoleSystem : EntitySystem
             console.Reactor = null;
         }
 
-        if (!_shipEvent.TryGetGrid(uid, out var grid))
+        if (!TryComp<DeviceLinkSourceComponent>(uid, out var links))
             return;
 
-        var consoleXform = Transform(uid);
-        var bestDist = float.MaxValue;
-        EntityUid? best = null;
-
-        var reactors = EntityQueryEnumerator<RbmkReactorComponent, TransformComponent>();
-        while (reactors.MoveNext(out var reactorUid, out var reactor, out var reactorXform))
+        foreach (var sink in links.LinkedPorts.Keys)
         {
-            if (reactorXform.GridUid != grid)
-                continue;
-
-            if (console.ConsoleId != null && reactor.ConsoleId != console.ConsoleId)
-                continue;
-
-            var dist = (reactorXform.LocalPosition - consoleXform.LocalPosition).LengthSquared();
-            if (dist >= bestDist)
-                continue;
-
-            bestDist = dist;
-            best = reactorUid;
+            if (TryLinkReactor(uid, console, sink))
+                return;
         }
+    }
 
-        console.Reactor = best;
+    /// <summary>
+    ///     Point the console at a reactor, if the link is legal: the target has to be a reactor, on
+    ///     the console's own grid (never across ships), and match the console's optional tag.
+    /// </summary>
+    /// <returns>True if the console is now bound to <paramref name="reactorUid"/>.</returns>
+    public bool TryLinkReactor(EntityUid uid, RbmkConsoleComponent console, EntityUid reactorUid)
+    {
+        if (!TryComp<RbmkReactorComponent>(reactorUid, out var reactor))
+            return false;
+
+        if (!_shipEvent.TryGetGrid(uid, out var grid) || Transform(reactorUid).GridUid != grid)
+            return false;
+
+        if (console.ConsoleId != null && reactor.ConsoleId != console.ConsoleId)
+            return false;
+
+        console.Reactor = reactorUid;
+        return true;
+    }
+
+    private void OnNewLink(EntityUid uid, RbmkConsoleComponent console, NewLinkEvent args)
+    {
+        if (TryLinkReactor(uid, console, args.Sink))
+            UpdateUi(uid, console);
+    }
+
+    private void OnPortDisconnected(EntityUid uid, RbmkConsoleComponent console, PortDisconnectedEvent args)
+    {
+        // The event fires before the link is dropped from LinkedPorts, so do not re-resolve here.
+        console.Reactor = null;
+        UpdateUi(uid, console);
     }
 
     public override void Update(float frameTime)

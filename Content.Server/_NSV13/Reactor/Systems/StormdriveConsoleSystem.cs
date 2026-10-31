@@ -8,6 +8,8 @@ using Content.Server.NodeContainer.EntitySystems;
 using Content.Server.NodeContainer.Nodes;
 using Content.Shared._NSV13.Reactor;
 using Content.Shared.Atmos;
+using Content.Shared.DeviceLinking;
+using Content.Shared.DeviceLinking.Events;
 using Robust.Server.GameObjects;
 using Robust.Shared.Audio.Systems;
 using Robust.Shared.Timing;
@@ -47,6 +49,8 @@ public sealed class StormdriveConsoleSystem : EntitySystem
         SubscribeLocalEvent<StormdriveConsoleComponent, StormdriveConsolePresetMessage>(OnPreset);
         SubscribeLocalEvent<StormdriveConsoleComponent, StormdriveConsoleMaintenanceMessage>(OnMaintenance);
         SubscribeLocalEvent<StormdriveConsoleComponent, StormdriveConsoleDumpMessage>(OnDump);
+        SubscribeLocalEvent<StormdriveConsoleComponent, NewLinkEvent>(OnNewLink);
+        SubscribeLocalEvent<StormdriveConsoleComponent, PortDisconnectedEvent>(OnPortDisconnected);
     }
 
     private void OnMapInit(EntityUid uid, StormdriveConsoleComponent console, MapInitEvent args)
@@ -62,7 +66,14 @@ public sealed class StormdriveConsoleSystem : EntitySystem
         UpdateUi(uid, console);
     }
 
-    /// <summary>Bind to the nearest stormdrive on this console's own grid, or to the one whose tag matches.</summary>
+    /// <summary>
+    ///     Bind to the stormdrive the multitool link points at.
+    /// </summary>
+    /// <remarks>
+    ///     As with the RBMK console, proximity no longer binds anything: the link is a normal
+    ///     <c>DeviceLink</c> from the console's <c>ReactorControl</c> source port to the drive's
+    ///     matching sink port, which makes the binding explicit, persistent and clearable.
+    /// </remarks>
     public void ResolveReactor(EntityUid uid, StormdriveConsoleComponent console)
     {
         if (console.Reactor is { } current)
@@ -73,31 +84,47 @@ public sealed class StormdriveConsoleSystem : EntitySystem
             console.Reactor = null;
         }
 
-        if (!_shipEvent.TryGetGrid(uid, out var grid))
+        if (!TryComp<DeviceLinkSourceComponent>(uid, out var links))
             return;
 
-        var consoleXform = Transform(uid);
-        var bestDist = float.MaxValue;
-        EntityUid? best = null;
-
-        var reactors = EntityQueryEnumerator<StormdriveComponent, TransformComponent>();
-        while (reactors.MoveNext(out var reactorUid, out var reactor, out var reactorXform))
+        foreach (var sink in links.LinkedPorts.Keys)
         {
-            if (reactorXform.GridUid != grid)
-                continue;
-
-            if (console.ConsoleId != null && reactor.ReactorId != console.ConsoleId)
-                continue;
-
-            var dist = (reactorXform.LocalPosition - consoleXform.LocalPosition).LengthSquared();
-            if (dist >= bestDist)
-                continue;
-
-            bestDist = dist;
-            best = reactorUid;
+            if (TryLinkReactor(uid, console, sink))
+                return;
         }
+    }
 
-        console.Reactor = best;
+    /// <summary>
+    ///     Point the console at a drive, if the target is a drive, on this console's own grid, and
+    ///     matches the console's optional tag.
+    /// </summary>
+    /// <returns>True if the console is now bound to <paramref name="reactorUid"/>.</returns>
+    public bool TryLinkReactor(EntityUid uid, StormdriveConsoleComponent console, EntityUid reactorUid)
+    {
+        if (!TryComp<StormdriveComponent>(reactorUid, out var reactor))
+            return false;
+
+        if (!_shipEvent.TryGetGrid(uid, out var grid) || Transform(reactorUid).GridUid != grid)
+            return false;
+
+        if (console.ConsoleId != null && reactor.ReactorId != console.ConsoleId)
+            return false;
+
+        console.Reactor = reactorUid;
+        return true;
+    }
+
+    private void OnNewLink(EntityUid uid, StormdriveConsoleComponent console, NewLinkEvent args)
+    {
+        if (TryLinkReactor(uid, console, args.Sink))
+            UpdateUi(uid, console);
+    }
+
+    private void OnPortDisconnected(EntityUid uid, StormdriveConsoleComponent console, PortDisconnectedEvent args)
+    {
+        // The event fires before the link is dropped from LinkedPorts, so do not re-resolve here.
+        console.Reactor = null;
+        UpdateUi(uid, console);
     }
 
     public override void Update(float frameTime)

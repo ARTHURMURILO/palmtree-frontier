@@ -242,8 +242,15 @@ public sealed class RbmkInteractionSystem : EntitySystem
         args.PushMarkup(message);
 
         // The ported art has no visible pipe stubs and the machine only accepts pipes on its centre
-        // tile, so the faces are spelled out instead of leaving the crew to guess.
-        args.PushMarkup(Loc.GetString("rbmk-examine-ports"));
+        // tile, so the faces are spelled out instead of leaving the crew to guess. They are given as
+        // screen sides rather than world compass points: the camera counter-rotates with the hull,
+        // so "west" is not what the player sees when the ship is pointed anywhere but north.
+        var rotation = Transform(uid).LocalRotation;
+        args.PushMarkup(Loc.GetString("rbmk-examine-ports",
+            ("inlet", ReactorExamine.ScreenSide(rotation, Direction.West)),
+            ("outlet", ReactorExamine.ScreenSide(rotation, Direction.East)),
+            ("moderator", ReactorExamine.ScreenSide(rotation, Direction.North))));
+        args.PushMarkup(Loc.GetString("rbmk-examine-power"));
     }
 
     /// <summary>

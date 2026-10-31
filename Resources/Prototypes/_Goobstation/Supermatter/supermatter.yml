@@ -108,6 +108,10 @@
     # Default flags: anchorable *and* unanchorable, so it can be fitted, moved and refitted.
     - type: Anchorable
       delay: 2
+    # Dragging is pull-based in SS14 and pulling requires this component. The crystal's parents are
+    # a bare entity prototype, so unlike every item and structure it never inherited `Pullable` -
+    # the shard could be wrenched down and then never actually moved.
+    - type: Pullable
     - type: Sprite
       drawdepth: WallMountedItems
       sprite: _Goobstation/Supermatter/supermatter_small.rsi

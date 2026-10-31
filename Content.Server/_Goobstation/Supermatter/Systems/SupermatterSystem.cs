@@ -306,7 +306,10 @@ public sealed partial class SupermatterSystem : SharedSupermatterSystem
         if (TryComp<RadiationSourceComponent>(uid, out var rad))
         {
             var transmittedpower = sm.Power * Math.Max(0, 1f + transmissionBonus / 10f);
-            rad.Intensity = transmittedpower * sm.RadiationOutputFactor;
+
+            // Palmtree: intensity is damage per second here, not a BYOND accumulator. A hot crystal's
+            // raw figure is in the hundreds and killed instantly; see SupermatterComponent.MaxRadiation.
+            rad.Intensity = Math.Clamp(transmittedpower * sm.RadiationOutputFactor, 0f, sm.MaxRadiation);
         }
 
         //Power * 0.55 * a value between 1 and 0.8

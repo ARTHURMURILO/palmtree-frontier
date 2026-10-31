@@ -2,7 +2,7 @@
 # Split out of the combined consoles.ftl, same reason as the RBMK file.
 
 stormdrive-console-title = Stormdrive reactor control
-stormdrive-console-no-reactor = NO REACTOR LINKED. Check the console tag.
+stormdrive-console-no-reactor = NO REACTOR LINKED. Use a multitool on the console and then on the drive.
 stormdrive-console-status-maintenance = MAINTENANCE MODE - lid open
 stormdrive-console-status-idle = Reactor off-line, awaiting ignition
 stormdrive-console-status-running = Fission reaction stable

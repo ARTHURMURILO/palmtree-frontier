@@ -2,9 +2,11 @@
 
 using Content.Server._NSV13.Reactor.Components;
 using Content.Server._NSV13.Reactor.Systems;
+using Content.Server.DeviceLinking.Systems;
 using Content.Shared._NSV13.Reactor;
 using Content.Server.NodeContainer.Nodes;
 using Content.Shared.Atmos;
+using Content.Shared.DeviceLinking;
 using Content.Shared.NodeContainer;
 using Robust.Server.GameObjects;
 using Robust.Shared.Containers;
@@ -55,7 +57,7 @@ public sealed class ReactorConsolesTest
     }
 
     [Test]
-    public async Task RbmkConsoleBindsOnItsOwnGrid()
+    public async Task RbmkConsoleBindsOnlyThroughAMultitoolLink()
     {
         await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
         var server = pair.Server;
@@ -69,9 +71,17 @@ public sealed class ReactorConsolesTest
 
             var consoleComp = entMan.GetComponent<RbmkConsoleComponent>(console);
             var system = entMan.System<RbmkConsoleSystem>();
+            var links = entMan.System<DeviceLinkSystem>();
+
+            // Standing next to a reactor must not bind anything any more: the link is the contract.
+            system.ResolveReactor(console, consoleComp);
+            Assert.That(consoleComp.Reactor, Is.Null, "proximity alone must not bind a console");
+
+            // The multitool's "link defaults" is what creates the binding.
+            links.LinkDefaults(null, console, reactor);
             system.ResolveReactor(console, consoleComp);
 
-            Assert.That(consoleComp.Reactor, Is.EqualTo(reactor), "console should drive the reactor");
+            Assert.That(consoleComp.Reactor, Is.EqualTo(reactor), "the link should bind the console");
         });
 
         await pair.CleanReturnAsync();
@@ -88,13 +98,18 @@ public sealed class ReactorConsolesTest
 
         await server.WaitAssertion(() =>
         {
-            entMan.SpawnEntity("RbmkNuclearReactorRunning", shipB.GridCoords);
+            var reactor = entMan.SpawnEntity("RbmkNuclearReactorRunning", shipB.GridCoords);
             var console = entMan.SpawnEntity("RbmkControlConsole", shipA.GridCoords);
 
             var consoleComp = entMan.GetComponent<RbmkConsoleComponent>(console);
             var system = entMan.System<RbmkConsoleSystem>();
-            system.ResolveReactor(console, consoleComp);
 
+            // Even a hand-made link must not cross grids: a console aboard one ship must never reach
+            // the reactor of another flying in formation.
+            Assert.That(system.TryLinkReactor(console, consoleComp, reactor), Is.False,
+                "a cross-ship link has to be refused");
+
+            system.ResolveReactor(console, consoleComp);
             Assert.That(consoleComp.Reactor, Is.Null,
                 "a console must never reach across to another vessel's reactor");
         });
@@ -145,6 +160,13 @@ public sealed class ReactorConsolesTest
             var consoleComp = entMan.GetComponent<StormdriveConsoleComponent>(console);
 
             var system = entMan.System<StormdriveConsoleSystem>();
+            var links = entMan.System<DeviceLinkSystem>();
+
+            // Same rule as the RBMK: the drive has to be linked to the console with a multitool.
+            system.ResolveReactor(console, consoleComp);
+            Assert.That(consoleComp.Reactor, Is.Null, "proximity alone must not bind a console");
+
+            links.LinkDefaults(null, console, reactor);
             system.ResolveReactor(console, consoleComp);
             Assert.That(consoleComp.Reactor, Is.EqualTo(reactor), "console should drive the drive");
 

@@ -11,4 +11,5 @@ stormdrive-announce-rods-failed = Primary control rods failed.
 stormdrive-announce-rods-worn = Control rods at {$integrity}% integrity.
 stormdrive-announce-dump-blocked = Fuel dump aborted: line pressure exceeds pump capacity.
 
-stormdrive-examine-ports = Its fuel line connects on the east face and its nucleium waste line on the west face.
+stormdrive-examine-ports = Its fuel line connects on the [color=cyan]{$fuel}[/color] face and its nucleium waste line on the [color=red]{$waste}[/color] face.
+stormdrive-examine-power = An HV take-off runs from its centre tile - lay HV cable under the drive.

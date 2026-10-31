@@ -1,13 +1,20 @@
 using System.Linq;
+using Content.Server._NF.DangerTether;
 using Content.Server.NodeContainer;
 using Content.Server.Power.Components;
 using Content.Server.Power.Nodes;
+using Content.Server.Shuttles.Components;
 using Content.Shared.Cargo.Prototypes;
 using Content.Shared.Construction.Components;
 using Content.Shared._Goobstation.Supermatter.Components;
+using Content.Shared.Movement.Pulling.Components;
 using Content.Shared.NodeContainer;
+using Content.Shared.Movement.Pulling.Components;
 using Content.Shared.NodeContainer.NodeGroups;
 using Robust.Shared.GameObjects;
+using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
+using Robust.Shared.Maths;
 using Robust.Shared.Prototypes;
 
 namespace Content.IntegrationTests.Tests._NSV13;
@@ -76,6 +83,44 @@ public sealed class ReactorHardwareTest
     }
 
     /// <summary>
+    ///     A reactor with HV cable under it and a load on the net must actually deliver, not merely
+    ///     report a figure on its own console.
+    /// </summary>
+    [Test]
+    public async Task ReactorFeedsPowerIntoAnHvCable()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        EntityUid reactor = default;
+
+        await server.WaitAssertion(() =>
+        {
+            reactor = entMan.SpawnEntity("RbmkNuclearReactorRunning", testMap.GridCoords);
+
+            // The device node sits on the machine's own tile: this is the cable a player lays
+            // "under" the reactor. The empty substation gives the net something to actually draw.
+            entMan.SpawnEntity("CableHV", testMap.GridCoords);
+            entMan.SpawnEntity("SubstationBasicEmpty", testMap.GridCoords);
+        });
+
+        await pair.RunTicksSync(300);
+
+        await server.WaitAssertion(() =>
+        {
+            var supplier = entMan.GetComponent<PowerSupplierComponent>(reactor);
+
+            Assert.That(supplier.Net, Is.Not.Null,
+                "the reactor's HV device node has to join the net formed by the cable");
+            Assert.That(supplier.CurrentSupply, Is.GreaterThan(0f),
+                "the reactor has to actually deliver power, not just set MaxSupply");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
     ///     The supermatter shard is the movable, purchasable crystal: it has to spawn unanchored and
     ///     keep both anchor flags, or it cannot be carried aboard and bolted down.
     /// </summary>
@@ -99,6 +144,13 @@ public sealed class ReactorHardwareTest
             Assert.That(entMan.HasComponent<AnchorableComponent>(uid), Is.True,
                 "the shard must be wrenchable, or it cannot be installed aboard a ship");
 
+            // Dragging in this engine is pull-based, and pulling needs Pullable. The crystal does not
+            // inherit it from BaseItem/BaseStructure like every other movable thing does.
+            Assert.That(entMan.HasComponent<PullableComponent>(uid), Is.True,
+                "the shard must be pullable, or it cannot be dragged onto a ship");
+            Assert.That(entMan.HasComponent<PullableComponent>(uid), Is.True,
+                "the shard must be pullable once unbolted, or it cannot be dragged aboard");
+
             // Same crystal as the full-size one: identical failure modes and output.
             var small = entMan.GetComponent<SupermatterComponent>(uid);
 
@@ -113,6 +165,74 @@ public sealed class ReactorHardwareTest
                 "the shard needs a flatpack to be sellable");
             Assert.That(protoMan.HasIndex<CargoProductPrototype>("EngineSupermatterShard"), Is.True,
                 "the shard should be purchasable through cargo");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    ///     A supermatter collapse that eats the floor out from under itself must not lose the
+    ///     singularity to the danger tether: the ship grid is the tether, and it is still the ship
+    ///     grid even after the tile below is gone.
+    /// </summary>
+    [Test]
+    public async Task SingularityOnAShipSurvivesLosingItsFloor()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var grid = testMap.Grid.Owner;
+        EntityUid singularity = default;
+
+        await server.WaitAssertion(() =>
+        {
+            // Test maps are not guaranteed to be shuttles; a real ship grid always is.
+            entMan.EnsureComponent<ShuttleComponent>(grid);
+
+            // Give the grid a deck rather than a single tile: a one-tile grid is deleted when its
+            // last tile goes, which would delete the singularity with it and prove nothing.
+            var map = entMan.System<SharedMapSystem>();
+            var gridComp = entMan.GetComponent<MapGridComponent>(grid);
+            for (var x = -4; x <= 4; x++)
+            {
+                for (var y = -4; y <= 4; y++)
+                    map.SetTile(grid, gridComp, new Vector2i(x, y), new Tile(1));
+            }
+
+            singularity = entMan.SpawnEntity("Singularity", testMap.GridCoords);
+
+            var tether = entMan.System<DangerTetherSystem>();
+            Assert.That(tether.AnyTetherInRange(singularity), Is.True,
+                "a singularity on a ship grid must count as tethered");
+        });
+
+        await pair.RunTicksSync(10);
+
+        await server.WaitAssertion(() =>
+        {
+            var map = entMan.System<SharedMapSystem>();
+            var gridComp = entMan.GetComponent<MapGridComponent>(grid);
+
+            // The event horizon eats the tile it is standing on. Removing a tile deparents everything
+            // on it to the map, so the singularity is now "in space" over its own hole - it must
+            // still count as the ship's problem, or the tether culls it half a second later.
+            map.SetTile(grid, gridComp, Vector2i.Zero, Tile.Empty);
+
+            Assert.That(entMan.EntityExists(singularity), Is.True,
+                "removing a tile must not delete the singularity");
+
+            var tether = entMan.System<DangerTetherSystem>();
+            Assert.That(tether.AnyTetherInRange(singularity), Is.True,
+                "a danger hovering over the hole it ate is still tethered to the ship");
+        });
+
+        await pair.RunTicksSync(120);
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(entMan.EntityExists(singularity), Is.True,
+                "the danger tether must not cull the singularity for eating its own floor");
         });
 
         await pair.CleanReturnAsync();

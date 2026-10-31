@@ -7,16 +7,16 @@ namespace Content.Server._NSV13.Reactor.Components;
 /// </summary>
 /// <remarks>
 ///     NSV13 linked its computers to reactors by scanning every machine for a matching
-///     <c>id</c> string (rbmk.dm:580-585). Here the console resolves its reactor the same way when
-///     <see cref="ConsoleId"/> is set, and otherwise simply takes the nearest reactor on its own
-///     grid - which is the SS14 shape of the same idea, because a grid is a ship.
+///     <c>id</c> string (rbmk.dm:580-585). Here the binding is explicit: the console carries a
+///     <c>DeviceLinkSource</c> and the reactor a matching <c>DeviceLinkSink</c>, and the crew makes
+///     the link with a multitool. <see cref="ConsoleId"/> remains as an optional mapper-set filter.
 /// </remarks>
 [RegisterComponent]
 public sealed partial class RbmkConsoleComponent : Component
 {
     /// <summary>
-    ///     Optional link tag. Must match <see cref="RbmkReactorComponent.ConsoleId"/>; when null the
-    ///     console binds to the closest reactor on its grid.
+    ///     Optional link tag. Must match <see cref="RbmkReactorComponent.ConsoleId"/>; when null any
+    ///     reactor the multitool link points at is accepted.
     /// </summary>
     [DataField]
     [ViewVariables(VVAccess.ReadWrite)]

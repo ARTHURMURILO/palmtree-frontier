@@ -47,6 +47,7 @@ public sealed class RbmkReactorSystem : EntitySystem
     [Dependency] private readonly NodeContainerSystem _nodeContainer = default!;
     [Dependency] private readonly ExplosionSystem _explosion = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!;
+    [Dependency] private readonly EngineAudioSystem _engineAudio = default!;
     [Dependency] private readonly ShipEventSystem _shipEvent = default!;
     [Dependency] private readonly EmpSystem _emp = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
@@ -412,7 +413,7 @@ public sealed class RbmkReactorSystem : EntitySystem
                 mix.Temperature = CelsiusToKelvin(reactor.Temperature);
             }
 
-            _audio.PlayPvs(SteamWhooshSound, uid);
+            _engineAudio.PlayOnGrid(SteamWhooshSound, uid);
 
             // Only the reactor compartment should feel this; a hissing core must not shake the
             // whole ship every tick.
@@ -477,7 +478,7 @@ public sealed class RbmkReactorSystem : EntitySystem
     private void StartAlarm(EntityUid uid, RbmkReactorComponent reactor)
     {
         StopAlarm(reactor);
-        reactor.AlarmStream = _audio.PlayPvs(reactor.AlarmSound, uid, AudioParams.Default.WithLoop(true))?.Entity;
+        reactor.AlarmStream = _engineAudio.PlayOnGrid(reactor.AlarmSound, uid, loop: true);
     }
 
     private void StopAlarm(RbmkReactorComponent reactor)
@@ -701,7 +702,7 @@ public sealed class RbmkReactorSystem : EntitySystem
             source.Enabled = true;
         }
 
-        _audio.PlayPvs(reactor.MeltdownSound, uid);
+        _engineAudio.PlayOnGrid(reactor.MeltdownSound, uid);
         _shipEvent.EngineAnnounce(uid, Loc.GetString("rbmk-announce-meltdown"));
 
         // Destructive core. Full intensity out to BlastCoreRadius, tapering to nothing at
@@ -764,7 +765,7 @@ public sealed class RbmkReactorSystem : EntitySystem
     public void Blowout(EntityUid uid, RbmkReactorComponent reactor)
     {
         StopAlarm(reactor);
-        _audio.PlayPvs(reactor.ExplosionSound, uid);
+        _engineAudio.PlayOnGrid(reactor.ExplosionSound, uid);
         _shipEvent.EngineAnnounce(uid, Loc.GetString("rbmk-announce-blowout"));
 
         // Original uses GLOB.MAX_EX_* (engine maximum). Here the vessel bursts over half again the
@@ -798,7 +799,7 @@ public sealed class RbmkReactorSystem : EntitySystem
         // rbmk.dm:537-544 start_up(): random startup sting, and the reactor hum becomes the
         // compartment's looping ambience (the prototype carries the sound, disabled).
         if (reactor.StartupSounds.Count > 0)
-            _audio.PlayPvs(_random.Pick(reactor.StartupSounds), uid);
+            _engineAudio.PlayOnGrid(_random.Pick(reactor.StartupSounds), uid);
 
         _ambient.SetAmbience(uid, true);
         UpdateVisuals(uid, reactor);

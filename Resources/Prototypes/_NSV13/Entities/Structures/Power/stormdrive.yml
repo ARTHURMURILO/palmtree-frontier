@@ -22,9 +22,9 @@
   placement:
     mode: SnapgridCenter
   components:
+  # No `noRot`: the fuel/waste ports turn with the hull, so the art has to turn with them.
   - type: Sprite
     sprite: _NSV13/Objects/Structures/Power/stormdrive.rsi
-    noRot: true
     layers:
     - state: reactor_off
       map: ["core"]
@@ -122,6 +122,10 @@
     loadNode: output
     sprite: Structures/Power/power.rsi
     state: generator
+  # The console is linked to the drive with a multitool; the link lands on this sink port.
+  - type: DeviceLinkSink
+    ports:
+      - ReactorControl
   # Shortband alarms do not cross a map without a telecomms relay; the drive carries its own pass.
   - type: TelecomExempt
   # Bolted down for life: still fittable on a fresh spawn, never removable afterwards.
