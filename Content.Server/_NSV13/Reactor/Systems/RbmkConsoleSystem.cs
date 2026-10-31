@@ -202,7 +202,10 @@ public sealed class RbmkConsoleSystem : EntitySystem
         state.VesselIntegrity = reactor.VesselIntegrity;
         state.MaxVesselIntegrity = reactor.MaxVesselIntegrity;
         state.IntegrityCause = reactor.LastIntegrityCause;
-        state.IntegrityDamage = reactor.LastIntegrityDamage;
+        // LastIntegrityDamage is per reactor tick; the console reports a per-second rate.
+        state.IntegrityDamage = reactor.TickInterval <= 0f
+            ? 0f
+            : reactor.LastIntegrityDamage / reactor.TickInterval;
         state.CoolantSatisfaction = reactor.CoolantSatisfaction;
         state.CoolantIn = reactor.LastCoolantTemperature;
         state.CoolantOut = reactor.LastOutputTemperature;

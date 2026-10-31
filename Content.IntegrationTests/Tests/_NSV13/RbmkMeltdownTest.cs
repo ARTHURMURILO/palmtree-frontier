@@ -79,6 +79,47 @@ public sealed class RbmkMeltdownTest
         await pair.CleanReturnAsync();
     }
 
+    /// <summary>
+    ///     The reactor must survive its own blast and stay on the grid as a wreck.
+    /// </summary>
+    /// <remarks>
+    ///     Every assertion in the older meltdown test runs in the same tick the meltdown was
+    ///     triggered, and the explosion is queued for a later tick - so the machine looked fine right
+    ///     up until the next tick deleted it. BaseMachine's Destructible thresholds remove the entity
+    ///     at 200 damage and a meltdown deals thousands, which turned "the core stays behind as
+    ///     permanent contamination" into "the core is gone and so is the room".
+    /// </remarks>
+    [Test]
+    public async Task MeltdownLeavesTheWreckBehind()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+
+        EntityUid uid = default;
+
+        await server.WaitAssertion(() =>
+        {
+            uid = entMan.SpawnEntity("RbmkNuclearReactorRunning", testMap.GridCoords);
+            var reactor = entMan.GetComponent<RbmkReactorComponent>(uid);
+            entMan.System<RbmkReactorSystem>().Meltdown(uid, reactor);
+        });
+
+        // Let the queued explosion actually resolve.
+        await pair.RunTicksSync(10);
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(entMan.EntityExists(uid), Is.True,
+                "the melted-down reactor must still exist as a wreck, not be deleted by its own blast");
+            Assert.That(entMan.GetComponent<RbmkReactorComponent>(uid).Slagged, Is.True,
+                "the surviving wreck should be in the slagged state");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
     [Test]
     public async Task MeltdownOnlyFiresOnce()
     {

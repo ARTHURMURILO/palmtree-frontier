@@ -692,6 +692,10 @@ public sealed class RbmkReactorSystem : EntitySystem
         StopAlarm(reactor);
         UpdateVisuals(uid, reactor);
 
+        // A slagged wreck still exists (it is not destructible any more), so its running hum has to
+        // be silenced by hand - nothing else will tick this machine again.
+        _ambient.SetAmbience(uid, false);
+
         // A slagged core must not keep feeding the grid: MaxSupply is persistent state, and nothing
         // else will tick this machine again to clear it. Without this the wreck keeps supplying the
         // last tick's wattage forever.
