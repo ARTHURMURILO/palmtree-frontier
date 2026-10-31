@@ -148,6 +148,47 @@ public sealed class StormdriveTest
     }
 
     /// <summary>
+    ///     The drive must survive its own blast and stay on the grid as a wreck.
+    /// </summary>
+    /// <remarks>
+    ///     The other meltdown assertions all run in the tick the meltdown was triggered, and the
+    ///     explosion is queued for a later tick - so the machine looked fine right up until the next
+    ///     tick deleted it. BaseMachine's Destructible thresholds remove the entity at 200 damage and
+    ///     a meltdown deals thousands, which meant the "ruined core" the console kept reporting was
+    ///     actually a hole in the deck.
+    /// </remarks>
+    [Test]
+    public async Task MeltdownLeavesTheWreckBehind()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+
+        EntityUid uid = default;
+
+        await server.WaitAssertion(() =>
+        {
+            uid = entMan.SpawnEntity("StormdriveReactorRunning", testMap.GridCoords);
+            var comp = entMan.GetComponent<StormdriveComponent>(uid);
+            entMan.System<StormdriveSystem>().Meltdown(uid, comp);
+        });
+
+        // Let the queued explosion actually resolve.
+        await pair.RunTicksSync(10);
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(entMan.EntityExists(uid), Is.True,
+                "the melted-down drive must still exist as a wreck, not be deleted by its own blast");
+            Assert.That(entMan.GetComponent<StormdriveComponent>(uid).State,
+                Is.EqualTo(StormdriveState.Meltdown), "the surviving wreck should be in the meltdown state");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
     ///     The actual detonation: a small blast, an EMP, a hot gas cloud and a permanently radiating
     ///     wreck - and deliberately no corium.
     /// </summary>
