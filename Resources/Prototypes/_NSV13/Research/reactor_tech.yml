@@ -1,0 +1,24 @@
+# NSV13 - research for the ported RBMK reactor.
+#
+# This fork's live tech tree is `Resources/Prototypes/_NF/Research/techtree.yml` (the older
+# `Resources/Prototypes/Research/*.yml` files are marked IGNORED on the Frontier), so this node joins
+# the `NFEngineering` tree with an explicit grid position rather than a separate tree of its own.
+#
+# Mirrors the DM techweb: `reactor_control_rods` was basic engineering. The RBMK has no control rods
+# of its own, so this branch's node is a plain "reactor machinery" gate for the boards and the vessel
+# sealant.
+
+- type: technology
+  id: NFReactorMachinery
+  name: research-technology-reactor-machinery
+  entityIcon: RbmkReactorMachineCircuitboard
+  discipline: NFEngineering
+  tier: 2
+  cost: 5000
+  recipeUnlocks:
+  - ReactorSealant
+  - RbmkReactorMachineCircuitboard
+  - RbmkConsoleCircuitboard
+  technologyPrerequisites:
+  - NFBasicPowerGeneration
+  position: 4, 28

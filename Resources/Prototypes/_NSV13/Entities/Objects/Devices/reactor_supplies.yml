@@ -1,0 +1,19 @@
+# NSV13 - consumables for the two reactors.
+#
+# The RBMK's vessel is patched with flexi-seal paste; the stormdrive is relined with sheet metal and
+# refitted with a packed core. Sealant has no /tg/ equivalent in this fork, so it is ported here.
+
+- type: entity
+  parent: BaseItem
+  id: ReactorSealant
+  name: flexi-seal reactor sealant
+  description: A can of expanding ceramic paste for patching the seals on a nuclear reactor vessel. Do not inhale.
+  components:
+  - type: Sprite
+    sprite: Objects/Consumable/Drinks/cola.rsi
+    state: icon
+  - type: Item
+    size: Small
+  - type: ReactorSealant
+  - type: StaticPrice
+    price: 150
