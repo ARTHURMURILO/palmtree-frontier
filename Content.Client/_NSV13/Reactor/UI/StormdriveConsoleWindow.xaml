@@ -25,7 +25,10 @@
             </BoxContainer>
         </PanelContainer>
 
-        <ScrollContainer VerticalExpand="True">
+        <!-- HScrollEnabled must stay off: with it on, the container gives its child its desired
+             width instead of the viewport width, so the fixed-width graph panel pushed the gas
+             list underneath the vertical scrollbar. -->
+        <ScrollContainer VerticalExpand="True" HScrollEnabled="False">
             <!-- Right margin keeps the buttons and bars clear of the scrollbar, which the
                  container draws on top of its content instead of reserving space for it. -->
             <BoxContainer Orientation="Vertical" SeparationOverride="10" Margin="0 0 16 0">
