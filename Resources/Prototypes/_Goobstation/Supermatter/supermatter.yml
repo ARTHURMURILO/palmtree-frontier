@@ -1,0 +1,157 @@
+# Goobstation - supermatter
+#
+# Ported from Goobstation. Stripped for Palmtree:
+#   - PhysicsGunBlacklist (Goob _Shitcode component)
+#   - LanguageSpeaker / LanguageKnowledge (Einstein Engines language system)
+
+- type: entity
+  id: Supermatter
+  name: supermatter crystal
+  description: A strangely translucent and iridescent crystal.
+  placement:
+    mode: SnapgridCenter
+  components:
+    - type: Supermatter
+      radiationOutputFactor: 0.005
+      whitelist:
+        tags:
+          - EmitterBolt
+        components:
+          - Body
+          - Item
+    - type: RadiationSource
+    - type: AmbientSound
+      range: 5
+      volume: 0
+      sound:
+        path: /Audio/_Goobstation/Supermatter/calm.ogg
+    - type: Physics
+    - type: Speech
+      speechSounds: Pai
+    - type: Fixtures
+      fixtures:
+        fix1:
+          shape:
+            !type:PhysShapeAabb
+            bounds: "-0.25,-0.25,0.25,0.25"
+          mask:
+            - Impassable
+            - MidImpassable
+            - HighImpassable
+            - LowImpassable
+            - InteractImpassable
+            - Opaque
+          layer:
+            - MidImpassable
+            - HighImpassable
+            - BulletImpassable
+            - InteractImpassable
+    - type: Transform
+      anchored: true
+      noRot: true
+    - type: CollisionWake
+      enabled: false
+    - type: Clickable
+    - type: InteractionOutline
+    - type: Sprite
+      drawdepth: WallMountedItems
+      sprite: _Goobstation/Supermatter/supermatter.rsi
+      state: supermatter
+    - type: Icon
+      sprite: _Goobstation/Supermatter/supermatter.rsi
+      state: supermatter
+    - type: PointLight
+      enabled: true
+      radius: 10
+      energy: 5
+      color: "#ffe000"
+    - type: Explosive
+      explosionType: Supermatter
+      maxIntensity: 10000
+      intensitySlope: 5
+      totalIntensity: 10000
+    - type: GuideHelp
+      guides: [ Supermatter ]
+    - type: WarpPoint
+      follow: true
+      location: supermatter
+    - type: StealTarget
+      stealGroup: SupermatterSliver # uses to verify sm existense on map
+    # Palmtree: reports go out on the Shortband, which RadioSystem will not carry across a map
+    # without a powered telecomms relay. A ship's engine room rarely has one, so the crystal carries
+    # its own pass instead of going silent the moment it starts failing.
+    - type: TelecomExempt
+
+# Palmtree: the smaller crystal, for ships that do not have a whole engine deck to give it.
+#
+# The art is tgstation's `sm_small` set (32x48, crystal on a mounting frame) from
+# icons/obj/machines/engine/supermatter.dmi - the same golden crystal family as the full-size sprite
+# this fork already ships, so the two read as different sizes of the same machine.
+#
+# Functionally it is the same crystal as `Supermatter`: same output, same failure points, same four
+# ways to fail. Only the housing differs. That is deliberate - it is a mounting option, not a
+# weaker engine, so nobody has to re-learn the machine to use one.
+#
+# It is also the only one you can move. The full crystal is welded to the deck for its whole life
+# (`anchored: true`, no `Anchorable`); the shard ships unanchored, can be wrenched down wherever it
+# lands, and can be dragged around beforehand. That is what makes it something you can buy, carry
+# aboard and install yourself.
+- type: entity
+  parent: Supermatter
+  id: SupermatterSmall
+  name: supermatter shard
+  description: A supermatter crystal in a compact mounting frame. Smaller than the real thing, and no safer.
+  components:
+    - type: Transform
+      anchored: false
+      noRot: true
+    # Default flags: anchorable *and* unanchorable, so it can be fitted, moved and refitted.
+    - type: Anchorable
+      delay: 2
+    - type: Sprite
+      drawdepth: WallMountedItems
+      sprite: _Goobstation/Supermatter/supermatter_small.rsi
+      state: shard
+    - type: Icon
+      sprite: _Goobstation/Supermatter/supermatter_small.rsi
+      state: shard
+
+# Flatpack version, so it can be sold through the cargo market like every other ship engine.
+- type: entity
+  parent: BaseNFFlatpack
+  id: SupermatterSmallFlatpack
+  name: supermatter shard flatpack
+  description: A flatpack used for constructing a supermatter shard. Handle with the same care as the real thing.
+  components:
+  - type: Flatpack
+    entity: SupermatterSmall
+  - type: Sprite
+    sprite: _NF/Objects/Devices/flatpack.rsi
+    layers:
+    - state: power_generator
+
+- type: entity
+  parent: BaseItem
+  id: SupermatterSliver
+  name: supermatter sliver
+  description: A shard from the station's supermatter crystal. Highly radioactive.
+  components:
+    - type: PointLight
+      enabled: true
+      radius: 3
+      energy: 2
+      color: "#fff633"
+    - type: RadiationSource
+      intensity: .75
+    - type: Icon
+      sprite: _Goobstation/Supermatter/supermatter_sliver.rsi
+      state: icon
+    - type: Sprite
+      sprite: _Goobstation/Supermatter/supermatter_sliver.rsi
+      state: icon
+    - type: StealTarget
+      stealGroup: SupermatterSliver
+    - type: Tag
+      tags:
+        - HighRiskItem
+    - type: SupermatterImmune
