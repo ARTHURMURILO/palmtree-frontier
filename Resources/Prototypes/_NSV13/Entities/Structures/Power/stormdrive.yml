@@ -103,6 +103,15 @@
         !type:CableDeviceNode
         nodeGroupID: HVPower
   - type: Stormdrive
+
+  # The machine has to survive its own failure. BaseMachine's Destructible thresholds delete the
+  # entity outright once it has taken 200 damage, and a meltdown deals thousands - so the reactor
+  # vanished in the blast instead of staying behind as a wreck, which is what the DM original leaves
+  # (its `icon_state` goes to the slagged/broken state and the machine is still there to be examined,
+  # repaired around, or scavenged). Emptying the thresholds keeps the machine damageable but
+  # indestructible, so the wreck is where the wreck should be.
+  - type: Destructible
+    thresholds: []
   # See the same block on the RBMK: a zero ramp rate pins the delivered power at 0 W forever.
   - type: PowerSupplier
     supplyRate: 0
