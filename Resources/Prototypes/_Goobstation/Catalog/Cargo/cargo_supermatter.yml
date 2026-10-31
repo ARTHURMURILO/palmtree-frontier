@@ -1,0 +1,9 @@
+- type: cargoProduct
+  id: EngineSupermatterShard
+  icon:
+    sprite: _Goobstation/Supermatter/supermatter_small.rsi
+    state: shard
+  product: SupermatterSmallFlatpack
+  cost: 20000
+  category: cargoproduct-category-name-engineering
+  group: market
