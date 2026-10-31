@@ -117,7 +117,12 @@ public sealed class StormdriveSystem : EntitySystem
                 if (!HasComp<ControlRodComponent>(rodUid))
                     continue;
 
-                comp.ControlRods.Add(rodUid);
+                // StormdriveRodSystem.OnRodInserted also records rods, and the container events fire
+                // during MapInit - possibly before this loop. Without the guard the five pre-loaded
+                // rods of StormdriveReactorRunning are recorded twice, giving ten entries for a
+                // five-slot bay.
+                if (!comp.ControlRods.Contains(rodUid))
+                    comp.ControlRods.Add(rodUid);
             }
         }
 
@@ -227,16 +232,18 @@ public sealed class StormdriveSystem : EntitySystem
             return;
         }
 
+        // Step 3: the armed meltdown countdown. This runs before the pipe lookup on purpose: it
+        // needs neither node, and a drive that loses a pipe mid-fuse must still detonate or fizzle
+        // instead of staying armed forever with its console banner hidden.
+        if (comp.ReactorEndTimes && HandleDestabilization(uid, comp))
+            return;
+
         if (!_nodeContainer.TryGetNodes(uid, comp.FuelInputName, comp.WasteOutputName,
                 out PipeNode? fuelNode, out PipeNode? wasteNode))
             return;
 
         var air1 = fuelNode.Air;
         var air2 = wasteNode.Air;
-
-        // Step 3: the armed meltdown countdown.
-        if (comp.ReactorEndTimes && HandleDestabilization(uid, comp))
-            return;
 
         // Step 4: player-toggled fuel dump.
         if (comp.DumpingFuel)
@@ -1036,6 +1043,11 @@ public sealed class StormdriveSystem : EntitySystem
         // Cooled below the threshold in the eighteen seconds you were given. Reprieve.
         comp.WarningState = StormdriveWarning.None;
         comp.ReactorEndTimes = false;
+
+        // The klaxon was started when the fuse armed and nothing else owns it from here: leaving it
+        // running would scream forever over a core that is now fine.
+        StopOverheatLoop(comp);
+
         return false;
     }
 
@@ -1053,6 +1065,9 @@ public sealed class StormdriveSystem : EntitySystem
             supplier.MaxSupply = 0f;
 
         StopOverheatLoop(comp);
+        // The wreck stays on the grid, so its ambience has to be silenced by hand; nothing else
+        // ticks this machine again.
+        _ambient.SetAmbience(uid, false);
         _audio.PlayPvs(comp.ExplosionSound, uid);
         _shipEvent.TryEngineAnnounce(uid, Loc.GetString("stormdrive-announce-meltdown"), ref comp.NextAlert, urgent: true);
 
@@ -1235,6 +1250,7 @@ public sealed class StormdriveSystem : EntitySystem
         // The DM leaves the icon to the next update_icon() call, which only runs from slowprocess().
         // slowprocess() bails out here ("running gate"), so the sprite used to stay on the last
         // running frame forever: a shut-down drive still looked like it was lit.
+        StopOverheatLoop(comp);
         _ambient.SetAmbience(uid, false);
         UpdateVisuals(uid, comp);
     }
