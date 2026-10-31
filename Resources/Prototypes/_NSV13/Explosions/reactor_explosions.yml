@@ -1,0 +1,31 @@
+# NSV13 reactors - meltdown explosion type.
+#
+# A dedicated type rather than reusing `Radioactive` because the meltdown has to actually tear
+# the hull apart, and no existing prototype carries Structural damage alongside Radiation.
+# `Radioactive` has no Structural at all, which is why a supermatter detonation scorches a ship
+# rather than opening it up.
+#
+# Note the warning at the top of Resources/Prototypes/explosion.yml: every extra explosion type
+# makes the airtight-destruction lookup table bigger. This is the only one we add, and it is
+# shared by the RBMK and (later) the Stormdrive.
+
+# Named `ReactorMeltdown`, not `RbmkMeltdown`: both reactors share this blast profile, and a
+# shared id is what lets each engine's branch ship without the other machine.
+- type: explosion
+  id: ReactorMeltdown
+  damagePerIntensity:
+    types:
+      Radiation: 6
+      Heat: 8
+      Blunt: 8
+      Structural: 30
+  # Floor tiles start failing at intensity 8 and are gone by 24. Combined with a 6-tile
+  # full-intensity core (see RbmkReactorComponent) this means the reactor compartment opens to
+  # space while the rest of the ship stays sealed and merely gets knocked around.
+  tileBreakChance: [0, 0.6, 1]
+  tileBreakIntensity: [0, 8, 24]
+  tileBreakRerollReduction: 25
+  lightColor: Orange
+  fireColor: Orange
+  texturePath: /Textures/Effects/fire.rsi
+  fireStates: 3

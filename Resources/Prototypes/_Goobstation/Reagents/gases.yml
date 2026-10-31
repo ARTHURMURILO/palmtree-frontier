@@ -1,0 +1,313 @@
+# Goobstation - /tg/ gases
+# Reagents for BZ, Healium, Nitrium and Pluoxium.
+# Adapted to Palmtree's reagent idioms (OrganType/ReagentThreshold conditions).
+
+- type: reagent
+  id: BZ
+  name: reagent-name-bz
+  desc: reagent-desc-bz
+  physicalDesc: reagent-physical-desc-gaseous
+  flavor: bitter
+  color: "#9370db"
+  metabolisms:
+    Poison:
+      effects:
+      - !type:Emote
+        emote: Cough
+        showInChat: true
+        probability: 0.1
+        conditions:
+        - !type:ReagentThreshold
+          reagent: BZ
+          min: 0.2
+      - !type:HealthChange
+        ignoreResistances: true
+        conditions:
+        - !type:ReagentThreshold
+          reagent: BZ
+          min: 0.5
+        damage:
+          types:
+            Asphyxiation: 10
+            Poison: 2.5
+      - !type:ModifyStatusEffect
+        effectProto: StatusEffectSeeingRainbow
+        type: Add
+        time: 150
+        conditions:
+        - !type:ReagentThreshold
+          reagent: BZ
+          min: 0.3
+    Gas:
+      effects:
+      - !type:HealthChange
+        ignoreResistances: true
+        scaleByQuantity: true
+        conditions:
+        - !type:ReagentThreshold
+          reagent: BZ
+          min: 0.5
+        damage:
+          types:
+            Asphyxiation: 5
+            Poison: 1.25
+      - !type:ModifyStatusEffect
+        effectProto: StatusEffectSeeingRainbow
+        type: Add
+        time: 30
+        conditions:
+        - !type:ReagentThreshold
+          reagent: BZ
+          min: 0.3
+
+- type: reagent
+  id: Healium
+  name: reagent-name-healium
+  desc: reagent-desc-healium
+  physicalDesc: reagent-physical-desc-gaseous
+  flavor: strange
+  color: "#90560b"
+  metabolisms:
+    Narcotic:
+      effects:
+      - !type:HealthChange
+        ignoreResistances: true
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Healium
+          max: 24
+        damage:
+          groups:
+            Burn: -2
+            Toxin: -5
+            Brute: -2
+      - !type:HealthChange
+        ignoreResistances: true
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Healium
+          min: 24
+        damage:
+          groups:
+            Burn: -20
+            Toxin: -50
+            Brute: -20
+      - !type:ModifyStatusEffect
+        effectProto: StatusEffectForcedSleeping
+        type: Add
+        time: 1
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Healium
+          min: 8
+      - !type:Drunk
+        boozePower: 45
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Healium
+          min: 4
+    Gas:
+      effects:
+      - !type:HealthChange
+        ignoreResistances: true
+        scaleByQuantity: true
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Healium
+          max: 24
+        damage:
+          groups:
+            Burn: -1
+            Toxin: -2.5
+            Brute: -1
+      - !type:HealthChange
+        ignoreResistances: true
+        scaleByQuantity: true
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Healium
+          min: 24
+        damage:
+          groups:
+            Burn: -10
+            Toxin: -25
+            Brute: -10
+      - !type:ModifyStatusEffect
+        effectProto: StatusEffectForcedSleeping
+        type: Add
+        time: 1
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Healium
+          min: 8
+
+- type: reagent
+  id: Nitrium
+  name: reagent-name-nitrium
+  desc: reagent-desc-nitrium
+  physicalDesc: reagent-physical-desc-gaseous
+  flavor: sour
+  color: "#a52a2a"
+  metabolisms:
+    Narcotic:
+      effects:
+      - !type:MovespeedModifier
+        walkSpeedModifier: 1.25
+        sprintSpeedModifier: 1.25
+        statusLifetime: 6
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Nitrium
+          min: 1
+          max: 8
+      - !type:MovespeedModifier
+        walkSpeedModifier: 1.4
+        sprintSpeedModifier: 1.4
+        statusLifetime: 6
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Nitrium
+          min: 8
+          max: 12
+      - !type:MovespeedModifier
+        walkSpeedModifier: 1.6
+        sprintSpeedModifier: 1.6
+        statusLifetime: 6
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Nitrium
+          min: 12
+      - !type:GenericStatusEffect
+        key: Stutter
+        component: StutteringAccent
+        time: 8
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Nitrium
+          min: 8
+      - !type:HealthChange
+        ignoreResistances: true
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Nitrium
+          min: 10
+        damage:
+          types:
+            Asphyxiation: 15
+    Gas:
+      effects:
+      - !type:MovespeedModifier
+        walkSpeedModifier: 1.25
+        sprintSpeedModifier: 1.25
+        statusLifetime: 6
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Nitrium
+          min: 1
+          max: 8
+      - !type:MovespeedModifier
+        walkSpeedModifier: 1.4
+        sprintSpeedModifier: 1.4
+        statusLifetime: 6
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Nitrium
+          min: 8
+          max: 12
+      - !type:MovespeedModifier
+        walkSpeedModifier: 1.6
+        sprintSpeedModifier: 1.6
+        statusLifetime: 6
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Nitrium
+          min: 12
+      - !type:HealthChange
+        ignoreResistances: true
+        scaleByQuantity: true
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Nitrium
+          min: 10
+        damage:
+          types:
+            Asphyxiation: 7.5
+
+- type: reagent
+  id: Pluoxium
+  name: reagent-name-pluoxium
+  desc: reagent-desc-pluoxium
+  physicalDesc: reagent-physical-desc-gaseous
+  flavor: bitter
+  color: "#7b68ee"
+  metabolisms:
+    Poison:
+      effects:
+      - !type:Oxygenate
+        factor: 8
+        conditions:
+        - !type:OrganType
+          type: Human
+      - !type:Oxygenate
+        factor: 8
+        conditions:
+        - !type:OrganType
+          type: Animal
+      - !type:Oxygenate
+        factor: 8
+        conditions:
+        - !type:OrganType
+          type: Rat
+      - !type:Oxygenate
+        factor: 8
+        conditions:
+        - !type:OrganType
+          type: Plant
+      - !type:Oxygenate
+        factor: 8
+        conditions:
+        - !type:OrganType
+          type: Feroxi
+      - !type:ModifyLungGas
+        ratios:
+          CarbonDioxide: 1.0
+          Pluoxium: -1.0
+        conditions:
+        - !type:OrganType
+          type: Vox
+          shouldHave: false
+    Gas:
+      effects:
+      - !type:Oxygenate
+        factor: 8
+        conditions:
+        - !type:OrganType
+          type: Human
+      - !type:Oxygenate
+        factor: 8
+        conditions:
+        - !type:OrganType
+          type: Animal
+      - !type:Oxygenate
+        factor: 8
+        conditions:
+        - !type:OrganType
+          type: Rat
+      - !type:Oxygenate
+        factor: 8
+        conditions:
+        - !type:OrganType
+          type: Plant
+      - !type:Oxygenate
+        factor: 8
+        conditions:
+        - !type:OrganType
+          type: Feroxi
+      - !type:ModifyLungGas
+        ratios:
+          CarbonDioxide: 1.0
+          Pluoxium: -1.0
+        conditions:
+        - !type:OrganType
+          type: Vox
+          shouldHave: false

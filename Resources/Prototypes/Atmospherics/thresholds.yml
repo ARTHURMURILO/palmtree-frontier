@@ -109,6 +109,13 @@
     threshold: 0.0001
 
 - type: alarmThreshold
+  id: stationNucleium # NSV13 reactor byproduct: never okay, but a reactor room will always read a trace
+  upperBound: !type:AlarmThresholdSetting
+    threshold: 0.002
+  upperWarnAround: !type:AlarmThresholdSetting
+    threshold: 0.5
+
+- type: alarmThreshold
   id: voxOxygen
   upperBound: !type:AlarmThresholdSetting
     threshold: 0.02 # 2%

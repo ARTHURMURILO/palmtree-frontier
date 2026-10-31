@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+- type: entity
+  id: EffectRbmkVentSteam
+  categories: [ HideSpawnMenu ]
+  description: Scalding vapor hissing out of a reactor that is not long for this world.
+  components:
+  - type: TimedDespawn
+    lifetime: 2.5
+  - type: Sprite
+    drawdepth: Effects
+    noRot: true
+    layers:
+    - shader: unshaded
+      sprite: Effects/atmospherics.rsi
+      state: water_vapor
+  - type: EffectVisuals
+  - type: AnimationPlayer
+  - type: Tag
+    tags:
+    - HideContextMenu

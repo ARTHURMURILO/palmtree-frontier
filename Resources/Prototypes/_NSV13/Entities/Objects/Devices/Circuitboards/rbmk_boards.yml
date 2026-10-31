@@ -1,0 +1,38 @@
+# NSV13 - circuit boards for the two reactors and their consoles.
+#
+# Both reactors are now `ConstructibleMachine`s: the standard machine-frame + board build order works,
+# so a shipyard can actually fabricate one instead of an admin spawning it.
+#
+# The original NSV13 techweb had two designs for this: the reactor control console board (under
+# "Seegson Storm Drive Machinery") and the techfab control-rod design. The board requirements below
+# follow the fork's Frontier machine-board conventions.
+
+# Split out of reactor_boards.yml so each engine ships its own circuitboards.
+- type: entity
+  parent: BaseMachineCircuitboard
+  id: RbmkReactorMachineCircuitboard
+  name: RBMK reactor machine board
+  description: A machine printed circuit board for an advanced gas-cooled nuclear reactor.
+  components:
+  - type: Sprite
+    state: engineering
+  - type: MachineBoard
+    prototype: RbmkNuclearReactor
+    requirements:
+      Capacitor: 3
+      Manipulator: 2
+    stackRequirements:
+      Cable: 5
+      Steel: 10
+      PlasmaGlass: 5
+
+- type: entity
+  parent: BaseComputerCircuitboard
+  id: RbmkConsoleCircuitboard
+  name: RBMK control console board
+  description: A computer printed circuit board for an RBMK control console.
+  components:
+  - type: Sprite
+    state: engineering
+  - type: ComputerBoard
+    prototype: RbmkControlConsole

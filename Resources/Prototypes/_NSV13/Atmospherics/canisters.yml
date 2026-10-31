@@ -1,0 +1,184 @@
+# NSV13 - canisters for the gases this port introduces.
+#
+# `moles` is positional and MUST have one entry per Atmospherics.TotalNumberOfGases (20):
+#   oxygen, nitrogen, co2, plasma, tritium, water vapour, ammonia, n2o, frezon, respiron,
+#   helium, bz, healium, nitrium, pluoxium, constricted plasma, nitryl, hyper-noblium,
+#   stimulum, nucleium.
+#
+# The stock sprites have no art for these gases, so each one borrows the nearest colour that
+# exists in the Frontier canister RSI (which is what GasCanister's sprite points at here).
+
+- type: entity
+  parent: GasCanister
+  id: ConstrictedPlasmaCanister
+  name: constricted plasma canister
+  description: A canister that can contain any type of gas. This one contains magnetically constricted plasma - the fuel a nuclear storm drive actually wants.
+  components:
+  - type: Sprite
+    layers:
+    - state: plasma
+  - type: GasCanister
+    gasMixture:
+      volume: 1500
+      moles:
+      - 0 # oxygen
+      - 0 # nitrogen
+      - 0 # carbon dioxide
+      - 0 # plasma
+      - 0 # tritium
+      - 0 # water vapour
+      - 0 # ammonia
+      - 0 # n2o
+      - 0 # frezon
+      - 0 # respiron
+      - 0 # helium
+      - 0 # bz
+      - 0 # healium
+      - 0 # nitrium
+      - 0 # pluoxium
+      - 2500 # constricted plasma
+      - 0 # nitryl
+      - 0 # hyper-noblium
+      - 0 # stimulum
+      - 0 # nucleium
+      temperature: 293.15
+
+- type: entity
+  parent: GasCanister
+  id: NucleiumCanister
+  name: nucleium canister
+  description: A canister that can contain any type of gas. This one contains nucleium, the waste plasma biproduct of a storm drive, used in quantum waveform generation.
+  components:
+  - type: Sprite
+    layers:
+    - state: healium
+  - type: GasCanister
+    gasMixture:
+      volume: 1500
+      moles:
+      - 0 # oxygen
+      - 0 # nitrogen
+      - 0 # carbon dioxide
+      - 0 # plasma
+      - 0 # tritium
+      - 0 # water vapour
+      - 0 # ammonia
+      - 0 # n2o
+      - 0 # frezon
+      - 0 # respiron
+      - 0 # helium
+      - 0 # bz
+      - 0 # healium
+      - 0 # nitrium
+      - 0 # pluoxium
+      - 0 # constricted plasma
+      - 0 # nitryl
+      - 0 # hyper-noblium
+      - 0 # stimulum
+      - 2500 # nucleium
+      temperature: 293.15
+
+- type: entity
+  parent: GasCanister
+  id: NitrylCanister
+  name: nitryl canister
+  description: A canister that can contain any type of gas. This one contains nitryl.
+  components:
+  - type: Sprite
+    layers:
+    - state: nitrous_oxide
+  - type: GasCanister
+    gasMixture:
+      volume: 1500
+      moles:
+      - 0 # oxygen
+      - 0 # nitrogen
+      - 0 # carbon dioxide
+      - 0 # plasma
+      - 0 # tritium
+      - 0 # water vapour
+      - 0 # ammonia
+      - 0 # n2o
+      - 0 # frezon
+      - 0 # respiron
+      - 0 # helium
+      - 0 # bz
+      - 0 # healium
+      - 0 # nitrium
+      - 0 # pluoxium
+      - 0 # constricted plasma
+      - 1000 # nitryl
+      - 0 # hyper-noblium
+      - 0 # stimulum
+      - 0 # nucleium
+      temperature: 293.15
+
+- type: entity
+  parent: GasCanister
+  id: HyperNobliumCanister
+  name: hyper-noblium canister
+  description: A canister that can contain any type of gas. This one contains hyper-noblium, a potent neutron inhibitor.
+  components:
+  - type: Sprite
+    layers:
+    - state: pluoxium
+  - type: GasCanister
+    gasMixture:
+      volume: 1500
+      moles:
+      - 0 # oxygen
+      - 0 # nitrogen
+      - 0 # carbon dioxide
+      - 0 # plasma
+      - 0 # tritium
+      - 0 # water vapour
+      - 0 # ammonia
+      - 0 # n2o
+      - 0 # frezon
+      - 0 # respiron
+      - 0 # helium
+      - 0 # bz
+      - 0 # healium
+      - 0 # nitrium
+      - 0 # pluoxium
+      - 0 # constricted plasma
+      - 0 # nitryl
+      - 500 # hyper-noblium
+      - 0 # stimulum
+      - 0 # nucleium
+      temperature: 293.15
+
+- type: entity
+  parent: GasCanister
+  id: StimulumCanister
+  name: stimulum canister
+  description: A canister that can contain any type of gas. This one contains stimulum, which greatly accelerates a storm drive reaction.
+  components:
+  - type: Sprite
+    layers:
+    - state: bz
+  - type: GasCanister
+    gasMixture:
+      volume: 1500
+      moles:
+      - 0 # oxygen
+      - 0 # nitrogen
+      - 0 # carbon dioxide
+      - 0 # plasma
+      - 0 # tritium
+      - 0 # water vapour
+      - 0 # ammonia
+      - 0 # n2o
+      - 0 # frezon
+      - 0 # respiron
+      - 0 # helium
+      - 0 # bz
+      - 0 # healium
+      - 0 # nitrium
+      - 0 # pluoxium
+      - 0 # constricted plasma
+      - 0 # nitryl
+      - 0 # hyper-noblium
+      - 500 # stimulum
+      - 0 # nucleium
+      temperature: 293.15

@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+# Split out of reactor_consoles.yml for the same reason as rbmk_console.yml.
+- type: entity
+  parent: BaseComputer
+  id: StormdriveControlConsole
+  name: stormdrive reactor control console
+  description: Rod insertion, reactor temperature and the fuel dump, all from a safe distance. Safer being nowhere near the core.
+  components:
+  # Placeholder screen: NSV13's StormdriveConsole TGUI has no SS14 art yet.
+  - type: Sprite
+    sprite: Structures/Machines/computers.rsi
+    layers:
+    - map: ["computerLayerBody"]
+      state: computer
+    - map: ["computerLayerKeyboard"]
+      state: generic_keyboard
+    - map: ["computerLayerScreen"]
+      state: sensors
+    - map: ["computerLayerKeys"]
+      state: generic_keys
+    - map: [ "enum.WiresVisualLayers.MaintenancePanel" ]
+      state: generic_panel_open
+  - type: StormdriveConsole
+  - type: Computer
+    board: StormdriveConsoleCircuitboard
+  - type: ActivatableUI
+    key: enum.StormdriveConsoleUiKey.Key
+  - type: UserInterface
+    interfaces:
+      enum.StormdriveConsoleUiKey.Key:
+        type: StormdriveConsoleBoundUserInterface
+  - type: StaticPrice
+    price: 500

@@ -1,0 +1,40 @@
+# NSV13 - research for the ported reactors.
+#
+# This fork's live tech tree is `Resources/Prototypes/_NF/Research/techtree.yml` (the older
+# `Resources/Prototypes/Research/*.yml` files are marked IGNORED on the Frontier), so these nodes join
+# the `NFEngineering` tree with explicit grid positions rather than a separate tree of their own.
+#
+# Mirrors the DM techweb: `reactor_control_rods` was basic engineering, and the stormdrive machinery
+# node required advanced engineering + advanced power. Costs are the fork's scale, not BYOND's 2500.
+
+- type: technology
+  id: NFReactorControlRods
+  name: research-technology-reactor-control-rods
+  entityIcon: ControlRod
+  discipline: NFEngineering
+  tier: 2
+  cost: 5000
+  recipeUnlocks:
+  - ControlRodInferior
+  - ReactorSealant
+  - RbmkReactorMachineCircuitboard
+  - RbmkConsoleCircuitboard
+  technologyPrerequisites:
+  - NFBasicPowerGeneration
+  position: 4, 28
+
+- type: technology
+  id: NFStormdriveMachinery
+  name: research-technology-stormdrive-machinery
+  entityIcon: StormdriveCore
+  discipline: NFEngineering
+  tier: 3
+  cost: 15000
+  recipeUnlocks:
+  - StormdriveReactorMachineCircuitboard
+  - StormdriveConsoleCircuitboard
+  technologyPrerequisites:
+  - NFReactorControlRods
+  - NFAdvancedPowercells
+  prerequisiteLineType: Diagonal
+  position: 4, 29

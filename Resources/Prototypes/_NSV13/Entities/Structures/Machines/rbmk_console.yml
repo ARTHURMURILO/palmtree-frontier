@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+# Split out of reactor_consoles.yml so the RBMK console can be reviewed and merged without
+# dragging the stormdrive console (and its BUI) along with it.
+- type: entity
+  parent: BaseComputer
+  id: RbmkControlConsole
+  name: RBMK control console
+  description: Controls and monitors an advanced gas-cooled nuclear reactor. Do not leave unattended.
+  components:
+  # Placeholder screen: NSV13's rbmk_rods/rbmk_stats/rbmk_fuel states are not ported yet.
+  - type: Sprite
+    sprite: Structures/Machines/computers.rsi
+    layers:
+    - map: ["computerLayerBody"]
+      state: computer
+    - map: ["computerLayerKeyboard"]
+      state: generic_keyboard
+    - map: ["computerLayerScreen"]
+      state: power_monitor
+    - map: ["computerLayerKeys"]
+      state: power_key
+    - map: [ "enum.WiresVisualLayers.MaintenancePanel" ]
+      state: generic_panel_open
+  - type: RbmkConsole
+  - type: Computer
+    board: RbmkConsoleCircuitboard
+  - type: ActivatableUI
+    key: enum.RbmkConsoleUiKey.Key
+  - type: UserInterface
+    interfaces:
+      enum.RbmkConsoleUiKey.Key:
+        type: RbmkConsoleBoundUserInterface
+  - type: StaticPrice
+    price: 500

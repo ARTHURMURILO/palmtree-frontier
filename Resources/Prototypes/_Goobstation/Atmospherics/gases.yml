@@ -1,0 +1,55 @@
+# Goobstation - /tg/ gases
+#
+# NOTE: Palmtree (Frontier lineage) uses NUMERIC gas prototype ids that must match
+# the Content.Shared.Atmos.Gas enum ordinal. Current map:
+#   0 Oxygen, 1 Nitrogen, 2 CarbonDioxide, 3 Plasma, 4 Tritium, 5 WaterVapor,
+#   6 Ammonia, 7 NitrousOxide, 8 Frezon, 9 Respiron, 10 Helium,
+#   11 BZ, 12 Healium, 13 Nitrium, 14 Pluoxium
+
+- type: gas
+  id: 11
+  name: gases-bz
+  gasOverlaySprite: /Textures/_NSV13/Effects/reactor_gases.rsi
+  gasOverlayState: bz
+  specificHeat: 20
+  heatCapacityRatio: 1.6
+  molarMass: 12
+  color: 9370db
+  reagent: BZ
+  pricePerMole: 2
+
+- type: gas
+  id: 12
+  name: gases-healium
+  specificHeat: 10
+  heatCapacityRatio: 1.4
+  molarMass: 15
+  gasOverlaySprite: /Textures/Effects/atmospherics.rsi
+  gasOverlayState: healium
+  color: fa8072
+  reagent: Healium
+  pricePerMole: 3
+
+- type: gas
+  id: 13
+  name: gases-nitrium
+  specificHeat: 10
+  heatCapacityRatio: 1.4
+  molarMass: 8
+  gasOverlaySprite: /Textures/Effects/atmospherics.rsi
+  gasOverlayState: nitrium
+  color: a52a2a
+  reagent: Nitrium
+  pricePerMole: 3
+
+- type: gas
+  id: 14
+  name: gases-pluoxium
+  gasOverlaySprite: /Textures/_NSV13/Effects/reactor_gases.rsi
+  gasOverlayState: pluoxium
+  specificHeat: 80
+  heatCapacityRatio: 1.33
+  molarMass: 32
+  color: 7b68ee
+  reagent: Pluoxium
+  pricePerMole: 0.1

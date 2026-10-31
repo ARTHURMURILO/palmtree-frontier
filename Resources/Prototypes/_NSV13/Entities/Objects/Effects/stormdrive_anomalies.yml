@@ -1,0 +1,83 @@
+# NSV13 - stormdrive anomalies.
+#
+# Ported from `stormdrive.dm`'s /obj/effect/anomaly/stormdrive subtypes. An unstable reactor tears
+# these into realspace; each one pulses until it detonates. Deliberately NOT parented to the stock
+# anomaly entity - that carries the generic Anomaly component, whose pulsing would fight ours.
+#
+# ART: borrowed from the stock anomaly sheet (anom2/anom3/anom5); the BYOND icons were the same
+# sprites.
+
+- type: entity
+  id: StormdriveAnomalySurge
+  name: storm surge anomaly
+  description: A crackling knot of loose electricity, bleeding out of a reactor that lost containment.
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Clickable
+  - type: InteractionOutline
+  - type: Physics
+    bodyType: Static
+  - type: Sprite
+    sprite: Structures/Specific/anomaly.rsi
+    layers:
+    - state: anom3
+    - state: anom3-pulse
+      shader: unshaded
+      visible: true
+  - type: PointLight
+    radius: 2
+    energy: 3
+    color: "#ffffaa"
+  - type: StormdriveAnomaly
+    kind: Surge
+    lifespan: 300
+
+- type: entity
+  id: StormdriveAnomalySheer
+  name: storm sheer anomaly
+  description: A shimmer of radiation and raw nucleium, hanging where the core came apart.
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Clickable
+  - type: InteractionOutline
+  - type: Physics
+    bodyType: Static
+  - type: Sprite
+    sprite: Structures/Specific/anomaly.rsi
+    layers:
+    - state: anom5
+    - state: anom5-pulse
+      shader: unshaded
+      visible: true
+  - type: PointLight
+    radius: 2
+    energy: 3
+    color: "#66ff99"
+  - type: StormdriveAnomaly
+    kind: Sheer
+    lifespan: 300
+
+- type: entity
+  id: StormdriveAnomalySquall
+  name: storm squall anomaly
+  description: A patch of space that keeps forgetting which way gravity is supposed to point.
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Clickable
+  - type: InteractionOutline
+  - type: Physics
+    bodyType: Static
+  - type: Sprite
+    sprite: Structures/Specific/anomaly.rsi
+    layers:
+    - state: anom2
+    - state: anom2-pulse
+      shader: unshaded
+      visible: true
+  - type: PointLight
+    radius: 2
+    energy: 3
+    color: "#aaddff"
+  - type: StormdriveAnomaly
+    kind: Squall
+    lifespan: 300

@@ -1,0 +1,69 @@
+# NSV13 - gases required by the RBMK and Stormdrive reactors.
+#
+# NOTE: Palmtree (Frontier lineage) uses NUMERIC gas prototype ids that must match
+# the Content.Shared.Atmos.Gas enum ordinal. Current map:
+#   0 Oxygen, 1 Nitrogen, 2 CarbonDioxide, 3 Plasma, 4 Tritium, 5 WaterVapor,
+#   6 Ammonia, 7 NitrousOxide, 8 Frezon, 9 Respiron, 10 Helium,
+#   11 BZ, 12 Healium, 13 Nitrium, 14 Pluoxium,
+#   15 ConstrictedPlasma, 16 Nitryl, 17 HyperNoblium, 18 Stimulum, 19 Nucleium
+#
+# Source: BeeStation/NSV13  nsv13/code/modules/atmospherics/auxgm/gas_types.dm
+# `specificHeat` values are taken verbatim from NSV13 because the reactor thermal
+# maths depends on them. NSV13 has no molarMass/heatCapacityRatio/colour, so those
+# are derived from chemistry where the gas is real, and are cosmetic/estimates where
+# it is fictional.
+
+- type: gas
+  id: 15
+  name: gases-constricted-plasma
+  gasOverlaySprite: /Textures/_NSV13/Effects/reactor_gases.rsi
+  gasOverlayState: constricted_plasma
+  specificHeat: 250
+  heatCapacityRatio: 1.7
+  molarMass: 120
+  color: ffcc00
+  pricePerMole: 0
+
+- type: gas
+  id: 16
+  name: gases-nitryl
+  specificHeat: 20
+  heatCapacityRatio: 1.3
+  molarMass: 46
+  gasOverlaySprite: /Textures/Effects/atmospherics.rsi
+  gasOverlayState: nitryl
+  color: b22222
+  pricePerMole: 3
+
+- type: gas
+  id: 17
+  name: gases-hyper-noblium
+  gasOverlaySprite: /Textures/_NSV13/Effects/reactor_gases.rsi
+  gasOverlayState: hyper_noblium
+  specificHeat: 2000
+  heatCapacityRatio: 1.4
+  molarMass: 150
+  color: 008080
+  pricePerMole: 50
+
+- type: gas
+  id: 18
+  name: gases-stimulum
+  gasOverlaySprite: /Textures/_NSV13/Effects/reactor_gases.rsi
+  gasOverlayState: stimulum
+  specificHeat: 5
+  heatCapacityRatio: 1.4
+  molarMass: 60
+  color: 1e90ff
+  pricePerMole: 25
+
+- type: gas
+  id: 19
+  name: gases-nucleium
+  gasOverlaySprite: /Textures/_NSV13/Effects/reactor_gases.rsi
+  gasOverlayState: nucleium
+  specificHeat: 450
+  heatCapacityRatio: 1.4
+  molarMass: 400
+  color: 00ff9d
+  pricePerMole: 0

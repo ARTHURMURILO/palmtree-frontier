@@ -179,6 +179,15 @@ namespace Content.Shared.Atmos
             [Gas.WaterVapor] = Loc.GetString("gas-water-vapor-abbreviation"),
             [Gas.Respiron] = Loc.GetString("gas-respiron-abbreviation"), // Frontier
             [Gas.Helium] = Loc.GetString("gas-helium-abbreviation"), // Frontier
+            [Gas.BZ] = Loc.GetString("gas-bz-abbreviation"), // Goobstation
+            [Gas.Healium] = Loc.GetString("gas-healium-abbreviation"), // Goobstation
+            [Gas.Nitrium] = Loc.GetString("gas-nitrium-abbreviation"), // Goobstation
+            [Gas.Pluoxium] = Loc.GetString("gas-pluoxium-abbreviation"), // Goobstation
+            [Gas.ConstrictedPlasma] = Loc.GetString("gas-constricted-plasma-abbreviation"), // NSV13
+            [Gas.Nitryl] = Loc.GetString("gas-nitryl-abbreviation"), // NSV13
+            [Gas.HyperNoblium] = Loc.GetString("gas-hyper-noblium-abbreviation"), // NSV13
+            [Gas.Stimulum] = Loc.GetString("gas-stimulum-abbreviation"), // NSV13
+            [Gas.Nucleium] = Loc.GetString("gas-nucleium-abbreviation"), // NSV13
         };
 
         #region Excited Groups
@@ -208,7 +217,7 @@ namespace Content.Shared.Atmos
         /// <summary>
         ///     Total number of gases. Increase this if you want to add more!
         /// </summary>
-        public const int TotalNumberOfGases = 11; // Frontier: 9<11
+        public const int TotalNumberOfGases = 20; // Frontier: 9<11 | Goobstation: 11<15 (/tg/ gases) | NSV13: 15<20 (reactor gases)
 
         /// <summary>
         ///     This is the actual length of the gases arrays in mixtures.
@@ -242,6 +251,15 @@ namespace Content.Shared.Atmos
 
         public const float TritiumBurnOxyFactor = 100f;
         public const float TritiumBurnTritFactor = 10f;
+
+        // Goobstation - /tg/ gases
+        public const float BZFormationEnergy = 80e3f;
+        public const float HealiumProductionEnergy = 9e3f;
+        public const float NitriumProductionEnergy = -100e3f;
+        public const float PluoxiumProductionEnergy = 250;
+        public const float NitriumDecompositionEnergy = 30e3f;
+        public const float N2OFormationEnergy = 10e3f;
+        // End Goobstation - /tg/ gases
 
         public const float FrezonCoolLowerTemperature = 23.15f;
 
@@ -377,6 +395,15 @@ namespace Content.Shared.Atmos
         NitrousOxide = 7,
         Frezon = 8,
         Respiron = 9, // Frontier
-        Helium = 10 // Frontier
+        Helium = 10, // Frontier
+        BZ = 11, // Goobstation - /tg/ gases
+        Healium = 12, // Goobstation - /tg/ gases
+        Nitrium = 13, // Goobstation - /tg/ gases
+        Pluoxium = 14, // Goobstation - /tg/ gases
+        ConstrictedPlasma = 15, // NSV13 - reactor fuel
+        Nitryl = 16, // NSV13 - reactor degradation gas
+        HyperNoblium = 17, // NSV13 - reactor neutron inhibitor
+        Stimulum = 18, // NSV13 - reactor reaction-rate booster
+        Nucleium = 19 // NSV13 - reactor byproduct/waste
     }
 }

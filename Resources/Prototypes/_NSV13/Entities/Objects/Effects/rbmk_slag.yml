@@ -1,0 +1,35 @@
+# NSV13 RBMK - radioactive slag (corium) flung across the ship by a meltdown.
+#
+# NSV13's original meltdown started a map-wide `nuclear_fallout` weather event, which cannot work
+# on a ship-based fork: there is no "the map" to irradiate. Instead the reactor throws chunks of
+# itself across the grid it is standing on, which is the same trick NSV13 already uses for the
+# Stormdrive's `nuclear_waste_spawner` landmarks.
+
+- type: entity
+  parent: BaseItem
+  id: RbmkSlag
+  name: radioactive slag
+  description: A fist-sized chunk of the reactor's own fuel channels, still glowing. It will be warm for a very long time.
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: Objects/Materials/ore.rsi
+    state: uranium
+  - type: Item
+    size: Tiny
+  - type: Physics
+    bodyType: Dynamic
+  # A continuous contamination source, not a one-off pulse: this is what makes the corridors
+  # unsafe after the blast rather than merely messy. Rads here are damage per second and sources
+  # add up, so a single chunk is ~4 rads at contact and a room full of them reads 10-15 on a Geiger
+  # counter - enough to make the compartment a place you visit in a radsuit, not one that kills in
+  # a single tick.
+  - type: RadiationSource
+    intensity: 4
+    slope: 1
+  - type: RbmkSlag
+  - type: PointLight
+    color: Orange
+    radius: 1.5
+    energy: 2
+    castShadows: false

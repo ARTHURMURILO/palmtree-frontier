@@ -1,0 +1,157 @@
+# Goobstation - supermatter vents/events
+#
+# Palmtree gas index map (see Content.Shared.Atmos.Atmospherics.Gas):
+#   0 oxygen, 1 nitrogen, 2 carbon dioxide, 3 plasma, 4 tritium, 5 water vapor,
+#   6 ammonia, 7 nitrous oxide, 8 frezon, 9 respiron, 10 helium,
+#   11 BZ, 12 healium, 13 nitrium, 14 pluoxium
+
+- type: weightedRandom
+  id: NormalEvents
+  weights:
+    GasSpillOxy: 3
+    GasSpillNitrogen: 3
+    GasSpillCarbon: 3
+    GasSpillFrezon: 1
+    SMBSAnomSpawn: 2
+    SMSurge: 4
+
+- type: weightedRandom
+  id: HarshEvents
+  weights:
+    GasSpillOxy: 1
+    GasSpillPlasma: 1
+    GasSpillNitrium: 1
+    GasSpillCarbon: 1
+    GasSpillFrezon: 1
+    SMShardSpawn: 1
+    SMAnomSpawn: 1
+    SMEMPSpawn: 1
+    SMGravitySpawn: 1
+
+- type: supermatterEvent
+  id: SMSurge
+  announcement: supermatter-surge
+
+- type: supermatterEvent
+  id: GasSpillOxy
+  gasToSpawn: 0
+  announcement: gas-spill-oxygen
+
+- type: supermatterEvent
+  id: GasSpillNitrogen
+  gasToSpawn: 1
+  announcement: gas-spill-nitrogen
+
+- type: supermatterEvent
+  id: GasSpillCarbon
+  gasToSpawn: 2
+  announcement: gas-spill-carbondioxide
+
+- type: supermatterEvent
+  id: GasSpillPlasma
+  gasToSpawn: 3
+  announcement: gas-spill-plasma
+
+- type: supermatterEvent
+  id: GasSpillFrezon
+  gasToSpawn: 8
+  announcement: gas-spill-frezon
+
+- type: supermatterEvent
+  id: GasSpillNitrium
+  gasToSpawn: 13 # Palmtree: was 11 on Goob (nitrium sits after respiron/helium here)
+  announcement: gas-spill-nitrium
+
+- type: supermatterEvent
+  id: SMShardSpawn
+  protoToSpawn: SupermatterSliver
+  announcement: supermatter-announcement-cc-tamper
+
+- type: supermatterEvent
+  id: SMAnomSpawn
+  protoToSpawn: RandomAnomalySpawner
+  announcement: supermatter-announcement-cc-tamper
+
+- type: supermatterEvent
+  id: SMBSAnomSpawn
+  protoToSpawn: AnomalyBluespace
+  announcement: supermatter-announcement-cc-tamper
+
+- type: supermatterEvent
+  id: SMCrabSpawn
+  protoToSpawn: MobSupermatterCrab
+  announcement: supermatter-announcement-cc-tamper
+
+- type: supermatterEvent
+  id: SMEMPSpawn
+  protoToSpawn: AdminInstantEffectEMP7
+  announcement: supermatter-energy-surge
+
+- type: supermatterEvent
+  id: SMGravitySpawn
+  protoToSpawn: AdminInstantEffectGravityWell
+  announcement: supermatter-energy-surge
+
+- type: entity
+  parent: MobOreCrab
+  id: MobSupermatterCrab
+  description: An ore crab made from Supermatter.
+  suffix: Supermatter
+  components:
+  - type: SupermatterImmune
+  - type: RadiationSource
+    intensity: 1.0
+  - type: Sprite
+    state: bananium_crab
+  - type: FactionException
+  - type: NPCRetaliation
+    attackMemoryLength: 10
+  - type: NpcFactionMember
+    factions:
+    - SimpleNeutral
+  - type: Destructible
+    thresholds:
+    - trigger:
+        !type:DamageTrigger
+        damage: 30
+      behaviors:
+      - !type:PlaySoundBehavior
+        sound:
+          collection: GlassBreak
+      - !type:SpawnEntitiesBehavior
+        spawn:
+          SupermatterSliver:
+            min: 1
+            max: 3
+      - !type:DoActsBehavior
+        acts: [ "Destruction" ]
+  - type: Slippery
+    slipData:
+      launchForwardsMultiplier: 2
+  - type: StepTrigger
+    intersectRatio: 0.2
+  - type: Fixtures
+    fixtures:
+      slips:
+        shape:
+          !type:PhysShapeCircle
+          radius: 0.35
+        hard: false
+        layer:
+        - SlipLayer
+      fix1:
+        shape:
+          !type:PhysShapeCircle
+          radius: 0.35
+        density: 50
+        mask:
+        - MobMask
+        layer:
+        - MobLayer
+  - type: MeleeWeapon
+    damage:
+      types:
+        Blunt: 3
+        Radiation: 5
+  # Palmtree: Goob's GroupRetaliation component was not ported (its NPCRetaliatedEvent
+  # does not exist here), so the crab retaliates alone rather than calling nearby crabs.

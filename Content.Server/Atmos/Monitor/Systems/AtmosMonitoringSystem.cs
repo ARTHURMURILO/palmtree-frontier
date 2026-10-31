@@ -479,7 +479,12 @@ public sealed class AtmosMonitorSystem : EntitySystem
         SetThreshold(uid, AtmosMonitorThresholdType.Pressure, allThresholdData.PressureThreshold);
         foreach (var gas in Enum.GetValues<Gas>())
         {
-            SetThreshold(uid, AtmosMonitorThresholdType.Gas, allThresholdData.GasThresholds[gas], gas);
+            // Sensors report every gas but only carry thresholds for the configured ones; indexing
+            // blindly threw for any gas the air alarm prototype had no entry for (BZ and friends).
+            if (!allThresholdData.GasThresholds.TryGetValue(gas, out var threshold))
+                continue;
+
+            SetThreshold(uid, AtmosMonitorThresholdType.Gas, threshold, gas);
         }
     }
 }

@@ -1,0 +1,25 @@
+# NSV13 - lathe recipes and research for the two reactors.
+#
+# The DM techweb had two nodes: `reactor_control_rods` (cheap, techfab-made rods) and
+# `stormdrive_reactor_control` (the console board). The machine boards and the reactors themselves were
+# department-printed rather than researched, so they are folded into the same two nodes here.
+
+# Split out of reactor_recipes.yml so each engine ships its own manufacturing chain.
+- type: latheRecipe
+  parent: [ BaseGoldCircuitboardRecipe, BaseEngineeringMachineRecipeCategory ]
+  id: RbmkReactorMachineCircuitboard
+  result: RbmkReactorMachineCircuitboard
+
+- type: latheRecipe
+  parent: [ BaseSilverCircuitboardRecipe, BaseEngineeringMachineRecipeCategory ]
+  id: RbmkConsoleCircuitboard
+  result: RbmkConsoleCircuitboard
+
+- type: latheRecipe
+  id: ReactorSealant
+  result: ReactorSealant
+  materials:
+    Steel: 100
+    Plastic: 200
+  categories:
+  - Engineering

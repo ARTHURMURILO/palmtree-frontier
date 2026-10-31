@@ -56,6 +56,8 @@ Fork modules are folder/namespace prefixes:
 | `_Funkystation` | Funky Station (via Dumont) | NanoChat group chats, emoji picker and emoji prototypes |
 | `_HL` | HardLight (via Coyote) | Ported shower (prototype, construction, sprite, audio) |
 | `_DEN` | TheDen | Clicker, foot protectors, Ovinia markings/sprites |
+| `_NSV13` | BeeStation/NSV13 | Reactor engines: RBMK, stormdrive, control/fuel rods, reactor consoles, slag and corium |
+| `_Goobstation` (engines) | Goobstation | Supermatter crystal, its console, delamination modes, and the `/tg/` gas set it eats |
 | `_EE` | Einstein Engines | Tajaran species (ported), carrying |
 | `_DV` | Delta-V | Vulpkanin/Harpy/Rodentia species, abilities, markings, NanoChat messaging |
 | `_White` | White Dream | Eastern Dragon reptilian markings |
