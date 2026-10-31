@@ -123,7 +123,18 @@ public sealed class SupermatterSmokeTest
         await server.WaitPost(() =>
         {
             entMan.SpawnEntity("SupermatterSliver", map.GridCoords);
-            entMan.SpawnEntity("SupermatterSmall", map.GridCoords);
+            var shard = entMan.SpawnEntity("SupermatterSmall", map.GridCoords);
+
+            // The shard is the movable crystal: it ships unanchored, can be wrenched down, and - the
+            // bit that was missing - can actually be dragged, which in this engine is pull-based and
+            // needs Pullable. The crystal's prototype chain is a bare entity, so it does not inherit
+            // Pullable from BaseItem/BaseStructure the way every other movable thing does.
+            Assert.That(entMan.GetComponent<TransformComponent>(shard).Anchored, Is.False,
+                "the shard must spawn unanchored so it can be carried aboard");
+            Assert.That(entMan.HasComponent<Content.Shared.Construction.Components.AnchorableComponent>(shard),
+                Is.True, "the shard must be wrenchable");
+            Assert.That(entMan.HasComponent<Content.Shared.Movement.Pulling.Components.PullableComponent>(shard),
+                Is.True, "the shard must be pullable, or it cannot be dragged");
             entMan.SpawnEntity("ComputerSupermatter", map.GridCoords);
             // BRANCH NOTE (supermatter branch): the BZ/Healium/Nitrium/Pluoxium canisters belong to
             // the reactor-gas layer on `engines-all`.
