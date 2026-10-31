@@ -7,7 +7,7 @@
         <Label Name="StatusLabel" Text="{Loc 'stormdrive-rods-closed'}" StyleClasses="LabelKeyText" />
         <Label Text="{Loc 'stormdrive-rods-header'}" StyleClasses="LabelHeading" />
 
-        <ScrollContainer VerticalExpand="True">
+        <ScrollContainer VerticalExpand="True" HScrollEnabled="False">
             <BoxContainer Name="RodList" Orientation="Vertical" SeparationOverride="6" Margin="0 0 16 0" />
         </ScrollContainer>
 
