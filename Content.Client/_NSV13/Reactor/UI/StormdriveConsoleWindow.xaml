@@ -1,0 +1,117 @@
+<DefaultWindow xmlns="https://spacestation14.io"
+               xmlns:ui="clr-namespace:Content.Client._NSV13.Reactor.UI"
+               Title="{Loc 'stormdrive-console-title'}"
+               SetSize="660 720"
+               MinSize="660 720"
+               Resizable="False">
+    <BoxContainer Orientation="Vertical" Margin="6" SeparationOverride="4">
+
+        <Label Name="StatusLabel"
+               Text="{Loc 'stormdrive-console-no-reactor'}"
+               StyleClasses="LabelKeyText" />
+
+        <!-- Armed meltdown. Hidden unless the fuse is actually burning: the old layout parked a
+             bare countdown label at the bottom of the statistics list, where it was both easy to
+             miss and impossible to read from across the room. -->
+        <PanelContainer Name="MeltdownPanel" Visible="False" StyleClasses="Inset">
+            <BoxContainer Orientation="Vertical" Margin="8 6" SeparationOverride="4">
+                <Label Name="MeltdownTitle" StyleClasses="LabelKeyText"
+                       Text="{Loc 'stormdrive-console-meltdown-title'}" />
+                <ProgressBar Name="MeltdownBar" MinValue="0" MaxValue="1" SetHeight="26">
+                    <Label Name="CountdownLabel" Margin="4 0" Text="--" />
+                </ProgressBar>
+                <Label Name="MeltdownHint" StyleClasses="LabelSubText"
+                       Text="{Loc 'stormdrive-console-meltdown-hint'}" />
+            </BoxContainer>
+        </PanelContainer>
+
+        <ScrollContainer VerticalExpand="True">
+            <!-- Right margin keeps the buttons and bars clear of the scrollbar, which the
+                 container draws on top of its content instead of reserving space for it. -->
+            <BoxContainer Orientation="Vertical" SeparationOverride="10" Margin="0 0 16 0">
+
+                <!-- ===== Control presets (AZ-1 .. AZ-7) ===== -->
+                <BoxContainer Orientation="Vertical" SeparationOverride="3">
+                    <Label Text="{Loc 'stormdrive-console-presets-header'}" StyleClasses="LabelHeading" />
+
+                    <Button Name="Preset1" HorizontalExpand="True" StyleClasses="ButtonColorRed"
+                            Text="{Loc 'stormdrive-console-az-1'}" />
+                    <Button Name="Preset2" HorizontalExpand="True"
+                            Text="{Loc 'stormdrive-console-az-2'}" />
+                    <Button Name="Preset3" HorizontalExpand="True"
+                            Text="{Loc 'stormdrive-console-az-3'}" />
+                    <Button Name="Preset4" HorizontalExpand="True"
+                            Text="{Loc 'stormdrive-console-az-4'}" />
+                    <Button Name="Preset5" HorizontalExpand="True" StyleClasses="ButtonColorRed"
+                            Text="{Loc 'stormdrive-console-az-5'}" />
+                    <Button Name="MaintenanceButton" HorizontalExpand="True"
+                            Text="{Loc 'stormdrive-console-az-6'}" />
+                    <Button Name="DumpButton" HorizontalExpand="True"
+                            Text="{Loc 'stormdrive-console-az-7'}" />
+                </BoxContainer>
+
+                <!-- ===== Control rod insertion ===== -->
+                <BoxContainer Orientation="Vertical" SeparationOverride="3">
+                    <Label Text="{Loc 'stormdrive-console-rod-header'}" StyleClasses="LabelHeading" />
+                    <Slider Name="RodSlider" MinValue="0" MaxValue="100" HorizontalExpand="True" />
+                    <Label Name="RodPercentLabel" Text="0" />
+                </BoxContainer>
+
+                <!-- ===== Statistics ===== -->
+                <BoxContainer Orientation="Vertical" SeparationOverride="4">
+                    <Label Text="{Loc 'stormdrive-console-statistics'}" StyleClasses="LabelHeading" />
+
+                    <Label Text="{Loc 'stormdrive-console-heat'}" StyleClasses="LabelSubText" />
+                    <ProgressBar Name="HeatBar" MinValue="0" MaxValue="1" SetHeight="22">
+                        <Label Name="HeatLabel" Margin="4 0" Text="--" />
+                    </ProgressBar>
+
+                    <Label Text="{Loc 'stormdrive-console-rod-integrity'}" StyleClasses="LabelSubText" />
+                    <ProgressBar Name="RodIntegrityBar" MinValue="0" MaxValue="1" SetHeight="22">
+                        <Label Name="RodIntegrityLabel" Margin="4 0" Text="--" />
+                    </ProgressBar>
+
+                    <Label Text="{Loc 'stormdrive-console-power'}" StyleClasses="LabelSubText" />
+                    <ProgressBar Name="PowerBar" MinValue="0" MaxValue="1" SetHeight="22">
+                        <Label Name="PowerLabel" Margin="4 0" Text="--" />
+                    </ProgressBar>
+
+                    <Label Text="{Loc 'stormdrive-console-reaction-rate'}" StyleClasses="LabelSubText" />
+                    <ProgressBar Name="ReactionBar" MinValue="0" MaxValue="1" SetHeight="22">
+                        <Label Name="ReactionRateLabel" Margin="4 0" Text="--" />
+                    </ProgressBar>
+
+                    <Label Text="{Loc 'stormdrive-console-fuel-ratio'}" StyleClasses="LabelSubText" />
+                    <ProgressBar Name="FuelRatioBar" MinValue="0" MaxValue="1" SetHeight="22">
+                        <Label Name="FuelRatioLabel" Margin="4 0" Text="--" />
+                    </ProgressBar>
+
+                    <Label Text="{Loc 'stormdrive-console-fuel-moles'}" StyleClasses="LabelSubText" />
+                    <ProgressBar Name="FuelMolesBar" MinValue="0" MaxValue="1" SetHeight="22">
+                        <Label Name="FuelMolesLabel" Margin="4 0" Text="--" />
+                    </ProgressBar>
+                </BoxContainer>
+
+                <!-- ===== Fuel line composition ===== -->
+                <BoxContainer Orientation="Vertical" SeparationOverride="4">
+                    <Label Text="{Loc 'stormdrive-console-composition'}" StyleClasses="LabelHeading" />
+
+                    <BoxContainer Orientation="Horizontal" SeparationOverride="12">
+                        <BoxContainer Name="GasList" Orientation="Vertical" SeparationOverride="2"
+                                      HorizontalExpand="True" />
+                        <PanelContainer StyleClasses="Inset" SetWidth="230" MinHeight="220">
+                            <ui:ReactorChart Name="GasChart" Margin="4" />
+                        </PanelContainer>
+                    </BoxContainer>
+
+                    <Label Name="InputLabel" Text="" StyleClasses="LabelSubText" />
+                    <Label Name="InhibitorLabel" Text="" StyleClasses="LabelSubText" />
+                    <Label Name="TotalMolesLabel" Text="" StyleClasses="LabelSubText" />
+                </BoxContainer>
+
+            </BoxContainer>
+        </ScrollContainer>
+
+        <Label Name="MessageLabel" Text="" />
+    </BoxContainer>
+</DefaultWindow>

@@ -1,0 +1,161 @@
+# NSV13 - Stormdrive fusion reactor.
+#
+# Ported from BeeStation/NSV13 `stormdrive.dm`. Unlike the RBMK this is a BINARY atmospherics
+# machine: fuel goes in one port, nucleium waste comes out the other. Feeds power to the grid.
+#
+# ART: ported from NSV13's goonstation reactor.dmi (converted to RSI v2). All of the DM
+# update_icon() states are present and animated - reactor_on/hot (9 frames each), reactor_overheat
+# (6), meltdown (8), broken (7), plus the repair-1/reinforce-2/refit-3 recovery states and the
+# twenty-four rods_{count}_{band} overlays (six rod counts by four insertion bands).
+#
+# ORIENTATION: the original's default has the fuel INPUT on the east side and the waste OUTPUT on
+# the west, which is the reverse of what you might expect. Keep that in mind when piping it up.
+#
+# DANGER: control rod percent is NOT a throttle in the intuitive direction. 0% means the rods are
+# fully withdrawn - maximum reactivity AND cooling disabled - which melts the core down.
+
+- type: entity
+  id: StormdriveReactor
+  parent: [ BaseMachine, ConstructibleMachine ]
+  name: class IV nuclear storm drive
+  description: What you get when somebody decides to inject magnetically constricted plasma into a nuclear reactor. It produces an ungodly amount of superheated plasma, radiation and fire. God help you if it melts down.
+  placement:
+    mode: SnapgridCenter
+  components:
+  - type: Sprite
+    sprite: _NSV13/Objects/Structures/Power/stormdrive.rsi
+    noRot: true
+    layers:
+    - state: reactor_off
+      map: ["core"]
+    - state: rods_5_1
+      map: ["rods"]
+      visible: false
+  - type: GenericVisualizer
+    visuals:
+      enum.StormdriveVisuals.Core:
+        core:
+          Off: { state: reactor_off }
+          Starting: { state: reactor_starting }
+          Maintenance: { state: reactor_maintenance }
+          On: { state: reactor_on }
+          Hot: { state: reactor_hot }
+          Overheat: { state: reactor_overheat }
+          Meltdown: { state: meltdown }
+          Broken: { state: broken }
+          Repair: { state: repair-1 }
+          Reinforce: { state: reinforce-2 }
+          Refit: { state: refit-3 }
+      enum.StormdriveVisuals.Rods:
+        rods:
+          none: { visible: false }
+          "rods_0_1": { state: rods_0_1, visible: true }
+          "rods_0_2": { state: rods_0_2, visible: true }
+          "rods_0_3": { state: rods_0_3, visible: true }
+          "rods_0_4": { state: rods_0_4, visible: true }
+          "rods_1_1": { state: rods_1_1, visible: true }
+          "rods_1_2": { state: rods_1_2, visible: true }
+          "rods_1_3": { state: rods_1_3, visible: true }
+          "rods_1_4": { state: rods_1_4, visible: true }
+          "rods_2_1": { state: rods_2_1, visible: true }
+          "rods_2_2": { state: rods_2_2, visible: true }
+          "rods_2_3": { state: rods_2_3, visible: true }
+          "rods_2_4": { state: rods_2_4, visible: true }
+          "rods_3_1": { state: rods_3_1, visible: true }
+          "rods_3_2": { state: rods_3_2, visible: true }
+          "rods_3_3": { state: rods_3_3, visible: true }
+          "rods_3_4": { state: rods_3_4, visible: true }
+          "rods_4_1": { state: rods_4_1, visible: true }
+          "rods_4_2": { state: rods_4_2, visible: true }
+          "rods_4_3": { state: rods_4_3, visible: true }
+          "rods_4_4": { state: rods_4_4, visible: true }
+          "rods_5_1": { state: rods_5_1, visible: true }
+          "rods_5_2": { state: rods_5_2, visible: true }
+          "rods_5_3": { state: rods_5_3, visible: true }
+          "rods_5_4": { state: rods_5_4, visible: true }
+  # Looping core hum, raised by try_start() and silenced by deactivate() (stormdrive.dm:539).
+  - type: AmbientSound
+    enabled: false
+    volume: -5
+    range: 6
+    sound:
+      path: /Audio/_NSV13/Reactor/hum.ogg
+  - type: PointLight
+    radius: 1.5
+    energy: 2
+    color: "#00ffff"
+    enabled: false
+  - type: Appearance
+  - type: AtmosDevice
+  - type: NodeContainer
+    nodes:
+      fuel:
+        !type:PipeNode
+        nodeGroupID: Pipe
+        pipeDirection: East
+      waste:
+        !type:PipeNode
+        nodeGroupID: Pipe
+        pipeDirection: West
+      # HV power take-off. Without a cable device node the PowerSupplier below is never attached
+      # to a net, so the drive spun up, reported megawatts on its console, and exported none of it.
+      output:
+        !type:CableDeviceNode
+        nodeGroupID: HVPower
+  - type: Stormdrive
+  # See the same block on the RBMK: a zero ramp rate pins the delivered power at 0 W forever.
+  - type: PowerSupplier
+    supplyRate: 0
+    supplyRampRate: 5000000
+    supplyRampTolerance: 500000
+  - type: PowerMonitoringDevice
+    group: Generator
+    loadNode: output
+    sprite: Structures/Power/power.rsi
+    state: generator
+  # Shortband alarms do not cross a map without a telecomms relay; the drive carries its own pass.
+  - type: TelecomExempt
+  # Bolted down for life: still fittable on a fresh spawn, never removable afterwards.
+  - type: Anchorable
+    flags: Anchorable
+  - type: Machine
+    board: StormdriveReactorMachineCircuitboard
+  # The rod bay: the DM reactor's own TGUI, where you pull and mount control rods by hand. Declaring
+  # the container up front means it is part of the entity from spawn instead of being added when the
+  # first rod is inserted.
+  - type: ContainerContainer
+    containers:
+      stormdrive_rods: !type:Container
+  - type: ActivatableUI
+    key: enum.StormdriveRodsUiKey.Key
+  - type: UserInterface
+    interfaces:
+      enum.StormdriveRodsUiKey.Key:
+        type: StormdriveRodsBoundUserInterface
+  - type: RadiationSource
+    intensity: 0
+    slope: 0.5
+  - type: StaticPrice
+    price: 12000
+
+# Mapping convenience: a drive that is already running and warm.
+- type: entity
+  id: StormdriveReactorRunning
+  parent: StormdriveReactor
+  suffix: Running
+  components:
+  # Five standard rods pre-loaded in the bay, so the drive has something to moderate with. The
+  # integrity figure is derived from these on map init, not hand-set.
+  - type: ContainerFill
+    containers:
+      stormdrive_rods:
+      - ControlRod
+      - ControlRod
+      - ControlRod
+      - ControlRod
+      - ControlRod
+  - type: Stormdrive
+    state: Running
+    heat: 200
+    reactionRate: 5
+    controlRodPercent: 33.6

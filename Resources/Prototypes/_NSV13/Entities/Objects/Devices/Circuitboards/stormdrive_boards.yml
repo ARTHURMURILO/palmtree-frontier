@@ -1,0 +1,39 @@
+# NSV13 - circuit boards for the two reactors and their consoles.
+#
+# Both reactors are now `ConstructibleMachine`s: the standard machine-frame + board build order works,
+# so a shipyard can actually fabricate one instead of an admin spawning it.
+#
+# The original NSV13 techweb had two designs for this: the reactor control console board (under
+# "Seegson Storm Drive Machinery") and the techfab control-rod design. The board requirements below
+# follow the fork's Frontier machine-board conventions.
+
+# Split out of reactor_boards.yml, same reason as rbmk_boards.yml.
+- type: entity
+  parent: BaseMachineCircuitboard
+  id: StormdriveReactorMachineCircuitboard
+  name: stormdrive reactor machine board
+  description: A machine printed circuit board for a Class IV nuclear storm drive.
+  components:
+  - type: Sprite
+    state: engineering
+  - type: MachineBoard
+    prototype: StormdriveReactor
+    requirements:
+      Capacitor: 4
+      Manipulator: 3
+      MatterBin: 1
+    stackRequirements:
+      Cable: 5
+      Steel: 15
+      PlasmaGlass: 10
+
+- type: entity
+  parent: BaseComputerCircuitboard
+  id: StormdriveConsoleCircuitboard
+  name: stormdrive control console board
+  description: A computer printed circuit board for a stormdrive control console.
+  components:
+  - type: Sprite
+    state: engineering
+  - type: ComputerBoard
+    prototype: StormdriveControlConsole

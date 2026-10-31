@@ -1,0 +1,26 @@
+# Audio ported with the NSV13 reactor modules.
+#
+# Every file here comes from BeeStation/NSV13 (nsv13/sound/), which ships under AGPL-3.0-or-later,
+# the same licence as this repository. They were copied verbatim - no re-encoding or trimming - so
+# the entries below record provenance only.
+
+- files:
+  - "alarm.ogg"
+  - "core_overheating.ogg"
+  - "explode.ogg"
+  - "hum.ogg"
+  - "meltdown.ogg"
+  - "startup.ogg"
+  - "startup2.ogg"
+  license: "AGPL-3.0-or-later"
+  copyright: "Taken from BeeStation/NSV13"
+  source: "https://github.com/BeeStation/NSV13"
+
+- files:
+  - "rbmk/reactor_hum.ogg"
+  - "rbmk/switch.ogg"
+  - "rbmk/switch2.ogg"
+  - "rbmk/switch3.ogg"
+  license: "AGPL-3.0-or-later"
+  copyright: "Taken from BeeStation/NSV13"
+  source: "https://github.com/BeeStation/NSV13"
