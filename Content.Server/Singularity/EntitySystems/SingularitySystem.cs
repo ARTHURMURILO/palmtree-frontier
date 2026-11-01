@@ -1,3 +1,4 @@
+using Content.Server._Goobstation.Supermatter.Components;
 using Content.Server.Physics.Components;
 using Content.Server.Singularity.Components;
 using Content.Server.Singularity.Events;
@@ -272,6 +273,12 @@ public sealed class SingularitySystem : SharedSingularitySystem
     /// <param name="args">The event arguments.</param>
     public void UpdateEnergyDrain(EntityUid uid, SingularityComponent comp, SingularityLevelChangedEvent args)
     {
+        // Palmtree: a singularity that is meant to stay keeps the drain its prototype declares.
+        // The supermatter's collapse uses this, so the hole it leaves behind does not evaporate the
+        // moment it runs out of floor to eat.
+        if (HasComp<PersistentSingularityComponent>(uid))
+            return;
+
         comp.EnergyDrain = args.NewValue switch
         {
             6 => 0,
