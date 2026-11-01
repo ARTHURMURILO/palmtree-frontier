@@ -95,7 +95,7 @@ public sealed partial class StormdriveComponent : Component
     [DataField]
     public float ControlRodModifier = 1f;
 
-    /// <summary>Mean rod integrity, 0…100.</summary>
+    /// <summary>Mean rod integrity, 0…100, as a percentage of each rod's own maximum.</summary>
     [DataField]
     public float ControlRodIntegrity;
 
