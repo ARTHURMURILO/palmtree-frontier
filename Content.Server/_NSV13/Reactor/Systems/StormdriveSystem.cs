@@ -1097,6 +1097,10 @@ public sealed class StormdriveSystem : EntitySystem
         comp.ReactionRate = 0f;
         comp.LastPowerProduced = 0f;
 
+        // A wreck has no feed lines to point at, and a missing layout is how the examine overlay
+        // knows to stop drawing arrows on it.
+        RemComp<ReactorPortLayoutComponent>(uid);
+
         // Nothing will tick this machine again, so the power supplier has to be cleared here or the
         // wreck keeps feeding the grid its final wattage forever.
         if (TryComp<PowerSupplierComponent>(uid, out var supplier))

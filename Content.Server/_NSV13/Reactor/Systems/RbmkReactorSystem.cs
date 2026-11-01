@@ -687,6 +687,11 @@ public sealed class RbmkReactorSystem : EntitySystem
         StopAlarm(reactor);
         UpdateVisuals(uid, reactor);
 
+        // A wreck has no feed lines to point at. Dropping the layout stops the examine overlay from
+        // drawing arrows on a lump of corium; the client treats a missing layout as "nothing to
+        // annotate", so this is the whole client-side change.
+        RemComp<ReactorPortLayoutComponent>(uid);
+
         // A slagged wreck still exists (it is not destructible any more), so its running hum has to
         // be silenced by hand - nothing else will tick this machine again.
         _ambient.SetAmbience(uid, false);

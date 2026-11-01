@@ -410,8 +410,13 @@ public sealed partial class RbmkReactorComponent : Component
     ///     Ceiling on the core's own output, in rads per second. Without it a runaway core reads
     ///     thousands of rads a second and there is no warning at all - the crew just drops dead.
     /// </summary>
+    /// <remarks>
+    ///     Palmtree: 20, not the 8 the port started with. 8 was low enough that a core stuffed with
+    ///     N2 and CO2 pinned the console's emission readout almost immediately, which made the
+    ///     number useless for judging how bad things actually were.
+    /// </remarks>
     [DataField]
-    public float MaxCoreRadiation = 8f;
+    public float MaxCoreRadiation = 20f;
 
     /// <summary>
     ///     Radiation left behind in the slagged core, in rads per second.
@@ -420,9 +425,9 @@ public sealed partial class RbmkReactorComponent : Component
     ///     SS14 hands <c>Intensity - Slope * distance</c> straight to the damage system once a second,
     ///     so this number <em>is</em> damage per second at the core. It is not the DM/BYOND scale:
     ///     a human has ~100 health, so anything in the hundreds kills instantly with no time to say
-    ///     anything. 8 rads is the same ceiling as a live core: a slagged core is a place you visit
-    ///     in a radsuit, not one that kills you before you can read the Geiger counter, and the
-    ///     corium chunks thrown around add their own contamination on top.
+    ///     anything. 8 rads keeps a slagged core a place you visit in a radsuit, not one that kills
+    ///     you before you can read the Geiger counter, and the corium chunks thrown around add
+    ///     their own contamination on top. It sits below the live-core ceiling on purpose.
     /// </remarks>
     [DataField]
     public float MeltdownRadiation = 8f;
