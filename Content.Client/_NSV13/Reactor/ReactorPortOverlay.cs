@@ -34,8 +34,8 @@ public sealed class ReactorPortOverlay : Overlay
     /// <summary>Where the arrow head ends, in tiles from the machine's centre.</summary>
     private const float ArrowEnd = 2.45f;
 
-    /// <summary>Where the label sits, in tiles from the machine's centre.</summary>
-    private const float LabelDistance = 2.85f;
+    /// <summary>Clearance between the arrow head and the label, in pixels.</summary>
+    private const float LabelGap = 4f;
 
     private const float HeadLength = 9f;
     private const float HeadWidth = 5f;
@@ -127,7 +127,24 @@ public sealed class ReactorPortOverlay : Overlay
         // Label, drawn upright and shadowed so it survives a bright reactor floor.
         var text = Loc.GetString(label);
         var size = handle.GetDimensions(_font, text, 1f);
-        var origin = viewport.WorldToScreen(centre + unitWorld * LabelDistance) - size / 2f;
+
+        // Caption the arrow without running into it. A label centred past the head of a sideways
+        // arrow is wide enough to reach back over the shaft ("MODERATOR" is the worst offender), so
+        // those get captioned from above instead. Vertical arrows have the room ahead of them.
+        Vector2 labelCentre;
+        if (MathF.Abs(along.X) > MathF.Abs(along.Y))
+        {
+            labelCentre = tip + new Vector2(0f, -(size.Y * 0.5f + LabelGap));
+        }
+        else
+        {
+            // Half the label's extent measured along the arrow, not just half its height: a label
+            // pushed out by half its height still clips a head that is coming in at an angle.
+            var halfAlong = MathF.Abs(along.X) * size.X * 0.5f + MathF.Abs(along.Y) * size.Y * 0.5f;
+            labelCentre = tip + along * (halfAlong + LabelGap);
+        }
+
+        var origin = labelCentre - size / 2f;
 
         handle.DrawString(_font, origin + new Vector2(1f, 1f), text, Color.Black.WithAlpha(0.8f * Alpha));
         handle.DrawString(_font, origin, text, color.WithAlpha(Alpha));
