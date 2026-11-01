@@ -13,6 +13,9 @@
   components:
     - type: Supermatter
       radiationOutputFactor: 0.005
+      # Palmtree: the collapse has to leave a hole behind, not a hole that evaporates three minutes
+      # later. See SupermatterSingularity at the bottom of this file.
+      singularitySpawnPrototype: SupermatterSingularity
     - type: RadiationSource
     - type: AmbientSound
       range: 5
@@ -170,3 +173,18 @@
       tags:
         - HighRiskItem
     - type: SupermatterImmune
+
+# Palmtree: what a gravitational collapse actually leaves behind.
+#
+# The stock `Singularity` carries 180 energy and sheds one per second, so a hole that finds nothing
+# to eat in space dissipates on its own after three minutes. That is fine for a station where the
+# singularity is supposed to be contained anyway; it is not fine for the one failure mode whose whole
+# point is the hole. This variant keeps its energy, grows as it eats, and is only removed when it
+# wanders far enough from the ship for the danger tether to claim it.
+- type: entity
+  id: SupermatterSingularity
+  parent: Singularity
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Singularity
+    energyLoss: 0

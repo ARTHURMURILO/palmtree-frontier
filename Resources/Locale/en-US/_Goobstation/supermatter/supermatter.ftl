@@ -21,22 +21,22 @@ supermatter-emergency =
     Crystal integrity {$integrity}%. Intervene now.
 
 supermatter-delam-explosion =
-    Containment failure imminent. Mode: explosive. T-minus {$seconds}.
+    Containment failure imminent. Predicted result: explosive. T-minus {$seconds}.
 
 supermatter-delam-overmass =
-    Containment failure imminent. Mode: gravitational collapse. T-minus {$seconds}.
+    Containment failure imminent. Predicted result: gravitational collapse. T-minus {$seconds}.
 
 supermatter-delam-tesla =
-    Containment failure imminent. Mode: power surge. T-minus {$seconds}.
+    Containment failure imminent. Predicted result: power surge. T-minus {$seconds}.
 
 supermatter-delam-cascade =
-    Containment failure imminent. Mode: resonance cascade. T-minus {$seconds}.
+    Containment failure imminent. Predicted result: resonance cascade. T-minus {$seconds}.
 
 supermatter-delam-countdown =
     T-minus {$seconds}.
 
 supermatter-delam-mode-change =
-    Failure mode changed to {$mode}.
+    Predicted result changed to {$mode}.
 
 supermatter-mode-explosion = explosive
 supermatter-mode-singulo = gravitational collapse
