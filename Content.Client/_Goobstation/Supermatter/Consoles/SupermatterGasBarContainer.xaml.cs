@@ -11,14 +11,12 @@ namespace Content.Client._Goobstation.Supermatter.Consoles;
 [GenerateTypedNameReferences]
 public sealed partial class SupermatterGasBarContainer : BoxContainer
 {
-    private readonly IEntityManager _entManager;
     private readonly IResourceCache _cache;
 
     public SupermatterGasBarContainer()
     {
         RobustXamlLoader.Load(this);
 
-        _entManager = IoCManager.Resolve<IEntityManager>();
         _cache = IoCManager.Resolve<IResourceCache>();
 
         // Load fonts

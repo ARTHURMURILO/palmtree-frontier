@@ -13,7 +13,6 @@ using Content.Server.Audio;
 using Content.Server.DoAfter;
 using Content.Server.Explosion.EntitySystems;
 using Content.Server.Lightning;
-using Content.Server.Station.Systems;
 using Content.Shared.Administration.Logs;
 using Content.Shared.Atmos;
 using Content.Shared.Database;
@@ -37,12 +36,9 @@ using Content.Shared.Random;
 using Content.Shared.Random.Helpers;
 using Robust.Shared.Random;
 using System.Numerics;
-using Content.Shared.Radio;
-using Content.Server.Radio.EntitySystems;
 using Content.Server.Chat.Managers;
 using Content.Shared.Ghost;
 using Content.Shared.Humanoid;
-using Content.Shared.Tag;
 
 namespace Content.Server._Goobstation.Supermatter.Systems;
 
@@ -59,11 +55,10 @@ public sealed partial class SupermatterSystem : SharedSupermatterSystem
     [Dependency] private DoAfterSystem _doAfter = default!;
     [Dependency] private SharedTransformSystem _transform = default!;
     [Dependency] private ISharedAdminLogManager _adminLog = default!;
-    [Dependency] private IPrototypeManager _proto = default!;    [Dependency] private IRobustRandom _random = default!;
-    [Dependency] private RadioSystem _radioSystem = default!;
+    [Dependency] private IPrototypeManager _proto = default!;
+    [Dependency] private IRobustRandom _random = default!;
     [Dependency] private IChatManager _chatmanager = default!;
     [Dependency] private ShipEventSystem _shipEvent = default!;
-    [Dependency] private TagSystem _tag = default!;
     [Dependency] private readonly IAdminManager _admin = default!;
     [Dependency] private readonly UserInterfaceSystem _ui = default!;
     [Dependency] private readonly SupermatterConsoleSystem _consoleSystem = default!;
@@ -171,10 +166,16 @@ public sealed partial class SupermatterSystem : SharedSupermatterSystem
                 return;
             }
             var eventToRun = _proto.Index<SupermatterEventPrototype>(eventToRunID);
-            if (eventToRun.Announcement != null)     //shout over radio!
+            if (eventToRun.Announcement != null)     //shout over the ship's Shortband!
             {
-                var message = Loc.GetString(eventToRun.Announcement);
-                _radioSystem.SendRadioMessage(uid, message, _proto.Index<RadioChannelPrototype>(sm.RadioChannel), uid);
+                // Palmtree: pass integrity even for events whose line does not use it; the
+                // tamper/anomaly lines do, and a missing argument made Fluent log an error and
+                // render the placeholder literally.
+                var message = Loc.GetString(eventToRun.Announcement,
+                    ("integrity", GetIntegrity(sm).ToString("0.00")));
+                // Palmtree: events are ship alarms too. Raw Engineering radio reaches every
+                // engineering headset on the map, which in a ship fork means every other vessel.
+                SupermatterAnnouncement(uid, message);
                 _chatmanager.SendAdminAlert($"{eventToRun.ID} run by supermatter {uid}");
             }
             if (eventToRun.GasToSpawn is not null)   //If its a gas event - create the gas
@@ -267,10 +268,6 @@ public sealed partial class SupermatterSystem : SharedSupermatterSystem
 
         // Effects the damage heat does to the crystal
         sm.DynamicHeatResistance = 1f;
-
-        // more moles of gases are harder to heat than fewer,
-        // so let's scale heat damage around them
-        sm.MoleHeatPenaltyThreshold = (float) Math.Max(moles * sm.MoleHeatPenalty, 0.25);
 
         // Ramps up or down in increments of 0.02 up to the proportion of co2
         // Given infinite time, powerloss_dynamic_scaling = co2comp
@@ -414,15 +411,15 @@ public sealed partial class SupermatterSystem : SharedSupermatterSystem
 
         var tempThreshold = Atmospherics.T0C + sm.HeatPenaltyThreshold;
 
-        // Temperature start to have a positive effect on damage after 350
+        // Temperature starts having a positive effect on damage above the 313.15 K heat threshold.
         var tempDamage = Math.Max(Math.Clamp(moles / 200f, .5f, 1f) * absorbedGas.Temperature - tempThreshold * sm.DynamicHeatResistance, 0f) * sm.MoleHeatThreshold / 150f * sm.DamageIncreaseMultiplier;
         totalDamage += tempDamage;
 
-        // Power only starts affecting damage when it is above 5000
+        // Power only starts affecting damage when it is above the power penalty threshold (2500).
         var powerDamage = Math.Max(sm.Power - sm.PowerPenaltyThreshold, 0f) / 500f * sm.DamageIncreaseMultiplier;
         totalDamage += powerDamage;
 
-        // Molar count only starts affecting damage when it is above 1800
+        // Molar count only starts affecting damage when it is above the mole penalty threshold (900).
         var moleDamage = Math.Max(moles - sm.MolePenaltyThreshold, 0) / 80 * sm.DamageIncreaseMultiplier;
         totalDamage += moleDamage;
 
@@ -549,10 +546,8 @@ public sealed partial class SupermatterSystem : SharedSupermatterSystem
     /// </remarks>
     public void SupermatterAnnouncement(EntityUid uid, string message)
     {
-        // HandleAnnouncements calls this with an empty message on every yell tick where the crystal
-        // is taking damage but has not reached the warning point. The old implementation sent an
-        // empty IC line, which was a no-op; the relay would wrap it as "[SHIP] " and radio it every
-        // few seconds, so the guard is load-bearing.
+        // Defensive: the relay would otherwise wrap an empty message as "[SHIP] " and put it on
+        // the Shortband. Callers should only announce actual reports.
         if (string.IsNullOrWhiteSpace(message))
             return;
 
@@ -881,9 +876,9 @@ public sealed partial class SupermatterSystem : SharedSupermatterSystem
 
     private void OnItemInteract(EntityUid uid, SupermatterComponent sm, ref InteractUsingEvent args)
     {
-        if (!HasComp<SupermatterImmuneComponent>(args.User))
-            return;
-
+        // Palmtree: this used to require the user to have SupermatterImmuneComponent, which is the
+        // opposite of the check in OnHandInteract and made the sliver-cutting interaction
+        // unreachable for every normal player. A sharp item is the only requirement.
         if (!sm.Activated)
             sm.Activated = true;
 
@@ -908,7 +903,14 @@ public sealed partial class SupermatterSystem : SharedSupermatterSystem
 
     private void OnGetSliver(EntityUid uid, SupermatterComponent sm, ref SupermatterDoAfterEvent args)
     {
-        if (args.Cancelled)
+        if (args.Cancelled || args.Handled)
+            return;
+
+        args.Handled = true;
+
+        // Two do-afters can be started before the first one finishes; the first completion removes
+        // the sliver, and the second must not spawn a second one or add the sabotage damage twice.
+        if (sm.SliverRemoved)
             return;
 
         // your criminal actions will not go unnoticed
@@ -960,13 +962,12 @@ public sealed partial class SupermatterSystem : SharedSupermatterSystem
         if (sm.GasEfficiencyFactorChanged)
         {
             var diff = sm.GasEfficiency - sm.GasEfficiencySetpoint;
-            diff = diff / 50;
-            Math.Round(diff, 5);
+            diff = (float) Math.Round(diff / 50, 5);
             if (diff > 0)
                 sm.GasEfficiency = sm.GasEfficiency - diff;
             else if (diff < 0)
                 sm.GasEfficiency = sm.GasEfficiency + diff;
-            else if (diff == 0)
+            else
                 sm.GasEfficiency = sm.GasEfficiencySetpoint;
             _adminLog.Add(LogType.Supermatter,
                 $"Supermatter gas efficiency factor adjusted by {diff} to {sm.GasEfficiency}");
@@ -977,13 +978,12 @@ public sealed partial class SupermatterSystem : SharedSupermatterSystem
         if (sm.RadiationOutputFactorChanged)
         {
             var diff = sm.RadiationOutputFactor - sm.RadiationOutputFactorSetpoint;
-            diff = diff / 50;
-            Math.Round(diff, 5);
+            diff = (float) Math.Round(diff / 50, 5);
             if (diff > 0)
                 sm.RadiationOutputFactor = sm.RadiationOutputFactor - diff;
             else if (diff < 0)
                 sm.RadiationOutputFactor = sm.RadiationOutputFactor + diff;
-            else if (diff == 0)
+            else
                 sm.RadiationOutputFactor = sm.RadiationOutputFactorSetpoint;
             _adminLog.Add(LogType.Supermatter,
                 $"Supermatter radiation output factor adjusted by {diff} to {sm.RadiationOutputFactor}");

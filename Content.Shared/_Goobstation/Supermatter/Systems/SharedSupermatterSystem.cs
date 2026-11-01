@@ -1,20 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-using System;
-using Content.Shared._Goobstation.Supermatter.Components;
-using Robust.Shared.GameObjects;
-using Robust.Shared.Serialization;
-
 namespace Content.Shared._Goobstation.Supermatter.Systems;
 
 public abstract class SharedSupermatterSystem : EntitySystem
 {
-    public override void Initialize()
-    {
-        base.Initialize();
-        SubscribeLocalEvent<SupermatterComponent, ComponentStartup>(OnSupermatterStartup);
-    }
-
     public enum SuperMatterSound : sbyte
     {
         Aggressive = 0,
@@ -28,26 +17,4 @@ public abstract class SharedSupermatterSystem : EntitySystem
         Tesla = 2,
         Cascade = 3 // save for later
     }
-    #region Getters/Setters
-
-    public void OnSupermatterStartup(EntityUid uid, SupermatterComponent comp, ComponentStartup args)
-    {
-    }
-
-    #endregion Getters/Setters
-
-    #region Serialization
-    /// <summary>
-    /// A state wrapper used to sync the supermatter between the server and client.
-    /// </summary>
-    [Serializable, NetSerializable]
-    protected sealed class SupermatterComponentState : ComponentState
-    {
-        public SupermatterComponentState(SupermatterComponent supermatter)
-        {
-        }
-    }
-
-    #endregion Serialization
-
 }

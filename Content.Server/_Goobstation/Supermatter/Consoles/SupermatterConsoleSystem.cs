@@ -1,15 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-using Content.Server.Pinpointer;
 using Content.Shared._Goobstation.Supermatter.Components;
 using Content.Shared._Goobstation.Supermatter.Consoles;
 using Content.Shared._Goobstation.Supermatter.Monitor;
 using Content.Shared.Atmos;
-using Content.Shared.Pinpointer;
 using Content.Shared.Radiation.Components;
 using Robust.Server.GameObjects;
-using Robust.Shared.Map.Components;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Content.Server._Goobstation.Supermatter.Console.Systems;
@@ -18,33 +14,20 @@ public sealed partial class SupermatterConsoleSystem : SharedSupermatterConsoleS
 {
     [Dependency] private UserInterfaceSystem _userInterfaceSystem = default!;
     [Dependency] private SharedAppearanceSystem _appearance = default!;
-    [Dependency] private NavMapSystem _navMapSystem = default!;
 
     private const float UpdateTime = 1.0f;
 
     // Note: this data does not need to be saved
-    private float _updateTimer = 1.0f;
+    private float _updateTimer = 0.0f;
 
     public override void Initialize()
     {
         base.Initialize();
 
-        // Console events
-        SubscribeLocalEvent<SupermatterConsoleComponent, ComponentInit>(OnConsoleInit);
-        SubscribeLocalEvent<SupermatterConsoleComponent, EntParentChangedMessage>(OnConsoleParentChanged);
         SubscribeLocalEvent<SupermatterConsoleComponent, SupermatterConsoleFocusChangeMessage>(OnFocusChangedMessage);
-
-        // Grid events
-        SubscribeLocalEvent<GridSplitEvent>(OnGridSplit);
     }
 
     #region Event handling
-
-    private void OnConsoleInit(EntityUid uid, SupermatterConsoleComponent component, ComponentInit args) =>
-        InitalizeConsole(uid, component);
-
-    private void OnConsoleParentChanged(EntityUid uid, SupermatterConsoleComponent component, EntParentChangedMessage args) =>
-        InitalizeConsole(uid, component);
 
     private void OnFocusChangedMessage(EntityUid uid, SupermatterConsoleComponent component, SupermatterConsoleFocusChangeMessage args)
     {
@@ -55,31 +38,18 @@ public sealed partial class SupermatterConsoleSystem : SharedSupermatterConsoleS
         component.FocusSupermatter = args.FocusSupermatter;
     }
 
-    private void OnGridSplit(ref GridSplitEvent args)
-    {
-        // Collect grids
-        var allGrids = args.NewGrids.ToList();
-
-        if (!allGrids.Contains(args.Grid))
-            allGrids.Add(args.Grid);
-
-        // Update supermatter monitoring consoles that stand upon an updated grid
-        var query = AllEntityQuery<SupermatterConsoleComponent, TransformComponent>();
-        while (query.MoveNext(out var ent, out var entConsole, out var entXform))
-        {
-            if (entXform.GridUid == null
-                || !allGrids.Contains(entXform.GridUid.Value))
-                continue;
-
-            InitalizeConsole(ent, entConsole);
-        }
-    }
-
     #endregion
 
     public override void Update(float frameTime)
     {
         base.Update(frameTime);
+
+        // Closed consoles only need their screen refreshed once a second. An open UI still gets a
+        // fresh state every tick, so clicking an entry does not wait for the next scan.
+        _updateTimer -= frameTime;
+        var refreshAll = _updateTimer <= 0f;
+        if (refreshAll)
+            _updateTimer += UpdateTime;
 
         // Keep a list of UI entries for each gridUid, in case multiple consoles stand on the same grid
         var supermatterEntriesForEachGrid = new Dictionary<EntityUid, SupermatterConsoleEntry[]>();
@@ -88,6 +58,10 @@ public sealed partial class SupermatterConsoleSystem : SharedSupermatterConsoleS
         while (query.MoveNext(out var ent, out var entConsole, out var entXform))
         {
             if (entXform?.GridUid == null)
+                continue;
+
+            var uiOpen = _userInterfaceSystem.IsUiOpen(ent, SupermatterConsoleUiKey.Key);
+            if (!refreshAll && !uiOpen)
                 continue;
 
             var gridUid = entXform.GridUid.Value;
@@ -163,9 +137,9 @@ public sealed partial class SupermatterConsoleSystem : SharedSupermatterConsoleS
         {
             focusSupermatterData = GetFocusSupermatterData(uid, uid, gridUid);
         }
-        else if (component.FocusSupermatter != NetEntity.Invalid)
+        else if (component.FocusSupermatter is { } focused)
         {
-            var focusUid = GetEntity(component.FocusSupermatter);
+            var focusUid = GetEntity(focused);
 
             if (EntityManager.EntityExists(focusUid))
                 focusSupermatterData = GetFocusSupermatterData(uid, focusUid, gridUid);
@@ -244,15 +218,5 @@ public sealed partial class SupermatterConsoleSystem : SharedSupermatterConsoleS
         integrity = (float)Math.Round(100 - integrity * 100, 2);
         integrity = integrity < 0 ? 0 : integrity;
         return integrity;
-    }
-
-    private void InitalizeConsole(EntityUid uid, SupermatterConsoleComponent component)
-    {
-        var xform = Transform(uid);
-
-        if (xform.GridUid == null)
-            return;
-
-        Dirty(uid, component);
     }
 }

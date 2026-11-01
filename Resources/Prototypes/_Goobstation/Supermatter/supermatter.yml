@@ -13,12 +13,6 @@
   components:
     - type: Supermatter
       radiationOutputFactor: 0.005
-      whitelist:
-        tags:
-          - EmitterBolt
-        components:
-          - Body
-          - Item
     - type: RadiationSource
     - type: AmbientSound
       range: 5

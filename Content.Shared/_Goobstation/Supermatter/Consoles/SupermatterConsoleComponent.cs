@@ -4,7 +4,6 @@ using Content.Shared._Goobstation.Supermatter.Consoles;
 using Content.Shared._Goobstation.Supermatter.Monitor;
 using Content.Shared.Atmos;
 using Robust.Shared.GameStates;
-using Robust.Shared.Map;
 using Robust.Shared.Serialization;
 using Robust.Shared.Utility;
 
@@ -19,29 +18,6 @@ public sealed partial class SupermatterConsoleComponent : Component
     /// </summary>
     [ViewVariables]
     public NetEntity? FocusSupermatter;
-}
-
-[Serializable, NetSerializable]
-public struct SupermatterNavMapData
-{
-    /// <summary>
-    /// The entity in question
-    /// </summary>
-    public NetEntity NetEntity;
-
-    /// <summary>
-    /// Location of the entity
-    /// </summary>
-    public NetCoordinates NetCoordinates;
-
-    /// <summary>
-    /// Populate the supermatter console nav map with a single entity
-    /// </summary>
-    public SupermatterNavMapData(NetEntity netEntity, NetCoordinates netCoordinates)
-    {
-        NetEntity = netEntity;
-        NetCoordinates = netCoordinates;
-    }
 }
 
 [Serializable, NetSerializable]

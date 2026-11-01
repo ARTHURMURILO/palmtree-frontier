@@ -7,22 +7,18 @@ using Content.Shared._Goobstation.Supermatter.Systems;
 using Content.Shared._Goobstation.Supermatter.Monitor;
 using Content.Shared.Atmos;
 using Content.Shared.DoAfter;
-using Content.Shared.Whitelist;
 using Robust.Shared.Audio;
 using Robust.Shared.GameObjects;
-using Robust.Shared.GameStates;
 using Robust.Shared.Serialization;
 using Robust.Shared.Serialization.Manager.Attributes;
 using Robust.Shared.ViewVariables;
 using Robust.Shared.Utility;
 using Robust.Shared.Prototypes;
 using Content.Shared.Random;
-using Robust.Shared.Toolshed.TypeParsers;
-using Content.Shared.Radio;
 
 namespace Content.Shared._Goobstation.Supermatter.Components;
 
-[RegisterComponent, NetworkedComponent]
+[RegisterComponent]
 public sealed partial class SupermatterComponent : Component
 {
     /// <summary>
@@ -45,15 +41,11 @@ public sealed partial class SupermatterComponent : Component
     public string SliverPrototypeId = "SupermatterSliver";
 
     /// <summary>
-    ///     Affects delamination timer. If removed - delamination timer is divided by 2.
+    ///     Affects delamination timer. If removed, the countdown is shortened by 10 seconds.
     /// </summary>
     [DataField("sliverRemoved")]
     [ViewVariables(VVAccess.ReadWrite)]
     public bool SliverRemoved = false;
-
-    [DataField("whitelist")]
-    public EntityWhitelist Whitelist = new();
-    public string IdTag = "EmitterBolt";
 
     public string[] LightningPrototypes =
     {
@@ -122,8 +114,8 @@ public sealed partial class SupermatterComponent : Component
     ///     SS14 hands <see cref="Content.Shared.Radiation.Components.RadiationSourceComponent.Intensity"/>
     ///     straight to the damage system every second, so Goob's raw figure - power times the output
     ///     factor, which on a hot crystal is well over a hundred - deleted a crewman before the
-    ///     Geiger counter finished a tick. Eight is the same ceiling the RBMK and the stormdrive use:
-    ///     a place you enter in a radsuit, not an instant death field.
+    ///     Geiger counter finished a tick. Eight is a place you enter in a radsuit, not an instant
+    ///     death field.
     /// </remarks>
     [DataField("maxRadiation")]
     [ViewVariables(VVAccess.ReadWrite)]
@@ -144,9 +136,6 @@ public sealed partial class SupermatterComponent : Component
     [DataField("delamSound")]
     public SoundSpecifier DelamSound = new SoundPathSpecifier("/Audio/_Goobstation/Supermatter/delamming.ogg");
 
-    [DataField("delamAlarm")]
-    public SoundSpecifier DelamAlarm = new SoundPathSpecifier("/Audio/Machines/alarm.ogg");
-
     #endregion SM Sound
 
     #region SM Calculation
@@ -166,14 +155,7 @@ public sealed partial class SupermatterComponent : Component
     public float DynamicHeatResistance = 1;
 
     /// <summary>
-    /// Multiplier on damage the core takes from absorbing hot gas
-    /// Default is ~1/350
-    /// </summary>
-    [ViewVariables(VVAccess.ReadOnly)]
-    public float MoleHeatPenalty = 0.00286f;
-
-    /// <summary>
-    /// Inverse of MoleHeatPenalty
+    /// Heat scale used by the damage formula.
     /// </summary>
     [ViewVariables(VVAccess.ReadOnly)]
     public float MoleHeatThreshold = 350f;
@@ -213,15 +195,14 @@ public sealed partial class SupermatterComponent : Component
     #region SM Timer
 
     /// <summary>
-    /// The point at which we should start sending messeges
-    /// about the damage to the engi channels.
+    /// The point at which we should start sending warning messages over the Shortband.
     /// </summary>
     [ViewVariables(VVAccess.ReadWrite)]
     [DataField("WarningPoint")]
     public float WarningPoint = 50;
 
     /// <summary>
-    /// The point at which we start sending messages to the common channel
+    /// The point at which warning messages become emergency messages.
     /// </summary>
     [ViewVariables(VVAccess.ReadWrite)]
     [DataField("emergencyPoint")]
@@ -251,12 +232,6 @@ public sealed partial class SupermatterComponent : Component
     [ViewVariables(VVAccess.ReadWrite)]
     [DataField("delamTimer")]
     public float DelamTimer = 120f;
-
-    /// <summary>
-    ///     The message timer
-    /// </summary>
-    [ViewVariables(VVAccess.ReadWrite)]
-    public float SpeakAccumulator = 60f;
 
     [ViewVariables(VVAccess.ReadOnly)]
     public float UpdateAccumulator = 0f;
@@ -304,14 +279,6 @@ public sealed partial class SupermatterComponent : Component
     [ViewVariables(VVAccess.ReadOnly)]
     [DataField("molepenaltyThreshold")]
     public float MolePenaltyThreshold = 900f;
-
-    /// <summary>
-    /// more moles of gases are harder to heat than fewer,
-    /// so let's scale heat damage around them
-    /// </summary>
-    [ViewVariables(VVAccess.ReadOnly)]
-    [DataField("moleheatpenaltyThreshold")]
-    public float MoleHeatPenaltyThreshold;
 
     /// <summary>
     /// The cutoff on power properly doing damage, pulling shit around,
@@ -409,23 +376,6 @@ public sealed partial class SupermatterComponent : Component
     /// <summary>How far through <see cref="DelamCountdownStages"/> the current fuse is.</summary>
     public int DelamCountdownIndex;
 
-    //Explosion totalIntensity value
-    [ViewVariables(VVAccess.ReadOnly)]
-    [DataField("totalIntensity")]
-    public float TotalIntensity = 50000f;
-
-    //Explosion radius value
-    [ViewVariables(VVAccess.ReadOnly)]
-    [DataField("radius")]
-    public float Radius = 50f;
-
-    /// <summary>
-    /// These would be what you would get at point blank, decreases with distance
-    /// </summary>
-    [ViewVariables(VVAccess.ReadOnly)]
-    [DataField("detonationRads")]
-    public float DetonationRads = 200f;
-
     #endregion SM Delamm
 
     #region SM Gas
@@ -505,14 +455,9 @@ public sealed partial class SupermatterComponent : Component
     [DataField]
     public ProtoId<WeightedRandomPrototype> NormalEvents = "NormalEvents";
 
-    /// <summary>Channel used for event shouts (e.g. "shout over radio").</summary>
-    [DataField]
-    public ProtoId<RadioChannelPrototype> RadioChannel = "Engineering";
-
-    // Palmtree: the old CommonRadioChannel field lived here. It was never read - routine reports go
-    // through the shared ship relay (ShipEventSystem.EngineAnnounce) so they can be signed with the
-    // vessel's name, and the relay owns the channel choice. A second, unread channel setting on the
-    // component was a trap for anyone trying to retune the alarms.
+    // Palmtree: event reports and routine alarms all go through the shared ship relay
+    // (ShipEventSystem.EngineAnnounce), which signs them with the vessel's name and owns the
+    // channel choice. A per-crystal channel setting here would let the two disagree.
 
     /// <summary>
     /// The time in minutes since a surge occurred that variables can be adjusted
@@ -547,6 +492,7 @@ public sealed partial class SupermatterComponent : Component
 
     [DataField]
     public bool Surge = false;
+    #endregion Events
 }
 
 [Prototype]
@@ -564,8 +510,7 @@ public sealed partial class SupermatterEventPrototype : IPrototype
     [DataField]
     public LocId? Announcement;
 }
-#endregion
- 
+
 [Serializable, NetSerializable]
 public sealed partial class SupermatterDoAfterEvent : SimpleDoAfterEvent
 {
