@@ -168,6 +168,27 @@ public sealed partial class StormdriveComponent : Component
     [DataField]
     public float ReactorStability = 100f;
 
+    /// <summary>
+    ///     Palmtree: hard cap on the radius of the instability gravity pull, in tiles.
+    /// </summary>
+    /// <remarks>
+    ///     The DM <c>grav_pull()</c> reached <c>orange(heat / 40)</c>, which on a full-size NSV13
+    ///     ship is the engine room and on a Palmtree ship is the whole vessel. Five tiles keeps a
+    ///     lurch inside the reactor compartment instead of flooring the entire crew.
+    /// </remarks>
+    [DataField]
+    public float GravityPullMaxRadius = 5f;
+
+    /// <summary>
+    ///     Palmtree: minimum gap between gravity pulls. The DM original rolled on every process
+    ///     tick, which at rock-bottom stability is a knockdown every six seconds forever.
+    /// </summary>
+    [DataField]
+    public TimeSpan GravityPullCooldown = TimeSpan.FromSeconds(10);
+
+    [ViewVariables(VVAccess.ReadOnly)]
+    public TimeSpan NextGravityPull;
+
     /// <summary>Ignition requirement and the "too cold to run" threshold.</summary>
     [DataField]
     public float StartThreshold = 20f;
