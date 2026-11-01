@@ -769,15 +769,24 @@ public sealed class StormdriveSystem : EntitySystem
 
         // §grav_pull(): a localised gravity event that yanks everything toward the core and puts
         // anyone standing in range on the floor. This is a warning shot, not an attack.
-        if (_random.Prob((100f - comp.ReactorStability) / 3f / 100f))
+        //
+        // Palmtree: the DM range was `orange(heat / 40)`, which at a working core temperature is
+        // fifteen to twenty tiles. That is the engine room on a full-size NSV13 ship, but it is the
+        // whole Palmtree vessel, so an unstable drive floored the entire crew on every roll. The
+        // radius is capped and the pull has a cooldown; the knockdown is a stumble, not a stunlock.
+        if (_timing.CurTime >= comp.NextGravityPull &&
+            _random.Prob((100f - comp.ReactorStability) / 3f / 100f))
         {
             // DM plays /sound/effects/empulse.ogg; this fork has no such file, so use the sound the
             // engine's own EMP effect uses instead of logging a missing resource every pulse.
             _audio.PlayPvs("/Audio/Effects/Lightning/lightningbolt.ogg", uid);
 
+            comp.NextGravityPull = _timing.CurTime + comp.GravityPullCooldown;
+
             // DM grav_pull() is a single `step_towards` per object plus a knockdown - a lurch, not
-            // a well. Strength 1.5 for two seconds keeps that feel.
-            _shipEvent.GravityPull(uid, comp.Heat / 40f + 1f, 1.5f, TimeSpan.FromSeconds(2));
+            // a well. Strength 1.5 keeps that feel.
+            var radius = MathF.Min(comp.Heat / 40f + 1f, comp.GravityPullMaxRadius);
+            _shipEvent.GravityPull(uid, radius, 1.5f, TimeSpan.FromSeconds(1));
         }
 
         if (comp.ReactorStability < 75f)
