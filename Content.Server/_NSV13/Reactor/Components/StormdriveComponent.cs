@@ -68,14 +68,14 @@ public sealed partial class StormdriveComponent : Component
     ///     Fraction of <see cref="ReactionRate"/> actually drawn from the fuel line each tick.
     /// </summary>
     /// <remarks>
-    ///     Palmtree: 0.25. The DM drive was written for stations with gas miners on tap; a ship buys
-    ///     its plasma by the canister, so the same reaction now costs a quarter of the fuel. The
-    ///     slug is scaled back up before the gas modifiers are computed, so the reaction itself is
-    ///     unchanged - only the pipe drains at a quarter speed. Electrical output is multiplied by
+    ///     Palmtree: 0.5. The DM drive was written for stations with gas miners on tap; a ship buys
+    ///     its plasma by the canister, so the same reaction now costs half the fuel. The slug is
+    ///     scaled back up before the gas modifiers are computed, so the reaction itself is
+    ///     unchanged - only the pipe drains at half speed. Electrical output is multiplied by
     ///     this same factor, so the watts per mole stay at the vanilla figure.
     /// </remarks>
     [DataField]
-    public float FuelConsumptionFactor = 0.25f;
+    public float FuelConsumptionFactor = 0.5f;
 
     [DataField]
     public float TargetReactionRate;

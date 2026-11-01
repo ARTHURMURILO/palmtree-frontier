@@ -232,11 +232,11 @@ public sealed partial class StormdriveConsoleWindow : DefaultWindow
             ("max", $"{state.TheoreticalMaximumPower / 1e6:F2}"));
 
         // Fuel burn, in mol/s (the value the label shows). The old 0.05 scale / 2-and-1 thresholds
-        // were in raw reaction-rate units (moles per 2 s tick); divide by 8 to keep the same
-        // green/amber cut-offs once the factor and the tick are applied.
-        ReactionBar.Value = Math.Clamp(state.FuelConsumptionRate * 0.4f, 0f, 1f);
-        ReactionBar.ForegroundStyleBoxOverride = state.FuelConsumptionRate >= 0.25f ? GreenFill
-            : state.FuelConsumptionRate >= 0.125f ? AmberFill : RedFill;
+        // were in raw reaction-rate units (moles per 2 s tick); divide by 4 to keep the same
+        // green/amber cut-offs once the factor (0.5) and the tick are applied.
+        ReactionBar.Value = Math.Clamp(state.FuelConsumptionRate * 0.2f, 0f, 1f);
+        ReactionBar.ForegroundStyleBoxOverride = state.FuelConsumptionRate >= 0.5f ? GreenFill
+            : state.FuelConsumptionRate >= 0.25f ? AmberFill : RedFill;
         ReactionRateLabel.Text = Loc.GetString("stormdrive-console-reaction-value", ("value", $"{state.FuelConsumptionRate:F1}"));
 
         // Fuel ratio: rich mixtures are bad.
