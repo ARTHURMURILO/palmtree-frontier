@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 using Content.Server._NSV13.Reactor.Components;
+using Content.Server._NSV13.Reactor.Events;
 using Content.Server._PS.Ships;
 using Content.Server.Atmos.EntitySystems;
 using Content.Server.Emp;
@@ -1110,6 +1111,7 @@ public sealed class StormdriveSystem : EntitySystem
 
         DoMeltdownEffects(uid, comp);
         UpdateVisuals(uid, comp);
+        RaiseLocalEvent(uid, new StormdriveStateChangedEvent());
 
         // DM: flick("meltdown") then, one second later, icon_state = "broken". The flick is the RSI
         // animation on the meltdown state; the timer swaps to the wreckage underneath it.
@@ -1258,6 +1260,9 @@ public sealed class StormdriveSystem : EntitySystem
         }
 
         UpdateVisuals(uid, comp);
+
+        // The rod-bay window is a different UI from the console; tell it the lid state changed.
+        RaiseLocalEvent(uid, new StormdriveStateChangedEvent());
         return true;
     }
 

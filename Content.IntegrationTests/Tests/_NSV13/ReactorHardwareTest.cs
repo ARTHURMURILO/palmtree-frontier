@@ -23,6 +23,7 @@ using Robust.Shared.Map.Components;
 using Robust.Shared.Maths;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Physics;
+using Robust.Shared.Physics.Components;
 
 namespace Content.IntegrationTests.Tests._NSV13;
 
@@ -165,8 +166,12 @@ public sealed class ReactorHardwareTest
             // inherit it from BaseItem/BaseStructure like every other movable thing does.
             Assert.That(entMan.HasComponent<PullableComponent>(uid), Is.True,
                 "the shard must be pullable, or it cannot be dragged onto a ship");
-            Assert.That(entMan.HasComponent<PullableComponent>(uid), Is.True,
-                "the shard must be pullable once unbolted, or it cannot be dragged aboard");
+
+            // Pulling rejects static bodies. The parent's Physics defaults to Static and only the
+            // anchoring system flips it to Dynamic on an explicit unanchor, so a freshly spawned
+            // shard could not be dragged until it was wrenched down and back up.
+            Assert.That(entMan.GetComponent<PhysicsComponent>(uid).BodyType, Is.EqualTo(BodyType.Dynamic),
+                "the shard must spawn with a dynamic body or it cannot be pulled");
 
             // Same crystal as the full-size one: identical failure modes and output.
             var small = entMan.GetComponent<SupermatterComponent>(uid);

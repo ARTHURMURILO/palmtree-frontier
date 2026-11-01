@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 using Content.Server._NSV13.Reactor.Components;
+using Content.Server._NSV13.Reactor.Events;
 using Content.Server.Emp;
 using Content.Shared.Examine;
 using Content.Shared._NSV13.Reactor;
@@ -59,6 +60,7 @@ public sealed class StormdriveRodSystem : EntitySystem
         SubscribeLocalEvent<StormdriveComponent, StormdriveRodRemoveDoAfterEvent>(OnRemoveFinished);
         SubscribeLocalEvent<StormdriveComponent, BoundUIOpenedEvent>(OnUiOpened);
         SubscribeLocalEvent<StormdriveComponent, StormdriveRemoveRodMessage>(OnRemoveMessage);
+        SubscribeLocalEvent<StormdriveComponent, StormdriveStateChangedEvent>(OnStateChanged);
     }
 
     private void OnExamined(EntityUid uid, StormdriveComponent comp, ExaminedEvent args)
@@ -287,6 +289,11 @@ public sealed class StormdriveRodSystem : EntitySystem
         UpdateUi(uid, comp);
     }
 
+    private void OnStateChanged(EntityUid uid, StormdriveComponent comp, StormdriveStateChangedEvent args)
+    {
+        UpdateUi(uid, comp);
+    }
+
     private void Notice(StormdriveComponent comp, string message)
     {
         comp.RodNotice = message;
@@ -295,7 +302,7 @@ public sealed class StormdriveRodSystem : EntitySystem
 
     public void UpdateUi(EntityUid uid, StormdriveComponent comp)
     {
-        if (!_ui.HasUi(uid, StormdriveRodsUiKey.Key))
+        if (!_ui.HasUi(uid, StormdriveRodsUiKey.Key) || !_ui.IsUiOpen(uid, StormdriveRodsUiKey.Key))
             return;
 
         if (comp.RodNotice.Length > 0 && _timing.CurTime >= comp.RodNoticeUntil)

@@ -87,7 +87,7 @@ public sealed partial class SupermatterConsoleSystem : SharedSupermatterConsoleS
             // Make a list of alarm state data for all the supermatters on the grid
             if (!supermatterEntriesForEachGrid.TryGetValue(entXform.GridUid.Value, out var supermatterEntries))
             {
-                supermatterEntries = GetSupermatterStateData(entXform.GridUid.Value).ToArray();
+                supermatterEntries = GetSupermatterStateData(entXform.GridUid.Value, ent).ToArray();
                 supermatterEntriesForEachGrid[entXform.GridUid.Value] = supermatterEntries;
             }
 
@@ -109,6 +109,17 @@ public sealed partial class SupermatterConsoleSystem : SharedSupermatterConsoleS
             // If the console UI is open, send UI data to each subscribed session
             UpdateUIState(ent, supermatterEntries, entConsole, entXform);
         }
+    }
+
+    /// <summary>
+    ///     Palmtree: point a console - or a crystal acting as its own console - at a supermatter.
+    /// </summary>
+    public void SetFocus(EntityUid consoleUid, EntityUid supermatterUid, SupermatterConsoleComponent? console = null)
+    {
+        if (!Resolve(consoleUid, ref console))
+            return;
+
+        console.FocusSupermatter = GetNetEntity(supermatterUid);
     }
 
     public void UpdateUIState
@@ -140,15 +151,19 @@ public sealed partial class SupermatterConsoleSystem : SharedSupermatterConsoleS
             new SupermatterConsoleBoundInterfaceState(supermatterStateData, focusSupermatterData));
     }
 
-    private List<SupermatterConsoleEntry> GetSupermatterStateData(EntityUid gridUid)
+    private List<SupermatterConsoleEntry> GetSupermatterStateData(EntityUid gridUid, EntityUid consoleUid)
     {
         var supermatterStateData = new List<SupermatterConsoleEntry>();
+
+        // Palmtree: a crystal can now act as its own console for admin inspection, and the shard is
+        // routinely unanchored - it still has to show up in its own window.
+        var selfConsole = HasComp<SupermatterComponent>(consoleUid);
 
         var querySupermatters = AllEntityQuery<SupermatterComponent, TransformComponent>();
         while (querySupermatters.MoveNext(out var ent, out var entSupermatter, out var entXform))
         {
             if (entXform.GridUid != gridUid
-                || !entXform.Anchored)
+                || (!entXform.Anchored && !(selfConsole && ent == consoleUid)))
                 continue;
 
             // Create entry
@@ -172,7 +187,8 @@ public sealed partial class SupermatterConsoleSystem : SharedSupermatterConsoleS
 
         var focusSupermatterXform = Transform(focusSupermatter.Value);
 
-        if (!focusSupermatterXform.Anchored
+        // Palmtree: self-inspection from an unanchored shard must still return its stats.
+        if ((!focusSupermatterXform.Anchored && focusSupermatter != uid)
             || focusSupermatterXform.GridUid != gridUid
             || !TryComp<SupermatterComponent>(focusSupermatter.Value, out var sm)
             || !TryComp<RadiationSourceComponent>(focusSupermatter.Value, out var radiationComp))

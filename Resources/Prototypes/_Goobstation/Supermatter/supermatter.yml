@@ -81,6 +81,14 @@
     # without a powered telecomms relay. A ship's engine room rarely has one, so the crystal carries
     # its own pass instead of going silent the moment it starts failing.
     - type: TelecomExempt
+    # Palmtree: admins inspecting a crystal (an admin ghost clicking it) get the monitoring window
+    # focused on the crystal itself, instead of being consumed by the hand-interact. The console
+    # component is what feeds that window; it is opened programmatically, never on normal use.
+    - type: SupermatterConsole
+    - type: UserInterface
+      interfaces:
+        enum.SupermatterConsoleUiKey.Key:
+          type: SupermatterConsoleBoundUserInterface
 
 # Palmtree: the smaller crystal, for ships that do not have a whole engine deck to give it.
 #
@@ -112,6 +120,11 @@
     # a bare entity prototype, so unlike every item and structure it never inherited `Pullable` -
     # the shard could be wrenched down and then never actually moved.
     - type: Pullable
+    # The parent's Physics has the engine default body type (Static), which `CanPull` rejects.
+    # The anchoring system only flips a body to Dynamic when it is unanchored by hand, so a shard
+    # that spawned unanchored could not be dragged until it was wrenched down and back up.
+    - type: Physics
+      bodyType: Dynamic
     - type: Sprite
       drawdepth: WallMountedItems
       sprite: _Goobstation/Supermatter/supermatter_small.rsi
