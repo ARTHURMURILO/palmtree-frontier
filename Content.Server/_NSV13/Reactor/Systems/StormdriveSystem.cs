@@ -25,6 +25,7 @@ using Content.Shared.Light.Components;
 using Content.Shared.Tag;
 using Robust.Server.GameObjects;
 using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
 using Robust.Shared.Physics.Events;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Random;
@@ -85,6 +86,7 @@ public sealed class StormdriveSystem : EntitySystem
         base.Initialize();
 
         SubscribeLocalEvent<StormdriveComponent, MapInitEvent>(OnMapInit);
+        SubscribeLocalEvent<StormdriveComponent, ComponentStartup>(OnStartup);
         // Subscribed on the reactor, not on the projectile: SingularityGeneratorSystem already owns
         // the (ParticleProjectileComponent, StartCollideEvent) pair and the event bus allows exactly
         // one subscription per component/event pair - registering ours threw on startup.
@@ -112,26 +114,7 @@ public sealed class StormdriveSystem : EntitySystem
         // A mapper (or the pre-started prototype) can load the bay through ContainerFill. Adopt
         // whatever is already in the container so those rods count toward efficiency/integrity
         // instead of being inert decoration.
-        if (_container.TryGetContainer(uid, StormdriveComponent.RodContainer, out var bay))
-        {
-            foreach (var rodUid in bay.ContainedEntities)
-            {
-                if (!HasComp<ControlRodComponent>(rodUid))
-                    continue;
-
-                // StormdriveRodSystem.OnRodInserted also records rods, and the container events fire
-                // during MapInit - possibly before this loop. Without the guard the five pre-loaded
-                // rods of StormdriveReactorRunning are recorded twice, giving ten entries for a
-                // five-slot bay.
-                if (!comp.ControlRods.Contains(rodUid))
-                    comp.ControlRods.Add(rodUid);
-
-                // The bay shields its rods. OnRodInserted does this for hand-mounted ones, but a
-                // ContainerFill-loaded rod can already be inside before that handler runs.
-                if (TryComp<RadiationSourceComponent>(rodUid, out var rodRadiation))
-                    rodRadiation.Enabled = false;
-            }
-        }
+        AdoptRods(uid, comp);
 
         // The pre-started prototype skips ignition, which is where the reaction state is normally
         // seeded. Without this the core spawns "running" with zero stability, and the stability
@@ -152,6 +135,65 @@ public sealed class StormdriveSystem : EntitySystem
     private float RollModifier(StormdriveComponent comp)
     {
         return _random.NextFloat(1f - comp.GasModifier / 100f, 1f + comp.GasModifier / 100f);
+    }
+
+    /// <summary>
+    ///     Palmtree: the only lifecycle hook a loaded ship gets.
+    /// </summary>
+    /// <remarks>
+    ///     MapInitEvent is skipped on load and the bay is restored as container data without insert
+    ///     events, so <see cref="StormdriveComponent.ControlRods"/> would stay empty: the first
+    ///     CanCool recomputes integrity as 0, the drive can never cool again, and the rods cannot be
+    ///     ejected because the UI is index-based off that list. Absolute round times cannot survive
+    ///     a save either, so reset them here; a hot core re-arms its own fuse from Heat.
+    /// </remarks>
+    private void OnStartup(EntityUid uid, StormdriveComponent comp, ComponentStartup args)
+    {
+        AdoptRods(uid, comp);
+        RecalculateRods(comp);
+        UpdateVisuals(uid, comp);
+
+        comp.NextProcess = TimeSpan.Zero;
+        comp.NextAlert = TimeSpan.Zero;
+        comp.NextGravityPull = TimeSpan.Zero;
+        comp.NextCountdownAnnounce = TimeSpan.Zero;
+        comp.MeltdownAt = TimeSpan.Zero;
+        comp.MeltdownCountdownIndex = 0;
+
+        // A saved warning flag without its deadline keeps the klaxon from re-arming (UpdateStatus
+        // guards on WarningState), and a saved armed fuse either detonates on the first tick with no
+        // countdown or silently reprieves. Clear both; UpdateStatus re-derives them from Heat.
+        comp.WarningState = StormdriveWarning.None;
+        comp.ReactorEndTimes = false;
+    }
+
+    /// <summary>
+    ///     Keep <see cref="StormdriveComponent.ControlRods"/> in step with the bay container.
+    /// </summary>
+    /// <remarks>
+    ///     Called from MapInit (fresh spawn / ContainerFill) and ComponentStartup (a loaded ship,
+    ///     where the container is restored as data and no insert event fires). The Contains guard
+    ///     keeps the two paths idempotent: without it the five pre-loaded rods of
+    ///     StormdriveReactorRunning were recorded twice, giving ten entries for a five-slot bay.
+    /// </remarks>
+    private void AdoptRods(EntityUid uid, StormdriveComponent comp)
+    {
+        if (!_container.TryGetContainer(uid, StormdriveComponent.RodContainer, out var bay))
+            return;
+
+        foreach (var rodUid in bay.ContainedEntities)
+        {
+            if (!HasComp<ControlRodComponent>(rodUid))
+                continue;
+
+            if (!comp.ControlRods.Contains(rodUid))
+                comp.ControlRods.Add(rodUid);
+
+            // The bay shields its rods. OnRodInserted does this for hand-mounted ones, but a
+            // ContainerFill-loaded or saved rod can already be inside before that handler runs.
+            if (TryComp<RadiationSourceComponent>(rodUid, out var rodRadiation))
+                rodRadiation.Enabled = false;
+        }
     }
 
     public override void Update(float frameTime)
@@ -1184,8 +1226,24 @@ public sealed class StormdriveSystem : EntitySystem
             comp.BlastPeakIntensity,
             canCreateVacuum: true);
 
-        // empulse(src, 25, 50): this is the real payload.
-        _emp.EmpPulse(coords, comp.EmpRange, 100000f, 60f);
+        // empulse(src, 25, 50): this is the real payload. SS14's EmpPulse is map-coordinate based
+        // and skips only protected grids, so every other hull on the map is marked immune: a
+        // meltdown on one ship must not black out a docked neighbour or the hub for a minute.
+        List<EntityUid>? immuneGrids = null;
+
+        if (_shipEvent.TryGetGrid(uid, out var shipGrid))
+        {
+            immuneGrids = new List<EntityUid>();
+            var grids = EntityQueryEnumerator<MapGridComponent>();
+
+            while (grids.MoveNext(out var gridUid, out _))
+            {
+                if (gridUid != shipGrid)
+                    immuneGrids.Add(gridUid);
+            }
+        }
+
+        _emp.EmpPulse(coords, comp.EmpRange, 100000f, 60f, immuneGrids);
 
         if (TryComp<RadiationSourceComponent>(uid, out var source))
         {
@@ -1216,7 +1274,11 @@ public sealed class StormdriveSystem : EntitySystem
     /// <returns>True if the reactor ignited.</returns>
     public bool TryStart(EntityUid uid, StormdriveComponent comp)
     {
-        if (comp.State is StormdriveState.Running or StormdriveState.Meltdown or StormdriveState.Maintenance)
+        // Palmtree: only Idle may ignite. The named guard used to omit Repair/Reinforce/Refit, so a
+        // single particle-accelerator hit on a half-repaired wreck set Heat = 30, State = Running,
+        // ReactorStability = 100 and ReactionRate = 5, skipping the remaining 25 uranium, the weld
+        // and the StormdriveCore. That is both an exploit and a meltdown loop.
+        if (comp.State != StormdriveState.Idle)
             return false;
 
         if (!_nodeContainer.TryGetNode(uid, comp.FuelInputName, out PipeNode? fuelNode))

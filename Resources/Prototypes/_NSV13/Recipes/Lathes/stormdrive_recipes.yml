@@ -17,6 +17,22 @@
 
 # DM: /datum/design/reactor_control_rods - iron 500 + titanium 500 for the techfab rod.
 
+# Palmtree: the final step of the meltdown repair chain needs a StormdriveCore, and nothing in the
+# tree produced or sold one. Without this recipe the four-step recovery consumes 25 uranium and a
+# weld and can never be finished. Unlocked by NFStormdriveMachinery, whose entityIcon is this core.
+- type: latheRecipe
+  id: StormdriveCore
+  result: StormdriveCore
+  materials:
+    Steel: 2000
+    Plasteel: 1000
+    Uranium: 500
+  categories:
+  - Engineering
+  icon:
+    sprite: _NSV13/Objects/Materials/control_rod.rsi
+    state: stormdrive_core
+
 - type: latheRecipe
   id: ControlRodInferior
   result: ControlRodInferior

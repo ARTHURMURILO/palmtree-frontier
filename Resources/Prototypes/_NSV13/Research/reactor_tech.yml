@@ -32,6 +32,7 @@
   recipeUnlocks:
   - StormdriveReactorMachineCircuitboard
   - StormdriveConsoleCircuitboard
+  - StormdriveCore
   technologyPrerequisites:
   - NFReactorControlRods
   - NFAdvancedPowercells
