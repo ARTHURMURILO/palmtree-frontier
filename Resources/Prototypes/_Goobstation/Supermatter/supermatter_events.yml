@@ -20,9 +20,8 @@
   weights:
     GasSpillOxy: 1
     GasSpillPlasma: 1
-    # BRANCH NOTE (supermatter branch): nitrium is index 13, which only exists once the reactor-gas
-    # layer from `engines-all` is merged. Spilling it here would write into a gas index that does not
-    # exist on this branch.
+    # Palmtree: nitrium is not part of this change (gas index 13). Spilling it here would write
+    # into a gas index that does not exist.
     # GasSpillNitrium: 1
     GasSpillCarbon: 1
     GasSpillFrezon: 1
@@ -60,7 +59,7 @@
   gasToSpawn: 8
   announcement: gas-spill-frezon
 
-# BRANCH NOTE (supermatter branch): the nitrium spill needs the reactor-gas layer (gas index 13).
+# Palmtree: the nitrium spill needs the gas layer (gas index 13).
 # - type: supermatterEvent
 #   id: GasSpillNitrium
 #   gasToSpawn: 13 # Palmtree: was 11 on Goob (nitrium sits after respiron/helium here)

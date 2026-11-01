@@ -40,10 +40,9 @@ public sealed class SupermatterSmokeTest
                     $"No gas prototype with numeric id {(int) gas} for enum value {gas}");
             }
 
-            // BRANCH NOTE (supermatter branch): the /tg/ and NSV13 gas prototypes ship with the
-            // reactor-gas layer on `engines-all`. The generic loop above still proves that every gas
-            // this branch actually has is wired to a prototype; these per-gas assertions come back
-            // with the gas layer.
+            // Palmtree: the /tg/ and NSV13 gas prototypes are not part of this change. The generic
+            // loop above still proves that every gas in the game is wired to a prototype; these
+            // per-gas assertions come back with the gas layer.
             //
             // // The /tg/ gases specifically.
             // Assert.That(protoMan.Index<GasPrototype>(((int) Gas.BZ).ToString()).Name, Is.EqualTo("gases-bz"));
@@ -136,8 +135,7 @@ public sealed class SupermatterSmokeTest
             Assert.That(entMan.HasComponent<Content.Shared.Movement.Pulling.Components.PullableComponent>(shard),
                 Is.True, "the shard must be pullable, or it cannot be dragged");
             entMan.SpawnEntity("ComputerSupermatter", map.GridCoords);
-            // BRANCH NOTE (supermatter branch): the BZ/Healium/Nitrium/Pluoxium canisters belong to
-            // the reactor-gas layer on `engines-all`.
+            // Palmtree: the BZ/Healium/Nitrium/Pluoxium canisters are not part of this change.
             // entMan.SpawnEntity("BZCanister", map.GridCoords);
             // entMan.SpawnEntity("HealiumCanister", map.GridCoords);
             // entMan.SpawnEntity("NitriumCanister", map.GridCoords);

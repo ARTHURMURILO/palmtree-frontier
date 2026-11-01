@@ -325,11 +325,10 @@ public sealed partial class SupermatterSystem : SharedSupermatterSystem
         absorbedGas.Temperature = Math.Max(0,
             Math.Min(absorbedGas.Temperature, sm.HeatThreshold * heatModifier));
 
-        // BRANCH NOTE (supermatter branch): the /tg/ "CO2 + O2 -> pluoxium" conversion lives here
-        // upstream. It is the only consumer of Pluoxium in this file, and Pluoxium comes from the
-        // reactor-gas layer on `engines-all`, so the whole block is compiled out on this branch.
-        // Leaving it half-enabled would delete CO2 and oxygen without producing anything, which is
-        // worse than not having the reaction at all. Restore the block when the gas layer lands.
+        // Palmtree: the /tg/ "CO2 + O2 -> pluoxium" conversion is not part of this change. It is
+        // the only consumer of Pluoxium in this file, and leaving it half-enabled would delete CO2
+        // and oxygen without producing anything, which is worse than not having the reaction at
+        // all. The block is kept, commented, for the gas layer that adds Pluoxium.
         //
         // // Assmos - /tg/ gases
         // // Checks for carbon dioxide and spits out pluoxium if both CO2 and oxygen are present.

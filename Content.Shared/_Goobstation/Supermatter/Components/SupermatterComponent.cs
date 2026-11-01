@@ -407,9 +407,9 @@ public sealed partial class SupermatterComponent : Component
         [Gas.Frezon] = (TransmitModifier: 3f, HeatPenalty: -10f, PowerMixRatio: -1f, AngerValue: -5f),
         [Gas.Ammonia] = (TransmitModifier: 0f, HeatPenalty: .5f, PowerMixRatio: 1f, AngerValue: 1f),
         [Gas.NitrousOxide] = (TransmitModifier: 0f, HeatPenalty: -5f, PowerMixRatio: -1f, AngerValue: -3f),
-        // BRANCH NOTE (supermatter branch): nitrium, BZ, healium and pluoxium belong to the
-        // reactor-gas layer on `engines-all`. The dictionary only has to cover the gases this
-        // branch actually has; the four entries below are restored with that layer.
+        // Palmtree: nitrium, BZ, healium and pluoxium are not part of this change. The dictionary
+        // only has to cover the gases the game has today; the four entries below are kept,
+        // commented, for the gas layer that adds them.
         // [Gas.Nitrium] = (TransmitModifier: 0f, HeatPenalty: -5f, PowerMixRatio: -1f, AngerValue: 10f), // EE Gas compatibility (Need to Change)
         // [Gas.BZ] = (TransmitModifier: 0f, HeatPenalty: 5f, PowerMixRatio: 1f, AngerValue: 3f), // Assmos - /tg/ gases
         // [Gas.Healium] = (TransmitModifier: 2.4f, HeatPenalty: 4f, PowerMixRatio: 1f, AngerValue: -5f), // Assmos - /tg/ gases
