@@ -192,5 +192,8 @@
   parent: Singularity
   categories: [ HideSpawnMenu ]
   components:
+  # Vanilla re-derives the drain from the singularity's level on every level change, so the flag
+  # below only survives because of this marker.
+  - type: PersistentSingularity
   - type: Singularity
     energyLoss: 0
