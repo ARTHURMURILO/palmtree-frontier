@@ -40,9 +40,18 @@ public sealed class ReactorPortOverlay : Overlay
     private const float HeadLength = 9f;
     private const float HeadWidth = 5f;
 
-    private static readonly Color CoolantInColor = Color.FromHex("#59C2FF");
-    private static readonly Color CoolantOutColor = Color.FromHex("#FF7A3C");
-    private static readonly Color ModeratorColor = Color.FromHex("#C77DFF");
+    /// <summary>
+    ///     Every connection either reactor can present, in drawing order. A face the machine does
+    ///     not have is left at <see cref="Direction.Invalid"/> and skipped.
+    /// </summary>
+    private static readonly (ReactorPortKind Kind, LocId Label, Color Color)[] Ports =
+    {
+        (ReactorPortKind.CoolantIn, "reactor-port-coolant-in", Color.FromHex("#59C2FF")),
+        (ReactorPortKind.CoolantOut, "reactor-port-coolant-out", Color.FromHex("#FF7A3C")),
+        (ReactorPortKind.Moderator, "reactor-port-moderator", Color.FromHex("#C77DFF")),
+        (ReactorPortKind.Fuel, "reactor-port-fuel", Color.FromHex("#7CE38B")),
+        (ReactorPortKind.Waste, "reactor-port-waste", Color.FromHex("#E0A458")),
+    };
 
     private readonly IEntityManager _entMan;
     private readonly SharedTransformSystem _xform;
@@ -78,9 +87,23 @@ public sealed class ReactorPortOverlay : Overlay
         var rotation = _xform.GetWorldRotation(uid);
         var handle = args.ScreenHandle;
 
-        DrawPort(handle, viewport, centre, rotation, layout.CoolantIn, "reactor-port-coolant-in", CoolantInColor);
-        DrawPort(handle, viewport, centre, rotation, layout.CoolantOut, "reactor-port-coolant-out", CoolantOutColor);
-        DrawPort(handle, viewport, centre, rotation, layout.Moderator, "reactor-port-moderator", ModeratorColor);
+        foreach (var (kind, label, color) in Ports)
+        {
+            DrawPort(handle, viewport, centre, rotation, FaceOf(layout, kind), label, color);
+        }
+    }
+
+    private static Direction FaceOf(ReactorPortLayoutComponent layout, ReactorPortKind kind)
+    {
+        return kind switch
+        {
+            ReactorPortKind.CoolantIn => layout.CoolantIn,
+            ReactorPortKind.CoolantOut => layout.CoolantOut,
+            ReactorPortKind.Moderator => layout.Moderator,
+            ReactorPortKind.Fuel => layout.Fuel,
+            ReactorPortKind.Waste => layout.Waste,
+            _ => Direction.Invalid,
+        };
     }
 
     private void DrawPort(

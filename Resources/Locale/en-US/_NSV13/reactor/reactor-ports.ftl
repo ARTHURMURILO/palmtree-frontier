@@ -4,3 +4,5 @@
 reactor-port-coolant-in = COOLANT IN
 reactor-port-coolant-out = COOLANT OUT
 reactor-port-moderator = MODERATOR
+reactor-port-fuel = FUEL IN
+reactor-port-waste = WASTE OUT

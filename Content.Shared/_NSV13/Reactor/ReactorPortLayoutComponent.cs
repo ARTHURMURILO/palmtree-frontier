@@ -6,6 +6,18 @@ using Robust.Shared.Maths;
 namespace Content.Shared._NSV13.Reactor;
 
 /// <summary>
+///     The connections a reactor machine can present, for the examine overlay.
+/// </summary>
+public enum ReactorPortKind : byte
+{
+    CoolantIn,
+    CoolantOut,
+    Moderator,
+    Fuel,
+    Waste,
+}
+
+/// <summary>
 ///     Which face of a reactor machine each of its connections sits on.
 /// </summary>
 /// <remarks>
@@ -18,19 +30,31 @@ namespace Content.Shared._NSV13.Reactor;
 ///
 ///     Faces are in the machine's own frame. The client rotates them by the machine's world
 ///     rotation, so a reactor bolted down on a turned hull still reports the side the player sees.
+///
+///     One component carries every connection either engine uses, rather than one per engine, so
+///     the RBMK and the stormdrive branches stay identical and can be merged without touching it.
+///     A face left at <see cref="Direction.Invalid"/> is simply not drawn.
 /// </remarks>
 [RegisterComponent, NetworkedComponent, AutoGenerateComponentState]
 public sealed partial class ReactorPortLayoutComponent : Component
 {
-    /// <summary>Face the cold coolant is piped into.</summary>
+    /// <summary>Face the cold coolant is piped into. RBMK.</summary>
     [DataField, AutoNetworkedField]
     public Direction CoolantIn = Direction.Invalid;
 
-    /// <summary>Face the hot coolant leaves from.</summary>
+    /// <summary>Face the hot coolant leaves from. RBMK.</summary>
     [DataField, AutoNetworkedField]
     public Direction CoolantOut = Direction.Invalid;
 
-    /// <summary>Face the moderator feed is piped into. Anything fed here is destroyed.</summary>
+    /// <summary>Face the moderator feed is piped into. RBMK. Anything fed here is destroyed.</summary>
     [DataField, AutoNetworkedField]
     public Direction Moderator = Direction.Invalid;
+
+    /// <summary>Face the fuel gas is piped into. Stormdrive.</summary>
+    [DataField, AutoNetworkedField]
+    public Direction Fuel = Direction.Invalid;
+
+    /// <summary>Face the nucleium waste leaves from. Stormdrive.</summary>
+    [DataField, AutoNetworkedField]
+    public Direction Waste = Direction.Invalid;
 }
