@@ -240,24 +240,6 @@ public sealed class RbmkInteractionSystem : EntitySystem
             };
 
         args.PushMarkup(message);
-
-        // A slagged vessel has no pipes and no take-off left to describe: the core is a lump of
-        // corium and the wreck feeds nothing. Describing live ports on it reads as a bug.
-        if (reactor.Slagged)
-            return;
-
-        // The ported art has no visible pipe stubs and the machine only accepts pipes on its centre
-        // tile, so the faces are spelled out instead of leaving the crew to guess. They are given as
-        // screen sides rather than world compass points: the camera counter-rotates with the hull,
-        // so "west" is not what the player sees when the ship is pointed anywhere but north.
-        var machineRotation = _transform.GetWorldRotation(uid);
-        var viewerFrame = Transform(args.Examiner).GridUid is { } viewerGrid
-            ? _transform.GetWorldRotation(viewerGrid)
-            : Angle.Zero;
-        args.PushMarkup(Loc.GetString("rbmk-examine-ports",
-            ("inlet", ReactorExamine.ScreenSide(machineRotation, viewerFrame, Direction.West)),
-            ("outlet", ReactorExamine.ScreenSide(machineRotation, viewerFrame, Direction.East)),
-            ("moderator", ReactorExamine.ScreenSide(machineRotation, viewerFrame, Direction.North))));
     }
 
     /// <summary>
