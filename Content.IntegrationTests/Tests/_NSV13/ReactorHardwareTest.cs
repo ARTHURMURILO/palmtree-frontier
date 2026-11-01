@@ -1,9 +1,13 @@
+using System.Collections.Generic;
 using System.Linq;
 using Content.Server._NF.DangerTether;
 using Content.Server.Construction.Components;
 using Content.Server.NodeContainer;
+using Content.Server.NodeContainer.Nodes;
 using Content.Server.Power.Components;
 using Content.Server.Power.Nodes;
+using Content.Shared._NSV13.Reactor;
+using Content.Shared.Atmos;
 using Content.Shared.Construction.Components;
 using Content.Shared.Construction.Prototypes;
 using Content.Shared.NodeContainer;
@@ -90,6 +94,72 @@ public sealed class ReactorHardwareTest
             var deconstructPath = graph.Path(construction.Node, construction.DeconstructionNode!);
             Assert.That(deconstructPath is null || deconstructPath.Length == 0, Is.True,
                 $"{protoId} must not be deconstructible");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    ///     The examine overlay takes its faces from <see cref="ReactorPortLayoutComponent"/>, not
+    ///     from the pipe nodes - those are <c>serverOnly</c>, so the client never sees them. That
+    ///     leaves two copies of the same fact, and a silent drift would point the coolant arrows at
+    ///     the wrong face of a machine whose art gives no hint either way.
+    /// </summary>
+    [Test]
+    [TestCase(Rbmk)]
+    public async Task ReactorPortLayoutMatchesItsPipeNodes(string protoId)
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true, Connected = true });
+        var server = pair.Server;
+        var client = pair.Client;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        EntityUid reactor = default;
+        NetEntity netReactor = default;
+
+        await server.WaitAssertion(() =>
+        {
+            reactor = entMan.SpawnEntity(protoId, testMap.GridCoords);
+            netReactor = entMan.GetNetEntity(reactor);
+            var nodes = entMan.GetComponent<NodeContainerComponent>(reactor).Nodes;
+            var layout = entMan.GetComponent<ReactorPortLayoutComponent>(reactor);
+
+            AssertFace(nodes, "coolantIn", layout.CoolantIn);
+            AssertFace(nodes, "coolantOut", layout.CoolantOut);
+            AssertFace(nodes, "moderatorIn", layout.Moderator);
+
+            static void AssertFace(Dictionary<string, Node> nodes, string nodeName, Direction face)
+            {
+                Assert.That(nodes.TryGetValue(nodeName, out var node), Is.True, $"{nodeName} is missing");
+                Assert.That(node, Is.InstanceOf<PipeNode>(), $"{nodeName} must be a pipe node");
+                Assert.That(face, Is.Not.EqualTo(Direction.Invalid),
+                    $"{nodeName} has no face in the overlay layout, so the client cannot draw it");
+
+                var pipeFace = ((PipeNode) node!).OriginalPipeDirection;
+                Assert.That(pipeFace, Is.EqualTo(face.ToPipeDirection()),
+                    $"{nodeName}: the overlay points at {face}, the pipe node is on {pipeFace}");
+            }
+        });
+
+        await pair.RunTicksSync(5);
+
+        // The faces are the only thing the client is allowed to know: the pipe nodes never leave
+        // the server. If the component state does not actually cross the wire the overlay has
+        // nothing to draw and the whole feature is silently dead, so assert it here.
+        await client.WaitAssertion(() =>
+        {
+            var clientEntMan = client.ResolveDependency<IEntityManager>();
+            var clientReactor = clientEntMan.GetEntity(netReactor);
+
+            Assert.That(clientReactor.IsValid, Is.True, "the reactor entity did not reach the client");
+
+            Assert.That(clientEntMan.HasComponent<ReactorPortLayoutComponent>(clientReactor), Is.True,
+                "the port faces have to reach the client");
+
+            var layout = clientEntMan.GetComponent<ReactorPortLayoutComponent>(clientReactor);
+            Assert.That(layout.CoolantIn, Is.EqualTo(Direction.West), "client-side coolant inlet face");
+            Assert.That(layout.CoolantOut, Is.EqualTo(Direction.East), "client-side coolant outlet face");
+            Assert.That(layout.Moderator, Is.EqualTo(Direction.North), "client-side moderator face");
         });
 
         await pair.CleanReturnAsync();

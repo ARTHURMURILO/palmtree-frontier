@@ -87,6 +87,13 @@
       output:
         !type:CableDeviceNode
         nodeGroupID: HVPower
+  # Mirrors the pipe directions above so the client can draw them on examine. The art is symmetric
+  # and the nodes themselves never leave the server, so without this the player has no way to tell
+  # which face is the feed and which is the outlet once the machine has been rotated.
+  - type: ReactorPortLayout
+    coolantIn: West
+    coolantOut: East
+    moderator: North
   # The board is only informational now (deconstruction is disabled below), but keeping it wired
   # means a mapped or admin-spawned reactor still reports its circuitboard correctly, and the
   # later construction path can reuse it.
