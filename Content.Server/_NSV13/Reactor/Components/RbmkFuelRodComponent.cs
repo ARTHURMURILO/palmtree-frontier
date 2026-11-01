@@ -28,9 +28,13 @@ public sealed partial class RbmkFuelRodComponent : Component
     [ViewVariables(VVAccess.ReadOnly)]
     public float OriginalFuelPower = 0.20f;
 
-    /// <summary>Radiation strength when held, in rads/s.</summary>
+    /// <summary>
+    ///     Radiation strength when held, in rads/s. NSV13's BYOND figures (500 uranium, 1500
+    ///     plutonium, 6000 depleted) are divided by 1000 at the boundary; the default matches the
+    ///     uranium rod so a prototyped rod that forgets the field is not instantly lethal.
+    /// </summary>
     [DataField]
-    public float RadStrength = 500f;
+    public float RadStrength = 0.5f;
 
     /// <summary>
     ///     Rods with this set decay on their own regardless of whether they are in a reactor,

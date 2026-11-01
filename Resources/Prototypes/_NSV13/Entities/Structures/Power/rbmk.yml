@@ -22,9 +22,10 @@
   placement:
     mode: SnapgridCenter
   components:
+  # No `noRot`: the pipe and cable ports turn with the hull, so the art has to turn with them.
+  # A screen-upright sprite on a rotating ship drew its ports on faces the nodes no longer used.
   - type: Sprite
     sprite: _NSV13/Objects/Structures/Power/rbmk.rsi
-    noRot: true
     layers:
     - state: reactor_off
       map: ["core"]
@@ -182,6 +183,9 @@
     size: Large
   - type: RbmkFuelRod
     fuelPower: 0.10
+    # This rod does not self-decay, so its starting power is 0.10 rather than the 0.20 default the
+    # self-decaying rods use. The fuel console bar is a ratio of the two.
+    originalFuelPower: 0.10
     # DM rad_strength 500. Rescaled: see RbmkFuelRodComponent.RadStrength.
     radStrength: 0.5
     depletionThreshold: 100
@@ -218,10 +222,13 @@
   - type: Sprite
     sprite: _NSV13/Objects/Materials/control_rod.rsi
     state: normal
-  # DM: depletion_conversion_type = null - a spent rod stays spent.
+  # DM: depletion_conversion_type = null - a spent rod stays spent. This has to be spelled out:
+  # the prototype inherits the uranium rod's conversion, so without the explicit null a depleted
+  # rod would turn back into fresh plutonium.
   - type: RbmkFuelRod
     fuelPower: 0.05
     originalFuelPower: 0.20
     radStrength: 3
     selfDecay: true
     depletionThreshold: 100
+    depletionConversion: null

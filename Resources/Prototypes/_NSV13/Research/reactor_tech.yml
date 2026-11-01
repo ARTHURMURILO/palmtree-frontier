@@ -21,4 +21,6 @@
   - RbmkConsoleCircuitboard
   technologyPrerequisites:
   - NFBasicPowerGeneration
-  position: 4, 28
+  # 4,28 is already NFAdvancedPowerGeneration's slot in the live techtree; placing this node
+  # there drew two research buttons on top of each other.
+  position: 3, 29

@@ -28,15 +28,12 @@ public sealed class RbmkSmokeTest
 
         await server.WaitAssertion(() =>
         {
-            // Every gas the RBMK maths touches must resolve by its numeric id.
-            // BRANCH NOTE (rbmk branch): constricted plasma, hyper-noblium, nitryl, BZ, pluoxium and
-            // nucleium belong to the reactor-gas layer on `engines-all`; this branch's maths only
-            // touches the vanilla set.
+            // Every gas the RBMK maths touches must resolve by its numeric id. This branch carries
+            // nucleium as the core's waste gas; the other reactor gases stay on `engines-all`.
             foreach (var gas in new[]
                      {
-                         Gas.Plasma, /* Gas.ConstrictedPlasma, */ Gas.Tritium, Gas.Oxygen,
-                         Gas.Nitrogen, Gas.CarbonDioxide, Gas.WaterVapor,
-                         /* Gas.HyperNoblium, Gas.Nitryl, Gas.BZ, Gas.Pluoxium, Gas.Nucleium, */
+                         Gas.Plasma, Gas.Tritium, Gas.Oxygen, Gas.Nitrogen, Gas.CarbonDioxide,
+                         Gas.WaterVapor, Gas.Nucleium,
                      })
             {
                 Assert.DoesNotThrow(() => protoMan.Index<Content.Shared.Atmos.Prototypes.GasPrototype>(((int) gas).ToString()),
@@ -61,14 +58,17 @@ public sealed class RbmkSmokeTest
             // NOTE: the depleted rod declares 0.05 but, exactly like the original, its first
             // MapInit/process pass overwrites fuel_power with og_fuel_power (0.20). That quirk is
             // preserved deliberately - see spec §D.9 - so the expectation here is 0.20, not 0.05.
-            var expected = new (string Proto, float Power, float Threshold, bool SelfDecay)[]
+            // Depleted rods inherit from the uranium prototype, so their conversion target also has
+            // to be asserted: without an explicit null the inherited plutonium conversion would
+            // breed fresh fuel out of a spent rod.
+            var expected = new (string Proto, float Power, float Threshold, bool SelfDecay, string? Conversion)[]
             {
-                ("RbmkFuelRodUranium", 0.10f, 100f, false),
-                ("RbmkFuelRodPlutonium", 0.20f, 300f, true),
-                ("RbmkFuelRodDepleted", 0.20f, 100f, true),
+                ("RbmkFuelRodUranium", 0.10f, 100f, false, "RbmkFuelRodPlutonium"),
+                ("RbmkFuelRodPlutonium", 0.20f, 300f, true, "RbmkFuelRodDepleted"),
+                ("RbmkFuelRodDepleted", 0.20f, 100f, true, null),
             };
 
-            foreach (var (proto, power, threshold, selfDecay) in expected)
+            foreach (var (proto, power, threshold, selfDecay, conversion) in expected)
             {
                 var uid = entMan.SpawnEntity(proto, MapCoordinates.Nullspace);
                 var rod = entMan.GetComponent<RbmkFuelRodComponent>(uid);
@@ -76,6 +76,7 @@ public sealed class RbmkSmokeTest
                 Assert.That(rod.FuelPower, Is.EqualTo(power).Within(0.0001f), $"{proto} fuel power");
                 Assert.That(rod.DepletionThreshold, Is.EqualTo(threshold).Within(0.0001f), $"{proto} threshold");
                 Assert.That(rod.SelfDecay, Is.EqualTo(selfDecay), $"{proto} self-decay");
+                Assert.That(rod.DepletionConversion?.Id, Is.EqualTo(conversion), $"{proto} conversion");
 
                 entMan.DeleteEntity(uid);
             }

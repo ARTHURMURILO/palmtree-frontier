@@ -190,7 +190,7 @@ public sealed class ShipEventSystem : EntitySystem
     /// </remarks>
     public void ShakeLocal(EntityUid source, float radius = 6f, float strength = 1f)
     {
-        if (TerminatingOrDeleted(source))
+        if (TerminatingOrDeleted(source) || !TryGetGrid(source, out var grid))
             return;
 
         var xform = Transform(source);
@@ -207,7 +207,7 @@ public sealed class ShipEventSystem : EntitySystem
 
             var playerXform = Transform(player);
 
-            if (playerXform.MapID != mapId)
+            if (playerXform.MapID != mapId || playerXform.GridUid != grid)
                 continue;
 
             if ((_transform.GetWorldPosition(playerXform) - origin).LengthSquared() > radiusSquared)
@@ -403,7 +403,14 @@ public sealed class ShipEventSystem : EntitySystem
             return tiles;
 
         foreach (var tile in _map.GetAllTiles(grid, gridComp))
+        {
+            // `GetAllTiles` also returns tiles that explosions or construction have emptied. The
+            // slag storm must land on an actual floor, otherwise chunks sail off into the void.
+            if (tile.Tile.IsEmpty)
+                continue;
+
             tiles.Add(tile);
+        }
 
         return tiles;
     }

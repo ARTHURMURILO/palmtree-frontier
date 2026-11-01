@@ -61,7 +61,7 @@ public sealed class RbmkConsoleBoundUserInterfaceState : BoundUserInterfaceState
     /// </remarks>
     public RbmkIntegrityCause IntegrityCause;
 
-    /// <summary>Integrity lost on the last tick. Zero when the vessel is holding.</summary>
+    /// <summary>Integrity lost per second. Zero when the vessel is holding.</summary>
     public float IntegrityDamage;
 
     /// <summary>Fraction of the coolant demand the inlet is meeting, 0..1.</summary>
@@ -102,7 +102,7 @@ public sealed class RbmkConsoleBoundUserInterfaceState : BoundUserInterfaceState
     ///     The DM statistics console kept four lists of a hundred samples and replayed them into a
     ///     tgui <c>Chart.Line</c> (rbmk.dm:646-672). SS14 has no chart control, so the samples are
     ///     shipped to the client and drawn by <c>ReactorChart</c>; the arrays are trimmed server-side
-    ///     to <c>ReactorChart.HistoryLength</c> so the payload stays small.
+    ///     to <c>RbmkConsoleComponent.HistoryLength</c> so the payload stays small.
     /// </remarks>
     public List<float> PowerHistory = new();
 

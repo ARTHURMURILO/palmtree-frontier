@@ -62,13 +62,13 @@ public sealed class ReactorChart : Control
 
         for (var i = 1; i < GridLines; i++)
         {
-            var y = size.Y * i / GridLines;
+            var y = size.Y * i / (float) GridLines;
             handle.DrawLine(new Vector2(0f, y), new Vector2(size.X, y), GridColour);
         }
 
         for (var i = 1; i < GridColumns; i++)
         {
-            var x = size.X * i / GridColumns;
+            var x = size.X * i / (float) GridColumns;
             handle.DrawLine(new Vector2(x, 0f), new Vector2(x, size.Y), GridColour);
         }
 

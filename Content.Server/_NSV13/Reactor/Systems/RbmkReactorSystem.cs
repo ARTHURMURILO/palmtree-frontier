@@ -18,6 +18,7 @@ using Robust.Shared.Audio;
 using Robust.Shared.Audio.Systems;
 using Robust.Shared.Containers;
 using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
 using Robust.Shared.Random;
 using Robust.Shared.Timing;
 
@@ -200,7 +201,6 @@ public sealed class RbmkReactorSystem : EntitySystem
             reactor.LastCoolantTemperature = inputCelsius;
 
             var heatDelta = inputCelsius / 100f * reactor.GasAbsorptionEffectiveness;
-            reactor.LastHeatDelta = heatDelta;
             reactor.Temperature += heatDelta;
 
             // All coolant moves to the outlet, then the inlet is emptied.
@@ -268,11 +268,6 @@ public sealed class RbmkReactorSystem : EntitySystem
                     coolantOutAir.AdjustMoles(Gas.Nucleium, totalFuelMoles / 20f);
             }
 
-            reactor.LastPowerProduced = powerProduced;
-
-            if (TryComp<PowerSupplierComponent>(uid, out var supplier))
-                supplier.MaxSupply = powerProduced;
-
             // BRANCH NOTE (rbmk branch): the pluoxium term needs the reactor gases.
             var totalControlMoles = moderatorAir.GetMoles(Gas.Nitrogen)
                                     + moderatorAir.GetMoles(Gas.CarbonDioxide) * 2f
@@ -309,13 +304,14 @@ public sealed class RbmkReactorSystem : EntitySystem
             moderatorAir.Clear();
             reactor.K += totalFuelMoles / 1000f;
         }
-        else
-        {
-            reactor.LastPowerProduced = 0f;
 
-            if (TryComp<PowerSupplierComponent>(uid, out var supplier))
-                supplier.MaxSupply = 0f;
-        }
+        // A PowerSupplier is persistent state: it has to be written every tick, not only on the
+        // branch that found fuel in the moderator gate. A stocked gate with no fuel gas (or one
+        // that just ran dry) otherwise keeps exporting the last tick's wattage forever.
+        reactor.LastPowerProduced = powerProduced;
+
+        if (TryComp<PowerSupplierComponent>(uid, out var supplier))
+            supplier.MaxSupply = reactor.LastPowerProduced;
 
         // ---------------- FUEL RODS ----------------
         var fuelPower = 0f;
@@ -365,6 +361,13 @@ public sealed class RbmkReactorSystem : EntitySystem
             reactor.Temperature -= 10f;
 
         HandleAlerts(uid, reactor);
+
+        // A meltdown (or a blowout, which calls one) sets the wreck's radiation and visuals itself.
+        // Carrying on would immediately overwrite the former with the live-core radiation figure and
+        // keep heating anything standing on a dead core.
+        if (reactor.Slagged)
+            return;
+
         UpdateRadiation(uid, reactor, spice);
         OverloadFlicker(uid, reactor);
         UpdateVisuals(uid, reactor);
@@ -539,7 +542,11 @@ public sealed class RbmkReactorSystem : EntitySystem
         for (var i = 0; i < count; i++)
         {
             var offset = _random.NextAngle().ToVec() * _random.NextFloat(0f, 0.6f);
-            Spawn(reactor.VentEffect, new MapCoordinates(coords.Position + offset, coords.MapId));
+            var puff = Spawn(reactor.VentEffect, new MapCoordinates(coords.Position + offset, coords.MapId));
+
+            // The ported puff is drawn falling out of the top of its cell; half a turn makes it
+            // rise out of the core instead.
+            _transform.SetLocalRotation(puff, Angle.FromDegrees(180f));
         }
     }
 
@@ -726,8 +733,24 @@ public sealed class RbmkReactorSystem : EntitySystem
             reactor.BlastPeakIntensity,
             canCreateVacuum: true);
 
-        // NSV13: empulse(src, 25, 15). SS14 takes light range, energy drain and duration.
-        _emp.EmpPulse(_transform.GetMapCoordinates(uid), 15f, 100000f, 30f);
+        // NSV13: empulse(src, 25, 15). SS14 takes light range, energy drain and duration. The pulse
+        // is map-coordinate based, so the other hulls are marked immune: a meltdown on one ship
+        // must not black out the electronics of a ship flying in formation.
+        List<EntityUid>? immuneGrids = null;
+
+        if (_shipEvent.TryGetGrid(uid, out var shipGrid))
+        {
+            immuneGrids = new List<EntityUid>();
+            var grids = EntityQueryEnumerator<MapGridComponent>();
+
+            while (grids.MoveNext(out var gridUid, out _))
+            {
+                if (gridUid != shipGrid)
+                    immuneGrids.Add(gridUid);
+            }
+        }
+
+        _emp.EmpPulse(_transform.GetMapCoordinates(uid), 15f, 100000f, 30f, immuneGrids);
 
         // The part the crew feels: no damage, just everything not bolted down becoming a projectile.
         _shipEvent.Shockwave(uid,
@@ -824,6 +847,14 @@ public sealed class RbmkReactorSystem : EntitySystem
         reactor.K = 0f;
         reactor.DesiredK = 0f;
         reactor.Temperature = 0f;
+        reactor.Power = 0f;
+
+        // A shut-down core stops ticking, so this is the last chance to clear the supplier; leaving
+        // it at the tick's last figure would keep feeding the grid from a dead reactor.
+        reactor.LastPowerProduced = 0f;
+
+        if (TryComp<PowerSupplierComponent>(uid, out var supplier))
+            supplier.MaxSupply = 0f;
 
         // The hum belongs to the running core; silence it when the reaction dies.
         _ambient.SetAmbience(uid, false);

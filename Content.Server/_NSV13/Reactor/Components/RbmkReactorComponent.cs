@@ -104,10 +104,6 @@ public sealed partial class RbmkReactorComponent : Component
     [ViewVariables(VVAccess.ReadOnly)]
     public float LastPowerProduced;
 
-    /// <summary>Last tick's coolant heat delta, for the UI.</summary>
-    [ViewVariables(VVAccess.ReadOnly)]
-    public float LastHeatDelta;
-
     /// <summary>Terminal state. Once true the reactor stops processing permanently.</summary>
     [ViewVariables(VVAccess.ReadOnly)]
     public bool Slagged;

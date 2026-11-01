@@ -2,11 +2,13 @@
 
 using Content.Server._NSV13.Reactor.Components;
 using Content.Server.Temperature.Systems;
+using Content.Server.Tools;
 using Content.Shared._NSV13.Reactor;
 using Content.Shared.DoAfter;
 using Content.Shared.Examine;
 using Content.Shared.Interaction;
 using Content.Shared.Nutrition.Components;
+using Content.Shared.Nutrition.EntitySystems;
 using Content.Shared.Popups;
 using Content.Shared.Tools.Components;
 using Content.Server.Temperature.Components;
@@ -37,12 +39,15 @@ public sealed class RbmkInteractionSystem : EntitySystem
     [Dependency] private readonly SharedContainerSystem _container = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
     [Dependency] private readonly MetaDataSystem _meta = default!;
+    [Dependency] private readonly ToolSystem _tool = default!;
 
     /// <summary>§attackby: fuel cannot be touched once the core is above this power percentage.</summary>
     public const float MaxPowerForFuelHandling = 20f;
 
     private static readonly TimeSpan FuelInsertTime = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan RepairTime = TimeSpan.FromSeconds(5);
+
+    private const string WeldingQuality = "Welding";
 
     public override void Initialize()
     {
@@ -52,6 +57,7 @@ public sealed class RbmkInteractionSystem : EntitySystem
         SubscribeLocalEvent<RbmkReactorComponent, ExaminedEvent>(OnExamined);
         SubscribeLocalEvent<RbmkReactorComponent, RbmkFuelInsertDoAfterEvent>(OnFuelInserted);
         SubscribeLocalEvent<RbmkReactorComponent, RbmkSealantDoAfterEvent>(OnSealed);
+        SubscribeLocalEvent<RbmkReactorComponent, RbmkWeldDoAfterEvent>(OnWelded);
     }
 
     private void OnInteractUsing(EntityUid uid, RbmkReactorComponent reactor, InteractUsingEvent args)
@@ -174,6 +180,11 @@ public sealed class RbmkInteractionSystem : EntitySystem
 
         args.Handled = true;
 
+        // The vessel can melt down during the do-after; sealing a slagged wreck would repair a
+        // machine that no longer accepts repairs.
+        if (reactor.Slagged)
+            return;
+
         // The DM original re-checks the same 350/400 gate after the do_after, so stacked do_afters
         // cannot push the seals past the point where sealant is supposed to stop working.
         if (reactor.VesselIntegrity >= reactor.MaxVesselIntegrity * 0.875f)
@@ -209,9 +220,43 @@ public sealed class RbmkInteractionSystem : EntitySystem
         }
 
         args.Handled = true;
+
+        // Go through the tool system rather than applying the patch instantly: it enforces the
+        // welder being lit and fuelled (and consumes that fuel), and keeps the repair behind the
+        // standard tool do-after. The old open-coded +20 let an empty, unlit welder fix the vessel
+        // for free, one click at a time.
+        _tool.UseTool(args.Used, args.User, uid, 0f, WeldingQuality, new RbmkWeldDoAfterEvent(), fuel: 2f);
+    }
+
+    private void OnWelded(EntityUid uid, RbmkReactorComponent reactor, RbmkWeldDoAfterEvent args)
+    {
+        if (args.Cancelled || args.Handled)
+            return;
+
+        args.Handled = true;
+
+        // The vessel state can change during the do-after, so re-check the same gates the DM's
+        // welder_act did before applying the patch.
+        if (reactor.Slagged)
+        {
+            _popup.PopupEntity(Loc.GetString("rbmk-repair-slagged"), uid, args.User);
+            return;
+        }
+
+        if (reactor.Power >= MaxPowerForFuelHandling)
+        {
+            _popup.PopupEntity(Loc.GetString("rbmk-repair-power"), uid, args.User);
+            return;
+        }
+
+        if (reactor.VesselIntegrity > reactor.MaxVesselIntegrity * 0.5f)
+        {
+            _popup.PopupEntity(Loc.GetString("rbmk-repair-weld-free"), uid, args.User);
+            return;
+        }
+
         reactor.VesselIntegrity = MathF.Min(reactor.VesselIntegrity + 20f, reactor.MaxVesselIntegrity);
 
-        _audio.PlayPvs("/Audio/Items/welder.ogg", uid);
         _popup.PopupEntity(Loc.GetString("rbmk-repair-welded"), uid, args.User);
     }
 
@@ -241,9 +286,23 @@ public sealed class RbmkInteractionSystem : EntitySystem
 
         args.PushMarkup(message);
 
+        // A slagged wreck has no usable ports left to describe.
+        if (reactor.Slagged)
+            return;
+
         // The ported art has no visible pipe stubs and the machine only accepts pipes on its centre
-        // tile, so the faces are spelled out instead of leaving the crew to guess.
-        args.PushMarkup(Loc.GetString("rbmk-examine-ports"));
+        // tile, so the faces are spelled out instead of leaving the crew to guess. They are given
+        // as screen sides, not world compass points: a rotated hull turns the art and its ports,
+        // so "west" is not what the player sees on a ship pointed anywhere but north.
+        var machineRotation = _transform.GetWorldRotation(uid);
+        var viewerFrame = Transform(args.Examiner).GridUid is { } viewerGrid
+            ? _transform.GetWorldRotation(viewerGrid)
+            : Angle.Zero;
+
+        args.PushMarkup(Loc.GetString("rbmk-examine-ports",
+            ("inlet", ReactorExamine.ScreenSide(machineRotation, viewerFrame, Direction.West)),
+            ("outlet", ReactorExamine.ScreenSide(machineRotation, viewerFrame, Direction.East)),
+            ("moderator", ReactorExamine.ScreenSide(machineRotation, viewerFrame, Direction.North))));
     }
 
     /// <summary>
@@ -256,13 +315,28 @@ public sealed class RbmkInteractionSystem : EntitySystem
             return;
 
         var coords = _transform.GetMapCoordinates(uid);
+        var gridUid = Transform(uid).GridUid;
 
         foreach (var entity in _lookup.GetEntitiesInRange(coords.MapId, coords.Position, 0.5f))
         {
             if (entity == uid)
                 continue;
 
-            if (HasComp<TemperatureComponent>(entity))
+            // The lookup is map-coordinate based; never let the core heat or cook something on
+            // another grid that happens to overlap its position.
+            if (gridUid != null &&
+                TryComp<TransformComponent>(entity, out var entityXform) &&
+                entityXform.GridUid != gridUid)
+            {
+                continue;
+            }
+
+            // Food uses EdibleComponent on this fork; FoodComponent is the obsolete predecessor and
+            // most recipes no longer carry it, so checking only that made the grill never fire.
+            var isFood = HasComp<FoodComponent>(entity) ||
+                         TryComp<EdibleComponent>(entity, out var edible) && edible.Edible == IngestionSystem.Food;
+
+            if (HasComp<TemperatureComponent>(entity) && !isFood)
             {
                 // DM: adjust_bodytemperature(CLAMP(temperature, BODYTEMP_COOLING_MAX, BODYTEMP_HEATING_MAX)).
                 // Degrees are converted to joules by the body's heat capacity, which the SS14
@@ -272,7 +346,7 @@ public sealed class RbmkInteractionSystem : EntitySystem
                 continue;
             }
 
-            if (reactor.Power < 20f || !HasComp<FoodComponent>(entity))
+            if (reactor.Power < 20f || !isFood)
                 continue;
 
             if (_random.Prob(0.8f))

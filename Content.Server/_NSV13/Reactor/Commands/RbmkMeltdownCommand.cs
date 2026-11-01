@@ -58,14 +58,24 @@ public sealed class RbmkMeltdownCommand : IConsoleCommand
                 return;
             }
 
-            var origin = _entMan.GetComponent<TransformComponent>(attacker).Coordinates;
+            var transform = _entMan.System<SharedTransformSystem>();
+            var originXform = _entMan.GetComponent<TransformComponent>(attacker);
+            var origin = transform.GetWorldPosition(originXform);
             var best = float.MaxValue;
 
             var query = _entMan.EntityQueryEnumerator<RbmkReactorComponent>();
             while (query.MoveNext(out var uid, out _))
             {
-                var distance = (_entMan.GetComponent<TransformComponent>(uid).Coordinates.Position - origin.Position)
-                    .LengthSquared();
+                var reactorXform = _entMan.GetComponent<TransformComponent>(uid);
+
+                // Positions on different maps are unrelated coordinate spaces; without this a
+                // reactor on another map could be "nearer" by raw X/Y than one on the caller's ship.
+                if (reactorXform.MapID != originXform.MapID)
+                    continue;
+
+                // World positions, not Coordinates: two grids on the same map have unrelated local
+                // coordinate spaces, so comparing local positions could pick a reactor decks away.
+                var distance = (transform.GetWorldPosition(reactorXform) - origin).LengthSquared();
 
                 if (distance >= best)
                     continue;

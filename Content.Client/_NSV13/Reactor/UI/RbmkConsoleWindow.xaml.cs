@@ -46,7 +46,6 @@ public sealed partial class RbmkConsoleWindow : DefaultWindow
     private static readonly StyleBoxFlat RedFill = Fill(Red);
     private static readonly StyleBoxFlat GreenFill = Fill(Green);
     private static readonly StyleBoxFlat AmberFill = Fill(Amber);
-    private static readonly StyleBoxFlat GreyFill = Fill(Grey);
 
     private RbmkConsoleBoundUserInterfaceState? _state;
 
@@ -124,10 +123,15 @@ public sealed partial class RbmkConsoleWindow : DefaultWindow
     {
         _state = state;
 
+        // Always take the server's notice, including when the console has lost its reactor: a stale
+        // "fuel handling refused" line otherwise stays under a NO REACTOR LINKED status.
+        MessageLabel.Text = state.Notice;
+
         if (!state.HasReactor)
         {
             StatusLabel.Text = Loc.GetString("rbmk-console-no-reactor");
             StatsChart.Clear();
+            RodList.RemoveAllChildren();
             return;
         }
 
@@ -146,8 +150,6 @@ public sealed partial class RbmkConsoleWindow : DefaultWindow
         UpdateRodsTab(state);
         UpdateStatsTab(state);
         UpdateFuelTab(state);
-
-        MessageLabel.Text = state.Notice;
     }
 
     private void UpdateRodsTab(RbmkConsoleBoundUserInterfaceState state)
@@ -201,10 +203,12 @@ public sealed partial class RbmkConsoleWindow : DefaultWindow
         RadiationLabel.Text = Loc.GetString("rbmk-console-radiation-value", ("value", $"{state.Radiation:F1}"));
         FuelRodsLabel.Text = $"{state.FuelRods} / {state.MaxFuelRods}";
 
-        // Four traces, one per legend entry, with the ranges RbmkStats.js declares.
+        // Four traces, one per legend entry, with the ranges RbmkStats.js declares. The original
+        // chart stored power * 10 against a 0..1500 axis; PowerHistory holds the raw percentage,
+        // so the equivalent axis here is 0..150.
         StatsChart.SetSeries(new[]
         {
-            new ReactorChart.ChartSeries { Values = state.PowerHistory.ToArray(), Min = 0f, Max = 1500f, Colour = Yellow },
+            new ReactorChart.ChartSeries { Values = state.PowerHistory.ToArray(), Min = 0f, Max = 150f, Colour = Yellow },
             new ReactorChart.ChartSeries { Values = state.PsiHistory.ToArray(), Min = 0f, Max = 1500f, Colour = White },
             new ReactorChart.ChartSeries { Values = state.CoolantInHistory.ToArray(), Min = -273.15f, Max = 1227f, Colour = Color.FromHex("#7FB3FF") },
             new ReactorChart.ChartSeries { Values = state.CoolantOutHistory.ToArray(), Min = -273.15f, Max = 1227f, Colour = Red },
@@ -269,9 +273,17 @@ public sealed partial class RbmkConsoleWindow : DefaultWindow
 
         foreach (var rod in state.Rods)
         {
-            var remaining = rod.OriginalFuelPower <= 0f
+            // A rod is "used up" by whichever runs out first: the fissile power it still produces
+            // (self-decaying rods) or the depletion it has accumulated (uranium, plutonium). Using
+            // only the power ratio showed a fresh uranium rod at half full because its declared
+            // starting power is half the shared 0.20 baseline.
+            var powerRemaining = rod.OriginalFuelPower <= 0f
                 ? 0f
                 : Math.Clamp(rod.FuelPower / rod.OriginalFuelPower, 0f, 1f);
+            var depletionRemaining = rod.DepletionThreshold <= 0f
+                ? 1f
+                : 1f - Math.Clamp(rod.Depletion / rod.DepletionThreshold, 0f, 1f);
+            var remaining = Math.Min(powerRemaining, depletionRemaining);
 
             var row = new BoxContainer
             {

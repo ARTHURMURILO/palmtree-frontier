@@ -44,6 +44,12 @@ public sealed partial class RbmkSealantDoAfterEvent : SimpleDoAfterEvent
 {
 }
 
+/// <summary>Raised when a welder finishes patching cracks in an RBMK vessel.</summary>
+[Serializable, NetSerializable]
+public sealed partial class RbmkWeldDoAfterEvent : SimpleDoAfterEvent
+{
+}
+
 /// <summary>
 ///     One step of the stormdrive's meltdown recovery chain. Shared because
 ///     <see cref="StormdriveRepairDoAfterEvent"/> carries it over the network.

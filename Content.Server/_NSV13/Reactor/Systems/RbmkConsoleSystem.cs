@@ -54,10 +54,8 @@ public sealed class RbmkConsoleSystem : EntitySystem
 
     private void OnUiOpened(EntityUid uid, RbmkConsoleComponent console, BoundUIOpenedEvent args)
     {
-        // A console built after the reactor, or one whose reactor was moved, gets another chance.
-        if (console.Reactor is null)
-            ResolveReactor(uid, console);
-
+        // A console built after the reactor, or one whose reactor was moved, gets another look.
+        ResolveReactor(uid, console);
         UpdateUi(uid, console);
     }
 
@@ -67,16 +65,27 @@ public sealed class RbmkConsoleSystem : EntitySystem
     /// </summary>
     public void ResolveReactor(EntityUid uid, RbmkConsoleComponent console)
     {
+        // Without a grid there is no ship to be scoped to; drop any stale binding rather than keep
+        // driving a reactor the console may no longer share a deck with.
+        if (!_shipEvent.TryGetGrid(uid, out var grid))
+        {
+            console.Reactor = null;
+            return;
+        }
+
         if (console.Reactor is { } current)
         {
-            if (!Deleted(current) && HasComp<RbmkReactorComponent>(current))
+            // Re-validate the binding, not just its existence: a reactor can be moved to another
+            // grid, and a console must never keep driving across that boundary.
+            if (!Deleted(current) &&
+                HasComp<RbmkReactorComponent>(current) &&
+                Transform(current).GridUid == grid)
+            {
                 return;
+            }
 
             console.Reactor = null;
         }
-
-        if (!_shipEvent.TryGetGrid(uid, out var grid))
-            return;
 
         var consoleXform = Transform(uid);
         var bestDist = float.MaxValue;
