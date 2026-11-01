@@ -269,9 +269,17 @@ public sealed partial class RbmkConsoleWindow : DefaultWindow
 
         foreach (var rod in state.Rods)
         {
-            var remaining = rod.OriginalFuelPower <= 0f
+            // A rod is "used up" by whichever runs out first: the fissile power it still produces
+            // (self-decaying rods) or the depletion it has accumulated (uranium, plutonium). Using
+            // only the power ratio showed a fresh uranium rod at half full because its declared
+            // starting power is half the shared 0.20 baseline.
+            var powerRemaining = rod.OriginalFuelPower <= 0f
                 ? 0f
                 : Math.Clamp(rod.FuelPower / rod.OriginalFuelPower, 0f, 1f);
+            var depletionRemaining = rod.DepletionThreshold <= 0f
+                ? 1f
+                : 1f - Math.Clamp(rod.Depletion / rod.DepletionThreshold, 0f, 1f);
+            var remaining = Math.Min(powerRemaining, depletionRemaining);
 
             var row = new BoxContainer
             {

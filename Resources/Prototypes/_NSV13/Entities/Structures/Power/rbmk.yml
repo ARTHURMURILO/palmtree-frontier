@@ -209,6 +209,9 @@
     size: Large
   - type: RbmkFuelRod
     fuelPower: 0.10
+    # This rod does not self-decay, so its starting power is 0.10 rather than the 0.20 default the
+    # self-decaying rods use. The fuel console bar is a ratio of the two.
+    originalFuelPower: 0.10
     # DM rad_strength 500. Rescaled: see RbmkFuelRodComponent.RadStrength.
     radStrength: 0.5
     depletionThreshold: 100
