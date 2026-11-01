@@ -1,7 +1,5 @@
-using Content.Server.Shuttles.Components;
 using Robust.Server.GameObjects;
 using Robust.Shared.Map;
-using Robust.Shared.Map.Components;
 using Robust.Shared.Timing;
 
 namespace Content.Server._NF.DangerTether;
@@ -10,11 +8,6 @@ namespace Content.Server._NF.DangerTether;
 /// A system to handle tethering dangerous objects, and deleting them when out of range of any tether.
 /// Runs periodic checks to handle deletion.
 /// </summary>
-/// <remarks>
-///     Palmtree: a tether is not the only place a dangerous object is allowed to exist. Anything
-///     sitting on a ship's grid is somebody's deliberate engineering, so it is left alone;
-///     see <see cref="AnyTetherInRange"/>.
-/// </remarks>
 public sealed class DangerTetherSystem : EntitySystem
 {
     [Dependency] private IGameTiming _timing = default!;
@@ -23,14 +16,12 @@ public sealed class DangerTetherSystem : EntitySystem
     private readonly TimeSpan _scanPeriod = TimeSpan.FromSeconds(0.5);
     private TimeSpan _nextScan = TimeSpan.Zero;
     private List<(MapCoordinates Position, float Distance)> _tethers = new();
-    private EntityQuery<ShuttleComponent> _shuttleQuery;
 
     public override void Initialize()
     {
         base.Initialize();
 
         SubscribeLocalEvent<DangerTetheredComponent, MapInitEvent>(OnTetheredMapInit);
-        _shuttleQuery = GetEntityQuery<ShuttleComponent>();
     }
 
     /// <summary>
@@ -76,38 +67,9 @@ public sealed class DangerTetherSystem : EntitySystem
         }
     }
 
-    /// <summary>How far outside a ship's hull a danger still counts as the ship's problem.</summary>
-    private const float ShipMargin = 25f;
-
     public bool AnyTetherInRange(EntityUid ent)
     {
-        // Palmtree: a ship is a tether. The Frontier check exists to stop a singularity being spawned
-        // in deep space and drifting into a station; it also deleted the singularity or energy ball a
-        // supermatter produces when it fails, because a ship has no DangerTether marker to stand in
-        // range of. That made the collapse failure mode impossible to reach on the one kind of grid
-        // this fork is actually about. Mapped stations and POIs keep their markers (and their
-        // protection); a flying grid is somebody's own problem to survive.
-        var xform = Transform(ent);
-        if (xform.GridUid is { } grid && _shuttleQuery.HasComp(grid))
-            return true;
-
-        // The parent check is not enough: removing a tile deparents everything standing on it to the
-        // map (SharedTransformSystem.MapManagerOnTileChanged). A singularity eating the floor out
-        // from under itself therefore lost its GridUid, failed this check and was culled half a
-        // second later - the exact "eats the hull, then vanishes in space" report. A danger within
-        // a short hop of a shuttle's footprint is still that ship's problem.
         var targetCoords = _transform.GetMapCoordinates(ent);
-        var shuttles = EntityQueryEnumerator<ShuttleComponent, MapGridComponent, TransformComponent>();
-        while (shuttles.MoveNext(out _, out _, out var gridComp, out var gridXform))
-        {
-            if (gridXform.MapID != targetCoords.MapId)
-                continue;
-
-            var bounds = gridXform.WorldMatrix.TransformBox(gridComp.LocalAABB).Enlarged(ShipMargin);
-            if (bounds.Contains(targetCoords.Position))
-                return true;
-        }
-
         foreach (var tetherEntry in _tethers)
         {
             if (tetherEntry.Position.MapId != targetCoords.MapId)

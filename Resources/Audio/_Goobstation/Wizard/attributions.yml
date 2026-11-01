@@ -1,8 +1,0 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later
-#
-# Only the supermatter sliver sound is ported; the rest of Goobstation's wizard folder is not.
-
-- files: ["supermatter.ogg"]
-  license: "CC-BY-SA-3.0"
-  copyright: "Taken from tgstation."
-  source: "https://github.com/tgstation/tgstation/blob/80ab61c8c7741e1d95e5f168357a9e6e61b38f2c/sound/effects/supermatter.ogg"

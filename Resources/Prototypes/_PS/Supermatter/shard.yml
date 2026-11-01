@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: 2025 Goob Station contributors
+# SPDX-FileCopyrightText: 2025 Palmtree Frontier contributors
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+# Palmtree: the smaller, movable supermatter crystal sold as a ship engine.
+# Mechanics come from the EE/Coyote/Triad engine; the housing and ship
+# packaging are Palmtree additions.
+- type: entity
+  parent: Supermatter
+  id: SupermatterSmall
+  name: supermatter shard
+  description: A supermatter crystal in a compact mounting frame. Smaller than the real thing, and no safer.
+  components:
+  - type: Transform
+    anchored: false
+    noRot: true
+  - type: Anchorable
+    delay: 2
+  - type: Pullable
+  - type: Physics
+    bodyType: Dynamic
+  - type: Sprite
+    sprite: _PS/Supermatter/supermatter_small.rsi
+    drawdepth: WallMountedItems
+    layers:
+    - state: shard
+      map: ["enum.SupermatterVisuals.Crystal"]
+    - state: shard-psy
+      map: ["enum.SupermatterVisuals.Psy"]
+      color: "#ffffff00"
+  - type: Icon
+    sprite: _PS/Supermatter/supermatter_small.rsi
+    state: shard
+  - type: SupermatterVisuals
+    crystal:
+      Normal: { state: shard }
+      Glow: { state: shard-glow }
+      GlowEmergency: { state: shard-glow }
+      GlowDelam: { state: shard-emissive }
+  - type: Supermatter
+    consoleIcon: { sprite: _PS/Supermatter/supermatter_small.rsi, state: shard }
+
+- type: entity
+  parent: BaseNFFlatpack
+  id: SupermatterSmallFlatpack
+  name: supermatter shard flatpack
+  description: A flatpack used for constructing a supermatter shard. Handle with the same care as the real thing.
+  components:
+  - type: Flatpack
+    entity: SupermatterSmall
+  - type: Sprite
+    sprite: _NF/Objects/Devices/flatpack.rsi
+    layers:
+    - state: power_generator

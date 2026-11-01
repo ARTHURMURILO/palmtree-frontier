@@ -533,12 +533,4 @@ public enum LogType
     /// </summary>
     Interaction = 500,
     #endregion Palmtree Values
-
-    // Goobstation Specific
-    #region Goobstation Values
-    /// <summary>
-    /// Supermatter events, mostly activations.
-    /// </summary>
-    Supermatter = 10003,
-    #endregion Goobstation Values
 }
