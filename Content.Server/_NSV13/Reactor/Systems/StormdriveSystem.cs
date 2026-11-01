@@ -608,7 +608,12 @@ public sealed class StormdriveSystem : EntitySystem
                 continue;
 
             effectiveness += rod.Effectiveness;
-            integrity += rod.Integrity;
+
+            // Palmtree: rods do not share a maximum. A crystalline rod starts at 200 and a techfab
+            // one at 80, so averaging raw integrity and clamping the result to 100 read a full bar
+            // on a crystalline rod until it had lost half its life, while the rod bay showed 88 %.
+            // The mean is taken as a percentage of each rod's own maximum instead.
+            integrity += rod.MaxIntegrity <= 0f ? 0f : rod.Integrity / rod.MaxIntegrity * 100f;
         }
 
         comp.ControlRodModifier = effectiveness / comp.ControlRods.Count;
