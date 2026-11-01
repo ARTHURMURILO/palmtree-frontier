@@ -262,10 +262,10 @@ public sealed class RbmkReactorSystem : EntitySystem
 
                 spice += moderatorAir.GetMoles(Gas.Tritium) / 5f;
 
-                // BRANCH NOTE (rbmk branch): nucleium is a reactor gas; without the gas layer the
-                // outlet simply carries heat and no exotic byproduct.
-                // if (reactor.Power >= 20f)
-                //     coolantOutAir.AdjustMoles(Gas.Nucleium, totalFuelMoles / 20f);
+                // Palmtree: nucleium is the one reactor gas this branch carries; it is the
+                // core's waste byproduct. The rest of the reactor gases stay commented above.
+                if (reactor.Power >= 20f)
+                    coolantOutAir.AdjustMoles(Gas.Nucleium, totalFuelMoles / 20f);
             }
 
             reactor.LastPowerProduced = powerProduced;
