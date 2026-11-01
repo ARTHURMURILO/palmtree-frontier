@@ -1,4 +1,4 @@
-# NSV13 - lathe recipes and research for the two reactors.
+# NSV13 - lathe recipes for the stormdrive.
 #
 # The DM techweb had two nodes: `reactor_control_rods` (cheap, techfab-made rods) and
 # `stormdrive_reactor_control` (the console board). The machine boards and the reactors themselves were
@@ -28,5 +28,3 @@
   icon:
     sprite: _NSV13/Objects/Materials/control_rod.rsi
     state: inferior
-
-# The RBMK's vessel patch: cheap, but you need it mid-emergency.

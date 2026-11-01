@@ -56,9 +56,9 @@ public sealed class StormdriveConsoleSystem : EntitySystem
 
     private void OnUiOpened(EntityUid uid, StormdriveConsoleComponent console, BoundUIOpenedEvent args)
     {
-        if (console.Reactor is null)
-            ResolveReactor(uid, console);
-
+        // ResolveReactor is a no-op while the current binding is alive, so this also recovers a
+        // console whose reactor was deleted (or moved to another grid) while nobody was looking.
+        ResolveReactor(uid, console);
         UpdateUi(uid, console);
     }
 
@@ -133,6 +133,11 @@ public sealed class StormdriveConsoleSystem : EntitySystem
     /// <summary>
     ///     Push one composition sample per gas, trimmed to the console's history length.
     /// </summary>
+    /// <remarks>
+    ///     Samples are percentages of the fuel line, not raw moles. That is what the DM
+    ///     <c>gas_records</c> stored and what the chart's fixed 0-100 axis draws; raw moles made
+    ///     every rich mixture clip at the top of the graph and flattened the small gases to nothing.
+    /// </remarks>
     private void Sample(StormdriveConsoleComponent console)
     {
         if (console.Reactor is not { } reactorUid ||
@@ -146,28 +151,32 @@ public sealed class StormdriveConsoleSystem : EntitySystem
             return;
 
         var air = fuelNode.Air;
+        var total = air.TotalMoles;
 
         Span<float> values = stackalloc float[(int) StormdriveConsoleGas.Count];
         // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
         // ConstrictedPlasma
-        values[(int) StormdriveConsoleGas.Plasma] = air.GetMoles(Gas.Plasma);
-        values[(int) StormdriveConsoleGas.Tritium] = air.GetMoles(Gas.Tritium);
-        values[(int) StormdriveConsoleGas.Oxygen] = air.GetMoles(Gas.Oxygen);
-        values[(int) StormdriveConsoleGas.Nitrogen] = air.GetMoles(Gas.Nitrogen);
-        values[(int) StormdriveConsoleGas.CarbonDioxide] = air.GetMoles(Gas.CarbonDioxide);
-        values[(int) StormdriveConsoleGas.WaterVapour] = air.GetMoles(Gas.WaterVapor);
-        // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
-        // HyperNoblium
-        values[(int) StormdriveConsoleGas.NitrousOxide] = air.GetMoles(Gas.NitrousOxide);
-        // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
-        // Nitryl
-        // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
-        // BZ
-        // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
-        // Stimulum
-        // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
-        // Pluoxium
-        values[(int) StormdriveConsoleGas.Nucleium] = air.GetMoles(Gas.Nucleium);
+        if (total > 0f)
+        {
+            values[(int) StormdriveConsoleGas.Plasma] = air.GetMoles(Gas.Plasma) / total * 100f;
+            values[(int) StormdriveConsoleGas.Tritium] = air.GetMoles(Gas.Tritium) / total * 100f;
+            values[(int) StormdriveConsoleGas.Oxygen] = air.GetMoles(Gas.Oxygen) / total * 100f;
+            values[(int) StormdriveConsoleGas.Nitrogen] = air.GetMoles(Gas.Nitrogen) / total * 100f;
+            values[(int) StormdriveConsoleGas.CarbonDioxide] = air.GetMoles(Gas.CarbonDioxide) / total * 100f;
+            values[(int) StormdriveConsoleGas.WaterVapour] = air.GetMoles(Gas.WaterVapor) / total * 100f;
+            // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
+            // HyperNoblium
+            values[(int) StormdriveConsoleGas.NitrousOxide] = air.GetMoles(Gas.NitrousOxide) / total * 100f;
+            // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
+            // Nitryl
+            // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
+            // BZ
+            // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
+            // Stimulum
+            // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
+            // Pluoxium
+            values[(int) StormdriveConsoleGas.Nucleium] = air.GetMoles(Gas.Nucleium) / total * 100f;
+        }
 
         for (var i = 0; i < (int) StormdriveConsoleGas.Count; i++)
         {
@@ -212,7 +221,8 @@ public sealed class StormdriveConsoleSystem : EntitySystem
         state.PipeOpen = reactor.DumpingFuel;
         state.LastPowerProduced = reactor.LastPowerProduced;
         state.TheoreticalMaximumPower = reactor.TheoreticalMaximumPower;
-        state.ReactionRate = reactor.ReactionRate;
+        // The simulation figure is moles per process tick; the window labels it mol/s.
+        state.ReactionRate = reactor.ReactionRate / MathF.Max(reactor.ProcessInterval, 0.01f);
         state.TemperatureHot = reactor.TemperatureHot;
         state.TemperatureCritical = reactor.TemperatureCritical;
         state.TemperatureMeltdown = reactor.TemperatureMeltdown;

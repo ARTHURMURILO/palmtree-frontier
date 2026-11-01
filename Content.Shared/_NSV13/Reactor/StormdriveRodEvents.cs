@@ -32,18 +32,6 @@ public sealed partial class StormdriveRepairDoAfterEvent : SimpleDoAfterEvent
     public StormdriveRepairStep Step;
 }
 
-/// <summary>Raised when a fuel rod finishes being loaded into an RBMK.</summary>
-[Serializable, NetSerializable]
-public sealed partial class RbmkFuelInsertDoAfterEvent : SimpleDoAfterEvent
-{
-}
-
-/// <summary>Raised when sealant finishes being applied to an RBMK vessel.</summary>
-[Serializable, NetSerializable]
-public sealed partial class RbmkSealantDoAfterEvent : SimpleDoAfterEvent
-{
-}
-
 /// <summary>
 ///     One step of the stormdrive's meltdown recovery chain. Shared because
 ///     <see cref="StormdriveRepairDoAfterEvent"/> carries it over the network.

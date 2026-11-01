@@ -1,6 +1,6 @@
-# NSV13 - circuit boards for the two reactors and their consoles.
+# NSV13 - circuit boards for the stormdrive and its console.
 #
-# Both reactors are now `ConstructibleMachine`s: the standard machine-frame + board build order works,
+# The drive is a `ConstructibleMachine`: the standard machine-frame + board build order works,
 # so a shipyard can actually fabricate one instead of an admin spawning it.
 #
 # The original NSV13 techweb had two designs for this: the reactor control console board (under

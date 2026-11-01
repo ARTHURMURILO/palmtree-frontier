@@ -6,7 +6,6 @@ using Robust.Client.Graphics;
 using Robust.Client.UserInterface.Controls;
 using Robust.Client.UserInterface.CustomControls;
 using Robust.Client.UserInterface.XAML;
-using Robust.Shared.Input;
 
 namespace Content.Client._NSV13.Reactor.UI;
 
@@ -71,15 +70,8 @@ public sealed partial class StormdriveConsoleWindow : DefaultWindow
 
         // Commit on release only. The physics tick is 2 s; streaming every intermediate value would
         // just hammer the setpoint (and, faithfully, wear the rods - DM's own slider did the same).
-        RodSlider.OnKeyBindUp += args =>
-        {
-            if (args.Function != EngineKeyFunctions.UIClick)
-                return;
-
-            if (_state is { HasReactor: true })
-                OnSetRods?.Invoke(RodSlider.Value);
-        };
-
+        // OnReleased already fires on the same click release, so an OnKeyBindUp handler here would
+        // send the setpoint twice and charge the rods twice for one drag.
         RodSlider.OnReleased += range =>
         {
             if (_state is { HasReactor: true })
@@ -177,8 +169,10 @@ public sealed partial class StormdriveConsoleWindow : DefaultWindow
         UpdateStatistics(state);
         UpdateComposition(state);
 
-        // Do not fight the engineer while they are dragging.
-        if (!RodSlider.HasKeyboardFocus())
+        // Do not fight the engineer while they are dragging. The slider never takes keyboard focus,
+        // so Grabbed is the only reliable "the mouse is down on it" signal; without this the
+        // half-second refresh snapped the handle back to the server value mid-drag.
+        if (!RodSlider.Grabbed)
             RodSlider.SetValueWithoutEvent(state.RodPercent);
 
         RodPercentLabel.Text = Loc.GetString("stormdrive-console-percent-value", ("value", $"{state.RodPercent:F1}"));
@@ -231,13 +225,15 @@ public sealed partial class StormdriveConsoleWindow : DefaultWindow
             ("value", $"{state.LastPowerProduced / 1e6:F2}"),
             ("max", $"{state.TheoreticalMaximumPower / 1e6:F2}"));
 
-        // Reaction rate: 0.05 scale in the JS, 0.2 good / 0.1 average.
-        ReactionBar.Value = Math.Clamp(state.ReactionRate * 0.05f, 0f, 1f);
-        ReactionBar.ForegroundStyleBoxOverride = state.ReactionRate >= 2f ? GreenFill
-            : state.ReactionRate >= 1f ? AmberFill : RedFill;
+        // Fuel burn in mol/s. The server converts the per-tick reaction rate for us, so the scale
+        // and cut-offs are the JS ones divided by the two-second process interval: green from
+        // 1 mol/s, amber from 0.5 mol/s.
+        ReactionBar.Value = Math.Clamp(state.ReactionRate * 0.1f, 0f, 1f);
+        ReactionBar.ForegroundStyleBoxOverride = state.ReactionRate >= 1f ? GreenFill
+            : state.ReactionRate >= 0.5f ? AmberFill : RedFill;
         ReactionRateLabel.Text = Loc.GetString("stormdrive-console-reaction-value", ("value", $"{state.ReactionRate:F1}"));
 
-        // Fuel ratio: rich mixtures are bad.
+        // Fuel ratio: a lean mixture is the dangerous one - below 12.5 % the reaction starves.
         var ratio = state.TotalMoles <= 0f ? 0f : Math.Clamp(state.FuelMix / state.TotalMoles, 0f, 1f);
         FuelRatioBar.Value = ratio;
         FuelRatioBar.ForegroundStyleBoxOverride = ratio <= 0.125f ? RedFill

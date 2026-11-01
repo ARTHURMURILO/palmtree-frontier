@@ -770,7 +770,10 @@ public sealed class StormdriveSystem : EntitySystem
                 _ => comp.SquallAnomaly,
             };
 
-            Spawn(proto, _transform.GetMapCoordinates(uid));
+            // Spawn it as a child of the drive's grid, not at a fixed map position: this is a
+            // ship-based fork and a drive that tears an anomaly loose while the hull is moving
+            // must not leave the anomaly floating in the space it used to occupy.
+            Spawn(proto, Transform(uid).Coordinates);
             comp.ReactorStability += 15f;
             _audio.PlayPvs("/Audio/Effects/Lightning/lightningbolt.ogg", uid);
         }
@@ -851,12 +854,20 @@ public sealed class StormdriveSystem : EntitySystem
     /// </summary>
     private void Destabilize(EntityUid uid)
     {
+        if (!_shipEvent.TryGetGrid(uid, out var grid))
+            return;
+
         var origin = _transform.GetMapCoordinates(uid);
         var damageable = new DamageSpecifier { DamageDict = { ["Structural"] = 1 } };
 
         foreach (var target in _lookup.GetEntitiesInRange(origin.MapId, origin.Position, 6f))
         {
             if (target == uid)
+                continue;
+
+            // Same rule as the light effects: a reactor tearing itself apart must not blow the
+            // windows out of a neighbouring, docked ship that happens to be within six tiles.
+            if (Transform(target).GridUid != grid)
                 continue;
 
             if (!_tag.HasTag(target, WindowTag))
@@ -989,6 +1000,12 @@ public sealed class StormdriveSystem : EntitySystem
         comp.MeltdownCountdownIndex = 0;
         comp.ReactorEndTimes = true;
 
+        // The overheat warning bed and klaxon are still looping when the core crosses the meltdown
+        // threshold. The DM original relayed the meltdown sting on the same reactor-alert channel,
+        // which replaced them; here each sound has its own stream, so without this the sting plays
+        // over the alarm for the whole eighteen-second fuse.
+        StopOverheatLoop(comp);
+
         _audio.PlayPvs(comp.MeltdownSound, uid);
     }
 
@@ -1045,6 +1062,11 @@ public sealed class StormdriveSystem : EntitySystem
         // The klaxon was started when the fuse armed and nothing else owns it from here: leaving it
         // running would scream forever over a core that is now fine.
         StopOverheatLoop(comp);
+
+        // The fuse ran out without a detonation. Say so: otherwise the last thing the crew heard
+        // was the countdown hit zero and then silence, which is indistinguishable from a bug.
+        _shipEvent.TryEngineAnnounce(uid, Loc.GetString("stormdrive-announce-meltdown-averted"),
+            ref comp.NextAlert, urgent: true);
 
         return false;
     }

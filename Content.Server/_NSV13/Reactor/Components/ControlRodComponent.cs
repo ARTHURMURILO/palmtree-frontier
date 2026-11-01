@@ -7,10 +7,16 @@ namespace Content.Server._NSV13.Reactor.Components;
 /// </summary>
 /// <remarks>
 ///     Ported from <c>control_rods.dm</c>. Five rod grades exist: standard (100 % integrity, ×1
-///     effectiveness), techfab (80 %, ×0.8), crystalline (200 %, ×1), plasma-sheathed (100 %, ×-0.5
-///     - it <em>adds</em> reactivity) and depleted (0 %, ×0, radioactive).
-///     The reactor averages both fields across its mounted rods, which is exactly what
-///     <c>handle_control_rod_efficiency()</c> and <c>handle_control_rod_integrity()</c> did.
+///     effectiveness), techfab (80 %, ×0.8), crystalline (200 %, ×1), plasma-sheathed (100 %, ×-0.5)
+///     and depleted (0 %, ×0, radioactive). The reactor averages both fields across its mounted
+///     rods, which is exactly what <c>handle_control_rod_efficiency()</c> and
+///     <c>handle_control_rod_integrity()</c> did.
+///
+///     The plasma rod's DM description says it "fuels the reaction", but the original formulas
+///     square the rod modifier for the reaction-rate target and use it as an exponent for the
+///     target temperature, so a negative modifier in practice drags the target temperature down
+///     and cools the core. That is the faithful behaviour: a plasma rod sabotages the drive by
+///     killing its heat, not by making it explode.
 /// </remarks>
 [RegisterComponent]
 public sealed partial class ControlRodComponent : Component

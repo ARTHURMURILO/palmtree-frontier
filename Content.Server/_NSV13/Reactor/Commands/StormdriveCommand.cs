@@ -59,7 +59,7 @@ public sealed class StormdriveCommand : IConsoleCommand
 
             case "prime":
                 Prime(uid, comp);
-                shell.WriteLine("Fuel line primed with 50 mol constricted plasma; core pre-heated.");
+                shell.WriteLine("Fuel line primed with 50 mol plasma; core pre-heated.");
                 return;
 
             case "start":
@@ -99,8 +99,8 @@ public sealed class StormdriveCommand : IConsoleCommand
     }
 
     /// <summary>
-    ///     Debug shortcut standing in for the particle accelerator: enough constricted plasma to
-    ///     satisfy ignition, and enough pre-heat to pass the gate.
+    ///     Debug shortcut standing in for the particle accelerator: enough plasma to satisfy
+    ///     ignition, and enough pre-heat to pass the gate.
     /// </summary>
     private void Prime(EntityUid uid, StormdriveComponent comp)
     {
@@ -120,7 +120,10 @@ public sealed class StormdriveCommand : IConsoleCommand
         if (shell.Player is not { AttachedEntity: { } body })
             return null;
 
-        var origin = _entMan.GetComponent<TransformComponent>(body).Coordinates;
+        // Console commands are not entity systems, so resolve the system through the entity
+        // manager instead of asking IoC to inject it.
+        var transform = _entMan.System<SharedTransformSystem>();
+        var origin = transform.GetMapCoordinates(body);
 
         EntityUid? best = null;
         var bestDistance = float.MaxValue;
@@ -128,8 +131,15 @@ public sealed class StormdriveCommand : IConsoleCommand
         var query = _entMan.EntityQueryEnumerator<StormdriveComponent>();
         while (query.MoveNext(out var uid, out _))
         {
-            var distance = (_entMan.GetComponent<TransformComponent>(uid).Coordinates.Position - origin.Position)
-                .LengthSquared();
+            // Grid-local positions are not comparable across ships: two drives on different hulls
+            // would both look like they sit at their grid's local zero. Compare world/map space,
+            // and stay on the caller's map.
+            var drive = transform.GetMapCoordinates(uid);
+
+            if (drive.MapId != origin.MapId)
+                continue;
+
+            var distance = (drive.Position - origin.Position).LengthSquared();
 
             if (distance >= bestDistance)
                 continue;

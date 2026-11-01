@@ -18,7 +18,9 @@
   - ControlRodInferior
   technologyPrerequisites:
   - NFBasicPowerGeneration
-  position: 4, 28
+  # 4, 28 is already NFAdvancedPowerGeneration. Sit one column left of the stormdrive node
+  # instead, diagonally off the basic power generator it requires.
+  position: 3, 29
 
 - type: technology
   id: NFStormdriveMachinery

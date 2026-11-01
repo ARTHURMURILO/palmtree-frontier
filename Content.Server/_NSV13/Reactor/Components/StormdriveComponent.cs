@@ -317,8 +317,8 @@ public sealed partial class StormdriveComponent : Component
     public float EmpRange = 25f;
 
     /// <summary>
-    ///     Radiation a live core puts out, in rads per degree Celsius. See
-    ///     <see cref="RbmkReactorComponent.RadiationPerDegree"/>.
+    ///     Radiation a live core puts out, in rads per degree Celsius. The figure is scaled into
+    ///     SS14's damage-per-second radiation units and capped by <see cref="MaxCoreRadiation"/>.
     /// </summary>
     [DataField]
     public float RadiationPerDegree = 0.0025f;
@@ -328,8 +328,7 @@ public sealed partial class StormdriveComponent : Component
     public float MaxCoreRadiation = 8f;
 
     /// <summary>
-    ///     Radiation left in the ruined core, in rads per second. See
-    ///     <see cref="RbmkReactorComponent.MeltdownRadiation"/> - SS14 applies this directly as
+    ///     Radiation left in the ruined core, in rads per second. SS14 applies this directly as
     ///     damage every second, so it is on a completely different scale to the BYOND original.
     /// </summary>
     [DataField]

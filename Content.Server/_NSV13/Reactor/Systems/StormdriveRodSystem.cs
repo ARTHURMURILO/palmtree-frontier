@@ -207,9 +207,13 @@ public sealed class StormdriveRodSystem : EntitySystem
         var rodUid = comp.ControlRods[args.Index];
         _container.Remove(rodUid, GetRodContainer(uid));
 
-        // The DM version forceMove()d the rod to the operator's turf.
+        // The DM version forceMove()d the rod to the operator's turf. Removing it from the
+        // container already puts it on the reactor's tile, so move it to the operator instead.
         if (Exists(rodUid))
-            _transform.SetCoordinates(rodUid, Transform(uid).Coordinates);
+        {
+            var drop = Exists(args.User) ? Transform(args.User).Coordinates : Transform(uid).Coordinates;
+            _transform.SetCoordinates(rodUid, drop);
+        }
 
         _stormdrive.UpdateVisuals(uid, comp);
 

@@ -43,6 +43,10 @@ public sealed class StormdriveConsoleBoundUserInterfaceState : BoundUserInterfac
     /// <summary>What the machine could theoretically make, for a "percent of rated" readout.</summary>
     public float TheoreticalMaximumPower;
 
+    /// <summary>
+    ///     Fuel burn, in moles per second. The reactor's own figure is per two-second process
+    ///     tick, so the raw reaction rate must not be sent next to a "mol/s" label.
+    /// </summary>
     public float ReactionRate;
 
     public float TemperatureHot;
