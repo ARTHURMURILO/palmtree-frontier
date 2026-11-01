@@ -66,13 +66,19 @@ public sealed class StormdriveRodSystem : EntitySystem
         if (!args.IsInDetailsRange)
             return;
 
+        // A melted drive is a wreck: its feed lines and take-off are gone, and it supplies nothing.
+        if (comp.State == StormdriveState.Meltdown)
+            return;
+
         // Screen sides, not compass points: the camera counter-rotates with the hull, so the crew
         // sees the drive in its own frame no matter which way the ship is pointing.
-        var rotation = Transform(uid).LocalRotation;
+        var machineRotation = _transform.GetWorldRotation(uid);
+        var viewerFrame = Transform(args.Examiner).GridUid is { } viewerGrid
+            ? _transform.GetWorldRotation(viewerGrid)
+            : Angle.Zero;
         args.PushMarkup(Loc.GetString("stormdrive-examine-ports",
-            ("fuel", ReactorExamine.ScreenSide(rotation, Direction.East)),
-            ("waste", ReactorExamine.ScreenSide(rotation, Direction.West))));
-        args.PushMarkup(Loc.GetString("stormdrive-examine-power"));
+            ("fuel", ReactorExamine.ScreenSide(machineRotation, viewerFrame, Direction.East)),
+            ("waste", ReactorExamine.ScreenSide(machineRotation, viewerFrame, Direction.West))));
     }
 
     /// <summary>The bay's container, created on first use.</summary>

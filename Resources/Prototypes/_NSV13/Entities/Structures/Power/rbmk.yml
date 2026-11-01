@@ -41,10 +41,11 @@
           Overheat: { state: reactor_overheat }
           Meltdown: { state: reactor_meltdown }
           Slagged: { state: reactor_slagged }
-  # The original is a floor-standing reactor you walk over: its 3x3 sprite is machinery, not an
-  # obstacle. BaseMachine's 1x1 `fix1` fixture both blocked movement and only covered a third of
-  # the art. `hard: false` keeps the fixture (so the machine stays clickable and hoverable) while
-  # letting anything walk straight over it; the shape is widened to match the 3x3 sprite.
+  # The art is 3x3, so the reserved footprint is 3x3 too. The fixture stays soft so the crew can
+  # still walk over the reactor; `ConstructionBlocker` is what stops girders and walls being built
+  # through the outer tiles (TileNotBlocked counts the blocker's fixture footprint without needing
+  # a hard collision). Pipes and cables still go down: their recipes never run that check.
+  - type: ConstructionBlocker
   - type: Fixtures
     fixtures:
       fix1:
@@ -65,6 +66,8 @@
   - type: Appearance
   - type: AtmosDevice
   - type: NodeContainer
+    # Opt in to the standard "It has a connector for HV cables." examine line.
+    examinable: true
     nodes:
       coolantIn:
         !type:PipeNode
@@ -84,10 +87,20 @@
       output:
         !type:CableDeviceNode
         nodeGroupID: HVPower
-  # Without a board the machine carries an empty `machine_board` container: deconstructing a mapped
-  # or admin-spawned reactor could not give the circuitboard back, even though its recipe exists.
+  # The board is only informational now (deconstruction is disabled below), but keeping it wired
+  # means a mapped or admin-spawned reactor still reports its circuitboard correctly, and the
+  # later construction path can reuse it.
   - type: Machine
     board: RbmkReactorMachineCircuitboard
+  # Reactors cannot be deconstructed (and cannot be constructed yet). The stock `Machine` graph
+  # lets a bare crowbar pry the whole machine back into a frame; `ReactorMachine` is a terminal
+  # node with no edges, so neither the crowbar nor the deconstruct verb can path anywhere. A
+  # proper construction path will be added later.
+  - type: Construction
+    graph: ReactorMachine
+    # The graph has a single `machine` node and no edges; pointing the deconstruction target at
+    # that same node means the deconstruct verb sees "already there" and offers nothing.
+    deconstructionTarget: machine
   - type: RbmkReactor
 
   # The machine has to survive its own failure. BaseMachine's Destructible thresholds delete the

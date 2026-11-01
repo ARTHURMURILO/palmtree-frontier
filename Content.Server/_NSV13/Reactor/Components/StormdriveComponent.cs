@@ -68,13 +68,14 @@ public sealed partial class StormdriveComponent : Component
     ///     Fraction of <see cref="ReactionRate"/> actually drawn from the fuel line each tick.
     /// </summary>
     /// <remarks>
-    ///     Palmtree: 0.5. The DM drive was written for stations with gas miners on tap; a ship buys
-    ///     its plasma by the canister, so the same reaction now costs half the fuel. The slug is
-    ///     scaled back up before the gas modifiers are computed, so the reaction itself is unchanged
-    ///     - only the pipe drains at half speed.
+    ///     Palmtree: 0.25. The DM drive was written for stations with gas miners on tap; a ship buys
+    ///     its plasma by the canister, so the same reaction now costs a quarter of the fuel. The
+    ///     slug is scaled back up before the gas modifiers are computed, so the reaction itself is
+    ///     unchanged - only the pipe drains at a quarter speed. Electrical output is multiplied by
+    ///     this same factor, so the watts per mole stay at the vanilla figure.
     /// </remarks>
     [DataField]
-    public float FuelConsumptionFactor = 0.5f;
+    public float FuelConsumptionFactor = 0.25f;
 
     [DataField]
     public float TargetReactionRate;
@@ -294,11 +295,11 @@ public sealed partial class StormdriveComponent : Component
     public SoundSpecifier AlarmSound = new SoundPathSpecifier("/Audio/_NSV13/Reactor/alarm.ogg");
 
     [DataField]
-    // The armed-meltdown sting is the drive's own meltdown.ogg, the same one the RBMK uses and the
-    // one stormdrive.dm relays when the core goes. core_overheating.ogg belongs to the *warning*
-    // loop (OverheatLoopSound below) and was previously reused here, which made the fuse sound like
-    // the alarm it was already playing.
-    public SoundSpecifier MeltdownSound = new SoundPathSpecifier("/Audio/_NSV13/Reactor/meltdown.ogg");
+    // stormdrive.dm `start_meltdown()` relays `nsv13/sound/effects/ship/reactor/meltdown.ogg` - a
+    // distinct 20 s file from the RBMK's own `rbmk/meltdown.ogg`. The port only shipped the RBMK
+    // one, so the fuse was playing the wrong machine's hiss; this is the original drive sting.
+    // `core_overheating.ogg` belongs to the warning loop (OverheatLoopSound below).
+    public SoundSpecifier MeltdownSound = new SoundPathSpecifier("/Audio/_NSV13/Reactor/stormdrive_meltdown.ogg");
 
     /// <summary>
     ///     Looping warning bed played while the core is over its critical temperature. The DM
@@ -327,10 +328,10 @@ public sealed partial class StormdriveComponent : Component
 
     /// <summary>Radius of the (deliberately small) meltdown blast.</summary>
     [DataField]
-    public float BlastRadius = 12f;
+    public float BlastRadius = 8f;
 
     [DataField]
-    public float BlastCoreRadius = 6f;
+    public float BlastCoreRadius = 4f;
 
     [DataField]
     public float BlastPeakIntensity = 10f;

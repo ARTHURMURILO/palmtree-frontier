@@ -234,6 +234,9 @@ public sealed class StormdriveConsoleSystem : EntitySystem
         state.LastPowerProduced = reactor.LastPowerProduced;
         state.TheoreticalMaximumPower = reactor.TheoreticalMaximumPower;
         state.ReactionRate = reactor.ReactionRate;
+        state.FuelConsumptionRate = reactor.ReactionRate
+                                   * Math.Clamp(reactor.FuelConsumptionFactor, 0.01f, 1f)
+                                   / MathF.Max(reactor.ProcessInterval, 0.01f);
         state.TemperatureHot = reactor.TemperatureHot;
         state.TemperatureCritical = reactor.TemperatureCritical;
         state.TemperatureMeltdown = reactor.TemperatureMeltdown;

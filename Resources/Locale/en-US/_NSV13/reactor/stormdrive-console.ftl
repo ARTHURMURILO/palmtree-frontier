@@ -23,14 +23,10 @@ stormdrive-console-meltdown-title = CORE DESTABILISED
 stormdrive-console-meltdown-hint = Control rods have failed. Cool the core below the meltdown threshold before the fuse runs out.
 stormdrive-console-countdown-idle = -
 stormdrive-console-fuel-mix = Fuel mix:
-stormdrive-console-input = Input warning bands:
-stormdrive-console-input-value = rich above { $high } mol, critical above { $veryHigh } mol
 stormdrive-console-plasma = Plasma:
 stormdrive-console-constricted-plasma = Constricted plasma:
 stormdrive-console-tritium = Tritium:
 stormdrive-console-nucleium = Nucleium:
-stormdrive-console-inhibitors = Inhibitors:
-stormdrive-console-inhibitors-value = { $nob } mol hyper-noblium, { $co2 } mol CO2
 stormdrive-console-total-moles = Total moles:
 stormdrive-console-rod-setpoint = Control rod insertion (0 = maximum reactivity)
 stormdrive-console-presets = Presets

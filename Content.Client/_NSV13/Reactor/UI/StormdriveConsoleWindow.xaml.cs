@@ -231,11 +231,13 @@ public sealed partial class StormdriveConsoleWindow : DefaultWindow
             ("value", $"{state.LastPowerProduced / 1e6:F2}"),
             ("max", $"{state.TheoreticalMaximumPower / 1e6:F2}"));
 
-        // Reaction rate: 0.05 scale in the JS, 0.2 good / 0.1 average.
-        ReactionBar.Value = Math.Clamp(state.ReactionRate * 0.05f, 0f, 1f);
-        ReactionBar.ForegroundStyleBoxOverride = state.ReactionRate >= 2f ? GreenFill
-            : state.ReactionRate >= 1f ? AmberFill : RedFill;
-        ReactionRateLabel.Text = Loc.GetString("stormdrive-console-reaction-value", ("value", $"{state.ReactionRate:F1}"));
+        // Fuel burn, in mol/s (the value the label shows). The old 0.05 scale / 2-and-1 thresholds
+        // were in raw reaction-rate units (moles per 2 s tick); divide by 8 to keep the same
+        // green/amber cut-offs once the factor and the tick are applied.
+        ReactionBar.Value = Math.Clamp(state.FuelConsumptionRate * 0.4f, 0f, 1f);
+        ReactionBar.ForegroundStyleBoxOverride = state.FuelConsumptionRate >= 0.25f ? GreenFill
+            : state.FuelConsumptionRate >= 0.125f ? AmberFill : RedFill;
+        ReactionRateLabel.Text = Loc.GetString("stormdrive-console-reaction-value", ("value", $"{state.FuelConsumptionRate:F1}"));
 
         // Fuel ratio: rich mixtures are bad.
         var ratio = state.TotalMoles <= 0f ? 0f : Math.Clamp(state.FuelMix / state.TotalMoles, 0f, 1f);
@@ -296,14 +298,6 @@ public sealed partial class StormdriveConsoleWindow : DefaultWindow
             _gasLabels[i].Text = Loc.GetString($"stormdrive-console-gas-{(StormdriveConsoleGas) i}",
                 ("percent", $"{fraction * 100f:F1}"));
         }
-
-        InputLabel.Text = Loc.GetString("stormdrive-console-input-value",
-            ("high", $"{state.MoleThresholdHigh:F0}"),
-            ("veryHigh", $"{state.MoleThresholdVeryHigh:F0}"));
-
-        InhibitorLabel.Text = Loc.GetString("stormdrive-console-inhibitors-value",
-            ("nob", $"{state.HyperNoblium:F0}"),
-            ("co2", $"{state.CarbonDioxide:F0}"));
 
         TotalMolesLabel.Text = Loc.GetString("stormdrive-console-moles-value", ("value", $"{state.TotalMoles:F0}"));
 

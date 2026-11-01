@@ -307,6 +307,11 @@ public sealed class StormdriveSystem : EntitySystem
         comp.LastPowerProduced = MathF.Max(0f,
             comp.BasePower * comp.InputPower - nucleiumPowerReduction);
 
+        // Palmtree: the reaction only consumes `FuelConsumptionFactor` of the gas, so the output has
+        // to scale with it too. Without this, halving the fuel doubled the watts per mole - the same
+        // reaction was being paid for with half the gas, which read as an unexplained 2x output.
+        comp.LastPowerProduced *= Math.Clamp(comp.FuelConsumptionFactor, 0.01f, 1f);
+
         // DM calls this late in the tick ("if(last_power_produced > 3000000)"), and the value it
         // reads is the one computed above, so the ordering here is equivalent.
         if (comp.LastPowerProduced > 3e6f)
@@ -1018,6 +1023,12 @@ public sealed class StormdriveSystem : EntitySystem
         comp.NextCountdownAnnounce = _timing.CurTime + TimeSpan.FromSeconds(1);
         comp.ReactorEndTimes = true;
 
+        // The overheat warning bed and the klaxon are still running when the core tips over the
+        // meltdown threshold. In the original they lived on the same reactor-alert channel as the
+        // meltdown relay, so starting the fuse replaced them; here the channel is per-sound, so
+        // they have to be stopped by hand or the sting plays over a klaxon for the whole 18 s.
+        StopOverheatLoop(comp);
+
         _engineAudio.PlayOnGrid(comp.MeltdownSound, uid);
     }
 
@@ -1154,8 +1165,8 @@ public sealed class StormdriveSystem : EntitySystem
         }
 
         // Ship-wide knockdown for everything standing.
-        _shipEvent.Shockwave(uid, coords, 22f, 7f, TimeSpan.FromSeconds(5));
-        _shipEvent.ShakeLocal(uid, 10f, 1.5f);
+        _shipEvent.Shockwave(uid, coords, 14.7f, 7f, TimeSpan.FromSeconds(5));
+        _shipEvent.ShakeLocal(uid, 6.7f, 1.5f);
 
         // NOTE: no slag storm here. stormdrive.dm's meltdown() only detonates the map's existing
         // nuclear_waste_spawner landmarks - it never throws corium around. That is the RBMK's

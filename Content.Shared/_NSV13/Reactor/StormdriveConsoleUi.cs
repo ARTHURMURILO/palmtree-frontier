@@ -45,6 +45,13 @@ public sealed class StormdriveConsoleBoundUserInterfaceState : BoundUserInterfac
 
     public float ReactionRate;
 
+    /// <summary>
+    ///     Fuel actually burned, in moles per second. <see cref="ReactionRate"/> is the vanilla
+    ///     reaction rate in moles per process tick; the drive only removes a fraction of it
+    ///     (<c>FuelConsumptionFactor</c>), so the raw figure overstates the real burn.
+    /// </summary>
+    public float FuelConsumptionRate;
+
     public float TemperatureHot;
     public float TemperatureCritical;
     public float TemperatureMeltdown;

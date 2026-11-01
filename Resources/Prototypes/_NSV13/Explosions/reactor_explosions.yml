@@ -19,8 +19,8 @@
       Heat: 8
       Blunt: 8
       Structural: 30
-  # Floor tiles start failing at intensity 8 and are gone by 24. Combined with a 6-tile
-  # full-intensity core (see RbmkReactorComponent) this means the reactor compartment opens to
+  # Floor tiles start failing at intensity 8 and are gone by 24. The blast core is a few tiles
+  # across (see RbmkReactorComponent / StormdriveComponent), so the reactor compartment opens to
   # space while the rest of the ship stays sealed and merely gets knocked around.
   tileBreakChance: [0, 0.6, 1]
   tileBreakIntensity: [0, 8, 24]

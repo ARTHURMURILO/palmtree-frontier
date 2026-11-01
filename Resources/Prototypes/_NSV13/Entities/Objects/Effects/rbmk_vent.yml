@@ -5,17 +5,21 @@
   categories: [ HideSpawnMenu ]
   description: Scalding vapor hissing out of a reactor that is not long for this world.
   components:
+  # One animation cycle and then gone. The sprite animation is five frames at 0.08 s (0.4 s total);
+  # the old 2.5 s lifetime left several puffs on screen at once because the over-pressure tick
+  # spawns one every two seconds.
   - type: TimedDespawn
-    lifetime: 2.5
+    lifetime: 0.45
   - type: Sprite
     drawdepth: Effects
-    noRot: true
+    # Not `noRot`: the vent is spawned rotated half a turn so the plume rises into the core.
     layers:
     - shader: unshaded
-      sprite: Effects/atmospherics.rsi
-      state: water_vapor
-  - type: EffectVisuals
-  - type: AnimationPlayer
+      # `Effects/atmospherics.rsi:water_vapor` is the *gas overlay*: a full-tile translucent
+      # square, so spawning it in the world drew a white box. This is a small puff recoloured
+      # from the chem vapour sprite instead.
+      sprite: _NSV13/Objects/Effects/steam_puff.rsi
+      state: steam_puff
   - type: Tag
     tags:
     - HideContextMenu

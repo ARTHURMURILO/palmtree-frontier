@@ -18,6 +18,7 @@ using Robust.Shared.Audio;
 using Robust.Shared.Audio.Systems;
 using Robust.Shared.Containers;
 using Robust.Shared.Map;
+using Robust.Shared.Maths;
 using Robust.Shared.Random;
 using Robust.Shared.Timing;
 
@@ -519,20 +520,22 @@ public sealed class RbmkReactorSystem : EntitySystem
     }
 
     /// <summary>
-    ///     Spawn a couple of short-lived vapour puffs around the core. Purely cosmetic, but it is
-    ///     what makes an over-pressure event readable from across the room instead of a number on a
-    ///     console.
+    ///     Spawn one short-lived vapour puff on the core tile, rotated to rise out of the machine.
+    ///     Purely cosmetic, but it is what makes an over-pressure event readable from across the
+    ///     room instead of a number on a console.
     /// </summary>
+    /// <remarks>
+    ///     One puff per whoosh: the effect lives for a single animation cycle (~0.4 s) and the
+    ///     over-pressure tick only fires every two seconds, so at most one is on screen at a time.
+    /// </remarks>
     private void VentSteam(EntityUid uid, RbmkReactorComponent reactor)
     {
         var coords = _transform.GetMapCoordinates(uid);
-        var count = reactor.Pressure > reactor.PressureCritical * 1.5f ? 3 : 1;
+        var spawn = Spawn(reactor.VentEffect, coords);
 
-        for (var i = 0; i < count; i++)
-        {
-            var offset = _random.NextAngle().ToVec() * _random.NextFloat(0f, 0.6f);
-            Spawn(reactor.VentEffect, new MapCoordinates(coords.Position + offset, coords.MapId));
-        }
+        // The plume in the sprite spreads downwards from the top of its cell; half a turn makes it
+        // rise out of the core instead of falling into it.
+        _transform.SetLocalRotation(spawn, Angle.FromDegrees(180f));
     }
 
     /// <summary>
@@ -730,7 +733,7 @@ public sealed class RbmkReactorSystem : EntitySystem
 
         // Lights go out, and the survivors get to sit in the flickering.
         _shipEvent.BlowLights(uid, reactor.LightDestroyChance, reactor.LightFlickerChance);
-        _shipEvent.ShakeLocal(uid, 16f, 2f);
+        _shipEvent.ShakeLocal(uid, 10.7f, 2f);
 
         _shipEvent.SpawnSlagStorm(uid, reactor.SlagCount, reactor.SlagPrototype, reactor.SlagThrowSpeed);
 

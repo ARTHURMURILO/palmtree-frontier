@@ -339,11 +339,11 @@ public sealed partial class RbmkReactorComponent : Component
     ///     <see cref="ShockwaveRadius"/>, which is non-destructive.
     /// </remarks>
     [DataField]
-    public float BlastRadius = 16f;
+    public float BlastRadius = 10.7f;
 
     /// <summary>Tiles around the core that take the full blast intensity.</summary>
     [DataField]
-    public float BlastCoreRadius = 8f;
+    public float BlastCoreRadius = 5.3f;
 
     /// <summary>
     ///     Intensity at the epicentre. Together with <see cref="BlastCoreRadius"/> this sets the
@@ -358,7 +358,7 @@ public sealed partial class RbmkReactorComponent : Component
     ///     the whole ship should feel the hit even when the hull survives, which is the point.
     /// </summary>
     [DataField]
-    public float ShockwaveRadius = 38f;
+    public float ShockwaveRadius = 25.3f;
 
     /// <summary>
     ///     Knockback speed, in tiles per second, applied at the shockwave origin. Scaled by each
