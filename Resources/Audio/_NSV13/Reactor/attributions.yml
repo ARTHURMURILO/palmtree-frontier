@@ -12,8 +12,8 @@
   - "meltdown.ogg"
   - "startup.ogg"
   - "startup2.ogg"
-  license: "AGPL-3.0-or-later"
-  copyright: "Taken from BeeStation/NSV13"
+  license: "Custom"
+  copyright: "Taken from BeeStation/NSV13, distributed under AGPL-3.0-or-later with the source code"
   source: "https://github.com/BeeStation/NSV13"
 
 - files:
@@ -21,6 +21,6 @@
   - "rbmk/switch.ogg"
   - "rbmk/switch2.ogg"
   - "rbmk/switch3.ogg"
-  license: "AGPL-3.0-or-later"
-  copyright: "Taken from BeeStation/NSV13"
+  license: "Custom"
+  copyright: "Taken from BeeStation/NSV13, distributed under AGPL-3.0-or-later with the source code"
   source: "https://github.com/BeeStation/NSV13"

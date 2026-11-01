@@ -15,6 +15,11 @@ namespace Content.Server._NSV13.Reactor.Components;
 public sealed partial class RbmkFuelRodComponent : Component
 {
     /// <summary>Accumulated depletion. Reaching <see cref="DepletionThreshold"/> triggers conversion.</summary>
+    /// <remarks>
+    ///     Palmtree: serialized. A half-burnt rod must stay half-burnt when it is ejected, carried
+    ///     around and stored with the ship; otherwise docking resets the fuel for free.
+    /// </remarks>
+    [DataField]
     [ViewVariables(VVAccess.ReadOnly)]
     public float Depletion;
 
@@ -46,8 +51,14 @@ public sealed partial class RbmkFuelRodComponent : Component
     [DataField]
     public float HalfLife = 2000f;
 
-    [ViewVariables]
-    public TimeSpan SpawnedAt;
+    /// <summary>
+    ///     Seconds this rod has existed, used for self-decay. A relative age, not an absolute
+    ///     <c>CurTime</c>: ship files outlive rounds, and an absolute round time restored in a later
+    ///     round would make the elapsed value negative, which turns decay into a fuel amplifier.
+    /// </summary>
+    [DataField]
+    [ViewVariables(VVAccess.ReadOnly)]
+    public float AgeSeconds;
 
     /// <summary>Depletion at which <see cref="DepletedFinal"/> is latched and conversion happens.</summary>
     [DataField]

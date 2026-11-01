@@ -87,6 +87,15 @@ public sealed class RbmkInteractionSystem : EntitySystem
     {
         args.Handled = true;
 
+        // A slagged wreck is not a machine any more: accepting rods would delete them with the
+        // wreck on the next meltdown or grid cleanup, which is a trap for a player who reads the
+        // sprite as "damaged reactor" rather than "dead reactor".
+        if (reactor.Slagged)
+        {
+            _popup.PopupEntity(Loc.GetString("rbmk-repair-slagged"), uid, args.User);
+            return;
+        }
+
         if (reactor.Power >= MaxPowerForFuelHandling)
         {
             _popup.PopupEntity(Loc.GetString("rbmk-fuel-too-hot"), uid, args.User);
@@ -225,7 +234,12 @@ public sealed class RbmkInteractionSystem : EntitySystem
         // welder being lit and fuelled (and consumes that fuel), and keeps the repair behind the
         // standard tool do-after. The old open-coded +20 let an empty, unlit welder fix the vessel
         // for free, one click at a time.
-        _tool.UseTool(args.Used, args.User, uid, 0f, WeldingQuality, new RbmkWeldDoAfterEvent(), fuel: 2f);
+        //
+        // Palmtree: the fourth argument is the do-after delay, not a quality flag. Passing 0f made
+        // the weld a zero-length do-after, i.e. a click-spam +20 while this comment claimed the
+        // opposite. RepairTime is the same 5 s the sealant uses.
+        _tool.UseTool(args.Used, args.User, uid, (float) RepairTime.TotalSeconds, WeldingQuality,
+            new RbmkWeldDoAfterEvent(), fuel: 2f);
     }
 
     private void OnWelded(EntityUid uid, RbmkReactorComponent reactor, RbmkWeldDoAfterEvent args)

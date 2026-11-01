@@ -75,6 +75,7 @@ public sealed class RbmkReactorSystem : EntitySystem
     {
         base.Initialize();
 
+        SubscribeLocalEvent<RbmkReactorComponent, MapInitEvent>(OnMapInit);
         SubscribeLocalEvent<RbmkReactorComponent, ComponentStartup>(OnStartup);
         SubscribeLocalEvent<RbmkReactorComponent, EntInsertedIntoContainerMessage>(OnRodInserted);
         SubscribeLocalEvent<RbmkReactorComponent, EntRemovedFromContainerMessage>(OnRodRemoved);
@@ -122,14 +123,41 @@ public sealed class RbmkReactorSystem : EntitySystem
             rodRadiation.Enabled = true;
     }
 
-    private void OnStartup(EntityUid uid, RbmkReactorComponent reactor, ComponentStartup args)
+    private void OnMapInit(EntityUid uid, RbmkReactorComponent reactor, MapInitEvent args)
     {
         // PORT NOTE: the original randomises gas_absorption_effectiveness to exactly 0.5 or 0.6 on
         // init and snapshots it into gas_absorption_constant so every reactor is slightly different.
         // Robust's IRobustRandom (rather than System.Random) keeps this deterministic across a
         // replay/prediction run, which is why the reactor constant must not use Random.Shared.
+        //
+        // Palmtree: MapInit, not ComponentStartup. GasAbsorptionConstant is a [DataField], and
+        // ComponentStartup also runs for entities spawned on an uninitialised map, which is what
+        // PrototypeSaveTest.UninitializedSaveTest does: writing 0.6 over the prototype's 0.5 there
+        // failed the test whenever the roll came up 6. MapInit does not run for a loaded ship, so a
+        // stored reactor keeps the constant it was saved with.
         reactor.GasAbsorptionEffectiveness = _random.Next(5, 7) / 10f;
         reactor.GasAbsorptionConstant = reactor.GasAbsorptionEffectiveness;
+    }
+
+    private void OnStartup(EntityUid uid, RbmkReactorComponent reactor, ComponentStartup args)
+    {
+        // Palmtree: ComponentStartup is the only lifecycle hook a loaded ship gets (MapInit is
+        // skipped, and containers are restored as data without insert events). Rebuild the fuel
+        // list from the container so a retrieved reactor knows it has rods: otherwise it reads 0/5,
+        // sits inert, refuses to eject, and accepts five more rods on top of the trapped five.
+        if (_container.TryGetContainer(uid, RbmkReactorComponent.FuelContainer, out var fuel))
+        {
+            foreach (var rodUid in fuel.ContainedEntities)
+            {
+                if (!HasComp<RbmkFuelRodComponent>(rodUid) || reactor.FuelRods.Contains(rodUid))
+                    continue;
+
+                reactor.FuelRods.Add(rodUid);
+
+                if (TryComp<RadiationSourceComponent>(rodUid, out var rodRadiation))
+                    rodRadiation.Enabled = false;
+            }
+        }
 
         // A reactor mapped in already running never goes through StartUp(), so give it its hum too.
         if (reactor.IsRunning)
@@ -615,12 +643,10 @@ public sealed class RbmkReactorSystem : EntitySystem
         // radiation model is continuous and unconditional, so the same figure has to be rescaled
         // (see RadiationPerDegree) and capped: an unclamped temperature readout is thousands of
         // rads per second, which deletes a character before the damage system can show a warning.
+        reactor.RawRadiation = Math.Max(0f, reactor.Temperature * spice * reactor.RadiationPerDegree);
+
         if (TryComp<RadiationSourceComponent>(uid, out var source))
-        {
-            source.Intensity = Math.Clamp(reactor.Temperature * spice * reactor.RadiationPerDegree,
-                0f,
-                reactor.MaxCoreRadiation);
-        }
+            source.Intensity = Math.Clamp(reactor.RawRadiation, 0f, reactor.MaxCoreRadiation);
     }
 
     /// <summary>
@@ -685,7 +711,14 @@ public sealed class RbmkReactorSystem : EntitySystem
     ///     that throws the crew and everything loose around the rest of the ship, and a storm of
     ///     radioactive slag that stays behind as a lasting hazard.
     /// </remarks>
-    public void Meltdown(EntityUid uid, RbmkReactorComponent reactor)
+    /// <param name="queueExplosion">
+    ///     False when the caller already queued its own blast. A blowout does: it queues the larger
+    ///     1.5x explosion and then calls this method for everything else. In BYOND those were two
+    ///     separate explosions; SS14's QueueExplosion merges same-type explosions on the same tile
+    ///     by adding their total intensity, so leaving both queued produced one blast far larger
+    ///     than either intended.
+    /// </param>
+    public void Meltdown(EntityUid uid, RbmkReactorComponent reactor, bool queueExplosion = true)
     {
         // Meltdown() is reachable from more than one alert, and the slagged reactor keeps ticking
         // for a moment before it stops. Only the first call gets to detonate.
@@ -727,15 +760,18 @@ public sealed class RbmkReactorSystem : EntitySystem
         // Destructive core. Full intensity out to BlastCoreRadius, tapering to nothing at
         // BlastRadius. Structural damage in the ReactorMeltdown prototype is what actually opens the
         // hull; the plateau is what makes sure the reactor compartment is gone rather than damaged.
-        var slope = reactor.BlastPeakIntensity / MathF.Max(reactor.BlastCoreRadius, 0.01f);
-        var intensity = _explosion.RadiusToIntensity(reactor.BlastRadius, slope, reactor.BlastPeakIntensity);
+        if (queueExplosion)
+        {
+            var slope = reactor.BlastPeakIntensity / MathF.Max(reactor.BlastCoreRadius, 0.01f);
+            var intensity = _explosion.RadiusToIntensity(reactor.BlastRadius, slope, reactor.BlastPeakIntensity);
 
-        _explosion.QueueExplosion(uid,
-            reactor.BlastExplosionType,
-            intensity,
-            slope,
-            reactor.BlastPeakIntensity,
-            canCreateVacuum: true);
+            _explosion.QueueExplosion(uid,
+                reactor.BlastExplosionType,
+                intensity,
+                slope,
+                reactor.BlastPeakIntensity,
+                canCreateVacuum: true);
+        }
 
         // NSV13: empulse(src, 25, 15). SS14 takes light range, energy drain and duration. The pulse
         // is map-coordinate based, so the other hulls are marked immune: a meltdown on one ship
@@ -816,7 +852,9 @@ public sealed class RbmkReactorSystem : EntitySystem
             reactor.BlastPeakIntensity,
             canCreateVacuum: true);
 
-        Meltdown(uid, reactor);
+        // This blast is the blowout's own. Skip the meltdown's so the two do not merge into one
+        // much larger explosion (see the queueExplosion remark on Meltdown).
+        Meltdown(uid, reactor, queueExplosion: false);
     }
 
     /// <summary>

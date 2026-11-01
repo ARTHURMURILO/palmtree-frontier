@@ -41,10 +41,7 @@ public sealed class ReactorConsolesTest
         {
             typeof(RbmkFuelInsertDoAfterEvent),
             typeof(RbmkSealantDoAfterEvent),
-            typeof(StormdriveRodInstallDoAfterEvent),
-            typeof(StormdriveRodRemoveDoAfterEvent),
-            typeof(StormdriveRepairDoAfterEvent),
-            typeof(StormdriveRepairStep),
+            typeof(RbmkWeldDoAfterEvent),
         };
 
         foreach (var type in events)

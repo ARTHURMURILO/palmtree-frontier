@@ -260,8 +260,19 @@ public sealed class RbmkConsoleSystem : EntitySystem
         state.CoolantInHistory = new List<float>(console.CoolantInHistory);
         state.CoolantOutHistory = new List<float>(console.CoolantOutHistory);
 
-        if (TryComp<RadiationSourceComponent>(reactorUid, out var source))
-            state.Radiation = source.Intensity;
+        // Palmtree: the gauge shows the raw emission, not the capped damage figure. The cap is a
+        // safety net (see MaxCoreRadiation); printing it made the readout a step function that sat
+        // at 20 however bad the core got, which is what made the number useless to the engineer.
+        // A slagged core is the exception: its source is the wreck's fixed figure.
+        if (reactor.Slagged)
+        {
+            if (TryComp<RadiationSourceComponent>(reactorUid, out var source))
+                state.Radiation = source.Intensity;
+        }
+        else
+        {
+            state.Radiation = reactor.RawRadiation;
+        }
 
         for (var i = 0; i < reactor.FuelRods.Count; i++)
         {

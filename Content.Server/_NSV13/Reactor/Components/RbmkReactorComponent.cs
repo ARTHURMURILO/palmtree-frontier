@@ -63,6 +63,11 @@ public sealed partial class RbmkReactorComponent : Component
     public float DesiredK;
 
     /// <summary>Structural hit points. Damage drives the reactor towards meltdown / blowout.</summary>
+    /// <remarks>
+    ///     Palmtree: serialized. A stored ship must not come back with a free full repair; the damage
+    ///     the crew took (or did not repair) is part of the machine's state.
+    /// </remarks>
+    [DataField]
     [ViewVariables(VVAccess.ReadOnly)]
     public float VesselIntegrity = 400f;
 
@@ -105,6 +110,11 @@ public sealed partial class RbmkReactorComponent : Component
     public float LastPowerProduced;
 
     /// <summary>Terminal state. Once true the reactor stops processing permanently.</summary>
+    /// <remarks>
+    ///     Palmtree: serialized. A slagged wreck must stay a wreck across a store/retrieve; otherwise
+    ///     docking is a way to un-melt a destroyed core while its radiation source keeps running.
+    /// </remarks>
+    [DataField]
     [ViewVariables(VVAccess.ReadOnly)]
     public bool Slagged;
 
@@ -333,13 +343,19 @@ public sealed partial class RbmkReactorComponent : Component
     ///     Kept small on purpose. The destructive part of a meltdown is meant to be the reactor
     ///     compartment, not the ship; everything past this radius is felt through
     ///     <see cref="ShockwaveRadius"/>, which is non-destructive.
+    ///
+    ///     Palmtree: 7.1, two thirds of the NSV13 10.7. NSV13 ships are multi-deck maps, so a
+    ///     10.7-tile blast was "the engine room"; the median Palmtree shuttle is 24x40 tiles and the
+    ///     smallest is 16x16, where 10.7 took the whole beam. Two thirds keeps a meltdown lethal to
+    ///     the compartment and the deck around it without deleting the ship outright.
     /// </remarks>
     [DataField]
-    public float BlastRadius = 10.7f;
+    public float BlastRadius = 7.1f;
 
     /// <summary>Tiles around the core that take the full blast intensity.</summary>
+    /// <remarks>Palmtree: two thirds of the NSV13 5.3, matching the radius above.</remarks>
     [DataField]
-    public float BlastCoreRadius = 5.3f;
+    public float BlastCoreRadius = 3.5f;
 
     /// <summary>
     ///     Intensity at the epicentre. Together with <see cref="BlastCoreRadius"/> this sets the
@@ -413,6 +429,14 @@ public sealed partial class RbmkReactorComponent : Component
     /// </remarks>
     [DataField]
     public float MaxCoreRadiation = 20f;
+
+    /// <summary>
+    ///     The uncapped emission the core produced on the last tick, in rads per second. The console
+    ///     prints this instead of the capped <see cref="RadiationSourceComponent"/> intensity, so the
+    ///     engineer can see a runaway climbing past the ceiling rather than a gauge pinned at 20.
+    /// </summary>
+    [ViewVariables(VVAccess.ReadOnly)]
+    public float RawRadiation;
 
     /// <summary>
     ///     Radiation left behind in the slagged core, in rads per second.

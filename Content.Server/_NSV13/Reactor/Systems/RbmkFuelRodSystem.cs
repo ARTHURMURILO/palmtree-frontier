@@ -2,7 +2,6 @@
 
 using Content.Server._NSV13.Reactor.Components;
 using Content.Shared.Radiation.Components;
-using Robust.Shared.Timing;
 
 namespace Content.Server._NSV13.Reactor.Systems;
 
@@ -18,8 +17,6 @@ namespace Content.Server._NSV13.Reactor.Systems;
 /// </remarks>
 public sealed class RbmkFuelRodSystem : EntitySystem
 {
-    [Dependency] private readonly IGameTiming _timing = default!;
-
     private const float DecayInterval = 1f;
 
     private float _accumulator;
@@ -33,8 +30,6 @@ public sealed class RbmkFuelRodSystem : EntitySystem
 
     private void OnMapInit(EntityUid uid, RbmkFuelRodComponent rod, MapInitEvent args)
     {
-        rod.SpawnedAt = _timing.CurTime;
-
         // The original overwrites fuel_power with og_fuel_power the moment a processing rod
         // first ticks, so the declared starting power of those subtypes is cosmetic.
         if (rod.SelfDecay)
@@ -59,7 +54,6 @@ public sealed class RbmkFuelRodSystem : EntitySystem
 
         _accumulator = 0f;
 
-        var now = _timing.CurTime;
         var query = EntityQueryEnumerator<RbmkFuelRodComponent>();
 
         while (query.MoveNext(out _, out var rod))
@@ -67,8 +61,11 @@ public sealed class RbmkFuelRodSystem : EntitySystem
             if (!rod.SelfDecay || rod.HalfLife <= 0f)
                 continue;
 
-            var elapsed = (float) (now - rod.SpawnedAt).TotalSeconds;
-            rod.FuelPower = rod.OriginalFuelPower * MathF.Pow(0.5f, elapsed / rod.HalfLife);
+            // Palmtree: age in seconds, stored as data. The DM original used world time; a stored
+            // rod comes back with this value instead of restarting its clock, and a round boundary
+            // cannot make the age negative.
+            rod.AgeSeconds += DecayInterval;
+            rod.FuelPower = rod.OriginalFuelPower * MathF.Pow(0.5f, rod.AgeSeconds / rod.HalfLife);
         }
     }
 }

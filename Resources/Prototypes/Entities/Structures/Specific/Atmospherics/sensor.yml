@@ -27,6 +27,7 @@
       Frezon: danger
       Respiron: ignore # Frontier
       Helium: stationHe # Frontier
+      Nucleium: ignore # NSV13 - reactor waste, inert
   - type: Tag
     tags:
       - AirSensor
