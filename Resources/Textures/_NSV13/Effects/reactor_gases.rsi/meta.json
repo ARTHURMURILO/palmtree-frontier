@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "license": "CC-BY-SA-3.0",
+  "copyright": "Derived from SS14 Effects/atmospherics.rsi (healium), recoloured for NSV13 reactor gases",
+  "size": { "x": 32, "y": 32 },
+  "states": [
+    {
+      "name": "nucleium",
+      "delays": [
+        [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+      ]
+    }
+  ]
+}

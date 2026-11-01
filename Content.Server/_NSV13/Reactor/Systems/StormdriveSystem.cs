@@ -315,9 +315,9 @@ public sealed class StormdriveSystem : EntitySystem
         var rate = comp.ReactionRate;
         var slug = air1.Remove(rate);
 
-        // BRANCH NOTE (stormdrive branch): the /tg/ + NSV13 reactor gases live on `engines-all`.
-        // The drive runs on vanilla plasma, tritium, oxygen, nitrogen, CO2 and water vapour here, and
-        // every missing gas contributes 0 to the maths below, exactly as if it had never been there.
+        // Palmtree: the drive runs on vanilla gases plus nucleium, its own waste. The other /tg/
+        // and NSV13 reactor gases are not part of this change and contribute 0 to the maths below,
+        // exactly as if they had never been there.
         var plasma = slug.GetMoles(Gas.Plasma);
         var constricted = 0f; // slug.GetMoles(Gas.ConstrictedPlasma);
         var tritium = slug.GetMoles(Gas.Tritium);
@@ -331,7 +331,7 @@ public sealed class StormdriveSystem : EntitySystem
         var bz = 0f; // slug.GetMoles(Gas.BZ);
         var stim = 0f; // slug.GetMoles(Gas.Stimulum);
         var pluox = 0f; // slug.GetMoles(Gas.Pluoxium);
-        var nucleium = 0f; // slug.GetMoles(Gas.Nucleium);
+        var nucleium = slug.GetMoles(Gas.Nucleium);
 
         var rorTotal = plasma * (0.5f * comp.PlasmaModifier)
                        + constricted * (1f * comp.ConstrictedPlasmaModifier)
@@ -475,22 +475,20 @@ public sealed class StormdriveSystem : EntitySystem
         if (comp.Heat <= 400f || comp.ReactionRate <= 0f)
             return;
 
-        // BRANCH NOTE (stormdrive branch): this whole step exists to manufacture nucleium. With the
-        // reactor gases on `engines-all`, the drive runs the same heat cycle and simply produces no
-        // exotic waste, so the waste line stays gas the drive can re-burn instead of a byproduct.
+        // Palmtree: nucleium is the one reactor gas this branch carries. It is created here, never
+        // converted; if the waste line is backed up it forces its way back into the fuel line.
         var heatKelvin = comp.Heat + 273.15f;
-        // var fuelAmount = air1.GetMoles(Gas.Plasma)
-        //                  + air1.GetMoles(Gas.ConstrictedPlasma)
-        //                  + air1.GetMoles(Gas.Tritium);
+        var fuelAmount = air1.GetMoles(Gas.Plasma)
+                         + air1.GetMoles(Gas.Tritium);
 
         if (air2.Pressure >= comp.MaxOutputPressure)
         {
-            // air1.AdjustMoles(Gas.Nucleium, fuelAmount / comp.ReactionRate / 10f * comp.InputPowerModifier);
+            air1.AdjustMoles(Gas.Nucleium, fuelAmount / comp.ReactionRate / 10f * comp.InputPowerModifier);
             air1.Temperature = heatKelvin;
         }
         else
         {
-            // air2.AdjustMoles(Gas.Nucleium, comp.ReactionRate / 10f * comp.InputPowerModifier);
+            air2.AdjustMoles(Gas.Nucleium, comp.ReactionRate / 10f * comp.InputPowerModifier);
             air2.Temperature = heatKelvin;
         }
     }
@@ -1123,8 +1121,7 @@ public sealed class StormdriveSystem : EntitySystem
         {
             mix.AdjustMoles(Gas.Oxygen, 750f);
             mix.AdjustMoles(Gas.Plasma, 200f);
-            // BRANCH NOTE (stormdrive branch): nucleium is a reactor gas.
-            // mix.AdjustMoles(Gas.Nucleium, 100f);
+            mix.AdjustMoles(Gas.Nucleium, 100f);
             mix.Temperature = 5000f;
         }
 

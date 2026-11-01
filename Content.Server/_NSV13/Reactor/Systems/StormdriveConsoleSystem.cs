@@ -167,8 +167,7 @@ public sealed class StormdriveConsoleSystem : EntitySystem
         // Stimulum
         // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
         // Pluoxium
-        // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
-        // Nucleium
+        values[(int) StormdriveConsoleGas.Nucleium] = air.GetMoles(Gas.Nucleium);
 
         for (var i = 0; i < (int) StormdriveConsoleGas.Count; i++)
         {
@@ -251,8 +250,7 @@ public sealed class StormdriveConsoleSystem : EntitySystem
         // Stimulum
         // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
         // Pluoxium
-        // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
-        // Nucleium
+        state.Nucleium = air.GetMoles(Gas.Nucleium);
         state.TotalMoles = air.TotalMoles;
 
         // fuel_mix is the same three positive contributors the ignition check counts in full.
