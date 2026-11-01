@@ -25,6 +25,13 @@ namespace Content.Shared._Goobstation.Supermatter.Components;
 [RegisterComponent, NetworkedComponent]
 public sealed partial class SupermatterComponent : Component
 {
+    /// <summary>
+    ///     Palmtree: the icon the monitoring console draws for this crystal. The sprite component is
+    ///     client-only, so the server cannot read it - each crystal prototype states its own art here.
+    /// </summary>
+    [DataField]
+    public SpriteSpecifier ConsoleIcon = new SpriteSpecifier.Texture(new ResPath("/Textures/_Goobstation/Interface/Supermatter/supermatter.png"));
+
     #region SM Base
 
     /// <summary>

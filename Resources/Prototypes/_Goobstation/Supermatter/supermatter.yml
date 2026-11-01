@@ -132,6 +132,10 @@
     - type: Icon
       sprite: _Goobstation/Supermatter/supermatter_small.rsi
       state: shard
+    # The monitoring console draws each crystal with its own art; the server cannot read the
+    # client-only sprite component, so the shard names its own icon here.
+    - type: Supermatter
+      consoleIcon: { sprite: _Goobstation/Supermatter/supermatter_small.rsi, state: shard }
 
 # Flatpack version, so it can be sold through the cargo market like every other ship engine.
 - type: entity

@@ -31,6 +31,10 @@ public sealed partial class SupermatterConsoleWindow : FancyWindow
     private SupermatterConsoleEntry[]? _supermatters = null;
     private IEnumerable<SupermatterConsoleEntry>? _activeAlerts = null;
 
+    // Palmtree: true when this window belongs to a crystal inspecting itself. Such a window lists
+    // exactly one entry, that crystal, and it can never be unfocused.
+    private bool _selfInspection;
+
     public event Action<NetEntity?>? SendFocusChangeMessageAction;
 
     private bool _autoScrollActive = false;
@@ -62,13 +66,21 @@ public sealed partial class SupermatterConsoleWindow : FancyWindow
         SendFocusChangeMessageAction += userInterface.SendFocusChangeMessage;
     }
 
-    public void UpdateUI(SupermatterConsoleEntry[] supermatters, SupermatterFocusData? focusData)
+    public void UpdateUI(SupermatterConsoleEntry[] supermatters, SupermatterFocusData? focusData, bool selfInspection)
     {
         if (_owner == null
             || !_entManager.TryGetComponent<SupermatterConsoleComponent>(_owner.Value, out var console))
             return;
 
-        if (_trackedEntity != focusData?.NetEntity)
+        _selfInspection = selfInspection;
+
+        if (_selfInspection)
+        {
+            // Palmtree: a crystal's own window always shows that crystal. Pin the selection to it
+            // and never ask the server to focus anything - there is nothing else to focus.
+            _trackedEntity = supermatters.Length > 0 ? supermatters[0].NetEntity : null;
+        }
+        else if (_trackedEntity != focusData?.NetEntity)
         {
             SendFocusChangeMessageAction?.Invoke(_trackedEntity);
             focusData = null;
@@ -124,6 +136,11 @@ public sealed partial class SupermatterConsoleWindow : FancyWindow
             // On click
             newEntryContainer.FocusButton.OnButtonUp += args =>
             {
+                // Palmtree: a crystal's own window has nothing else to focus - do not let the
+                // click collapse its stats.
+                if (_selfInspection)
+                    return;
+
                 if (_trackedEntity == newEntryContainer.NetEntity)
                     _trackedEntity = null;
                 else

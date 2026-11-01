@@ -6,6 +6,7 @@ using Content.Shared.Atmos;
 using Robust.Shared.GameStates;
 using Robust.Shared.Map;
 using Robust.Shared.Serialization;
+using Robust.Shared.Utility;
 
 namespace Content.Shared._Goobstation.Supermatter.Components;
 
@@ -138,12 +139,19 @@ public sealed class SupermatterConsoleBoundInterfaceState : BoundUserInterfaceSt
     public SupermatterFocusData? FocusData;
 
     /// <summary>
+    /// Palmtree: true when the window belongs to a crystal inspecting itself (the admin-ghost path)
+    /// rather than to a monitoring console. Such a window lists that crystal and nothing else.
+    /// </summary>
+    public bool SelfInspection;
+
+    /// <summary>
     /// Sends data from the server to the client to populate the atmos monitoring console UI
     /// </summary>
-    public SupermatterConsoleBoundInterfaceState(SupermatterConsoleEntry[] supermatters, SupermatterFocusData? focusData)
+    public SupermatterConsoleBoundInterfaceState(SupermatterConsoleEntry[] supermatters, SupermatterFocusData? focusData, bool selfInspection)
     {
         Supermatters = supermatters;
         FocusData = focusData;
+        SelfInspection = selfInspection;
     }
 }
 
@@ -166,16 +174,24 @@ public struct SupermatterConsoleEntry
     public SupermatterStatusType EntityStatus;
 
     /// <summary>
+    /// Palmtree: the icon the window draws for this crystal. The full crystal and the shard use
+    /// different art, and the sprite component is client-only, so the crystal states its own icon.
+    /// </summary>
+    public SpriteSpecifier Icon;
+
+    /// <summary>
     /// Used to populate the supermatter console UI with data from a single supermatter
     /// </summary>
     public SupermatterConsoleEntry
         (NetEntity entity,
         string entityName,
-        SupermatterStatusType status)
+        SupermatterStatusType status,
+        SpriteSpecifier icon)
     {
         NetEntity = entity;
         EntityName = entityName;
         EntityStatus = status;
+        Icon = icon;
     }
 }
 
