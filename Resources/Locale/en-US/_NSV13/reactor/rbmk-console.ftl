@@ -3,7 +3,7 @@
 # merged) independently: neither branch needs the other machine's strings.
 
 rbmk-console-title = RBMK reactor control
-rbmk-console-no-reactor = NO REACTOR LINKED. Check the console tag.
+rbmk-console-no-reactor = NO REACTOR LINKED. Use a multitool on the console and then on the reactor.
 rbmk-console-status-running = CORE CRITICAL - REACTOR RUNNING
 rbmk-console-status-idle = Reactor subcritical
 rbmk-console-status-slagged = CORE DESTROYED - SLAGGED

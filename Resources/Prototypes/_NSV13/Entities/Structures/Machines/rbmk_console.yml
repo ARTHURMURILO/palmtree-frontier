@@ -23,6 +23,11 @@
     - map: [ "enum.WiresVisualLayers.MaintenancePanel" ]
       state: generic_panel_open
   - type: RbmkConsole
+  # The console has to be linked to a reactor with a multitool before it will drive anything. The
+  # source port is what the link UI lists; the reactor carries the matching sink port.
+  - type: DeviceLinkSource
+    ports:
+      - ReactorControl
   - type: Computer
     board: RbmkConsoleCircuitboard
   - type: ActivatableUI
