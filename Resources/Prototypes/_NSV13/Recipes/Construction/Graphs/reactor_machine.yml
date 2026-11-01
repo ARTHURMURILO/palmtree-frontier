@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+# The reactors are deliberately not deconstructible, and not constructible yet either: the stock
+# `Machine` graph's crowbar step turned a whole reactor back into a machine frame in one do-after.
+# This graph is a single terminal node with no edges, so neither construction nor deconstruction
+# can path anywhere. A proper construction method will be added later; until then this is the
+# whole graph.
+- type: constructionGraph
+  id: ReactorMachine
+  start: machine
+  graph:
+    - node: machine
+      entity: !type:BoardNodeEntity { container: machine_board }

@@ -33,7 +33,10 @@ public sealed partial class TileNotBlocked : IConstructionCondition
             return false;
         }
 
-        return !turfSystem.IsTileBlocked(tileRef.Value, _filterMobs ? CollisionGroup.MobMask : CollisionGroup.Impassable);
+        // Palmtree: `includeConstructionBlockers` lets a soft machine footprint reserve its tiles.
+        return !turfSystem.IsTileBlocked(tileRef.Value,
+            _filterMobs ? CollisionGroup.MobMask : CollisionGroup.Impassable,
+            includeConstructionBlockers: true);
     }
 
     public ConstructionGuideEntry GenerateGuideEntry()

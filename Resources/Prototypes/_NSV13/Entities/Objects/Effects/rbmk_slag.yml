@@ -12,9 +12,11 @@
   description: A fist-sized chunk of the reactor's own fuel channels, still glowing. It will be warm for a very long time.
   categories: [ HideSpawnMenu ]
   components:
+  # Recolored from the uranium ore: darker rock, hotter green veins, so a corridor full of slag
+  # reads as something that is still reacting rather than as spilled ore.
   - type: Sprite
-    sprite: Objects/Materials/ore.rsi
-    state: uranium
+    sprite: _NSV13/Objects/Effects/slag.rsi
+    state: slag
   - type: Item
     size: Tiny
   - type: Physics
@@ -28,8 +30,10 @@
     intensity: 4
     slope: 1
   - type: RbmkSlag
+  # The glow the description promises: green, brighter than the ore, and wide enough that a pile
+  # lights the compartment instead of only the tile it landed on.
   - type: PointLight
-    color: Orange
-    radius: 1.5
-    energy: 2
+    color: "#39FF14"
+    radius: 2.5
+    energy: 2.5
     castShadows: false

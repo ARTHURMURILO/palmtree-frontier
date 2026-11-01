@@ -22,15 +22,38 @@
   placement:
     mode: SnapgridCenter
   components:
+  # No `noRot`: the fuel/waste ports turn with the hull, so the art has to turn with them.
   - type: Sprite
     sprite: _NSV13/Objects/Structures/Power/stormdrive.rsi
-    noRot: true
     layers:
     - state: reactor_off
       map: ["core"]
     - state: rods_5_1
       map: ["rods"]
       visible: false
+  # The drive is a 3x1 machine: with the stock 1x1 `fix1` a girder or wall could be built through
+  # either end. The fixture stays soft so the drive is not a wall; `ConstructionBlocker` reserves
+  # the 3x1 footprint for construction instead. Pipes and cables are unaffected - their recipes do
+  # not run the tile check.
+  - type: ConstructionBlocker
+  - type: Fixtures
+    fixtures:
+      # The core itself is solid; the two end tiles are walk-over and only reserved against building.
+      fix1:
+        shape:
+          !type:PhysShapeAabb
+          bounds: "-0.5,-0.5,0.5,0.5"
+        hard: true
+        density: 190
+        mask:
+        - MachineMask
+        layer:
+        - MachineLayer
+      footprint:
+        shape:
+          !type:PhysShapeAabb
+          bounds: "-1.5,-0.5,1.5,0.5"
+        hard: false
   - type: GenericVisualizer
     visuals:
       enum.StormdriveVisuals.Core:
@@ -88,6 +111,8 @@
   - type: Appearance
   - type: AtmosDevice
   - type: NodeContainer
+    # Opt in to the standard "It has a connector for HV cables." examine line.
+    examinable: true
     nodes:
       fuel:
         !type:PipeNode
@@ -122,6 +147,10 @@
     loadNode: output
     sprite: Structures/Power/power.rsi
     state: generator
+  # The console is linked to the drive with a multitool; the link lands on this sink port.
+  - type: DeviceLinkSink
+    ports:
+      - ReactorControl
   # Shortband alarms do not cross a map without a telecomms relay; the drive carries its own pass.
   - type: TelecomExempt
   # Bolted down for life: still fittable on a fresh spawn, never removable afterwards.
@@ -129,6 +158,15 @@
     flags: Anchorable
   - type: Machine
     board: StormdriveReactorMachineCircuitboard
+  # Reactors cannot be deconstructed (and cannot be constructed yet). The stock `Machine` graph
+  # lets a bare crowbar pry the whole machine back into a frame; `ReactorMachine` is a terminal
+  # node with no edges, so neither the crowbar nor the deconstruct verb can path anywhere. A
+  # proper construction path will be added later.
+  - type: Construction
+    graph: ReactorMachine
+    # The graph has a single `machine` node and no edges; pointing the deconstruction target at
+    # that same node means the deconstruct verb sees "already there" and offers nothing.
+    deconstructionTarget: machine
   # The rod bay: the DM reactor's own TGUI, where you pull and mount control rods by hand. Declaring
   # the container up front means it is part of the entity from spawn instead of being added when the
   # first rod is inserted.

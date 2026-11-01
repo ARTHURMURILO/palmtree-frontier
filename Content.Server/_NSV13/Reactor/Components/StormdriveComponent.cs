@@ -64,6 +64,19 @@ public sealed partial class StormdriveComponent : Component
     [DataField]
     public float ReactionRate;
 
+    /// <summary>
+    ///     Fraction of <see cref="ReactionRate"/> actually drawn from the fuel line each tick.
+    /// </summary>
+    /// <remarks>
+    ///     Palmtree: 0.5. The DM drive was written for stations with gas miners on tap; a ship buys
+    ///     its plasma by the canister, so the same reaction now costs half the fuel. The slug is
+    ///     scaled back up before the gas modifiers are computed, so the reaction itself is
+    ///     unchanged - only the pipe drains at half speed. Electrical output is multiplied by
+    ///     this same factor, so the watts per mole stay at the vanilla figure.
+    /// </remarks>
+    [DataField]
+    public float FuelConsumptionFactor = 0.5f;
+
     [DataField]
     public float TargetReactionRate;
 
@@ -244,14 +257,21 @@ public sealed partial class StormdriveComponent : Component
     ///     Seconds-remaining marks at which the armed meltdown counts itself down over the radio.
     /// </summary>
     /// <remarks>
-    ///     The drive ticks every two seconds, so the marks are two apart: a one-second cadence would
-    ///     emit two lines per tick. Descending; each mark fires once per fuse.
+    ///     Ten, eight and six are two apart because the drive itself only ticks every two seconds,
+    ///     and a mark per tick is as fast as the early fuse needs to talk. From six down the marks
+    ///     are one second apart and are announced by a dedicated one-second timer rather than the
+    ///     process tick, so the last seconds of the fuse are heard every second. Descending; each
+    ///     mark fires once per fuse.
     /// </remarks>
     [DataField]
-    public int[] MeltdownCountdownStages = { 10, 8, 6, 4, 2 };
+    public int[] MeltdownCountdownStages = { 10, 8, 6, 5, 4, 3, 2, 1 };
 
     /// <summary>How far through <see cref="MeltdownCountdownStages"/> the current fuse is.</summary>
     public int MeltdownCountdownIndex;
+
+    /// <summary>When the next per-second countdown mark is due. Set when the fuse arms.</summary>
+    [ViewVariables(VVAccess.ReadOnly)]
+    public TimeSpan NextCountdownAnnounce;
 
     /// <summary>Maximum pressure the waste line can take before the dump aborts.</summary>
     [DataField]
@@ -275,7 +295,11 @@ public sealed partial class StormdriveComponent : Component
     public SoundSpecifier AlarmSound = new SoundPathSpecifier("/Audio/_NSV13/Reactor/alarm.ogg");
 
     [DataField]
-    public SoundSpecifier MeltdownSound = new SoundPathSpecifier("/Audio/_NSV13/Reactor/core_overheating.ogg");
+    // stormdrive.dm `start_meltdown()` relays `nsv13/sound/effects/ship/reactor/meltdown.ogg` - a
+    // distinct 20 s file from the RBMK's own `rbmk/meltdown.ogg`. The port only shipped the RBMK
+    // one, so the fuse was playing the wrong machine's hiss; this is the original drive sting.
+    // `core_overheating.ogg` belongs to the warning loop (OverheatLoopSound below).
+    public SoundSpecifier MeltdownSound = new SoundPathSpecifier("/Audio/_NSV13/Reactor/stormdrive_meltdown.ogg");
 
     /// <summary>
     ///     Looping warning bed played while the core is over its critical temperature. The DM
@@ -304,10 +328,10 @@ public sealed partial class StormdriveComponent : Component
 
     /// <summary>Radius of the (deliberately small) meltdown blast.</summary>
     [DataField]
-    public float BlastRadius = 12f;
+    public float BlastRadius = 8f;
 
     [DataField]
-    public float BlastCoreRadius = 6f;
+    public float BlastCoreRadius = 4f;
 
     [DataField]
     public float BlastPeakIntensity = 10f;
@@ -331,8 +355,13 @@ public sealed partial class StormdriveComponent : Component
     ///     Radiation left in the ruined core, in rads per second. SS14 applies this directly as
     ///     damage every second, so it is on a completely different scale to the BYOND original.
     /// </summary>
+    /// <remarks>
+    ///     Capped by <see cref="MaxCoreRadiation"/> at the use site: the gas modifier can multiply
+    ///     this several times over, and a plasma-rich wreck was reading 39 rads at the core, which
+    ///     killed in about three seconds. Eight is already a place you only enter in a radsuit.
+    /// </remarks>
     [DataField]
-    public float MeltdownRadiation = 25f;
+    public float MeltdownRadiation = 8f;
 
     /// <summary>
     ///     Corium chunk spawned when the pit is cleaned out during repairs (stormdrive.dm:265).

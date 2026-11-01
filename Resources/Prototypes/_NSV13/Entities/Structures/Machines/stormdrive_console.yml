@@ -22,6 +22,10 @@
     - map: [ "enum.WiresVisualLayers.MaintenancePanel" ]
       state: generic_panel_open
   - type: StormdriveConsole
+  # A multitool link is required, and this is the port it lands on.
+  - type: DeviceLinkSource
+    ports:
+      - ReactorControl
   - type: Computer
     board: StormdriveConsoleCircuitboard
   - type: ActivatableUI

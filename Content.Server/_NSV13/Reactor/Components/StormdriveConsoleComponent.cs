@@ -10,8 +10,9 @@ namespace Content.Server._NSV13.Reactor.Components;
 /// <remarks>
 ///     Ported from <c>/obj/machinery/computer/ship/reactor_control_computer</c>
 ///     (stormdrive.dm:1290-1440). The DM original linked either from a multitool buffer or from a
-///     mapper-set <c>reactor_id</c>; here <see cref="ConsoleId"/> plays the role of <c>reactor_id</c>
-///     and an unset id means "whatever reactor is closest on my own grid".
+///     mapper-set <c>reactor_id</c>; here the multitool link is the real binding (a
+///     <c>DeviceLinkSource</c> on the console, a matching sink on the drive) and
+///     <see cref="ConsoleId"/> is only an optional filter.
 /// </remarks>
 [RegisterComponent]
 public sealed partial class StormdriveConsoleComponent : Component

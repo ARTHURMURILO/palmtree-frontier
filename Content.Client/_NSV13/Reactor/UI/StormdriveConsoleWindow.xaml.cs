@@ -225,13 +225,13 @@ public sealed partial class StormdriveConsoleWindow : DefaultWindow
             ("value", $"{state.LastPowerProduced / 1e6:F2}"),
             ("max", $"{state.TheoreticalMaximumPower / 1e6:F2}"));
 
-        // Fuel burn in mol/s. The server converts the per-tick reaction rate for us, so the scale
-        // and cut-offs are the JS ones divided by the two-second process interval: green from
-        // 1 mol/s, amber from 0.5 mol/s.
-        ReactionBar.Value = Math.Clamp(state.ReactionRate * 0.1f, 0f, 1f);
-        ReactionBar.ForegroundStyleBoxOverride = state.ReactionRate >= 1f ? GreenFill
-            : state.ReactionRate >= 0.5f ? AmberFill : RedFill;
-        ReactionRateLabel.Text = Loc.GetString("stormdrive-console-reaction-value", ("value", $"{state.ReactionRate:F1}"));
+        // Fuel burn, in mol/s (the value the label shows). The old 0.05 scale / 2-and-1 thresholds
+        // were in raw reaction-rate units (moles per 2 s tick); divide by 4 to keep the same
+        // green/amber cut-offs once the factor (0.5) and the tick are applied.
+        ReactionBar.Value = Math.Clamp(state.FuelConsumptionRate * 0.2f, 0f, 1f);
+        ReactionBar.ForegroundStyleBoxOverride = state.FuelConsumptionRate >= 0.5f ? GreenFill
+            : state.FuelConsumptionRate >= 0.25f ? AmberFill : RedFill;
+        ReactionRateLabel.Text = Loc.GetString("stormdrive-console-reaction-value", ("value", $"{state.FuelConsumptionRate:F1}"));
 
         // Fuel ratio: a lean mixture is the dangerous one - below 12.5 % the reaction starves.
         var ratio = state.TotalMoles <= 0f ? 0f : Math.Clamp(state.FuelMix / state.TotalMoles, 0f, 1f);
@@ -292,14 +292,6 @@ public sealed partial class StormdriveConsoleWindow : DefaultWindow
             _gasLabels[i].Text = Loc.GetString($"stormdrive-console-gas-{(StormdriveConsoleGas) i}",
                 ("percent", $"{fraction * 100f:F1}"));
         }
-
-        InputLabel.Text = Loc.GetString("stormdrive-console-input-value",
-            ("high", $"{state.MoleThresholdHigh:F0}"),
-            ("veryHigh", $"{state.MoleThresholdVeryHigh:F0}"));
-
-        InhibitorLabel.Text = Loc.GetString("stormdrive-console-inhibitors-value",
-            ("nob", $"{state.HyperNoblium:F0}"),
-            ("co2", $"{state.CarbonDioxide:F0}"));
 
         TotalMolesLabel.Text = Loc.GetString("stormdrive-console-moles-value", ("value", $"{state.TotalMoles:F0}"));
 

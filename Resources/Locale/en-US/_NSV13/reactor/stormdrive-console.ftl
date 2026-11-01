@@ -2,7 +2,7 @@
 # Split out of the combined consoles.ftl, same reason as the RBMK file.
 
 stormdrive-console-title = Stormdrive reactor control
-stormdrive-console-no-reactor = NO REACTOR LINKED. Check the console tag.
+stormdrive-console-no-reactor = NO REACTOR LINKED. Use a multitool on the console and then on the drive.
 stormdrive-console-status-maintenance = MAINTENANCE MODE - lid open
 stormdrive-console-status-idle = Reactor off-line, awaiting ignition
 stormdrive-console-status-running = Fission reaction stable
@@ -20,8 +20,6 @@ stormdrive-console-reaction-rate = Reaction rate:
 stormdrive-console-countdown-value = { $seconds } s
 stormdrive-console-meltdown-title = CORE DESTABILISED
 stormdrive-console-meltdown-hint = Control rods have failed. Cool the core below the meltdown threshold before the fuse runs out.
-stormdrive-console-input-value = rich above { $high } mol, critical above { $veryHigh } mol
-stormdrive-console-inhibitors-value = { $nob } mol hyper-noblium, { $co2 } mol CO2
 stormdrive-console-maintenance = Engage maintenance
 stormdrive-console-maintenance-off = Disengage maintenance
 stormdrive-console-dump = Open fuel dump
@@ -67,7 +65,7 @@ stormdrive-rods-entry = { $name } - { $percent } % integrity, x{ $effectiveness 
 stormdrive-rods-eject-name = Eject { $name }
 stormdrive-rods-full = The bay already holds the maximum number of control rods.
 stormdrive-rods-no-bay = There is no intact rod bay left to open.
-stormdrive-rods-not-maintenance = The lid is sealed. Engage maintenance protocols before opening the bay.
+stormdrive-rods-not-maintenance = "The lid is sealed.\nEngage maintenance protocols before opening the bay."
 stormdrive-rods-mounted = The control rod locks into the coupling.
 stormdrive-rods-live-blue-glow = A blue glow envelopes your hands!
 stormdrive-repair-need-sheets = You need at least { $count } sheets of liner material to reline the reactor pit.

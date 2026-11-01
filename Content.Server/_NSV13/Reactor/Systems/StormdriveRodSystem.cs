@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 using Content.Server._NSV13.Reactor.Components;
+using Content.Server._NSV13.Reactor.Events;
 using Content.Server.Emp;
 using Content.Shared.Examine;
 using Content.Shared._NSV13.Reactor;
@@ -10,6 +11,7 @@ using Content.Shared.DoAfter;
 using Content.Shared.Interaction;
 using Content.Shared.Popups;
 using Content.Server.Radiation.Systems;
+using Content.Shared.Radiation.Components;
 using Robust.Server.GameObjects;
 using Robust.Shared.Audio.Systems;
 using Robust.Shared.Containers;
@@ -58,6 +60,7 @@ public sealed class StormdriveRodSystem : EntitySystem
         SubscribeLocalEvent<StormdriveComponent, StormdriveRodRemoveDoAfterEvent>(OnRemoveFinished);
         SubscribeLocalEvent<StormdriveComponent, BoundUIOpenedEvent>(OnUiOpened);
         SubscribeLocalEvent<StormdriveComponent, StormdriveRemoveRodMessage>(OnRemoveMessage);
+        SubscribeLocalEvent<StormdriveComponent, StormdriveStateChangedEvent>(OnStateChanged);
     }
 
     private void OnExamined(EntityUid uid, StormdriveComponent comp, ExaminedEvent args)
@@ -65,7 +68,19 @@ public sealed class StormdriveRodSystem : EntitySystem
         if (!args.IsInDetailsRange)
             return;
 
-        args.PushMarkup(Loc.GetString("stormdrive-examine-ports"));
+        // A melted drive is a wreck: its feed lines and take-off are gone, and it supplies nothing.
+        if (comp.State == StormdriveState.Meltdown)
+            return;
+
+        // Screen sides, not compass points: the camera counter-rotates with the hull, so the crew
+        // sees the drive in its own frame no matter which way the ship is pointing.
+        var machineRotation = _transform.GetWorldRotation(uid);
+        var viewerFrame = Transform(args.Examiner).GridUid is { } viewerGrid
+            ? _transform.GetWorldRotation(viewerGrid)
+            : Angle.Zero;
+        args.PushMarkup(Loc.GetString("stormdrive-examine-ports",
+            ("fuel", ReactorExamine.ScreenSide(machineRotation, viewerFrame, Direction.East)),
+            ("waste", ReactorExamine.ScreenSide(machineRotation, viewerFrame, Direction.West))));
     }
 
     /// <summary>The bay's container, created on first use.</summary>
@@ -244,6 +259,12 @@ public sealed class StormdriveRodSystem : EntitySystem
         if (!HasComp<ControlRodComponent>(args.Entity) || comp.ControlRods.Contains(args.Entity))
             return;
 
+        // A rod sitting in the bay is shielded by the core, exactly as the RBMK's fuel rods are
+        // (see RbmkReactorSystem.OnRodInserted). Without this, five 3-rad rods stack on the reactor
+        // tile and the drive reads 15 rads before its own source is even counted.
+        if (TryComp<RadiationSourceComponent>(args.Entity, out var rodRadiation))
+            rodRadiation.Enabled = false;
+
         comp.ControlRods.Add(args.Entity);
         _stormdrive.RecalculateRods(comp);
         _stormdrive.UpdateVisuals(uid, comp);
@@ -258,12 +279,21 @@ public sealed class StormdriveRodSystem : EntitySystem
         if (!comp.ControlRods.Remove(args.Entity))
             return;
 
+        // Pulled back out: the rod is unshielded again and has to read as the hot item it is.
+        if (TryComp<RadiationSourceComponent>(args.Entity, out var rodRadiation))
+            rodRadiation.Enabled = true;
+
         _stormdrive.RecalculateRods(comp);
         _stormdrive.UpdateVisuals(uid, comp);
         UpdateUi(uid, comp);
     }
 
     private void OnUiOpened(EntityUid uid, StormdriveComponent comp, BoundUIOpenedEvent args)
+    {
+        UpdateUi(uid, comp);
+    }
+
+    private void OnStateChanged(EntityUid uid, StormdriveComponent comp, StormdriveStateChangedEvent args)
     {
         UpdateUi(uid, comp);
     }
@@ -276,7 +306,7 @@ public sealed class StormdriveRodSystem : EntitySystem
 
     public void UpdateUi(EntityUid uid, StormdriveComponent comp)
     {
-        if (!_ui.HasUi(uid, StormdriveRodsUiKey.Key))
+        if (!_ui.HasUi(uid, StormdriveRodsUiKey.Key) || !_ui.IsUiOpen(uid, StormdriveRodsUiKey.Key))
             return;
 
         if (comp.RodNotice.Length > 0 && _timing.CurTime >= comp.RodNoticeUntil)

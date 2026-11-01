@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 using Content.Server._NSV13.Reactor.Components;
+using Content.Server._NSV13.Reactor.Events;
 using Content.Server._PS.Ships;
 using Content.Server.Atmos.EntitySystems;
 using Content.Server.Emp;
@@ -60,6 +61,7 @@ public sealed class StormdriveSystem : EntitySystem
     [Dependency] private readonly NodeContainerSystem _nodeContainer = default!;
     [Dependency] private readonly ExplosionSystem _explosion = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!;
+    [Dependency] private readonly EngineAudioSystem _engineAudio = default!;
     [Dependency] private readonly SharedContainerSystem _container = default!;
     [Dependency] private readonly AppearanceSystem _appearance = default!;
     [Dependency] private readonly PoweredLightSystem _poweredLight = default!;
@@ -123,6 +125,11 @@ public sealed class StormdriveSystem : EntitySystem
                 // five-slot bay.
                 if (!comp.ControlRods.Contains(rodUid))
                     comp.ControlRods.Add(rodUid);
+
+                // The bay shields its rods. OnRodInserted does this for hand-mounted ones, but a
+                // ContainerFill-loaded rod can already be inside before that handler runs.
+                if (TryComp<RadiationSourceComponent>(rodUid, out var rodRadiation))
+                    rodRadiation.Enabled = false;
             }
         }
 
@@ -166,6 +173,22 @@ public sealed class StormdriveSystem : EntitySystem
                 continue;
 
             SlowProcess(uid, comp);
+        }
+
+        // The armed-meltdown countdown runs on its own one-second clock. The process tick is two
+        // seconds, which is fine for the 10/8/6 marks but would skip every other number in the last
+        // seconds of the fuse - exactly the part the crew needs to hear.
+        var countdowns = EntityQueryEnumerator<StormdriveComponent>();
+        while (countdowns.MoveNext(out var countdownUid, out var countdown))
+        {
+            if (!countdown.ReactorEndTimes || countdown.State == StormdriveState.Meltdown)
+                continue;
+
+            if (now < countdown.NextCountdownAnnounce)
+                continue;
+
+            countdown.NextCountdownAnnounce = now + TimeSpan.FromSeconds(1);
+            AnnounceMeltdownCountdown(countdownUid, countdown);
         }
     }
 
@@ -225,7 +248,11 @@ public sealed class StormdriveSystem : EntitySystem
         {
             if (TryComp<RadiationSourceComponent>(uid, out var dead))
             {
-                dead.Intensity = comp.MeltdownRadiation * comp.RadiationModifier;
+                // The gas modifier can multiply this several times over; the wreck must not read
+                // more than a live core at full tilt. See StormdriveComponent.MeltdownRadiation.
+                dead.Intensity = Math.Clamp(comp.MeltdownRadiation * comp.RadiationModifier,
+                    0f,
+                    comp.MaxCoreRadiation);
                 dead.Enabled = true;
             }
 
@@ -281,6 +308,11 @@ public sealed class StormdriveSystem : EntitySystem
         comp.LastPowerProduced = MathF.Max(0f,
             comp.BasePower * comp.InputPower - nucleiumPowerReduction);
 
+        // Palmtree: the reaction only consumes `FuelConsumptionFactor` of the gas, so the output has
+        // to scale with it too. Without this, halving the fuel doubled the watts per mole - the same
+        // reaction was being paid for with half the gas, which read as an unexplained 2x output.
+        comp.LastPowerProduced *= Math.Clamp(comp.FuelConsumptionFactor, 0.01f, 1f);
+
         // DM calls this late in the tick ("if(last_power_produced > 3000000)"), and the value it
         // reads is the one computed above, so the ordering here is equivalent.
         if (comp.LastPowerProduced > 3e6f)
@@ -313,25 +345,30 @@ public sealed class StormdriveSystem : EntitySystem
     private void React(EntityUid uid, StormdriveComponent comp, GasMixture air1, out float nucleiumPowerReduction)
     {
         var rate = comp.ReactionRate;
-        var slug = air1.Remove(rate);
+        // Palmtree: only half the reaction's worth of gas leaves the pipe (FuelConsumptionFactor),
+        // then the slug is scaled back to a full reaction so the gas modifiers - which are all
+        // ratios against `rate` - come out exactly as they would have. Same reaction, half the fuel.
+        var factor = Math.Clamp(comp.FuelConsumptionFactor, 0.01f, 1f);
+        var slug = air1.Remove(rate * factor);
+        var slugScale = 1f / factor;
 
         // Palmtree: the drive runs on vanilla gases plus nucleium, its own waste. The other /tg/
         // and NSV13 reactor gases are not part of this change and contribute 0 to the maths below,
         // exactly as if they had never been there.
-        var plasma = slug.GetMoles(Gas.Plasma);
-        var constricted = 0f; // slug.GetMoles(Gas.ConstrictedPlasma);
-        var tritium = slug.GetMoles(Gas.Tritium);
-        var o2 = slug.GetMoles(Gas.Oxygen);
-        var n2 = slug.GetMoles(Gas.Nitrogen);
-        var co2 = slug.GetMoles(Gas.CarbonDioxide);
-        var h2o = slug.GetMoles(Gas.WaterVapor);
-        var nob = 0f; // slug.GetMoles(Gas.HyperNoblium);
-        var n2o = slug.GetMoles(Gas.NitrousOxide);
-        var nitryl = 0f; // slug.GetMoles(Gas.Nitryl);
-        var bz = 0f; // slug.GetMoles(Gas.BZ);
-        var stim = 0f; // slug.GetMoles(Gas.Stimulum);
-        var pluox = 0f; // slug.GetMoles(Gas.Pluoxium);
-        var nucleium = slug.GetMoles(Gas.Nucleium);
+        var plasma = slug.GetMoles(Gas.Plasma) * slugScale;
+        var constricted = 0f; // slug.GetMoles(Gas.ConstrictedPlasma) * slugScale;
+        var tritium = slug.GetMoles(Gas.Tritium) * slugScale;
+        var o2 = slug.GetMoles(Gas.Oxygen) * slugScale;
+        var n2 = slug.GetMoles(Gas.Nitrogen) * slugScale;
+        var co2 = slug.GetMoles(Gas.CarbonDioxide) * slugScale;
+        var h2o = slug.GetMoles(Gas.WaterVapor) * slugScale;
+        var nob = 0f; // slug.GetMoles(Gas.HyperNoblium) * slugScale;
+        var n2o = slug.GetMoles(Gas.NitrousOxide) * slugScale;
+        var nitryl = 0f; // slug.GetMoles(Gas.Nitryl) * slugScale;
+        var bz = 0f; // slug.GetMoles(Gas.BZ) * slugScale;
+        var stim = 0f; // slug.GetMoles(Gas.Stimulum) * slugScale;
+        var pluox = 0f; // slug.GetMoles(Gas.Pluoxium) * slugScale;
+        var nucleium = slug.GetMoles(Gas.Nucleium) * slugScale;
 
         var rorTotal = plasma * (0.5f * comp.PlasmaModifier)
                        + constricted * (1f * comp.ConstrictedPlasmaModifier)
@@ -830,8 +867,8 @@ public sealed class StormdriveSystem : EntitySystem
             // Looping, not a one-shot sting: the DM original relays this to the ship's overmap as a
             // continuous alarm, and a single second of klaxon while the core keeps climbing reads
             // as a bug rather than as a warning.
-            comp.AlarmStream = _audio.PlayPvs(comp.AlarmSound, uid, AudioParams.Default.WithLoop(true))?.Entity;
-            comp.OverheatStream = _audio.PlayPvs(comp.OverheatLoopSound, uid, AudioParams.Default.WithLoop(true))?.Entity;
+            comp.AlarmStream = _engineAudio.PlayOnGrid(comp.AlarmSound, uid, loop: true);
+            comp.OverheatStream = _engineAudio.PlayOnGrid(comp.OverheatLoopSound, uid, loop: true);
         }
         else if (comp.Heat <= comp.TemperatureCritical && comp.WarningState == StormdriveWarning.Overheat)
         {
@@ -998,15 +1035,16 @@ public sealed class StormdriveSystem : EntitySystem
         comp.WarningState = StormdriveWarning.Meltdown;
         comp.MeltdownAt = _timing.CurTime + comp.MeltdownDelay;
         comp.MeltdownCountdownIndex = 0;
+        comp.NextCountdownAnnounce = _timing.CurTime + TimeSpan.FromSeconds(1);
         comp.ReactorEndTimes = true;
 
-        // The overheat warning bed and klaxon are still looping when the core crosses the meltdown
-        // threshold. The DM original relayed the meltdown sting on the same reactor-alert channel,
-        // which replaced them; here each sound has its own stream, so without this the sting plays
-        // over the alarm for the whole eighteen-second fuse.
+        // The overheat warning bed and the klaxon are still running when the core tips over the
+        // meltdown threshold. In the original they lived on the same reactor-alert channel as the
+        // meltdown relay, so starting the fuse replaced them; here the channel is per-sound, so
+        // they have to be stopped by hand or the sting plays over a klaxon for the whole 18 s.
         StopOverheatLoop(comp);
 
-        _audio.PlayPvs(comp.MeltdownSound, uid);
+        _engineAudio.PlayOnGrid(comp.MeltdownSound, uid);
     }
 
     /// <summary>
@@ -1016,7 +1054,8 @@ public sealed class StormdriveSystem : EntitySystem
     ///     The DM original announced "the rods have failed" and then went quiet for the whole fuse, so
     ///     the only sign of the deadline was a number on the console. A fuse nobody can hear is a
     ///     fuse that surprises people; the marks in <see cref="StormdriveComponent.MeltdownCountdownStages"/>
-    ///     are spaced to the reactor's own two-second tick.
+    ///     are read on a one-second clock, so the early 10/8/6 marks and the last five seconds both
+    ///     land where they should.
     /// </remarks>
     private void AnnounceMeltdownCountdown(EntityUid uid, StormdriveComponent comp)
     {
@@ -1039,8 +1078,6 @@ public sealed class StormdriveSystem : EntitySystem
     {
         if (_timing.CurTime < comp.MeltdownAt)
         {
-            AnnounceMeltdownCountdown(uid, comp);
-
             // §handle_reactor_destabilization(): while the fuse burns, the core keeps shaking the
             // compartment apart. 40 % per tick, windows first, then anyone standing nearby.
             if (_random.Prob(0.4f))
@@ -1088,11 +1125,12 @@ public sealed class StormdriveSystem : EntitySystem
         // The wreck stays on the grid, so its ambience has to be silenced by hand; nothing else
         // ticks this machine again.
         _ambient.SetAmbience(uid, false);
-        _audio.PlayPvs(comp.ExplosionSound, uid);
+        _engineAudio.PlayOnGrid(comp.ExplosionSound, uid);
         _shipEvent.TryEngineAnnounce(uid, Loc.GetString("stormdrive-announce-meltdown"), ref comp.NextAlert, urgent: true);
 
         DoMeltdownEffects(uid, comp);
         UpdateVisuals(uid, comp);
+        RaiseLocalEvent(uid, new StormdriveStateChangedEvent());
 
         // DM: flick("meltdown") then, one second later, icon_state = "broken". The flick is the RSI
         // animation on the meltdown state; the timer swaps to the wreckage underneath it.
@@ -1148,8 +1186,8 @@ public sealed class StormdriveSystem : EntitySystem
         }
 
         // Ship-wide knockdown for everything standing.
-        _shipEvent.Shockwave(uid, coords, 22f, 7f, TimeSpan.FromSeconds(5));
-        _shipEvent.ShakeLocal(uid, 10f, 1.5f);
+        _shipEvent.Shockwave(uid, coords, 14.7f, 7f, TimeSpan.FromSeconds(5));
+        _shipEvent.ShakeLocal(uid, 6.7f, 1.5f);
 
         // NOTE: no slag storm here. stormdrive.dm's meltdown() only detonates the map's existing
         // nuclear_waste_spawner landmarks - it never throws corium around. That is the RBMK's
@@ -1191,7 +1229,7 @@ public sealed class StormdriveSystem : EntitySystem
         // stormdrive.dm:537-542 - the startup sting is picked at random, and the core starts to
         // glow an ominous blue. The prototype carries the hum; it becomes audible only now.
         if (comp.StartupSounds.Count > 0)
-            _audio.PlayPvs(_random.Pick(comp.StartupSounds), uid);
+            _engineAudio.PlayOnGrid(_random.Pick(comp.StartupSounds), uid);
 
         _ambient.SetAmbience(uid, true);
         UpdateVisuals(uid, comp);
@@ -1242,6 +1280,9 @@ public sealed class StormdriveSystem : EntitySystem
         }
 
         UpdateVisuals(uid, comp);
+
+        // The rod-bay window is a different UI from the console; tell it the lid state changed.
+        RaiseLocalEvent(uid, new StormdriveStateChangedEvent());
         return true;
     }
 

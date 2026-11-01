@@ -107,8 +107,6 @@
                         </PanelContainer>
                     </BoxContainer>
 
-                    <Label Name="InputLabel" Text="" StyleClasses="LabelSubText" />
-                    <Label Name="InhibitorLabel" Text="" StyleClasses="LabelSubText" />
                     <Label Name="TotalMolesLabel" Text="" StyleClasses="LabelSubText" />
                 </BoxContainer>
 
