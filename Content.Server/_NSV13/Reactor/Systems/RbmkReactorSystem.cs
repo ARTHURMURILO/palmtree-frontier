@@ -537,18 +537,16 @@ public sealed class RbmkReactorSystem : EntitySystem
     /// </summary>
     private void VentSteam(EntityUid uid, RbmkReactorComponent reactor)
     {
+        // One puff per tick, however bad the pressure is. Three at once read as a burst of separate
+        // splashes rather than one plume, and with a 0.45 s lifetime at a 2 s tick a single puff
+        // already leaves a visible trail.
         var coords = _transform.GetMapCoordinates(uid);
-        var count = reactor.Pressure > reactor.PressureCritical * 1.5f ? 3 : 1;
+        var offset = _random.NextAngle().ToVec() * _random.NextFloat(0f, 0.6f);
+        var puff = Spawn(reactor.VentEffect, new MapCoordinates(coords.Position + offset, coords.MapId));
 
-        for (var i = 0; i < count; i++)
-        {
-            var offset = _random.NextAngle().ToVec() * _random.NextFloat(0f, 0.6f);
-            var puff = Spawn(reactor.VentEffect, new MapCoordinates(coords.Position + offset, coords.MapId));
-
-            // The ported puff is drawn falling out of the top of its cell; half a turn makes it
-            // rise out of the core instead.
-            _transform.SetLocalRotation(puff, Angle.FromDegrees(180f));
-        }
+        // The ported puff is drawn falling out of the top of its cell; half a turn makes it rise
+        // out of the core instead.
+        _transform.SetLocalRotation(puff, Angle.FromDegrees(180f));
     }
 
     /// <summary>
@@ -699,6 +697,11 @@ public sealed class RbmkReactorSystem : EntitySystem
         reactor.AlertActive = false;
         StopAlarm(reactor);
         UpdateVisuals(uid, reactor);
+
+        // A wreck has no feed lines to point at. Dropping the layout stops the examine overlay from
+        // drawing arrows on a lump of corium; the client treats a missing layout as "nothing to
+        // annotate", so this is the whole client-side change.
+        RemComp<ReactorPortLayoutComponent>(uid);
 
         // A slagged wreck still exists (it is not destructible any more), so its running hum has to
         // be silenced by hand - nothing else will tick this machine again.
