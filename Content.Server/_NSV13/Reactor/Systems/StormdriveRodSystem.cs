@@ -3,7 +3,6 @@
 using Content.Server._NSV13.Reactor.Components;
 using Content.Server._NSV13.Reactor.Events;
 using Content.Server.Emp;
-using Content.Shared.Examine;
 using Content.Shared._NSV13.Reactor;
 using Content.Shared.Damage;
 using Content.Shared.Damage.Systems;
@@ -53,7 +52,6 @@ public sealed class StormdriveRodSystem : EntitySystem
         base.Initialize();
 
         SubscribeLocalEvent<StormdriveComponent, InteractUsingEvent>(OnInteractUsing);
-        SubscribeLocalEvent<StormdriveComponent, ExaminedEvent>(OnExamined);
         SubscribeLocalEvent<StormdriveComponent, StormdriveRodInstallDoAfterEvent>(OnInstallFinished);
         SubscribeLocalEvent<StormdriveComponent, EntInsertedIntoContainerMessage>(OnRodInserted);
         SubscribeLocalEvent<StormdriveComponent, EntRemovedFromContainerMessage>(OnRodRemoved);
@@ -61,26 +59,6 @@ public sealed class StormdriveRodSystem : EntitySystem
         SubscribeLocalEvent<StormdriveComponent, BoundUIOpenedEvent>(OnUiOpened);
         SubscribeLocalEvent<StormdriveComponent, StormdriveRemoveRodMessage>(OnRemoveMessage);
         SubscribeLocalEvent<StormdriveComponent, StormdriveStateChangedEvent>(OnStateChanged);
-    }
-
-    private void OnExamined(EntityUid uid, StormdriveComponent comp, ExaminedEvent args)
-    {
-        if (!args.IsInDetailsRange)
-            return;
-
-        // A melted drive is a wreck: its feed lines and take-off are gone, and it supplies nothing.
-        if (comp.State == StormdriveState.Meltdown)
-            return;
-
-        // Screen sides, not compass points: the camera counter-rotates with the hull, so the crew
-        // sees the drive in its own frame no matter which way the ship is pointing.
-        var machineRotation = _transform.GetWorldRotation(uid);
-        var viewerFrame = Transform(args.Examiner).GridUid is { } viewerGrid
-            ? _transform.GetWorldRotation(viewerGrid)
-            : Angle.Zero;
-        args.PushMarkup(Loc.GetString("stormdrive-examine-ports",
-            ("fuel", ReactorExamine.ScreenSide(machineRotation, viewerFrame, Direction.East)),
-            ("waste", ReactorExamine.ScreenSide(machineRotation, viewerFrame, Direction.West))));
     }
 
     /// <summary>The bay's container, created on first use.</summary>
