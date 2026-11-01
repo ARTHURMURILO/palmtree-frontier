@@ -25,6 +25,13 @@ namespace Content.Shared._Goobstation.Supermatter.Components;
 [RegisterComponent, NetworkedComponent]
 public sealed partial class SupermatterComponent : Component
 {
+    /// <summary>
+    ///     Palmtree: the icon the monitoring console draws for this crystal. The sprite component is
+    ///     client-only, so the server cannot read it - each crystal prototype states its own art here.
+    /// </summary>
+    [DataField]
+    public SpriteSpecifier ConsoleIcon = new SpriteSpecifier.Texture(new ResPath("/Textures/_Goobstation/Interface/Supermatter/supermatter.png"));
+
     #region SM Base
 
     /// <summary>
@@ -107,6 +114,20 @@ public sealed partial class SupermatterComponent : Component
     [DataField("radiationOutputFactor")]
     [ViewVariables(VVAccess.ReadWrite)]
     public float RadiationOutputFactor = 0.03f;
+
+    /// <summary>
+    ///     Ceiling on the crystal's own radiation output, in rads per second.
+    /// </summary>
+    /// <remarks>
+    ///     SS14 hands <see cref="Content.Shared.Radiation.Components.RadiationSourceComponent.Intensity"/>
+    ///     straight to the damage system every second, so Goob's raw figure - power times the output
+    ///     factor, which on a hot crystal is well over a hundred - deleted a crewman before the
+    ///     Geiger counter finished a tick. Eight is the same ceiling the RBMK and the stormdrive use:
+    ///     a place you enter in a radsuit, not an instant death field.
+    /// </remarks>
+    [DataField("maxRadiation")]
+    [ViewVariables(VVAccess.ReadWrite)]
+    public float MaxRadiation = 8f;
     #endregion SM Base
 
     #region SM Sound
@@ -436,11 +457,9 @@ public sealed partial class SupermatterComponent : Component
         [Gas.Frezon] = (TransmitModifier: 3f, HeatPenalty: -10f, PowerMixRatio: -1f, AngerValue: -5f),
         [Gas.Ammonia] = (TransmitModifier: 0f, HeatPenalty: .5f, PowerMixRatio: 1f, AngerValue: 1f),
         [Gas.NitrousOxide] = (TransmitModifier: 0f, HeatPenalty: -5f, PowerMixRatio: -1f, AngerValue: -3f),
-        // BRANCH NOTE (supermatter branch): Nitrium, BZ, Healium and Pluoxium are the /tg/ gases added
-        // by the reactor-gas layer, which lives on `engines-all`. This branch is mergeable on its own,
-        // so their entries are commented out; GasDataFields is only a tuning table, and Factor()
-        // already treats an absent gas as inert, so the crystal behaves exactly as it would if these
-        // gases had never existed. Restore these four lines when the gas layer lands.
+        // BRANCH NOTE (supermatter branch): nitrium, BZ, healium and pluoxium belong to the
+        // reactor-gas layer on `engines-all`. The dictionary only has to cover the gases this
+        // branch actually has; the four entries below are restored with that layer.
         // [Gas.Nitrium] = (TransmitModifier: 0f, HeatPenalty: -5f, PowerMixRatio: -1f, AngerValue: 10f), // EE Gas compatibility (Need to Change)
         // [Gas.BZ] = (TransmitModifier: 0f, HeatPenalty: 5f, PowerMixRatio: 1f, AngerValue: 3f), // Assmos - /tg/ gases
         // [Gas.Healium] = (TransmitModifier: 2.4f, HeatPenalty: 4f, PowerMixRatio: 1f, AngerValue: -5f), // Assmos - /tg/ gases

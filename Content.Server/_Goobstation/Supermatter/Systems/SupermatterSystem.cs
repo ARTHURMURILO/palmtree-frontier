@@ -5,7 +5,9 @@ using Content.Shared._Goobstation.Supermatter.Components;
 using Content.Shared._Goobstation.Supermatter.Events;
 using Content.Shared._Goobstation.Supermatter.Monitor;
 using Content.Shared._Goobstation.Supermatter.Systems;
+using Content.Server._Goobstation.Supermatter.Console.Systems;
 using Content.Server._PS.Ships;
+using Content.Server.Administration.Managers;
 using Content.Server.Atmos.EntitySystems;
 using Content.Server.Audio;
 using Content.Server.DoAfter;
@@ -38,6 +40,7 @@ using System.Numerics;
 using Content.Shared.Radio;
 using Content.Server.Radio.EntitySystems;
 using Content.Server.Chat.Managers;
+using Content.Shared.Ghost;
 using Content.Shared.Humanoid;
 using Content.Shared.Tag;
 
@@ -61,6 +64,9 @@ public sealed partial class SupermatterSystem : SharedSupermatterSystem
     [Dependency] private IChatManager _chatmanager = default!;
     [Dependency] private ShipEventSystem _shipEvent = default!;
     [Dependency] private TagSystem _tag = default!;
+    [Dependency] private readonly IAdminManager _admin = default!;
+    [Dependency] private readonly UserInterfaceSystem _ui = default!;
+    [Dependency] private readonly SupermatterConsoleSystem _consoleSystem = default!;
 
 
     public override void Initialize()
@@ -306,7 +312,10 @@ public sealed partial class SupermatterSystem : SharedSupermatterSystem
         if (TryComp<RadiationSourceComponent>(uid, out var rad))
         {
             var transmittedpower = sm.Power * Math.Max(0, 1f + transmissionBonus / 10f);
-            rad.Intensity = transmittedpower * sm.RadiationOutputFactor;
+
+            // Palmtree: intensity is damage per second here, not a BYOND accumulator. A hot crystal's
+            // raw figure is in the hundreds and killed instantly; see SupermatterComponent.MaxRadiation.
+            rad.Intensity = Math.Clamp(transmittedpower * sm.RadiationOutputFactor, 0f, sm.MaxRadiation);
         }
 
         //Power * 0.55 * a value between 1 and 0.8
@@ -836,6 +845,15 @@ public sealed partial class SupermatterSystem : SharedSupermatterSystem
         if (HasComp<SupermatterImmuneComponent>(target))
             return;
 
+        // Palmtree: an admin ghost is here to look at the crystal, not to be turned into ash. Open
+        // the monitoring window focused on this crystal instead of consuming them.
+        if (HasComp<GhostComponent>(target) && _admin.IsAdmin(target))
+        {
+            OpenAdminInspect(uid, target);
+            args.Handled = true;
+            return;
+        }
+
         if (!sm.Activated)
             sm.Activated = true;
 
@@ -847,6 +865,18 @@ public sealed partial class SupermatterSystem : SharedSupermatterSystem
         SpawnNextToOrDrop("Ash", target);
         _audio.PlayPvs(sm.DustSound, uid);
         QueueDel(target);
+    }
+
+    /// <summary>
+    ///     Palmtree: open the supermatter monitoring window on the crystal itself, focused on it.
+    /// </summary>
+    private void OpenAdminInspect(EntityUid uid, EntityUid user)
+    {
+        if (!HasComp<SupermatterConsoleComponent>(uid))
+            return;
+
+        _consoleSystem.SetFocus(uid, uid);
+        _ui.TryOpenUi(uid, SupermatterConsoleUiKey.Key, user);
     }
 
     private void OnItemInteract(EntityUid uid, SupermatterComponent sm, ref InteractUsingEvent args)

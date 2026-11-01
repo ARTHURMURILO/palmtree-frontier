@@ -6,8 +6,8 @@
 
     <Button Name="FocusButton" VerticalExpand="True" HorizontalExpand="True" StyleClasses="OpenLeft" Access="Public">
         <BoxContainer HorizontalExpand="True" VerticalExpand="True" Orientation="Horizontal">
-            <!-- Supermatter sprite -->
-            <TextureRect Name="SupermatterSprite" SetWidth="32" SetHeight="48" TexturePath="/Textures/_Goobstation/Interface/Supermatter/supermatter.png" Margin="6 2" />
+            <!-- Supermatter sprite (set by C# code from the entry's icon) -->
+            <TextureRect Name="SupermatterSprite" SetWidth="32" SetHeight="48" Margin="6 2" />
             <!-- Supermatter name -->
             <Label Name="SupermatterNameLabel" Text="???" HorizontalExpand="True" HorizontalAlignment="Left" Margin="5 0" />
 

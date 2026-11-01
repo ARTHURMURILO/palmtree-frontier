@@ -46,8 +46,14 @@ public sealed partial class SupermatterConsoleSystem : SharedSupermatterConsoleS
     private void OnConsoleParentChanged(EntityUid uid, SupermatterConsoleComponent component, EntParentChangedMessage args) =>
         InitalizeConsole(uid, component);
 
-    private void OnFocusChangedMessage(EntityUid uid, SupermatterConsoleComponent component, SupermatterConsoleFocusChangeMessage args) =>
+    private void OnFocusChangedMessage(EntityUid uid, SupermatterConsoleComponent component, SupermatterConsoleFocusChangeMessage args)
+    {
+        // Palmtree: a crystal's own window always shows that crystal; there is nothing else to focus.
+        if (HasComp<SupermatterComponent>(uid))
+            return;
+
         component.FocusSupermatter = args.FocusSupermatter;
+    }
 
     private void OnGridSplit(ref GridSplitEvent args)
     {
@@ -84,11 +90,24 @@ public sealed partial class SupermatterConsoleSystem : SharedSupermatterConsoleS
             if (entXform?.GridUid == null)
                 continue;
 
-            // Make a list of alarm state data for all the supermatters on the grid
-            if (!supermatterEntriesForEachGrid.TryGetValue(entXform.GridUid.Value, out var supermatterEntries))
+            var gridUid = entXform.GridUid.Value;
+            SupermatterConsoleEntry[] supermatterEntries;
+
+            // Make a list of alarm state data for all the supermatters on the grid.
+            // Palmtree: a crystal's own window must not inherit the list built for a monitoring
+            // console standing on the same grid, so self-inspection is never cached.
+            if (HasComp<SupermatterComponent>(ent))
             {
-                supermatterEntries = GetSupermatterStateData(entXform.GridUid.Value).ToArray();
-                supermatterEntriesForEachGrid[entXform.GridUid.Value] = supermatterEntries;
+                supermatterEntries = GetSupermatterStateData(gridUid, ent).ToArray();
+            }
+            else if (supermatterEntriesForEachGrid.TryGetValue(gridUid, out var cachedEntries))
+            {
+                supermatterEntries = cachedEntries;
+            }
+            else
+            {
+                supermatterEntries = GetSupermatterStateData(gridUid, ent).ToArray();
+                supermatterEntriesForEachGrid[gridUid] = supermatterEntries;
             }
 
             // Determine the highest level of status for the console
@@ -111,6 +130,17 @@ public sealed partial class SupermatterConsoleSystem : SharedSupermatterConsoleS
         }
     }
 
+    /// <summary>
+    ///     Palmtree: point a console - or a crystal acting as its own console - at a supermatter.
+    /// </summary>
+    public void SetFocus(EntityUid consoleUid, EntityUid supermatterUid, SupermatterConsoleComponent? console = null)
+    {
+        if (!Resolve(consoleUid, ref console))
+            return;
+
+        console.FocusSupermatter = GetNetEntity(supermatterUid);
+    }
+
     public void UpdateUIState
         (EntityUid uid,
         SupermatterConsoleEntry[] supermatterStateData,
@@ -125,9 +155,15 @@ public sealed partial class SupermatterConsoleSystem : SharedSupermatterConsoleS
         // Palmtree: the focused supermatter can be gone (delaminated, deleted, console re-linked).
         // GetEntity() on an invalid NetEntity yields EntityUid 0, and Transform(0) then threw
         // KeyNotFoundException on every update tick. Bail out cleanly instead.
+        // A crystal acting as its own console is always focused on itself.
+        var selfInspection = HasComp<SupermatterComponent>(uid);
         SupermatterFocusData? focusSupermatterData = null;
 
-        if (component.FocusSupermatter != NetEntity.Invalid)
+        if (selfInspection)
+        {
+            focusSupermatterData = GetFocusSupermatterData(uid, uid, gridUid);
+        }
+        else if (component.FocusSupermatter != NetEntity.Invalid)
         {
             var focusUid = GetEntity(component.FocusSupermatter);
 
@@ -137,12 +173,21 @@ public sealed partial class SupermatterConsoleSystem : SharedSupermatterConsoleS
 
         // Set the UI state
         _userInterfaceSystem.SetUiState(uid, SupermatterConsoleUiKey.Key,
-            new SupermatterConsoleBoundInterfaceState(supermatterStateData, focusSupermatterData));
+            new SupermatterConsoleBoundInterfaceState(supermatterStateData, focusSupermatterData, selfInspection));
     }
 
-    private List<SupermatterConsoleEntry> GetSupermatterStateData(EntityUid gridUid)
+    private List<SupermatterConsoleEntry> GetSupermatterStateData(EntityUid gridUid, EntityUid consoleUid)
     {
         var supermatterStateData = new List<SupermatterConsoleEntry>();
+
+        // Palmtree: a crystal acting as its own console (admin inspection) reports only itself. A
+        // monitoring console still reports every installed crystal on its own grid - and nothing
+        // from the ship flying next to it.
+        if (TryComp<SupermatterComponent>(consoleUid, out var selfSupermatter))
+        {
+            supermatterStateData.Add(MakeEntry(consoleUid, selfSupermatter));
+            return supermatterStateData;
+        }
 
         var querySupermatters = AllEntityQuery<SupermatterComponent, TransformComponent>();
         while (querySupermatters.MoveNext(out var ent, out var entSupermatter, out var entXform))
@@ -151,19 +196,17 @@ public sealed partial class SupermatterConsoleSystem : SharedSupermatterConsoleS
                 || !entXform.Anchored)
                 continue;
 
-            // Create entry
-            var netEnt = GetNetEntity(ent);
-
-            var entry = new SupermatterConsoleEntry
-                (netEnt,
-                MetaData(ent).EntityName,
-                entSupermatter.Status);
-
-            supermatterStateData.Add(entry);
+            supermatterStateData.Add(MakeEntry(ent, entSupermatter));
         }
 
         return supermatterStateData;
     }
+
+    private SupermatterConsoleEntry MakeEntry(EntityUid uid, SupermatterComponent supermatter) =>
+        new(GetNetEntity(uid),
+            MetaData(uid).EntityName,
+            supermatter.Status,
+            supermatter.ConsoleIcon);
 
     private SupermatterFocusData? GetFocusSupermatterData(EntityUid uid, EntityUid? focusSupermatter, EntityUid gridUid)
     {
@@ -172,7 +215,8 @@ public sealed partial class SupermatterConsoleSystem : SharedSupermatterConsoleS
 
         var focusSupermatterXform = Transform(focusSupermatter.Value);
 
-        if (!focusSupermatterXform.Anchored
+        // Palmtree: self-inspection from an unanchored shard must still return its stats.
+        if ((!focusSupermatterXform.Anchored && focusSupermatter != uid)
             || focusSupermatterXform.GridUid != gridUid
             || !TryComp<SupermatterComponent>(focusSupermatter.Value, out var sm)
             || !TryComp<RadiationSourceComponent>(focusSupermatter.Value, out var radiationComp))

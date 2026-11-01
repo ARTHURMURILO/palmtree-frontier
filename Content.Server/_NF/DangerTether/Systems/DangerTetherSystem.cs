@@ -1,6 +1,7 @@
 using Content.Server.Shuttles.Components;
 using Robust.Server.GameObjects;
 using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
 using Robust.Shared.Timing;
 
 namespace Content.Server._NF.DangerTether;
@@ -75,6 +76,9 @@ public sealed class DangerTetherSystem : EntitySystem
         }
     }
 
+    /// <summary>How far outside a ship's hull a danger still counts as the ship's problem.</summary>
+    private const float ShipMargin = 25f;
+
     public bool AnyTetherInRange(EntityUid ent)
     {
         // Palmtree: a ship is a tether. The Frontier check exists to stop a singularity being spawned
@@ -83,14 +87,27 @@ public sealed class DangerTetherSystem : EntitySystem
         // range of. That made the collapse failure mode impossible to reach on the one kind of grid
         // this fork is actually about. Mapped stations and POIs keep their markers (and their
         // protection); a flying grid is somebody's own problem to survive.
-        if (TryComp(ent, out TransformComponent? xform) &&
-            xform.GridUid is { } grid &&
-            _shuttleQuery.HasComp(grid))
-        {
+        var xform = Transform(ent);
+        if (xform.GridUid is { } grid && _shuttleQuery.HasComp(grid))
             return true;
+
+        // The parent check is not enough: removing a tile deparents everything standing on it to the
+        // map (SharedTransformSystem.MapManagerOnTileChanged). A singularity eating the floor out
+        // from under itself therefore lost its GridUid, failed this check and was culled half a
+        // second later - the exact "eats the hull, then vanishes in space" report. A danger within
+        // a short hop of a shuttle's footprint is still that ship's problem.
+        var targetCoords = _transform.GetMapCoordinates(ent);
+        var shuttles = EntityQueryEnumerator<ShuttleComponent, MapGridComponent, TransformComponent>();
+        while (shuttles.MoveNext(out _, out _, out var gridComp, out var gridXform))
+        {
+            if (gridXform.MapID != targetCoords.MapId)
+                continue;
+
+            var bounds = gridXform.WorldMatrix.TransformBox(gridComp.LocalAABB).Enlarged(ShipMargin);
+            if (bounds.Contains(targetCoords.Position))
+                return true;
         }
 
-        var targetCoords = _transform.GetMapCoordinates(ent);
         foreach (var tetherEntry in _tethers)
         {
             if (tetherEntry.Position.MapId != targetCoords.MapId)

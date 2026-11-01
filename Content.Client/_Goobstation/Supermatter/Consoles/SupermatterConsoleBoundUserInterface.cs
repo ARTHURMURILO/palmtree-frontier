@@ -25,7 +25,7 @@ public sealed class SupermatterConsoleBoundUserInterface : BoundUserInterface
         base.UpdateState(state);
 
         var castState = (SupermatterConsoleBoundInterfaceState)state;
-        _menu?.UpdateUI(castState.Supermatters, castState.FocusData);
+        _menu?.UpdateUI(castState.Supermatters, castState.FocusData, castState.SelfInspection);
     }
 
     public void SendFocusChangeMessage(NetEntity? netEntity) =>
