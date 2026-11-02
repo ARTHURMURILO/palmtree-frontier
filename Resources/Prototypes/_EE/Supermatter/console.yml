@@ -54,6 +54,10 @@
           True: { visible: false }
           False: { visible: true }
   - type: SupermatterConsole
+  # Palmtree: the console is the ship's Shortband alarm source. This marker lets it transmit
+  # without a telecom server; it deliberately has no microphone or speaker, so it never relays
+  # or repeats radio traffic the way a shuttle console does.
+  - type: TelecomExempt
   - type: ActivatableUI
     singleUser: true
     key: enum.SupermatterConsoleUiKey.Key

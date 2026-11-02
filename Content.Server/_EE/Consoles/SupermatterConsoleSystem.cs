@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later AND MIT
 
+using Content.Server.Power.EntitySystems;
 using Content.Shared._EE.CCVars;
 using Content.Shared._EE.Supermatter.Components;
 using Content.Shared._EE.Supermatter.Consoles;
@@ -11,6 +12,7 @@ using Content.Shared.Atmos;
 using Content.Shared.Radiation.Components;
 using Robust.Server.GameObjects;
 using Robust.Shared.Configuration;
+using Robust.Shared.Random;
 using System.Linq;
 
 namespace Content.Server._EE.Supermatter.Console.Systems;
@@ -20,6 +22,8 @@ public sealed partial class SupermatterConsoleSystem : SharedSupermatterConsoleS
     [Dependency] private UserInterfaceSystem _userInterfaceSystem = default!;
     [Dependency] private SharedAppearanceSystem _appearance = default!;
     [Dependency] private IConfigurationManager _config = default!;
+    [Dependency] private IRobustRandom _random = default!;
+    [Dependency] private PowerReceiverSystem _power = default!;
 
     // Triad: gate the console refresh to 1 Hz. Upstream EE ran this Update() every
     // server tick, pushing a full BUI state (supermatter list + a whole GasMixture) to
@@ -73,6 +77,46 @@ public sealed partial class SupermatterConsoleSystem : SharedSupermatterConsoleS
 
         console.FocusSupermatter = GetNetEntity(supermatterUid);
         Dirty(consoleUid, console);
+    }
+
+    /// <summary>
+    /// Palmtree: pick a monitoring console on the crystal's grid to broadcast engine alarms from.
+    /// </summary>
+    /// <remarks>
+    /// The crystal's own <see cref="SupermatterConsoleComponent"/> (used for admin self-inspection)
+    /// is never a candidate, and neither is anything else that is itself a crystal. Unpowered
+    /// consoles are skipped as well. If the ship has no powered monitoring console, the alarm is
+    /// simply not broadcast. A console is only a sender here: it has no radio receiver or speaker,
+    /// so it does not repeat Shortband traffic.
+    /// </remarks>
+    public bool TryGetAnnouncingConsole(EntityUid crystal, out EntityUid console)
+    {
+        console = default;
+
+        if (!TryComp(crystal, out TransformComponent? crystalXform) ||
+            crystalXform.GridUid is not { } gridUid)
+        {
+            return false;
+        }
+
+        var candidates = new List<EntityUid>();
+        var query = AllEntityQuery<SupermatterConsoleComponent, TransformComponent>();
+        while (query.MoveNext(out var ent, out _, out var xform))
+        {
+            if (ent == crystal || HasComp<SupermatterComponent>(ent))
+                continue;
+
+            if (xform.GridUid != gridUid || !_power.IsPowered(ent))
+                continue;
+
+            candidates.Add(ent);
+        }
+
+        if (candidates.Count == 0)
+            return false;
+
+        console = _random.Pick(candidates);
+        return true;
     }
 
     private void OnGridSplit(ref GridSplitEvent args)

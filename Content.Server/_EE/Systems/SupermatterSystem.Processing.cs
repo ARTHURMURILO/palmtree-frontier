@@ -614,12 +614,14 @@ public sealed partial class SupermatterSystem
     }
 
     /// <summary>
-    /// Sends the given message over the ship's Shortband relay.
+    /// Sends the given message over the ship's Shortband relay, via a monitoring console.
     /// </summary>
     /// <remarks>
-    /// Palmtree: the crystal is machinery, not a station announcer. All of its reports go out
-    /// through <see cref="ShipEventSystem.EngineAnnounce"/>, which signs them with the vessel
-    /// name and limits them to the Shortband instead of the map-wide Engineering/Common channels.
+    /// Palmtree: the crystal is machinery, not a station announcer, and it does not transmit on
+    /// the Shortband itself. Its reports are handed to a supermatter monitoring console on the
+    /// same grid, which signs them with the vessel name through
+    /// <see cref="ShipEventSystem.EngineAnnounce"/> and puts them on the Shortband instead of the
+    /// map-wide Engineering/Common channels. If no monitoring console exists, nothing is broadcast.
     /// </remarks>
     public void SendSupermatterAnnouncement(EntityUid uid, SupermatterComponent sm, string message, bool global = false)
     {
@@ -630,7 +632,11 @@ public sealed partial class SupermatterSystem
         HandleStatus(uid, sm);
 
         sm.YellLast = _timing.CurTime;
-        _shipEvent.EngineAnnounce(uid, message);
+
+        if (!_consoleSystem.TryGetAnnouncingConsole(uid, out var console))
+            return;
+
+        _shipEvent.EngineAnnounce(console, message);
     }
 
     /// <summary>

@@ -31,34 +31,31 @@
 
 - type: cargoProduct
   id: EngineSingularityGenerator
-  abstract: true # Frontier
   icon:
     sprite: Structures/Power/Generation/Singularity/generator.rsi
     state: icon
   product: CrateEngineeringSingularityGenerator
-  cost: 4000
-  category: Engineering
+  cost: 25000 # Palmtree - unhidden and repriced
+  category: cargoproduct-category-name-engineering
   group: market
 
 - type: cargoProduct
   id: EngineSingularityContainment
-  abstract: true # Frontier
   icon:
     sprite: Structures/Power/Generation/Singularity/containment.rsi
     state: icon
   product: CrateEngineeringSingularityContainment
-  cost: 1000
+  cost: 8000 # Palmtree - unhidden and repriced
   category: cargoproduct-category-name-engineering
   group: market
 
 - type: cargoProduct
   id: EngineSingularityEmitter
-  abstract: true # Frontier
   icon:
     sprite: Structures/Power/Generation/Singularity/emitter.rsi
     state: emitter2
   product: CrateEngineeringSingularityEmitter
-  cost: 1500
+  cost: 6000 # Palmtree - unhidden and repriced
   category: cargoproduct-category-name-engineering
   group: market
 
@@ -96,12 +93,11 @@
 
 - type: cargoProduct
   id: EngineTeslaGenerator
-  abstract: true # Frontier
   icon:
     sprite: Structures/Power/Generation/Tesla/generator.rsi
     state: icon
   product: CrateEngineeringTeslaGenerator
-  cost: 4000
+  cost: 25000 # Palmtree - unhidden and repriced
   category: cargoproduct-category-name-engineering
   group: market
 

@@ -1,7 +1,10 @@
 using System.Linq;
 using Content.Server._EE.Supermatter.Components;
+using Content.Server._EE.Supermatter.Console.Systems;
 using Content.Server._PS.BluespaceDock;
 using Content.Server.Atmos.EntitySystems;
+using Content.Server.Power.Components;
+using Content.Server.Radio.Components;
 using Content.Server.Tesla.Components;
 using Content.Shared._EE.Supermatter.Components;
 using Content.Shared.Atmos;
@@ -9,6 +12,7 @@ using Content.Shared._EE.Supermatter.Consoles;
 using Content.Shared.Construction.Components;
 using Content.Shared.Movement.Pulling.Components;
 using Content.Shared.Radiation.Components;
+using Content.Shared.Radio.Components;
 using Content.Shared.Singularity.Components;
 using Robust.Server.GameObjects;
 using Robust.Shared.GameObjects;
@@ -257,6 +261,87 @@ public sealed class SupermatterTest
             Assert.That(selfState.Supermatters[0].NetEntity,
                 Is.EqualTo(entMan.GetNetEntity(crystal)));
             Assert.That(selfState.FocusData, Is.Not.Null);
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task SupermatterAlarmsUseAMonitoringConsole()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
+        var server = pair.Server;
+        var entMan = server.EntMan;
+        var consoleSystem = server.System<SupermatterConsoleSystem>();
+
+        var map = await pair.CreateTestMap();
+        EntityUid crystal = default;
+        EntityUid consoleA = default;
+        EntityUid consoleB = default;
+
+        await server.WaitPost(() =>
+        {
+            crystal = entMan.SpawnEntity("Supermatter", map.GridCoords);
+            consoleA = entMan.SpawnEntity("ComputerSupermatter", map.GridCoords);
+            consoleB = entMan.SpawnEntity("ComputerSupermatter", map.GridCoords);
+        });
+
+        await pair.RunTicksSync(2);
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(entMan.HasComponent<TelecomExemptComponent>(crystal), Is.False,
+                "the crystal must not be able to transmit on the Shortband itself");
+            Assert.That(entMan.HasComponent<TelecomExemptComponent>(consoleA), Is.True,
+                "the console must be able to transmit without a telecom server");
+            Assert.That(entMan.HasComponent<RadioMicrophoneComponent>(consoleA), Is.False,
+                "the console must not relay or repeat Shortband traffic");
+            Assert.That(entMan.HasComponent<RadioSpeakerComponent>(consoleA), Is.False,
+                "the console must not emit received radio traffic");
+            Assert.That(entMan.HasComponent<ActiveRadioComponent>(consoleA), Is.False,
+                "the console must not listen to radio channels");
+            Assert.That(entMan.HasComponent<IntrinsicRadioReceiverComponent>(consoleA), Is.False,
+                "the console must not listen to radio channels");
+
+            var powerA = entMan.GetComponent<ApcPowerReceiverComponent>(consoleA);
+            var powerB = entMan.GetComponent<ApcPowerReceiverComponent>(consoleB);
+
+            powerA.Powered = true;
+            powerB.Powered = false;
+            Assert.That(consoleSystem.TryGetAnnouncingConsole(crystal, out var console), Is.True);
+            Assert.That(console, Is.EqualTo(consoleA),
+                "an unpowered console must not be picked while a powered one exists");
+
+            powerA.Powered = false;
+            powerB.Powered = true;
+            Assert.That(consoleSystem.TryGetAnnouncingConsole(crystal, out console), Is.True);
+            Assert.That(console, Is.EqualTo(consoleB),
+                "the powered console must be picked regardless of its order");
+
+            powerA.Powered = true;
+            powerB.Powered = true;
+            Assert.That(consoleSystem.TryGetAnnouncingConsole(crystal, out console), Is.True);
+            Assert.That(console, Is.EqualTo(consoleA).Or.EqualTo(consoleB),
+                "alarms must be broadcast from one of the powered monitoring consoles, never the crystal");
+
+            powerA.Powered = false;
+            powerB.Powered = false;
+            Assert.That(consoleSystem.TryGetAnnouncingConsole(crystal, out _), Is.False,
+                "unpowered consoles must not broadcast");
+        });
+
+        await server.WaitPost(() =>
+        {
+            entMan.DeleteEntity(consoleA);
+            entMan.DeleteEntity(consoleB);
+        });
+
+        await pair.RunTicksSync(1);
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(consoleSystem.TryGetAnnouncingConsole(crystal, out _), Is.False,
+                "a crystal without a monitoring console must not broadcast");
         });
 
         await pair.CleanReturnAsync();

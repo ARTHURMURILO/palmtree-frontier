@@ -68,7 +68,6 @@
   - type: Clickable
   - type: InteractionOutline
   - type: Physics
-  - type: TelecomExempt
   # Palmtree: the crystal can act as its own monitoring console when an admin
   # ghost inspects it. Normal players never get this UI.
   - type: SupermatterConsole
