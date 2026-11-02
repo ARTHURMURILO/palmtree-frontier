@@ -1,0 +1,185 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Construction recipes for the Goob decor port (Palmtree).
+# Graphs: Resources/Prototypes/_Goobstation/Recipes/Construction/Graphs/furniture/decor.yml
+
+# region vases
+- type: construction
+  id: VaseEmpty
+  graph: Vase
+  startNode: start
+  targetNode: vaseEmpty
+  category: construction-category-misc
+  objectType: Item
+
+- type: construction
+  id: VaseChrysanthemums
+  graph: Vase
+  startNode: start
+  targetNode: vaseChrysanthemums
+  category: construction-category-misc
+  objectType: Item
+
+- type: construction
+  id: VaseTulips
+  graph: Vase
+  startNode: start
+  targetNode: vaseTulips
+  category: construction-category-misc
+  objectType: Item
+
+- type: construction
+  id: VaseDaisies
+  graph: Vase
+  startNode: start
+  targetNode: vaseDaisies
+  category: construction-category-misc
+  objectType: Item
+
+- type: construction
+  id: VaseWhiteDaisies
+  graph: Vase
+  startNode: start
+  targetNode: vaseWhiteDaisies
+  category: construction-category-misc
+  objectType: Item
+
+- type: construction
+  id: VaseRoses
+  graph: Vase
+  startNode: start
+  targetNode: vaseRoses
+  category: construction-category-misc
+  objectType: Item
+
+- type: construction
+  id: VaseLilies
+  graph: Vase
+  startNode: start
+  targetNode: vaseLilies
+  category: construction-category-misc
+  objectType: Item
+
+- type: construction
+  id: VaseMarigolds
+  graph: Vase
+  startNode: start
+  targetNode: vaseMarigolds
+  category: construction-category-misc
+  objectType: Item
+
+- type: construction
+  id: VaseViolets
+  graph: Vase
+  startNode: start
+  targetNode: vaseViolets
+  category: construction-category-misc
+  objectType: Item
+
+# region candelabra
+- type: construction
+  id: Candelabra
+  graph: Candelabra
+  startNode: start
+  targetNode: candelabraUnlit
+  category: construction-category-furniture
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canBuildInImpassable: false
+
+# region ceiling fan
+- type: construction
+  id: CeilingFan
+  graph: CeilingFan
+  startNode: start
+  targetNode: ceilingFan
+  category: construction-category-furniture
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canBuildInImpassable: false
+
+# region wall clock
+- type: construction
+  id: WallClockDecor
+  graph: WallClock
+  startNode: start
+  targetNode: wallClock
+  category: construction-category-furniture
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canBuildInImpassable: true
+  conditions:
+    - !type:WallmountCondition
+
+# region desktop computer
+- type: construction
+  id: DesktopComputer
+  graph: DesktopComputer
+  startNode: start
+  targetNode: desktopComputer
+  category: construction-category-furniture
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canBuildInImpassable: false
+
+# region barrels
+- type: construction
+  id: BarrelSteel
+  graph: Barrel
+  startNode: start
+  targetNode: barrelSteel
+  category: construction-category-furniture
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canBuildInImpassable: false
+
+- type: construction
+  id: BarrelWooden
+  graph: Barrel
+  startNode: start
+  targetNode: barrelPlanks
+  category: construction-category-furniture
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canBuildInImpassable: false
+
+- type: construction
+  id: BarrelFire
+  graph: Barrel
+  startNode: start
+  targetNode: barrelFire
+  category: construction-category-furniture
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canBuildInImpassable: false
+
+# region floor lights
+- type: construction
+  id: FloorLightEmpty
+  graph: FloorLight
+  startNode: start
+  targetNode: floorLightEmpty
+  category: construction-category-furniture
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canBuildInImpassable: false
+
+- type: construction
+  id: FloorLightAlwaysPowered
+  graph: FloorLight
+  startNode: start
+  targetNode: floorLightAlwaysPowered
+  category: construction-category-furniture
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canBuildInImpassable: false
+
+# region construction barricade
+- type: construction
+  id: ConstructionBarricade
+  graph: ConstructionBarricade
+  startNode: start
+  targetNode: constructionBarricade
+  category: construction-category-structures
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canBuildInImpassable: false

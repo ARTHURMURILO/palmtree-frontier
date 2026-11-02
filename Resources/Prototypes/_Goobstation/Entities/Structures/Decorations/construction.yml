@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Ported from Goob Station (_Goobstation/Entities/Structures/Decorations/construction.yml).
+
+- type: entity
+  id: ConstructionBarricade
+  parent: BaseStructure
+  name: construction barricade
+  description: Wear your helmet!
+  components:
+  - type: Construction
+    graph: ConstructionBarricade
+    node: constructionBarricade
+  - type: Anchorable
+  - type: Sprite
+    noRot: true
+    sprite: _Goobstation/Structures/Decoration/construction.rsi
+    state: construction
+  - type: Damageable
+    damageContainer: StructuralInorganic
+    damageModifierSet: StructuralMetallicStrong
+  - type: Pullable
+  - type: Climbable
+    delay: 5.0
+  - type: Destructible
+    thresholds:
+      - trigger:
+          !type:DamageTrigger
+          damage: 60
+        behaviors:
+        - !type:SpawnEntitiesBehavior
+          spawn:
+            SheetSteel1:
+              min: 2
+              max: 5
+        - !type:DoActsBehavior
+          acts: [ "Destruction" ]
