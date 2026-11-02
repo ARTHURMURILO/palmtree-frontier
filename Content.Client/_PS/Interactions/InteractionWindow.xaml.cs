@@ -405,6 +405,7 @@ public sealed partial class InteractionWindow : FancyWindow
             visibility.AddItem(Loc.GetString("genital-visibility-hidden-by-underwear"), (int) GenitalVisibility.HiddenByUnderwear);
             visibility.AddItem(Loc.GetString("genital-visibility-hidden-by-jumpsuit"), (int) GenitalVisibility.HiddenByJumpsuit);
             visibility.AddItem(Loc.GetString("genital-visibility-never-hidden"), (int) GenitalVisibility.NeverHidden);
+            visibility.AddItem(Loc.GetString("genital-visibility-visible-under-clothes"), (int) GenitalVisibility.VisibleUnderClothes);
             visibility.SelectId((int) genital.Visibility);
             // Palmtree: visibility is independent of arousal; only the arousal toggle is limited to
             // organs that have an aroused state.

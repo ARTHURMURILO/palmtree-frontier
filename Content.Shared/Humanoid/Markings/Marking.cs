@@ -65,6 +65,7 @@ namespace Content.Shared.Humanoid.Markings
             _markingColors = new(other.MarkingColors);
             Visible = other.Visible;
             Forced = other.Forced;
+            RenderOverClothing = other.RenderOverClothing;
             // Palmtree/Coyote Start
             _markingScale = other._markingScale;
             _markingOffsetX = other._markingOffsetX;
@@ -235,6 +236,7 @@ namespace Content.Shared.Humanoid.Markings
                 && _markingGlow.SequenceEqual(other._markingGlow)
                 && Visible.Equals(other.Visible)
                 && Forced.Equals(other.Forced)
+                && RenderOverClothing == other.RenderOverClothing
                 // Palmtree/Coyote Start
                 && _markingScale == other._markingScale
                 && _markingOffsetX == other._markingOffsetX

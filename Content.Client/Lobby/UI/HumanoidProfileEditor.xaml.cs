@@ -3,6 +3,7 @@ using System.Linq;
 using System.Numerics;
 using Content.Client.Administration.UI.CustomControls; // Palmtree: HSeparator
 using Content.Client._PS.Consent; // Palmtree: NSFW age gate
+using Content.Client._PS.Humanoid; // Palmtree: direction-aware layer ordering
 using Content.Client._PS.UserInterface; // Palmtree: color clipboard
 using Content.Client.Humanoid;
 using Content.Client.Lobby.UI.Loadouts;
@@ -40,6 +41,8 @@ using Robust.Shared.Audio.Systems;
 using Robust.Shared.Configuration;
 using Robust.Shared.ContentPack;
 using Robust.Shared.Enums;
+using Robust.Shared.GameObjects;
+using Robust.Shared.Graphics.RSI;
 using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Random;
@@ -803,6 +806,7 @@ namespace Content.Client.Lobby.UI
                 visibilityButton.AddItem(Loc.GetString("genital-visibility-hidden-by-underwear"), (int) GenitalVisibility.HiddenByUnderwear);
                 visibilityButton.AddItem(Loc.GetString("genital-visibility-hidden-by-jumpsuit"), (int) GenitalVisibility.HiddenByJumpsuit);
                 visibilityButton.AddItem(Loc.GetString("genital-visibility-never-hidden"), (int) GenitalVisibility.NeverHidden);
+                visibilityButton.AddItem(Loc.GetString("genital-visibility-visible-under-clothes"), (int) GenitalVisibility.VisibleUnderClothes);
 
                 // Modern SPLURT: breasts (and any other organ with a skin-toned variant) can use
                 // baked-in skin shading instead of a tinted sprite.
@@ -1809,6 +1813,7 @@ namespace Content.Client.Lobby.UI
 
             PreviewDummy = _controller.LoadProfileEntity(Profile, JobOverride, ShowClothes.Pressed);
             SpriteView.SetEntity(PreviewDummy);
+            ApplyPreviewLayerDirection(SpriteView.OverrideDirection ?? Direction.South);
             _entManager.System<MetaDataSystem>().SetEntityName(PreviewDummy, Profile.Name);
             ApplyPreviewUndergarmentVisibility();
             ApplyPreviewArousal();
@@ -2833,7 +2838,26 @@ namespace Content.Client.Lobby.UI
 
         private void SetPreviewRotation(Direction direction)
         {
-            SpriteView.OverrideDirection = (Direction) ((int) direction % 4 * 2);
+            var spriteDirection = (Direction) ((int) direction % 4 * 2);
+            SpriteView.OverrideDirection = spriteDirection;
+            ApplyPreviewLayerDirection(spriteDirection);
+        }
+
+        /// <summary>
+        /// Palmtree: tell the humanoid layer-order system which direction the preview is actually
+        /// drawn in. SpriteView overrides the direction without rotating the dummy entity.
+        /// </summary>
+        private void ApplyPreviewLayerDirection(Direction direction)
+        {
+            if (PreviewDummy == EntityUid.Invalid ||
+                !_entManager.HasComponent<HumanoidAppearanceComponent>(PreviewDummy))
+            {
+                return;
+            }
+
+            var layerDirection = _entManager.EnsureComponent<HumanoidLayerDirectionComponent>(PreviewDummy);
+            layerDirection.Direction = direction.Convert(RsiDirectionType.Dir4);
+            _entManager.System<HumanoidAppearanceSystem>().RefreshSprite(PreviewDummy);
         }
 
         private void RandomizeEverything()
