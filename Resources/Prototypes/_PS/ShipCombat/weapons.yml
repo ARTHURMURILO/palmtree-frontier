@@ -87,10 +87,16 @@
   id: ShipTurretBeam
   damage:
     types:
-      Heat: 20
-  # No vanilla muzzle/travel/impact flashes: they are grid-parented (they follow the firing ship) and
-  # only sent to players whose PVS covers the shot. ShipWeaponSystem spawns a map-anchored impact
-  # flash with a global PVS override instead.
+      Heat: 60
+  muzzleFlash:
+    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: muzzle_beam_heavy
+  travelFlash:
+    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: beam_heavy
+  impactFlash:
+    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: impact_beam_heavy
   # Plays at the hit entity, so the ship being shot hears the beam land (even through its shields).
   sound:
     path: /Audio/Weapons/Guns/Hits/energy_metal1.ogg
@@ -188,7 +194,7 @@
   description: A console-driven turret firing an instant laser beam. 45-degree arc, powered by the bluespace power bypass.
   components:
   - type: Gun
-    fireRate: 0.5
+    fireRate: 0.2
     selectedMode: SemiAuto
     soundGunshot:
       path: /Audio/Weapons/Guns/Gunshots/laser3.ogg
@@ -297,6 +303,7 @@
   description: A console-driven turret firing an instant phaser beam. 45-degree arc, powered by the bluespace power bypass.
   components:
   - type: Gun
+    fireRate: 0.2
     soundGunshot:
       collection: ShipPhaser
   - type: HitscanBatteryAmmoProvider
@@ -338,7 +345,16 @@
   id: ShipTurretPhaserBeam
   damage:
     types:
-      Heat: 30
+      Heat: 90
+  muzzleFlash:
+    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: muzzle_beam_heavy
+  travelFlash:
+    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: beam_heavy
+  impactFlash:
+    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: impact_beam_heavy
   sound:
     path: /Audio/Weapons/Guns/Hits/energy_metal1.ogg
   forceSound: true

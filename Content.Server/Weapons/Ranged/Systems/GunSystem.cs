@@ -169,6 +169,9 @@ public sealed partial class GunSystem : SharedGunSystem
                     //in the situation when user == null, means that the cannon fires on its own (via signals). And we need the gun to not fire by itself in this case
                     var lastUser = user ?? gunUid;
 
+                    // Palmtree: ship weapon effects are map-parented (they must not follow the ship).
+                    var shipWeaponEffects = HasComp<ShipWeaponComponent>(gunUid);
+
                     if (hitscan.Reflective != ReflectType.None)
                     {
                         for (var reflectAttempt = 0; reflectAttempt < 3; reflectAttempt++)
@@ -212,7 +215,7 @@ public sealed partial class GunSystem : SharedGunSystem
                             var hit = result.HitEntity;
                             lastHit = hit;
 
-                            FireEffects(fromEffect, result.Distance, dir.Normalized().ToAngle(), hitscan, hit);
+                            FireEffects(fromEffect, result.Distance, dir.Normalized().ToAngle(), hitscan, hit, shipWeaponEffects);
 
                             var ev = new HitScanReflectAttemptEvent(user, gunUid, hitscan.Reflective, dir, false);
                             RaiseLocalEvent(hit, ref ev);
@@ -281,7 +284,7 @@ public sealed partial class GunSystem : SharedGunSystem
                     }
                     else
                     {
-                        FireEffects(fromEffect, hitscan.MaxLength, dir.ToAngle(), hitscan);
+                        FireEffects(fromEffect, hitscan.MaxLength, dir.ToAngle(), hitscan, shipWeapon: shipWeaponEffects);
                     }
 
                     Audio.PlayPredicted(gun.SoundGunshotModified, gunUid, user);
@@ -429,7 +432,7 @@ public sealed partial class GunSystem : SharedGunSystem
     // TODO: Pseudo RNG so the client can predict these.
     #region Hitscan effects
 
-    private void FireEffects(EntityCoordinates fromCoordinates, float distance, Angle angle, HitscanPrototype hitscan, EntityUid? hitEntity = null)
+    private void FireEffects(EntityCoordinates fromCoordinates, float distance, Angle angle, HitscanPrototype hitscan, EntityUid? hitEntity = null, bool shipWeapon = false)
     {
         // Lord
         // Forgive me for the shitcode I am about to do
@@ -441,7 +444,15 @@ public sealed partial class GunSystem : SharedGunSystem
         // Look you could probably optimise this a bit with redundant transforms at this point.
 
         var gridUid = fromXform.GridUid;
-        if (gridUid != fromCoordinates.EntityId && TryComp(gridUid, out TransformComponent? gridXform))
+
+        // Palmtree: ship weapon effects are parented to the map instead of the firing grid, so the
+        // beam stays where the shot happened instead of following the ship. The angle stays a world
+        // angle for the same reason.
+        if (shipWeapon && fromXform.MapUid is { } effectMapUid)
+        {
+            fromCoordinates = new EntityCoordinates(effectMapUid, TransformSystem.ToMapCoordinates(fromCoordinates).Position);
+        }
+        else if (gridUid != fromCoordinates.EntityId && TryComp(gridUid, out TransformComponent? gridXform))
         {
             var (_, gridRot, gridInvMatrix) = TransformSystem.GetWorldPositionRotationInvMatrix(gridXform);
             var map = TransformSystem.ToMapCoordinates(fromCoordinates);
