@@ -8,6 +8,7 @@ using Content.Shared.Trigger;
 using Robust.Shared.Audio.Systems;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
+using Robust.Shared.Map;
 using Robust.Shared.Maths;
 using Robust.Shared.Physics;
 using Robust.Shared.Physics.Components;
@@ -32,6 +33,7 @@ public sealed class ShipTorpedoSystem : EntitySystem
     [Dependency] private readonly SharedPhysicsSystem _physics = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
     [Dependency] private readonly SharedMapSystem _mapSystem = default!;
+    [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly SharedProjectileSystem _projectiles = default!;
     [Dependency] private readonly TurfSystem _turf = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
@@ -250,8 +252,12 @@ public sealed class ShipTorpedoSystem : EntitySystem
                     {
                         // The launching ship's own hull never counts: a torpedo that has to turn
                         // away from the tube must be able to leave its own ship first.
-                        if (hit.HitEntity.IsValid() && Transform(hit.HitEntity).GridUid == torpedo.Source)
+                        if (hit.HitEntity.IsValid()
+                            && (Transform(hit.HitEntity).GridUid == torpedo.Source
+                                || HasComp<ShipTorpedoComponent>(hit.HitEntity)))
+                        {
                             continue;
+                        }
 
                         Detonate(uid, torpedo);
                         break;
@@ -331,11 +337,8 @@ public sealed class ShipTorpedoSystem : EntitySystem
     /// </summary>
     private bool IsOverGrid(TransformComponent xform, EntityUid grid)
     {
-        if (!TryComp<MapGridComponent>(grid, out var mapGrid))
-            return false;
-
-        var local = Vector2.Transform(_transform.GetWorldPosition(xform), _transform.GetInvWorldMatrix(grid));
-        return mapGrid.LocalAABB.Contains(local);
+        var world = new MapCoordinates(_transform.GetWorldPosition(xform), xform.MapID);
+        return _mapManager.TryFindGridAt(world, out var foundGrid, out _) && foundGrid == grid;
     }
 
     /// <summary>
