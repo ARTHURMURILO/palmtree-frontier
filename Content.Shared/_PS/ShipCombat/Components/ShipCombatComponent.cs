@@ -107,13 +107,13 @@ public sealed partial class ShipCombatComponent : Component
     public bool WeaponsBlocked;
 
     /// <summary>True when the ship has any shield generator (runtime; absent pools feed the grid).</summary>
-    public bool ShieldPoolActive;
+    public bool ShieldPoolActive = true;
 
     /// <summary>True when the ship has any weapon or torpedo launcher (runtime).</summary>
-    public bool WeaponPoolActive;
+    public bool WeaponPoolActive = true;
 
     /// <summary>True when the ship has any bluespace thruster (runtime).</summary>
-    public bool ThrusterPoolActive;
+    public bool ThrusterPoolActive = true;
 
     /// <summary>True once the emergency auxiliary distribution was applied (runtime).</summary>
     public bool EmergencyAuxSet;

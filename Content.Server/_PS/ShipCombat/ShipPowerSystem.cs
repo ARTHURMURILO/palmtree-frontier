@@ -218,18 +218,20 @@ public sealed class ShipPowerSystem : EntitySystem
     /// </summary>
     public void ApplyPreset(Entity<ShipCombatComponent> combat, ShipPowerPreset preset)
     {
-        switch (preset)
+        var (shields, weapons, thrusters) = preset switch
         {
-            case ShipPowerPreset.Attack:
-                SetPools(combat.Comp, 50, 100, 25, 25);
-                break;
-            case ShipPowerPreset.Defense:
-                SetPools(combat.Comp, 100, 50, 25, 25);
-                break;
-            default:
-                SetPools(combat.Comp, 50, 50, 50, 50);
-                break;
-        }
+            ShipPowerPreset.Attack => (50, 100, 25),
+            ShipPowerPreset.Defense => (100, 50, 25),
+            _ => (50, 50, 50),
+        };
+
+        // Presets only touch systems the ship actually has: unavailable sliders stay where they are.
+        if (combat.Comp.ShieldPoolActive)
+            SetPoolValue(combat.Comp, ShipPowerPool.Shields, shields);
+        if (combat.Comp.WeaponPoolActive)
+            SetPoolValue(combat.Comp, ShipPowerPool.Weapons, weapons);
+        if (combat.Comp.ThrusterPoolActive)
+            SetPoolValue(combat.Comp, ShipPowerPool.Thrusters, thrusters);
     }
 
     /// <summary>
