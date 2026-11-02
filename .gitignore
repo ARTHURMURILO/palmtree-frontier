@@ -310,6 +310,9 @@ Resources/MapImages
 # Machine-specific paths for AI docs (see .ai/file_paths.md)
 .ai/file_paths.md
 
+# AI workspace scratch files (local only)
+.ai/workspace/
+
 # Local development scripts
 /dclient.sh
 /dserver.sh
