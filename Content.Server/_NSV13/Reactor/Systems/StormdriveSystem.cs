@@ -1214,12 +1214,17 @@ public sealed class StormdriveSystem : EntitySystem
         _engineAudio.PlayOnGrid(comp.ExplosionSound, uid);
 
         // The countdown says nothing at zero on purpose: the last thing the crew hears from the
-        // core is this, not another status line. Delivered the same way as the supermatter's
-        // "You feel reality distort for a moment...": map-wide server chat, no radio, so it reads
-        // as something the crew felt rather than something the machine reported.
-        var mapFilter = Filter.BroadcastMap(Transform(uid).MapID);
+        // core is this, not another status line. Delivered like the supermatter's "You feel
+        // reality distort for a moment..." (server chat, no radio), but to the ship rather than
+        // the map: this is a ship-based fork, so a map-wide filter reaches every other vessel in
+        // the sector, and a freighter on the far side of the dock did not feel this deck move.
+        var xform = Transform(uid);
+        var filter = xform.GridUid is { } grid
+            ? Filter.BroadcastGrid(grid)
+            : Filter.BroadcastMap(xform.MapID);
+
         var message = Loc.GetString("stormdrive-meltdown-player");
-        _chatManager.ChatMessageToManyFiltered(mapFilter,
+        _chatManager.ChatMessageToManyFiltered(filter,
             ChatChannel.Server,
             message,
             Loc.GetString("chat-manager-server-wrap-message", ("message", message)),
