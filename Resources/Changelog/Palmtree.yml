@@ -1635,3 +1635,40 @@ Entries:
   time: '2026-11-02T17:00:26.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/2bc17a774abbd9597b70c17e896b55f0ab267a1c
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: RCDs can now build LED and coloured lamp/bulb lights.
+    - type: Add
+      message: >-
+        The experimental RCD can build lockers, hardsuit storage, APCs, SMES,
+        substations, blast doors, shutters, buttons, switches, thrusters,
+        gyroscopes, and other ship fixtures.
+    - type: Add
+      message: >-
+        The experimental RCD can build reinforced and plastitanium walls and
+        windows.
+    - type: Tweak
+      message: >-
+        RCD menus group lights under Lamps/Bulbs, power under Machinery/Wiring,
+        and airlocks under Doors.
+    - type: Tweak
+      message: >-
+        Normal RCDs gain matter from deconstruction; excess matter spills out as
+        compressed matter.
+    - type: Tweak
+      message: Airlocks and firelocks can now share a single tile.
+    - type: Tweak
+      message: >-
+        The experimental RCD deconstructs any wall, fixture, or tile for free,
+        except fans.
+    - type: Fix
+      message: >-
+        SSD characters no longer start breathing again after their player logs
+        off or switches characters.
+    - type: Fix
+      message: Defibrillators now heal asphyxiation on critical patients.
+  id: 90109
+  time: '2026-11-02T17:51:09.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/3a6f84b007eb3b3716c11ed7d7002d2650367e5b
