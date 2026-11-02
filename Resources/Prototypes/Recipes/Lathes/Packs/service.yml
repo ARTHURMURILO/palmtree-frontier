@@ -38,12 +38,6 @@
   # - BoozeDispenserMachineCircuitboard # Frontier: dynamic
   # - SodaDispenserMachineCircuitboard # Frontier: dynamic
   - SmartFridgeCircuitboard
-  # Goobstation: station radio media set
-  - VinylPlayerCircuitboard
-  - TapeDeckCircuitboard
-  - StationRadioCircuitboard
-  - StationRadioRigCircuitboard
-  - StationRadioServerCircuitboard
 
 ## Dynamic
 

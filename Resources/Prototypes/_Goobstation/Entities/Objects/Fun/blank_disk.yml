@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Palmtree: blank disk that imprints itself into any vinyl record.
+
+- type: entity
+  parent: BaseVinylDisk
+  id: BlankVinylDisk
+  name: blank bluespace disk
+  description: A featureless white disk. Imprint a song into it and it becomes that record, permanently.
+  components:
+  - type: Sprite
+    state: blank-vinyl-disk
+  - type: BlankVinylDisk
+  - type: ActivatableUI
+    key: enum.BlankVinylDiskUiKey.Key
+    verbText: blank-vinyl-disk-verb
+  - type: UserInterface
+    interfaces:
+      enum.BlankVinylDiskUiKey.Key:
+        type: BlankVinylDiskBoundUserInterface
+
+- type: latheRecipe
+  id: BlankVinylDisk
+  result: BlankVinylDisk
+  completetime: 2
+  materials:
+    Glass: 100

@@ -106,6 +106,8 @@
     - NFPietyStatic
     - NFCandlesStatic
     - CSPlumbingStatic # Palmtree: showers, sinks, drains
+    dynamicPacks:
+    - GoobStationMedia # Goobstation: researched media boards
   - type: EmagLatheRecipes
     emagStaticPacks:
     - NFServiceTechfabEmagStatic

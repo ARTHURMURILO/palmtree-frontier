@@ -157,6 +157,8 @@
     - NFServiceKitchenStatic # Frontier
     - NFEvaSuitCommon # Frontier
     - CSPlumbingStatic # Palmtree: showers, sinks, drains
+    dynamicPacks:
+    - GoobStationMedia # Goobstation: researched media boards
 
   - type: EmagLatheRecipes
     emagStaticPacks:
@@ -322,6 +324,7 @@
     - NFMedicalBoards # Frontier
     - NFServiceBoards # Frontier
     - NFEngineeringBoardsCircuitImprinter # Frontier
+    - GoobStationMedia # Goobstation: researched media boards
   - type: EmagLatheRecipes
     emagDynamicPacks: [] # Frontier: empty list
     # - SecurityBoards # Frontier

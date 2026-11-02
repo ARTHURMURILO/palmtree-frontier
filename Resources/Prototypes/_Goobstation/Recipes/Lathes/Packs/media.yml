@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Research-gated media content (see _NF/Research/techtree.yml).
+
+- type: latheRecipePack
+  id: GoobStationMedia
+  recipes:
+  - VinylPlayerCircuitboard
+  - TapeDeckCircuitboard
+  - StationRadioCircuitboard
+  - StationRadioRigCircuitboard
+  - StationRadioServerCircuitboard
+  - BlankVinylDisk

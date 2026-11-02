@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Ported from Goob Station (_Goobstation/Entities/Structures/Furniture/cdrack.yml).
-# Palmtree: ported as decor — CD storage/UI would need Goob's CD system, which Palmtree does not have.
+# Palmtree: storage is whitelisted to vinyl disks (the only disks in this repo) and holds 20 of them.
 
 - type: entity
   id: CdRack
@@ -16,7 +16,26 @@
     snapCardinals: true
     layers:
       - state: base
-      - state: cd-10
+      - map: ["enum.StorageFillLayers.Fill"]
+        state: cd-0
+  - type: Appearance
+  - type: StorageFillVisualizer
+    maxFillLevels: 11
+    fillBaseName: cd
+  - type: Storage
+    maxItemSize: Normal
+    grid:
+    - 0,0,0,19
+    whitelist:
+      components:
+      - Vinyl
+  - type: UserInterface
+    interfaces:
+      enum.StorageUiKey.Key:
+        type: StorageBoundUserInterface
+  - type: ContainerContainer
+    containers:
+      storagebase: !type:Container
   - type: Damageable
     damageModifierSet: Wood
     damageContainer: StructuralInorganic

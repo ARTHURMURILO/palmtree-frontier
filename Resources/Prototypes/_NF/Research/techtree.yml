@@ -896,6 +896,10 @@
   - SynthesizerInstrument
   - DawInstrumentMachineCircuitboard
   - JukeboxCircuitBoard
+  # Palmtree: media set
+  - VinylPlayerCircuitboard
+  - TapeDeckCircuitboard
+  - BlankVinylDisk
   technologyPrerequisites:
   - NFAdvancedEntertainment
   position: 2, 19
@@ -911,6 +915,10 @@
   - ComputerTelevisionCircuitboard
   - SurveillanceWirelessCameraMovableCircuitboard
   - SurveillanceWirelessCameraAnchoredCircuitboard
+  # Palmtree: station radio
+  - StationRadioCircuitboard
+  - StationRadioRigCircuitboard
+  - StationRadioServerCircuitboard
   technologyPrerequisites:
   - NFAudioVisualCommunication
   position: 1, 19

@@ -13,6 +13,7 @@
   - type: Construction
     graph: WallClock
     node: wallClock
+  - type: Clock
   - type: Anchorable
   - type: Sprite
     noRot: true
