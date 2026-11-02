@@ -104,6 +104,7 @@
   - AlertsComputerCircuitboard
   - PowerComputerCircuitboard
   - AtmosMonitoringComputerCircuitboard
+  - SupermatterComputerCircuitboard # Palmtree
   - SolarAssemblyFlatpack
 
 - type: latheRecipePack

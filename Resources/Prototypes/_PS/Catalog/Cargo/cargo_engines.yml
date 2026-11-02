@@ -24,3 +24,16 @@
   cost: 15000
   category: cargoproduct-category-name-engineering
   group: market
+
+# Palmtree: the supermatter monitoring console board had no source at all. Crews that lost or
+# never had the console could not rebuild it, so sell the board directly as well as unlocking it
+# in Atmospheric Damage Control.
+- type: cargoProduct
+  id: EngineSupermatterConsoleBoard
+  icon:
+    sprite: Objects/Misc/module.rsi
+    state: cpu_engineering
+  product: SupermatterComputerCircuitboard
+  cost: 4000
+  category: cargoproduct-category-name-engineering
+  group: market
