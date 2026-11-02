@@ -247,6 +247,7 @@
     - NFScience # Frontier
     - NFPouches # Frontier
     - NFProtolathe # Frontier
+    - GoobStationMedia # Goobstation: researched media boards
   - type: EmagLatheRecipes
     emagDynamicPacks:
     - NfsdAmmoStatic # Frontier: SecurityAmmo<NfsdAmmoStatic

@@ -15,40 +15,46 @@ public sealed class BlankVinylDiskWindow : DefaultWindow
     public BlankVinylDiskWindow(List<(string Id, string Name)> options)
     {
         Title = Loc.GetString("blank-vinyl-disk-window-title");
-        MinSize = new System.Numerics.Vector2(340, 420);
+        MinSize = new System.Numerics.Vector2(420, 420);
+        SetSize = new System.Numerics.Vector2(460, 520);
 
-        var scroll = new ScrollContainer
+        var box = new BoxContainer
         {
-            HorizontalExpand = true,
+            Orientation = BoxContainer.LayoutOrientation.Vertical,
+            SeparationOverride = 6,
             VerticalExpand = true,
         };
 
-        var list = new BoxContainer
-        {
-            Orientation = BoxContainer.LayoutOrientation.Vertical,
-            HorizontalExpand = true,
-            SeparationOverride = 2,
-        };
-
-        scroll.AddChild(list);
-        ContentsContainer.AddChild(scroll);
-
-        var hint = new Label
+        box.AddChild(new Label
         {
             Text = Loc.GetString("blank-vinyl-disk-window-hint"),
-            Margin = new Thickness(4, 4, 4, 8),
-        };
-        list.AddChild(hint);
+            Margin = new Thickness(2, 2, 2, 6),
+        });
 
-        foreach (var (id, name) in options)
+        var list = new ItemList
         {
-            var button = new Button
+            VerticalExpand = true,
+            HorizontalExpand = true,
+        };
+
+        var entries = new List<ItemList.Item>(options.Count);
+        foreach (var (_, name) in options)
+        {
+            entries.Add(new ItemList.Item(list)
             {
                 Text = name,
-                HorizontalExpand = true,
-            };
-            button.OnPressed += _ => OnSelected?.Invoke(id);
-            list.AddChild(button);
+                Selectable = true,
+            });
         }
+
+        list.SetItems(entries);
+        list.OnItemSelected += args =>
+        {
+            if (args.ItemIndex >= 0 && args.ItemIndex < options.Count)
+                OnSelected?.Invoke(options[args.ItemIndex].Id);
+        };
+
+        box.AddChild(list);
+        ContentsContainer.AddChild(box);
     }
 }

@@ -1,5 +1,6 @@
 using Content.Shared._Goobstation.BlankDisk;
 using Content.Shared._Goobstation.StationRadio.Components;
+using Content.Shared.Popups;
 using Robust.Shared.Containers;
 using Robust.Shared.Prototypes;
 
@@ -12,6 +13,7 @@ public sealed class BlankVinylDiskSystem : EntitySystem
 {
     [Dependency] private readonly IPrototypeManager _proto = default!;
     [Dependency] private readonly SharedContainerSystem _containers = default!;
+    [Dependency] private readonly SharedPopupSystem _popup = default!;
 
     public override void Initialize()
     {
@@ -29,12 +31,16 @@ public sealed class BlankVinylDiskSystem : EntitySystem
             return;
 
         var xform = Transform(ent.Owner);
+        var coords = xform.Coordinates;
         _containers.TryGetContainingContainer((ent.Owner, xform, MetaData(ent.Owner)), out var container);
 
-        var replacement = Spawn(args.Prototype, xform.Coordinates);
+        // Delete the blank first: it still occupies its slot, so inserting the replacement would fail.
+        Del(ent.Owner);
+
+        var replacement = Spawn(args.Prototype, coords);
         if (container != null && !_containers.Insert((replacement, null, null, null), container))
             Log.Warning($"Failed to insert imprinted disk into {ToPrettyString(container.Owner)}");
 
-        QueueDel(ent.Owner);
+        _popup.PopupEntity(Loc.GetString("blank-vinyl-disk-imprinted"), replacement, PopupType.Medium);
     }
 }
