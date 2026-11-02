@@ -1,0 +1,334 @@
+# Palmtree: construction graphs for player-built fixtures. All final nodes use `*Empty` entities.
+
+#region Mirror
+- type: constructionGraph
+  id: Mirror
+  start: start
+  graph:
+  - node: start
+    edges:
+    - to: mirror
+      steps:
+      - material: Steel
+        amount: 2
+      - material: Glass
+        amount: 1
+        doAfter: 2
+    - to: mirrorModern
+      steps:
+      - material: Steel
+        amount: 2
+      - material: Glass
+        amount: 1
+        doAfter: 2
+  - node: mirror
+    entity: MirrorEmpty
+    edges:
+    - to: start
+      steps:
+      - tool: Screwing
+        doAfter: 2
+      completed:
+      - !type:SpawnPrototype
+        prototype: SheetSteel1
+        amount: 2
+      - !type:SpawnPrototype
+        prototype: SheetGlass1
+        amount: 1
+      - !type:EmptyAllContainers
+      - !type:DeleteEntity
+  - node: mirrorModern
+    entity: MirrorModernEmpty
+    edges:
+    - to: start
+      steps:
+      - tool: Screwing
+        doAfter: 2
+      completed:
+      - !type:SpawnPrototype
+        prototype: SheetSteel1
+        amount: 2
+      - !type:SpawnPrototype
+        prototype: SheetGlass1
+        amount: 1
+      - !type:EmptyAllContainers
+      - !type:DeleteEntity
+#endregion
+
+#region Water cooler
+- type: constructionGraph
+  id: WaterCooler
+  start: start
+  graph:
+  - node: start
+    edges:
+    - to: waterCooler
+      steps:
+      - material: Steel
+        amount: 4
+      - material: Glass
+        amount: 1
+      - material: Cable
+        amount: 2
+        doAfter: 5
+  - node: waterCooler
+    entity: WaterCoolerEmpty
+    edges:
+    - to: start
+      steps:
+      - tool: Screwing
+        doAfter: 3
+      completed:
+      - !type:SpawnPrototype
+        prototype: SheetSteel1
+        amount: 4
+      - !type:SpawnPrototype
+        prototype: SheetGlass1
+        amount: 1
+      - !type:SpawnPrototype
+        prototype: CableApcStack1
+        amount: 2
+      - !type:EmptyAllContainers
+      - !type:DeleteEntity
+#endregion
+
+#region Jukebox wallmount
+- type: constructionGraph
+  id: JukeboxWallmount
+  start: start
+  graph:
+  - node: start
+    edges:
+    - to: wallmount
+      steps:
+      - tag: JukeboxFlatpack
+        name: construction-graph-tag-jukebox-flatpack
+        icon:
+          sprite: _NF/Objects/Devices/flatpack.rsi
+          state: service_lathe
+      - tool: Screwing
+        doAfter: 2
+  - node: wallmount
+    entity: JukeboxWallmountEmpty
+    edges:
+    - to: start
+      steps:
+      - tool: Screwing
+        doAfter: 2
+      completed:
+      - !type:SpawnPrototype
+        prototype: JukeboxFlatpack
+        amount: 1
+      - !type:EmptyAllContainers
+      - !type:DeleteEntity
+#endregion
+
+#region Airtight plastic flaps
+- type: constructionGraph
+  id: PlasticFlapsAirtight
+  start: start
+  graph:
+  - node: start
+    edges:
+    - to: airtightClear
+      steps:
+      - material: Plastic
+        amount: 5
+      - material: Steel
+        amount: 1
+        doAfter: 10
+    - to: airtightOpaque
+      steps:
+      - material: Plastic
+        amount: 5
+      - material: Steel
+        amount: 1
+        doAfter: 10
+  - node: airtightClear
+    entity: PlasticFlapsAirtightClearEmpty
+    edges:
+    - to: airtightOpaque
+      steps:
+      - tool: Welding
+        doAfter: 5
+    - to: start
+      steps:
+      - tool: Anchoring
+        doAfter: 10
+      completed:
+      - !type:SpawnPrototype
+        prototype: SheetPlastic
+        amount: 5
+      - !type:SpawnPrototype
+        prototype: SheetSteel1
+        amount: 1
+      - !type:EmptyAllContainers
+      - !type:DeleteEntity
+  - node: airtightOpaque
+    entity: PlasticFlapsAirtightOpaqueEmpty
+    edges:
+    - to: start
+      steps:
+      - tool: Anchoring
+        doAfter: 10
+      completed:
+      - !type:SpawnPrototype
+        prototype: SheetPlastic
+        amount: 5
+      - !type:SpawnPrototype
+        prototype: SheetSteel1
+        amount: 1
+      - !type:EmptyAllContainers
+      - !type:DeleteEntity
+#endregion
+
+#region Suit storage
+- type: constructionGraph
+  id: SuitStorage
+  start: start
+  graph:
+  - node: start
+    edges:
+    - to: floor
+      steps:
+      - material: Steel
+        amount: 4
+      - material: Cable
+        amount: 2
+        doAfter: 5
+    - to: wallmount
+      steps:
+      - material: Steel
+        amount: 4
+      - material: Cable
+        amount: 2
+        doAfter: 5
+  - node: floor
+    entity: SuitStorageEmpty
+    edges:
+    - to: start
+      steps:
+      - tool: Screwing
+        doAfter: 5
+      conditions:
+      - !type:StorageWelded
+        welded: false
+      - !type:Locked
+        locked: false
+      completed:
+      - !type:SpawnPrototype
+        prototype: SheetSteel1
+        amount: 4
+      - !type:SpawnPrototype
+        prototype: CableApcStack1
+        amount: 2
+      - !type:EmptyAllContainers
+      - !type:DeleteEntity
+  - node: wallmount
+    entity: SuitStorageWallmountEmpty
+    edges:
+    - to: start
+      steps:
+      - tool: Screwing
+        doAfter: 5
+      conditions:
+      - !type:StorageWelded
+        welded: false
+      - !type:Locked
+        locked: false
+      completed:
+      - !type:SpawnPrototype
+        prototype: SheetSteel1
+        amount: 4
+      - !type:SpawnPrototype
+        prototype: CableApcStack1
+        amount: 2
+      - !type:EmptyAllContainers
+      - !type:DeleteEntity
+#endregion
+
+#region Wall cabinets
+- type: constructionGraph
+  id: WallCabinets
+  start: start
+  graph:
+  - node: start
+    edges:
+    - to: extinguisher
+      steps:
+      - material: Steel
+        amount: 1
+      - material: Glass
+        amount: 1
+        doAfter: 2
+    - to: defibrillator
+      steps:
+      - material: Steel
+        amount: 1
+      - material: Glass
+        amount: 1
+        doAfter: 2
+    - to: fireAxe
+      steps:
+      - material: Steel
+        amount: 2
+      - material: Glass
+        amount: 1
+      - material: Cable
+        amount: 1
+        doAfter: 3
+  - node: extinguisher
+    entity: ExtinguisherCabinetEmpty
+    edges:
+    - to: start
+      steps:
+      - tool: Screwing
+        doAfter: 2
+      completed:
+      - !type:SpawnPrototype
+        prototype: SheetSteel1
+        amount: 1
+      - !type:SpawnPrototype
+        prototype: SheetGlass1
+        amount: 1
+      - !type:EmptyAllContainers
+      - !type:DeleteEntity
+  - node: defibrillator
+    entity: DefibrillatorCabinetEmpty
+    edges:
+    - to: start
+      steps:
+      - tool: Screwing
+        doAfter: 2
+      completed:
+      - !type:SpawnPrototype
+        prototype: SheetSteel1
+        amount: 1
+      - !type:SpawnPrototype
+        prototype: SheetGlass1
+        amount: 1
+      - !type:EmptyAllContainers
+      - !type:DeleteEntity
+  - node: fireAxe
+    entity: FireAxeCabinetEmpty
+    edges:
+    - to: start
+      steps:
+      - tool: Screwing
+        doAfter: 3
+      conditions:
+      - !type:Locked
+        locked: false
+      completed:
+      - !type:SpawnPrototype
+        prototype: SheetSteel1
+        amount: 2
+      - !type:SpawnPrototype
+        prototype: SheetGlass1
+        amount: 1
+      - !type:SpawnPrototype
+        prototype: CableApcStack1
+        amount: 1
+      - !type:EmptyAllContainers
+      - !type:DeleteEntity
+#endregion
