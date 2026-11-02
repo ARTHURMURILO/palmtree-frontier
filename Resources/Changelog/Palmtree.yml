@@ -1595,3 +1595,15 @@ Entries:
         appears in chat.
   id: 90105
   time: '2026-10-28T23:27:49.0000000+00:00'
+- author: xTheLifex
+  changes:
+    - type: Tweak
+      message: >-
+        Flickering and rave light effects now come from the fixture itself; the
+        normal bulb only changes the light's color.
+    - type: Remove
+      message: Removed the redundant flickering and rave bulb variants.
+  id: 90106
+  time: '2026-11-02T14:36:06.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/2a0c63d94e23a7bd9fdc86a2b63e076f7d18c10b
