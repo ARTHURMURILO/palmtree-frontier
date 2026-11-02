@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Ported from Goob Station (Entities/Structures/Decoration/bonfire.yml, BonfireStake).
+# Palmtree: IgniteOnBuckle is Goob-only, so it was dropped.
+
+- type: entity
+  parent: Bonfire
+  id: BonfireStake
+  name: bonfire with stake
+  description: A sinister bonfire with a stake for... ceremonial purposes. Best not to ask.
+  components:
+  - type: Construction
+    graph: BonfireStake
+    node: bonfireStake
+  - type: Sprite
+    sprite: Structures/Decoration/bonfire_stake.rsi
+    layers:
+    - state: burning
+    offset: "0, 0.5"
+  - type: Strap
+    position: Stand
+    buckleOffset: "0, 0.5"
+    buckleDoafterTime: 5
+  - type: IgnitionSource
+    temperature: 400
+    ignited: true

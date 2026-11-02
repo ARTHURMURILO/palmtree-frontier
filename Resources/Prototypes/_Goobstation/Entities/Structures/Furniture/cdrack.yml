@@ -1,0 +1,56 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Ported from Goob Station (_Goobstation/Entities/Structures/Furniture/cdrack.yml).
+# Palmtree: ported as decor — CD storage/UI would need Goob's CD system, which Palmtree does not have.
+
+- type: entity
+  id: CdRack
+  parent: BaseStructure
+  name: CD rack
+  description: Mostly filled with CDs.
+  components:
+  - type: Construction
+    graph: CdRackGraph
+    node: CdRackNode
+  - type: Sprite
+    sprite: _Goobstation/Structures/Furniture/cdrack.rsi
+    snapCardinals: true
+    layers:
+      - state: base
+      - state: cd-10
+  - type: Damageable
+    damageModifierSet: Wood
+    damageContainer: StructuralInorganic
+  - type: Destructible
+    thresholds:
+    - trigger: # Excess damage, don't spawn entities
+        !type:DamageTrigger
+        damage: 100
+      behaviors:
+      - !type:PlaySoundBehavior
+        sound:
+          collection: WoodDestroyHeavy
+      - !type:DoActsBehavior
+        acts: ["Destruction"]
+    - trigger:
+        !type:DamageTrigger
+        damage: 30
+      behaviors:
+      - !type:PlaySoundBehavior
+        sound:
+          collection: WoodDestroyHeavy
+      - !type:SpawnEntitiesBehavior
+        spawn:
+          MaterialWoodPlank:
+            min: 2
+            max: 3
+      - !type:DoActsBehavior
+        acts: ["Destruction"]
+  - type: Tag
+    tags:
+    - Structure
+    - Wooden
+  - type: Transform
+    anchored: true
+    noRot: true
+  - type: Anchorable
+  - type: InteractionOutline
