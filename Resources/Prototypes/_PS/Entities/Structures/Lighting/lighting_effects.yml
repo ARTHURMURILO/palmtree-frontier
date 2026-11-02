@@ -1,5 +1,5 @@
 # Palmtree: flickering and rave light fixtures for dungeon decoration.
-# Flickering fixtures spawn a flickering bulb; rave fixtures carry RaveLight directly and spawn a rave bulb.
+# The fixture owns the effect and still spawns its normal bulb; the bulb supplies the light's color.
 # Rave variants pulse 100% -> 0% -> 100%; a screwdriver cycles the period through 0.5s, 1s and 2s.
 # Always-powered variants work without APC power and still contain a replaceable bulb.
 
@@ -9,16 +9,13 @@
   id: PoweredlightFlickering
   suffix: Flickering
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightTubeFlickering
+  - type: FlickeringLight
 
 - type: entity
   parent: Poweredlight
   id: PoweredlightRave
   suffix: Rave
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightTubeRave
   - type: RaveLight
     maxEnergy: 0.8
 
@@ -44,16 +41,13 @@
   id: PoweredlightLEDFlickering
   suffix: Flickering
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LedLightTubeFlickering
+  - type: FlickeringLight
 
 - type: entity
   parent: PoweredlightLED
   id: PoweredlightLEDRave
   suffix: Rave
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LedLightTubeRave
   - type: RaveLight
     maxEnergy: 1
 
@@ -79,16 +73,13 @@
   id: PoweredlightExteriorFlickering
   suffix: Flickering
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: ExteriorLightTubeFlickering
+  - type: FlickeringLight
 
 - type: entity
   parent: PoweredlightExterior
   id: PoweredlightExteriorRave
   suffix: Rave
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: ExteriorLightTubeRave
   - type: RaveLight
     maxEnergy: 4.5
 
@@ -114,16 +105,13 @@
   id: PoweredlightSodiumFlickering
   suffix: Flickering
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: SodiumLightTubeFlickering
+  - type: FlickeringLight
 
 - type: entity
   parent: PoweredlightSodium
   id: PoweredlightSodiumRave
   suffix: Rave
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: SodiumLightTubeRave
   - type: RaveLight
     maxEnergy: 4
 
@@ -149,16 +137,13 @@
   id: PoweredSmallLightFlickering
   suffix: Flickering
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightBulbFlickering
+  - type: FlickeringLight
 
 - type: entity
   parent: PoweredSmallLight
   id: PoweredSmallLightRave
   suffix: Rave
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightBulbRave
   - type: RaveLight
     maxEnergy: 1
 
@@ -184,16 +169,13 @@
   id: PoweredLEDSmallLightFlickering
   suffix: Flickering
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LedLightBulbFlickering
+  - type: FlickeringLight
 
 - type: entity
   parent: PoweredLEDSmallLight
   id: PoweredLEDSmallLightRave
   suffix: Rave
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LedLightBulbRave
   - type: RaveLight
     maxEnergy: 1
 
@@ -219,16 +201,13 @@
   id: PoweredDimSmallLightFlickering
   suffix: Flickering
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: DimLightBulbFlickering
+  - type: FlickeringLight
 
 - type: entity
   parent: PoweredDimSmallLight
   id: PoweredDimSmallLightRave
   suffix: Rave
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: DimLightBulbRave
   - type: RaveLight
     maxEnergy: 0.5
 
@@ -254,16 +233,13 @@
   id: PoweredWarmSmallLightFlickering
   suffix: Flickering
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: WarmLightBulbFlickering
+  - type: FlickeringLight
 
 - type: entity
   parent: PoweredWarmSmallLight
   id: PoweredWarmSmallLightRave
   suffix: Rave
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: WarmLightBulbRave
   - type: RaveLight
     maxEnergy: 1
 
@@ -289,16 +265,13 @@
   id: PoweredlightCyanFlickering
   suffix: Flickering
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightTubeCrystalCyanFlickering
+  - type: FlickeringLight
 
 - type: entity
   parent: PoweredlightCyan
   id: PoweredlightCyanRave
   suffix: Rave
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightTubeCrystalCyanRave
   - type: RaveLight
     maxEnergy: 3
 
@@ -324,16 +297,13 @@
   id: PoweredlightBlueFlickering
   suffix: Flickering
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightTubeCrystalBlueFlickering
+  - type: FlickeringLight
 
 - type: entity
   parent: PoweredlightBlue
   id: PoweredlightBlueRave
   suffix: Rave
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightTubeCrystalBlueRave
   - type: RaveLight
     maxEnergy: 3
 
@@ -359,16 +329,13 @@
   id: PoweredlightYellowFlickering
   suffix: Flickering
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightTubeCrystalYellowFlickering
+  - type: FlickeringLight
 
 - type: entity
   parent: PoweredlightYellow
   id: PoweredlightYellowRave
   suffix: Rave
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightTubeCrystalYellowRave
   - type: RaveLight
     maxEnergy: 3
 
@@ -394,16 +361,13 @@
   id: PoweredlightPinkFlickering
   suffix: Flickering
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightTubeCrystalPinkFlickering
+  - type: FlickeringLight
 
 - type: entity
   parent: PoweredlightPink
   id: PoweredlightPinkRave
   suffix: Rave
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightTubeCrystalPinkRave
   - type: RaveLight
     maxEnergy: 3
 
@@ -429,16 +393,13 @@
   id: PoweredlightOrangeFlickering
   suffix: Flickering
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightTubeCrystalOrangeFlickering
+  - type: FlickeringLight
 
 - type: entity
   parent: PoweredlightOrange
   id: PoweredlightOrangeRave
   suffix: Rave
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightTubeCrystalOrangeRave
   - type: RaveLight
     maxEnergy: 3
 
@@ -464,16 +425,13 @@
   id: PoweredlightBlackFlickering
   suffix: Flickering
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightTubeCrystalBlackFlickering
+  - type: FlickeringLight
 
 - type: entity
   parent: PoweredlightBlack
   id: PoweredlightBlackRave
   suffix: Rave
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightTubeCrystalBlackRave
   - type: RaveLight
     maxEnergy: 1
 
@@ -499,16 +457,13 @@
   id: PoweredlightRedFlickering
   suffix: Flickering
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightTubeCrystalRedFlickering
+  - type: FlickeringLight
 
 - type: entity
   parent: PoweredlightRed
   id: PoweredlightRedRave
   suffix: Rave
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightTubeCrystalRedRave
   - type: RaveLight
     maxEnergy: 3
 
@@ -534,16 +489,13 @@
   id: PoweredlightGreenFlickering
   suffix: Flickering
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightTubeCrystalGreenFlickering
+  - type: FlickeringLight
 
 - type: entity
   parent: PoweredlightGreen
   id: PoweredlightGreenRave
   suffix: Rave
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightTubeCrystalGreenRave
   - type: RaveLight
     maxEnergy: 3
 
@@ -569,16 +521,13 @@
   id: PoweredlightUltravioletFlickering
   suffix: Flickering
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightTubeUltravioletFlickering
+  - type: FlickeringLight
 
 - type: entity
   parent: PoweredlightUltraviolet
   id: PoweredlightUltravioletRave
   suffix: Rave
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightTubeUltravioletRave
   - type: RaveLight
     maxEnergy: 3
 
@@ -604,16 +553,13 @@
   id: PoweredLightPostSmallFlickering
   suffix: Flickering
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightTubeFlickering
+  - type: FlickeringLight
 
 - type: entity
   parent: PoweredLightPostSmall
   id: PoweredLightPostSmallRave
   suffix: Rave
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightTubeRave
   - type: RaveLight
     maxEnergy: 0.8
 
@@ -639,16 +585,13 @@
   id: PoweredLEDLightPostSmallFlickering
   suffix: Flickering
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LedLightTubeFlickering
+  - type: FlickeringLight
 
 - type: entity
   parent: PoweredLEDLightPostSmall
   id: PoweredLEDLightPostSmallRave
   suffix: Rave
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LedLightTubeRave
   - type: RaveLight
     maxEnergy: 1
 
@@ -674,16 +617,13 @@
   id: PoweredLightPostSmallRedFlickering
   suffix: Flickering
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightTubeCrystalRedFlickering
+  - type: FlickeringLight
 
 - type: entity
   parent: PoweredLightPostSmallRed
   id: PoweredLightPostSmallRedRave
   suffix: Rave
   components:
-  - type: PoweredLight
-    hasLampOnSpawn: LightTubeCrystalRedRave
   - type: RaveLight
     maxEnergy: 3
 
