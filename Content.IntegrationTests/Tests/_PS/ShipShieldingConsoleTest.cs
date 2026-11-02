@@ -59,6 +59,7 @@ public sealed class ShipShieldingConsoleTest
             bus.RaiseLocalEvent(console, new ShieldingConsoleSetPoolLockMessage(ShipPowerPool.Auxiliary, true));
             Assert.That(state.Comp.AuxiliaryPowerLocked, Is.True);
 
+            MarkPoolsPresent(state.Comp);
             bus.RaiseLocalEvent(console, new ShieldingConsoleSetPresetMessage(ShipPowerPreset.Defense));
             Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Shields), Is.EqualTo(100));
             Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Weapons), Is.EqualTo(50));
@@ -243,5 +244,13 @@ public sealed class ShipShieldingConsoleTest
         }
 
         return sum;
+    }
+
+    /// <summary>Test grids have no devices; presets skip absent systems, so mark them present.</summary>
+    private static void MarkPoolsPresent(Content.Shared._PS.ShipCombat.Components.ShipCombatComponent combat)
+    {
+        combat.ShieldPoolActive = true;
+        combat.WeaponPoolActive = true;
+        combat.ThrusterPoolActive = true;
     }
 }

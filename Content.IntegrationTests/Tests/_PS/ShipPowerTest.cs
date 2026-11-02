@@ -79,16 +79,19 @@ public sealed class ShipPowerTest
             var power = server.System<ShipPowerSystem>();
             Assert.That(combat.TryEnsureShipCombat(testMap.Grid.Owner, out var state), Is.True);
 
+            MarkPoolsPresent(state.Comp);
             power.ApplyPreset(state, ShipPowerPreset.Attack);
             Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Weapons), Is.EqualTo(100));
             Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Shields), Is.EqualTo(50));
             Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Thrusters), Is.EqualTo(25));
             Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Auxiliary), Is.EqualTo(25));
 
+            MarkPoolsPresent(state.Comp);
             power.ApplyPreset(state, ShipPowerPreset.Defense);
             Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Shields), Is.EqualTo(100));
             Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Weapons), Is.EqualTo(50));
 
+            MarkPoolsPresent(state.Comp);
             power.ApplyPreset(state, ShipPowerPreset.Balanced);
             Assert.That(Total(state.Comp), Is.EqualTo(200));
             Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Shields), Is.EqualTo(50));
@@ -303,6 +306,7 @@ public sealed class ShipPowerTest
         {
             var combat = server.System<ShipCombatSystem>();
             Assert.That(combat.TryEnsureShipCombat(grid, out var state), Is.True);
+            MarkPoolsPresent(state.Comp);
             server.System<ShipPowerSystem>().ApplyPreset(state, ShipPowerPreset.Attack);
 
             var dock = server.System<BluespaceDockSystem>();
@@ -432,5 +436,13 @@ public sealed class ShipPowerTest
         }
 
         return sum;
+    }
+
+    /// <summary>Test grids have no devices; presets skip absent systems, so mark them present.</summary>
+    private static void MarkPoolsPresent(Content.Shared._PS.ShipCombat.Components.ShipCombatComponent combat)
+    {
+        combat.ShieldPoolActive = true;
+        combat.WeaponPoolActive = true;
+        combat.ThrusterPoolActive = true;
     }
 }
