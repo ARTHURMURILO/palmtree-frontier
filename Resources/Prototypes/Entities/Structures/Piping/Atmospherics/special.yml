@@ -25,6 +25,7 @@
   - type: Tag
     tags:
       - SpreaderIgnore
+      - RCDUnDeconstructable # Palmtree: RCDs must not remove tiny fans
 
 - type: entity
   id: AtmosDeviceFanDirectional
@@ -54,6 +55,7 @@
   - type: Tag
     tags:
       - SpreaderIgnore
+      - RCDUnDeconstructable # Palmtree: RCDs must not remove directional fans
   - type: Construction # Palmtree: buildable directional fan (Coyote/HardLight)
     graph: GasUnary
     node: tinygayfan
