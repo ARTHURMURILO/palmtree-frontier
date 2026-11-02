@@ -85,28 +85,28 @@
                            VerticalExpand="True"/>
                 </controls:StripeBack>
                 <BoxContainer Orientation="Horizontal" Margin="3">
-                    <Label Text="{Loc 'shielding-console-pool-shields'}" MinWidth="64"/>
+                    <Label Name="ShieldsPoolLabel" Text="{Loc 'shielding-console-pool-shields'}" MinWidth="64"/>
                     <ps:ThresholdSlider Name="ShieldSlider" HorizontalExpand="True"/>
                     <Label Name="ShieldValueLabel" MinWidth="34" Align="Right"/>
                     <Label Name="ShieldAlertLabel" Text="/!\" MinWidth="20" Modulate="#ff3b3b" Visible="False"/>
                     <CheckBox Name="ShieldLockCheck"/>
                 </BoxContainer>
                 <BoxContainer Orientation="Horizontal" Margin="3">
-                    <Label Text="{Loc 'shielding-console-pool-weapons'}" MinWidth="64"/>
+                    <Label Name="WeaponsPoolLabel" Text="{Loc 'shielding-console-pool-weapons'}" MinWidth="64"/>
                     <ps:ThresholdSlider Name="WeaponSlider" HorizontalExpand="True"/>
                     <Label Name="WeaponValueLabel" MinWidth="34" Align="Right"/>
                     <Label Name="WeaponAlertLabel" Text="/!\" MinWidth="20" Modulate="#ff3b3b" Visible="False"/>
                     <CheckBox Name="WeaponLockCheck"/>
                 </BoxContainer>
                 <BoxContainer Orientation="Horizontal" Margin="3">
-                    <Label Text="{Loc 'shielding-console-pool-thrusters'}" MinWidth="64"/>
+                    <Label Name="ThrustersPoolLabel" Text="{Loc 'shielding-console-pool-thrusters'}" MinWidth="64"/>
                     <ps:ThresholdSlider Name="ThrusterSlider" HorizontalExpand="True"/>
                     <Label Name="ThrusterValueLabel" MinWidth="34" Align="Right"/>
                     <Label Name="ThrusterAlertLabel" Text="/!\" MinWidth="20" Modulate="#ff3b3b" Visible="False"/>
                     <CheckBox Name="ThrusterLockCheck"/>
                 </BoxContainer>
                 <BoxContainer Orientation="Horizontal" Margin="3">
-                    <Label Text="{Loc 'shielding-console-pool-auxiliary'}" MinWidth="64"/>
+                    <Label Name="AuxiliaryPoolLabel" Text="{Loc 'shielding-console-pool-auxiliary'}" MinWidth="64"/>
                     <ps:ThresholdSlider Name="AuxiliarySlider" HorizontalExpand="True"/>
                     <Label Name="AuxiliaryValueLabel" MinWidth="34" Align="Right"/>
                     <Label Name="AuxiliaryAlertLabel" Text="/!\" MinWidth="20" Modulate="#ff3b3b" Visible="False"/>

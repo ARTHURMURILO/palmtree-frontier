@@ -21,6 +21,7 @@ public sealed partial class ShieldingConsoleWindow : FancyWindow
 {
     // Palmtree: shielding consoles are dark yellow instead of the default gray.
     private static readonly Color InactivePoolColor = Color.FromHex("#555555");
+    private static readonly Color InactivePoolTextColor = Color.FromHex("#c0392b");
 
     private static readonly Color WindowBackgroundColor = Color.FromHex("#2A2414");
     private static readonly Color WindowHeadingColor = Color.FromHex("#3A3018");
@@ -40,6 +41,7 @@ public sealed partial class ShieldingConsoleWindow : FancyWindow
 
     private readonly Dictionary<ShipPowerPool, ThresholdSlider> _sliders = new();
     private readonly Dictionary<ShipPowerPool, Label> _valueLabels = new();
+    private readonly Dictionary<ShipPowerPool, Label> _poolLabels = new();
     private readonly Dictionary<ShipPowerPool, Label> _alertLabels = new();
     private readonly Dictionary<ShipPowerPool, CheckBox> _lockChecks = new();
 
@@ -87,10 +89,10 @@ public sealed partial class ShieldingConsoleWindow : FancyWindow
         FacingAllButton.OnPressed += _ => OnRedistribute?.Invoke(ShieldFacing.All);
 
         // Power pools: sliders, value labels, alerts and locks.
-        RegisterPool(ShipPowerPool.Shields, ShieldSlider, ShieldValueLabel, ShieldAlertLabel, ShieldLockCheck);
-        RegisterPool(ShipPowerPool.Weapons, WeaponSlider, WeaponValueLabel, WeaponAlertLabel, WeaponLockCheck);
-        RegisterPool(ShipPowerPool.Thrusters, ThrusterSlider, ThrusterValueLabel, ThrusterAlertLabel, ThrusterLockCheck);
-        RegisterPool(ShipPowerPool.Auxiliary, AuxiliarySlider, AuxiliaryValueLabel, AuxiliaryAlertLabel, AuxiliaryLockCheck);
+        RegisterPool(ShipPowerPool.Shields, ShieldSlider, ShieldValueLabel, ShieldAlertLabel, ShieldLockCheck, ShieldsPoolLabel);
+        RegisterPool(ShipPowerPool.Weapons, WeaponSlider, WeaponValueLabel, WeaponAlertLabel, WeaponLockCheck, WeaponsPoolLabel);
+        RegisterPool(ShipPowerPool.Thrusters, ThrusterSlider, ThrusterValueLabel, ThrusterAlertLabel, ThrusterLockCheck, ThrustersPoolLabel);
+        RegisterPool(ShipPowerPool.Auxiliary, AuxiliarySlider, AuxiliaryValueLabel, AuxiliaryAlertLabel, AuxiliaryLockCheck, AuxiliaryPoolLabel);
 
         PresetAttackButton.OnPressed += _ => OnPresetSelected?.Invoke(ShipPowerPreset.Attack);
         PresetDefenseButton.OnPressed += _ => OnPresetSelected?.Invoke(ShipPowerPreset.Defense);
@@ -114,10 +116,10 @@ public sealed partial class ShieldingConsoleWindow : FancyWindow
         if (_pendingCondition == null)
             ConditionOption.SelectId((int) state.Condition);
 
-        SetPool(ShipPowerPool.Shields, state.ShieldPower, state.ShieldLocked, state.ShieldsAlert);
-        SetPool(ShipPowerPool.Weapons, state.WeaponPower, state.WeaponLocked, state.WeaponsAlert);
-        SetPool(ShipPowerPool.Thrusters, state.ThrusterPower, state.ThrusterLocked, state.ThrustersAlert);
-        SetPool(ShipPowerPool.Auxiliary, state.AuxiliaryPower, state.AuxiliaryLocked, state.AuxiliaryAlert);
+        SetPool(ShipPowerPool.Shields, state.ShieldPower, state.ShieldLocked, state.ShieldsAlert, ShieldsPoolLabel);
+        SetPool(ShipPowerPool.Weapons, state.WeaponPower, state.WeaponLocked, state.WeaponsAlert, WeaponsPoolLabel);
+        SetPool(ShipPowerPool.Thrusters, state.ThrusterPower, state.ThrusterLocked, state.ThrustersAlert, ThrustersPoolLabel);
+        SetPool(ShipPowerPool.Auxiliary, state.AuxiliaryPower, state.AuxiliaryLocked, state.AuxiliaryAlert, AuxiliaryPoolLabel);
 
         // Facings: charge / maximum, with a DOWN marker for collapsed ones.
         SetFacing(FacingForeLabel, FacingForeBar, state, ShieldFacing.Fore);
@@ -139,6 +141,8 @@ public sealed partial class ShieldingConsoleWindow : FancyWindow
             _sliders[pool].MouseFilter = active ? MouseFilterMode.Stop : MouseFilterMode.Ignore;
             _lockChecks[pool].Disabled = !active;
             _sliders[pool].ModulateSelfOverride = active ? null : InactivePoolColor;
+            _poolLabels[pool].FontColorOverride = active ? null : InactivePoolTextColor;
+            _valueLabels[pool].FontColorOverride = active ? null : InactivePoolTextColor;
         }
     }
 
@@ -147,9 +151,11 @@ public sealed partial class ShieldingConsoleWindow : FancyWindow
         ThresholdSlider slider,
         Label valueLabel,
         Label alertLabel,
-        CheckBox lockCheck)
+        CheckBox lockCheck,
+        Label poolLabel)
     {
         _sliders[pool] = slider;
+        _poolLabels[pool] = poolLabel;
         _valueLabels[pool] = valueLabel;
         _alertLabels[pool] = alertLabel;
         _lockChecks[pool] = lockCheck;
@@ -169,7 +175,7 @@ public sealed partial class ShieldingConsoleWindow : FancyWindow
         lockCheck.OnToggled += args => OnPoolLockChanged?.Invoke(pool, args.Pressed);
     }
 
-    private void SetPool(ShipPowerPool pool, int value, bool locked, bool alert)
+    private void SetPool(ShipPowerPool pool, int value, bool locked, bool alert, Label poolLabel)
     {
         var slider = _sliders[pool];
 

@@ -40,7 +40,7 @@ public sealed class ShipTorpedoSystem : EntitySystem
     [Dependency] private readonly ShipShieldSystem _shields = default!;
 
     /// <summary>Delay between the torpedo contacting the target and detonating.</summary>
-    private static readonly TimeSpan ContactFuse = TimeSpan.FromSeconds(0.75);
+    private static readonly TimeSpan ContactFuse = TimeSpan.FromSeconds(0.1);
 
     /// <summary>How often the incoming-torpedo scan runs.</summary>
     private static readonly TimeSpan AlarmScanInterval = TimeSpan.FromSeconds(0.25);

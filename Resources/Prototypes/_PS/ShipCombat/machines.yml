@@ -1,7 +1,7 @@
 - type: entity
   parent: BaseMachine
   id: BluespacePowerSink
-  name: bluespace power bypass
+  name: bluespace power transmitter
   description: Splits a ship's generator output between its shields, weapons and thrusters, and feeds whatever is left back into the power grid.
   suffix: Palmtree
   components:
@@ -55,7 +55,7 @@
   parent: BaseThruster
   id: BluespaceThruster
   name: bluespace thruster
-  description: A thruster fed by the ship's bluespace power bypass instead of cables. More power means more speed.
+  description: A thruster fed by the ship's bluespace power transmitter instead of cables. More power means more speed.
   suffix: Palmtree
   components:
   - type: Sprite
@@ -85,7 +85,7 @@
   parent: BaseMachine
   id: ShieldGenerator
   name: shield generator
-  description: Projects the ship's directional shields, fed by the bluespace power bypass.
+  description: Projects the ship's directional shields, fed by the bluespace power transmitter.
   suffix: Palmtree
   components:
   - type: Sprite
