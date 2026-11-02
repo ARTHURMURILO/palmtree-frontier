@@ -1,0 +1,489 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Vinyl disks made from music Palmtree already ships (Lobby / Jukebox / _PS Lobby).
+# No new audio was added: every song path below points at an .ogg already in this repo.
+# Prototype shape ported from Goob Station (_Goobstation/Entities/Objects/Fun/vinyls.yml).
+
+- type: entity
+  abstract: true
+  id: BaseVinylDisk
+  name: vinyl disk
+  description: A vinyl disk containing music.
+  parent: BaseItem
+  components:
+  - type: Vinyl
+  - type: Sprite
+    sprite: _Goobstation/Objects/Misc/RadioStation/vinyls.rsi
+    state: red-vinyl-disk
+  - type: EmbeddableProjectile
+    sound: /Audio/Weapons/star_hit.ogg
+  - type: Damageable
+    damageContainer: Inorganic
+    damageModifierSet: Wood
+  - type: Destructible
+    thresholds:
+    - trigger:
+        !type:DamageTrigger
+        damage: 12
+      behaviors:
+      - !type:PlaySoundBehavior
+        sound:
+          collection: GlassBreak
+      - !type:SpawnEntitiesBehavior
+        spawn:
+          VinylDiskBroken:
+            min: 1
+            max: 1
+      - !type:DoActsBehavior
+        acts: [ "Destruction" ]
+  - type: DamageOnLand
+    ignoreResistances: true
+    damage:
+      types:
+        Blunt: 5
+  - type: DamageOtherOnHit
+    damage:
+      types:
+        Slash: 5
+
+- type: entity
+  id: VinylDiskBroken
+  parent: BaseItem
+  name: broken vinyl disk
+  description: Someone's favourite song, snapped in half.
+  components:
+  - type: Sprite
+    sprite: _Goobstation/Objects/Misc/RadioStation/vinyls.rsi
+    state: broken-vinyl-disk
+  - type: Tag
+    tags:
+    - Trash
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskSpacStac
+  name: vinyl disk (Spac Stac)
+  components:
+  - type: Vinyl
+    song: /Audio/Lobby/Spac_Stac.ogg
+  - type: Sprite
+    state: red-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskAbsconditus
+  name: vinyl disk (Absconditus)
+  components:
+  - type: Vinyl
+    song: /Audio/Lobby/absconditus.ogg
+  - type: Sprite
+    state: blue-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskAtomicamnesiammx
+  name: vinyl disk (Atomicamnesiammx)
+  components:
+  - type: Vinyl
+    song: /Audio/Lobby/atomicamnesiammx.ogg
+  - type: Sprite
+    state: green-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskCometHaley
+  name: vinyl disk (Comet Haley)
+  components:
+  - type: Vinyl
+    song: /Audio/Lobby/comet_haley.ogg
+  - type: Sprite
+    state: purple-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskEndlessSpace
+  name: vinyl disk (Endless Space)
+  components:
+  - type: Vinyl
+    song: /Audio/Lobby/endless_space.ogg
+  - type: Sprite
+    state: orange-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskEveryLightIsBlinkingAtOnce
+  name: vinyl disk (Every Light Is Blinking At Once)
+  components:
+  - type: Vinyl
+    song: /Audio/Lobby/every_light_is_blinking_at_once.ogg
+  - type: Sprite
+    state: pink-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskLasersRipApartTheBulkhead
+  name: vinyl disk (Lasers Rip Apart The Bulkhead)
+  components:
+  - type: Vinyl
+    song: /Audio/Lobby/lasers_rip_apart_the_bulkhead.ogg
+  - type: Sprite
+    state: yellow-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskModFlipFlap
+  name: vinyl disk (Flip Flap)
+  components:
+  - type: Vinyl
+    song: /Audio/Lobby/mod.flip-flap.ogg
+  - type: Sprite
+    state: cyan-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskPwmur
+  name: vinyl disk (Pwmur)
+  components:
+  - type: Vinyl
+    song: /Audio/Lobby/pwmur.ogg
+  - type: Sprite
+    state: white-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskSinguloose
+  name: vinyl disk (Singuloose)
+  components:
+  - type: Vinyl
+    song: /Audio/Lobby/singuloose.ogg
+  - type: Sprite
+    state: lightblue-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskSpaceAsshole
+  name: vinyl disk (Space Asshole)
+  components:
+  - type: Vinyl
+    song: /Audio/Lobby/space_asshole.ogg
+  - type: Sprite
+    state: darkblue-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskTheWizard
+  name: vinyl disk (The Wizard)
+  components:
+  - type: Vinyl
+    song: /Audio/Lobby/the_wizard.ogg
+  - type: Sprite
+    state: lightishred-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskThunderdome
+  name: vinyl disk (Thunderdome)
+  components:
+  - type: Vinyl
+    song: /Audio/Lobby/thunderdome.ogg
+  - type: Sprite
+    state: glossy-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskTitle2
+  name: vinyl disk (Title2)
+  components:
+  - type: Vinyl
+    song: /Audio/Lobby/title2.ogg
+  - type: Sprite
+    state: red-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskTitle3
+  name: vinyl disk (Title3)
+  components:
+  - type: Vinyl
+    song: /Audio/Lobby/title3.ogg
+  - type: Sprite
+    state: blue-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskConstellations
+  name: vinyl disk (Constellations)
+  components:
+  - type: Vinyl
+    song: /Audio/Jukebox/constellations.ogg
+  - type: Sprite
+    state: green-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskDrifting
+  name: vinyl disk (Drifting)
+  components:
+  - type: Vinyl
+    song: /Audio/Jukebox/drifting.ogg
+  - type: Sprite
+    state: purple-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskFlipFlap
+  name: vinyl disk (Flip Flap)
+  components:
+  - type: Vinyl
+    song: /Audio/Jukebox/flip-flap.ogg
+  - type: Sprite
+    state: orange-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskSector11
+  name: vinyl disk (Sector11)
+  components:
+  - type: Vinyl
+    song: /Audio/Jukebox/sector11.ogg
+  - type: Sprite
+    state: pink-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskStarlight
+  name: vinyl disk (Starlight)
+  components:
+  - type: Vinyl
+    song: /Audio/Jukebox/starlight.ogg
+  - type: Sprite
+    state: yellow-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskSunset
+  name: vinyl disk (Sunset)
+  components:
+  - type: Vinyl
+    song: /Audio/Jukebox/sunset.ogg
+  - type: Sprite
+    state: cyan-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskTitle3Jukebox
+  name: vinyl disk (Title3)
+  components:
+  - type: Vinyl
+    song: /Audio/Jukebox/title3.ogg
+  - type: Sprite
+    state: white-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskDosHighUmb
+  name: vinyl disk (DOS=HIGH, UMB)
+  components:
+  - type: Vinyl
+    song: /Audio/_DV/Jukebox/DOS=HIGH,_UMB.ogg
+  - type: Sprite
+    state: lightblue-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskPatriciaTaxxonMinuteMono
+  name: vinyl disk (Patricia Taxxon Minute MONO)
+  components:
+  - type: Vinyl
+    song: /Audio/_DV/Jukebox/Patricia_Taxxon_-_Minute_-_MONO.ogg
+  - type: Sprite
+    state: darkblue-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskPhoronWillMakeUsRichmono2
+  name: vinyl disk (Phoron Will Make Us RichMONO2)
+  components:
+  - type: Vinyl
+    song: /Audio/_DV/Jukebox/Phoron_Will_Make_Us_RichMONO2.ogg
+  - type: Sprite
+    state: lightishred-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskScratchPostOstMono
+  name: vinyl disk (Scratch Post OST MONO)
+  components:
+  - type: Vinyl
+    song: /Audio/_DV/Jukebox/Scratch_Post_-_OST_MONO.ogg
+  - type: Sprite
+    state: glossy-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskADifferentRealityLagoonaRemixXmMono
+  name: vinyl disk (A Different Reality Lagoona Remix.xm MONO)
+  components:
+  - type: Vinyl
+    song: /Audio/_DV/Jukebox/a_different_reality_lagoona_remix.xm-MONO.ogg
+  - type: Sprite
+    state: red-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskAggravatedItMono
+  name: vinyl disk (Aggravated.it MONO)
+  components:
+  - type: Vinyl
+    song: /Audio/_DV/Jukebox/aggravated.it-MONO.ogg
+  - type: Sprite
+    state: blue-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskAutumnalEquinoxXmMono
+  name: vinyl disk (Autumnal Equinox.xm MONO)
+  components:
+  - type: Vinyl
+    song: /Audio/_DV/Jukebox/autumnal_equinox.xm-MONO.ogg
+  - type: Sprite
+    state: green-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskDeckTheHallsBMono
+  name: vinyl disk (Deck The Halls B MONO)
+  components:
+  - type: Vinyl
+    song: /Audio/_DV/Jukebox/deck_the_halls_b-MONO.ogg
+  - type: Sprite
+    state: purple-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskDrozerixAloneXmMono
+  name: vinyl disk (Drozerix Alone.xm MONO)
+  components:
+  - type: Vinyl
+    song: /Audio/_DV/Jukebox/drozerix_-_alone.xm-MONO.ogg
+  - type: Sprite
+    state: orange-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskDrozerixLeisurelyVoiceXmMono
+  name: vinyl disk (Drozerix Leisurely Voice.xm MONO)
+  components:
+  - type: Vinyl
+    song: /Audio/_DV/Jukebox/drozerix_-_leisurely_voice.xm-MONO.ogg
+  - type: Sprite
+    state: pink-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskEveryLightIsBlinkingAtOncemono
+  name: vinyl disk (Every Light Is Blinking At onceMONO)
+  components:
+  - type: Vinyl
+    song: /Audio/_DV/Jukebox/every_light_is_blinking_at_onceMONO.ogg
+  - type: Sprite
+    state: yellow-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskHackersMono
+  name: vinyl disk (Hackers MONO)
+  components:
+  - type: Vinyl
+    song: /Audio/_DV/Jukebox/hackers-MONO.ogg
+  - type: Sprite
+    state: cyan-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskLasersRipApartTheBulkheadmono
+  name: vinyl disk (Lasers Rip Apart The bulkheadMONO)
+  components:
+  - type: Vinyl
+    song: /Audio/_DV/Jukebox/lasers_rip_apart_the_bulkheadMONO.ogg
+  - type: Sprite
+    state: white-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskMarhabaMono
+  name: vinyl disk (Marhaba MONO)
+  components:
+  - type: Vinyl
+    song: /Audio/_DV/Jukebox/marhaba-MONO.ogg
+  - type: Sprite
+    state: lightblue-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskPsiriusNymphsOfTheForestMptmMono
+  name: vinyl disk (Psirius Nymphs Of The Forest.mptm MONO)
+  components:
+  - type: Vinyl
+    song: /Audio/_DV/Jukebox/psirius_-_nymphs_of_the_forest.mptm-MONO.ogg
+  - type: Sprite
+    state: darkblue-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskShibamataMono
+  name: vinyl disk (Shibamata MONO)
+  components:
+  - type: Vinyl
+    song: /Audio/_DV/Jukebox/shibamata-MONO.ogg
+  - type: Sprite
+    state: lightishred-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskSpaceAssholeMono
+  name: vinyl disk (Space Asshole MONO)
+  components:
+  - type: Vinyl
+    song: /Audio/_DV/Jukebox/space_asshole-MONO.ogg
+  - type: Sprite
+    state: glossy-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskSuperpositionMono
+  name: vinyl disk (Superposition MONO)
+  components:
+  - type: Vinyl
+    song: /Audio/_DV/Jukebox/superposition-MONO.ogg
+  - type: Sprite
+    state: red-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskNi4Ni
+  name: vinyl disk (NI4NI)
+  components:
+  - type: Vinyl
+    song: /Audio/_PS/Lobby/NI4NI.ogg
+  - type: Sprite
+    state: blue-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskUnrealsuperhero
+  name: vinyl disk (Unrealsuperhero)
+  components:
+  - type: Vinyl
+    song: /Audio/_PS/Lobby/unrealsuperhero.ogg
+  - type: Sprite
+    state: green-vinyl-disk
+
+- type: entity
+  parent: BaseVinylDisk
+  id: VinylDiskWelcometoourworld
+  name: vinyl disk (Welcometoourworld)
+  components:
+  - type: Vinyl
+    song: /Audio/_PS/Lobby/welcometoourworld.ogg
+  - type: Sprite
+    state: purple-vinyl-disk

@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Ported from Goob Station (_Goobstation/DeviceLink/{source,sink}_ports.yml).
+
+- type: sinkPort
+  id: StationRadioRigPort
+  name: signal-port-name-radio-rig
+  description: signal-port-description-radio-rig
+
+- type: sourcePort
+  id: VinylPlayerPort
+  name: signal-port-name-vinyl-player
+  description: signal-port-description-vinyl-player
+
+- type: sourcePort
+  id: StationRadioServerPort
+  name: signal-port-name-radio-server
+  description: signal-port-description-radio-server
