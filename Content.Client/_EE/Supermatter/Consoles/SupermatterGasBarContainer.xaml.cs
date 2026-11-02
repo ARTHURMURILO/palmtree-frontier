@@ -116,7 +116,17 @@ public sealed partial class SupermatterGasBarContainer : BoxContainer
 
         var powerMix = gasData.PowerMixRatio;
         var tempFactor = powerMix > 0.8 ? 50f : 30f;
-        powerMix = 1f * tempFactor / Atmospherics.T0C * powerMix * _config.GetCVar(CCVars.AtmosTickRate);
+
+        // Palmtree: atmos.tickrate is CVar.SERVERONLY, so it is not registered on the client and
+        // GetCVar throws InvalidConfigurationException. That exception was thrown from this
+        // constructor, which took down the whole supermatter console window (and the BUI) the
+        // moment anyone opened it. Fall back to the CVar's default, which is the value the server
+        // runs with unless it was configured otherwise.
+        var atmosTickRate = _config.IsCVarRegistered(CCVars.AtmosTickRate.Name)
+            ? _config.GetCVar(CCVars.AtmosTickRate)
+            : CCVars.AtmosTickRate.DefaultValue;
+
+        powerMix = 1f * tempFactor / Atmospherics.T0C * powerMix * atmosTickRate;
         PowerInfoLabel.Text = Loc.GetString("supermatter-console-window-label-gas-power-bar", ("power", powerMix.ToString("+0.00;-0.00")));
         PowerInfoLabel.FontColorOverride = GetDetailColor(powerMix);
 
