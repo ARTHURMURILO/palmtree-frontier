@@ -1607,3 +1607,17 @@ Entries:
   time: '2026-11-02T14:36:06.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/2a0c63d94e23a7bd9fdc86a2b63e076f7d18c10b
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: Fixed balls rendering on top of the penis.
+    - type: Fix
+      message: Fixed genital organs rendering under hair and tails when facing south.
+    - type: Fix
+      message: Fixed tails rendering over hair when facing east or west.
+    - type: Add
+      message: Added a Visible under clothes genital visibility option.
+  id: 90107
+  time: '2026-11-02T15:56:36.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/35e2bfd22749affa61be3b928ed1f528e7df6df3
