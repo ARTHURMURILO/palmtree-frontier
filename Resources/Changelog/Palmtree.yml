@@ -1621,3 +1621,17 @@ Entries:
   time: '2026-11-02T15:56:36.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/35e2bfd22749affa61be3b928ed1f528e7df6df3
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Empty Frontier wall locker variants are now constructible.
+    - type: Add
+      message: >-
+        Mirrors, water coolers, wallmount televisions, airtight plastic flaps,
+        suit storage units, and empty wall cabinets are now constructible.
+    - type: Add
+      message: Jukebox flatpacks can be crafted and used to build wallmount jukeboxes.
+  id: 90108
+  time: '2026-11-02T17:00:26.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/2bc17a774abbd9597b70c17e896b55f0ab267a1c
