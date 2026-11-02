@@ -661,7 +661,7 @@ public sealed class ShipWeaponsTest
             targetGrid = target.Owner;
             mapSystem.SetTile(targetGrid, target.Comp, new Vector2i(0, 0), new Tile(1));
             // South of the launcher, so the torpedo has to steer after launching east.
-            xform.SetWorldPosition(targetGrid, new Vector2(20f, -20f));
+            xform.SetWorldPosition(targetGrid, new Vector2(60f, -40f));
         });
 
         await pair.RunTicksSync(10);

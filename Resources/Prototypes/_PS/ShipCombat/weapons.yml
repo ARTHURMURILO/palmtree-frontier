@@ -88,14 +88,15 @@
   damage:
     types:
       Heat: 60
+  color: "#ffffff"
   muzzleFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/beam.rsi
     state: muzzle_beam_heavy
   travelFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/beam.rsi
     state: beam_heavy
   impactFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/beam.rsi
     state: impact_beam_heavy
   # Plays at the hit entity, so the ship being shot hears the beam land (even through its shields).
   sound:
@@ -346,14 +347,15 @@
   damage:
     types:
       Heat: 90
+  color: "#ff9a1a"
   muzzleFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/beam.rsi
     state: muzzle_beam_heavy
   travelFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/beam.rsi
     state: beam_heavy
   impactFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/beam.rsi
     state: impact_beam_heavy
   sound:
     path: /Audio/Weapons/Guns/Hits/energy_metal1.ogg
