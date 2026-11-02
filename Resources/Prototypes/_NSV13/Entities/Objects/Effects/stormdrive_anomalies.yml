@@ -1,83 +1,100 @@
 # NSV13 - stormdrive anomalies.
 #
-# Ported from `stormdrive.dm`'s /obj/effect/anomaly/stormdrive subtypes. An unstable reactor tears
-# these into realspace; each one pulses until it detonates. Deliberately NOT parented to the stock
-# anomaly entity - that carries the generic Anomaly component, whose pulsing would fight ours.
+# Ported from `stormdrive.dm`'s /obj/effect/anomaly/stormdrive subtypes. A critically unstable
+# stormdrive tears one of these into realspace as it comes apart.
+#
+# BRANCH NOTE (stormdrive branch): these used to be bespoke hazards driven by
+# StormdriveAnomalySystem - a 1.5 s pulse and a detonation at 300 s, with a custom
+# StormdriveAnomalyComponent. That was a second reactor failure on top of the first one and far
+# too punishing next to how anomalies behave everywhere else, so the custom machinery is gone and
+# these are now ordinary stock anomalies.
+#
+# They are deliberately INERT stock anomalies. The pulse length is set well past the timed
+# despawn, so they never pulse and never go supercritical; `TimedDespawn` removes them after two
+# minutes. What remains is the stock anomaly contract players already know: they can be scanned,
+# they can be contained in an anomaly vessel, and touching or hitting one hurts (both come from
+# BaseAnomaly). They are a warning that the core lost containment, not a threat of their own.
 #
 # ART: borrowed from the stock anomaly sheet (anom2/anom3/anom5); the BYOND icons were the same
 # sprites.
 
 - type: entity
   id: StormdriveAnomalySurge
+  parent: BaseAnomaly
   name: storm surge anomaly
   description: A crackling knot of loose electricity, bleeding out of a reactor that lost containment.
   categories: [ HideSpawnMenu ]
   components:
-  - type: Clickable
-  - type: InteractionOutline
-  - type: Physics
-    bodyType: Static
+  - type: Anomaly
+    # The core is only ever spawned if something forces this anomaly to end (an admin running the
+    # supercritical command); the normal life cycle is the timed despawn below.
+    corePrototype: AnomalyCoreElectricity
+    coreInertPrototype: AnomalyCoreElectricityInert
+    minPulseLength: 180
+    maxPulseLength: 300
   - type: Sprite
-    sprite: Structures/Specific/anomaly.rsi
     layers:
     - state: anom3
+      map: ["enum.AnomalyVisualLayers.Base"]
     - state: anom3-pulse
-      shader: unshaded
-      visible: true
+      map: ["enum.AnomalyVisualLayers.Animated"]
+      visible: false
   - type: PointLight
     radius: 2
     energy: 3
     color: "#ffffaa"
-  - type: StormdriveAnomaly
-    kind: Surge
-    lifespan: 300
+  - type: ElectricityAnomaly
+  - type: TimedDespawn
+    lifetime: 120
 
 - type: entity
   id: StormdriveAnomalySheer
+  parent: BaseAnomaly
   name: storm sheer anomaly
   description: A shimmer of radiation and raw nucleium, hanging where the core came apart.
   categories: [ HideSpawnMenu ]
   components:
-  - type: Clickable
-  - type: InteractionOutline
-  - type: Physics
-    bodyType: Static
+  - type: Anomaly
+    corePrototype: AnomalyCoreGravity
+    coreInertPrototype: AnomalyCoreGravityInert
+    minPulseLength: 180
+    maxPulseLength: 300
   - type: Sprite
-    sprite: Structures/Specific/anomaly.rsi
     layers:
     - state: anom5
+      map: ["enum.AnomalyVisualLayers.Base"]
     - state: anom5-pulse
-      shader: unshaded
-      visible: true
+      map: ["enum.AnomalyVisualLayers.Animated"]
+      visible: false
   - type: PointLight
     radius: 2
     energy: 3
     color: "#66ff99"
-  - type: StormdriveAnomaly
-    kind: Sheer
-    lifespan: 300
+  - type: TimedDespawn
+    lifetime: 120
 
 - type: entity
   id: StormdriveAnomalySquall
+  parent: BaseAnomaly
   name: storm squall anomaly
   description: A patch of space that keeps forgetting which way gravity is supposed to point.
   categories: [ HideSpawnMenu ]
   components:
-  - type: Clickable
-  - type: InteractionOutline
-  - type: Physics
-    bodyType: Static
+  - type: Anomaly
+    corePrototype: AnomalyCoreGravity
+    coreInertPrototype: AnomalyCoreGravityInert
+    minPulseLength: 180
+    maxPulseLength: 300
   - type: Sprite
-    sprite: Structures/Specific/anomaly.rsi
     layers:
     - state: anom2
+      map: ["enum.AnomalyVisualLayers.Base"]
     - state: anom2-pulse
-      shader: unshaded
-      visible: true
+      map: ["enum.AnomalyVisualLayers.Animated"]
+      visible: false
   - type: PointLight
     radius: 2
     energy: 3
     color: "#aaddff"
-  - type: StormdriveAnomaly
-    kind: Squall
-    lifespan: 300
+  - type: TimedDespawn
+    lifetime: 120

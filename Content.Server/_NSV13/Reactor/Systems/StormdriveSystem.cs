@@ -4,6 +4,7 @@ using Content.Server._NSV13.Reactor.Components;
 using Content.Server._NSV13.Reactor.Events;
 using Content.Server._PS.Ships;
 using Content.Server.Atmos.EntitySystems;
+using Content.Server.Chat.Managers;
 using Content.Server.Emp;
 using Content.Server.Explosion.EntitySystems;
 using Content.Server.NodeContainer.EntitySystems;
@@ -12,6 +13,7 @@ using Content.Server.ParticleAccelerator.Components;
 using Content.Server.Power.Components;
 using Content.Shared.Atmos;
 using Content.Shared.Audio;
+using Content.Shared.Chat;
 using Content.Shared.Radiation.Components;
 using Content.Shared.Singularity.Components;
 using Robust.Shared.Audio;
@@ -27,6 +29,7 @@ using Robust.Server.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Physics.Events;
+using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Random;
 using Robust.Shared.Timing;
@@ -46,9 +49,10 @@ namespace Content.Server._NSV13.Reactor.Systems;
 ///     </para>
 ///     <para>
 ///     The machine is completed by <see cref="StormdriveRodSystem"/> (the rod bay),
-///     <see cref="StormdriveConsoleSystem"/> (the control console), <see cref="StormdriveRepairSystem"/>
-///     (the meltdown recovery chain) and <see cref="StormdriveAnomalySystem"/> (the three anomalies an
-///     unstable core can tear loose); this class owns the physics only.
+///     <see cref="StormdriveConsoleSystem"/> (the control console) and
+///     <see cref="StormdriveRepairSystem"/> (the meltdown recovery chain); this class owns the
+///     physics only. The anomalies an unstable core can tear loose are stock anomaly entities and
+///     need no system of their own.
 ///     </para>
 ///     <para>
 ///     The danger model is completely different from the RBMK's: <c>control_rod_percent = 0</c> is
@@ -77,6 +81,7 @@ public sealed class StormdriveSystem : EntitySystem
     [Dependency] private readonly IRobustRandom _random = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly SharedAmbientSoundSystem _ambient = default!;
+    [Dependency] private readonly IChatManager _chatManager = default!;
 
     /// <summary>Prototype a burnt-out rod is swapped for (<c>/obj/item/control_rod/irradiated</c>).</summary>
     private static readonly EntProtoId SpentRodPrototype = "ControlRodIrradiated";
@@ -158,7 +163,6 @@ public sealed class StormdriveSystem : EntitySystem
         comp.NextGravityPull = TimeSpan.Zero;
         comp.NextCountdownAnnounce = TimeSpan.Zero;
         comp.MeltdownAt = TimeSpan.Zero;
-        comp.MeltdownCountdownIndex = 0;
 
         // A saved warning flag without its deadline keeps the klaxon from re-arming (UpdateStatus
         // guards on WarningState), and a saved armed fuse either detonates on the first tick with no
@@ -218,8 +222,8 @@ public sealed class StormdriveSystem : EntitySystem
         }
 
         // The armed-meltdown countdown runs on its own one-second clock. The process tick is two
-        // seconds, which is fine for the 10/8/6 marks but would skip every other number in the last
-        // seconds of the fuse - exactly the part the crew needs to hear.
+        // seconds, which is fine for the five-second beat but would skip every other number in the
+        // last seconds of the fuse - exactly the part the crew needs to hear.
         var countdowns = EntityQueryEnumerator<StormdriveComponent>();
         while (countdowns.MoveNext(out var countdownUid, out var countdown))
         {
@@ -865,8 +869,14 @@ public sealed class StormdriveSystem : EntitySystem
 
             // Spawn it as a child of the drive's grid, not at a fixed map position: this is a
             // ship-based fork and a drive that tears an anomaly loose while the hull is moving
-            // must not leave the anomaly floating in the space it used to occupy.
-            Spawn(proto, Transform(uid).Coordinates);
+            // must not leave the anomaly floating in the space it used to occupy. PlaceNextTo
+            // keeps it off the drive's own tile so it can be walked up to and scanned.
+            //
+            // BRANCH NOTE (stormdrive branch): the anomaly is an inert stock anomaly (see
+            // stormdrive_anomalies.yml). It does not pulse and does not explode; it is a warning
+            // that the core lost containment, and it despawns on its own after two minutes.
+            var anomaly = Spawn(proto, Transform(uid).Coordinates);
+            _transform.PlaceNextTo(anomaly, uid);
             comp.ReactorStability += 15f;
             _audio.PlayPvs("/Audio/Effects/Lightning/lightningbolt.ogg", uid);
         }
@@ -1090,7 +1100,6 @@ public sealed class StormdriveSystem : EntitySystem
 
         comp.WarningState = StormdriveWarning.Meltdown;
         comp.MeltdownAt = _timing.CurTime + comp.MeltdownDelay;
-        comp.MeltdownCountdownIndex = 0;
         comp.NextCountdownAnnounce = _timing.CurTime + TimeSpan.FromSeconds(1);
         comp.ReactorEndTimes = true;
 
@@ -1107,23 +1116,40 @@ public sealed class StormdriveSystem : EntitySystem
     ///     Count the armed meltdown down out loud, on the same Shortband the rest of the alarms use.
     /// </summary>
     /// <remarks>
+    ///     <para>
     ///     The DM original announced "the rods have failed" and then went quiet for the whole fuse, so
     ///     the only sign of the deadline was a number on the console. A fuse nobody can hear is a
-    ///     fuse that surprises people; the marks in <see cref="StormdriveComponent.MeltdownCountdownStages"/>
-    ///     are read on a one-second clock, so the early 10/8/6 marks and the last five seconds both
-    ///     land where they should.
+    ///     fuse that surprises people, so the fuse counts itself down.
+    ///     </para>
+    ///     <para>
+    ///     The cadence is the supermatter's delamination countdown, which players already know: one
+    ///     mark every five seconds while there is time to react ("15 seconds remain..."), then one
+    ///     mark per second for the last five ("5...", "4...", ...). Nothing is sent at zero; the
+    ///     meltdown itself has the last word with the ominous line the crew remembers.
+    ///     </para>
     /// </remarks>
     private void AnnounceMeltdownCountdown(EntityUid uid, StormdriveComponent comp)
     {
-        var stages = comp.MeltdownCountdownStages;
         var remaining = (int) Math.Ceiling((comp.MeltdownAt - _timing.CurTime).TotalSeconds);
 
-        while (comp.MeltdownCountdownIndex < stages.Length
-               && remaining <= stages[comp.MeltdownCountdownIndex])
+        // The fuse is over. Meltdown() speaks instead.
+        if (remaining <= 0)
+            return;
+
+        if (remaining > 5)
         {
-            var stage = stages[comp.MeltdownCountdownIndex++];
-            _shipEvent.EngineAnnounce(uid, Loc.GetString("stormdrive-announce-countdown", ("seconds", stage)));
+            // Five-second beat. The armed message already carried the full fuse length, so the
+            // first mark the crew hears is at fifteen.
+            if (remaining % 5 != 0)
+                return;
+
+            _shipEvent.EngineAnnounce(uid,
+                Loc.GetString("stormdrive-announce-countdown", ("seconds", remaining)));
+            return;
         }
+
+        _shipEvent.EngineAnnounce(uid,
+            Loc.GetString("stormdrive-announce-countdown-imminent", ("seconds", remaining)));
     }
 
     /// <summary>
@@ -1186,7 +1212,21 @@ public sealed class StormdriveSystem : EntitySystem
         // ticks this machine again.
         _ambient.SetAmbience(uid, false);
         _engineAudio.PlayOnGrid(comp.ExplosionSound, uid);
-        _shipEvent.TryEngineAnnounce(uid, Loc.GetString("stormdrive-announce-meltdown"), ref comp.NextAlert, urgent: true);
+
+        // The countdown says nothing at zero on purpose: the last thing the crew hears from the
+        // core is this, not another status line. Delivered the same way as the supermatter's
+        // "You feel reality distort for a moment...": map-wide server chat, no radio, so it reads
+        // as something the crew felt rather than something the machine reported.
+        var mapFilter = Filter.BroadcastMap(Transform(uid).MapID);
+        var message = Loc.GetString("stormdrive-meltdown-player");
+        _chatManager.ChatMessageToManyFiltered(mapFilter,
+            ChatChannel.Server,
+            message,
+            Loc.GetString("chat-manager-server-wrap-message", ("message", message)),
+            uid,
+            false,
+            true,
+            Color.Red);
 
         DoMeltdownEffects(uid, comp);
         UpdateVisuals(uid, comp);

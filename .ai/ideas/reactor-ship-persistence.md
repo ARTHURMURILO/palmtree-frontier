@@ -47,7 +47,7 @@ clear message, not silently fixed.
 | Engine | Gate |
 |---|---|
 | RBMK | `IsRunning == false`, `Temperature < 50 °C`, `AlertActive == false`. A slagged wreck is allowed (it is legitimate cargo) and stays slagged. |
-| Stormdrive | `State` is `Idle` or `Maintenance`, `Heat < 50`, `ReactorEndTimes == false`, `WarningState == None`, no `StormdriveAnomalyComponent` on the grid |
+| Stormdrive | `State` is `Idle` or `Maintenance`, `Heat < 50`, `ReactorEndTimes == false`, `WarningState == None`, no `StormdriveAnomalySurge`/`Sheer`/`Squall` on the grid |
 
 **Do not gate on fuel rods.** With the restore fix a cold, fuelled reactor stores and reloads
 correctly, and forcing the crew to eject five rods before every dock visit is hostile. If the
@@ -61,8 +61,8 @@ Preserve the permanent facts, normalise the timers and streams:
   time), control-rod percentage, mounted rods and their integrity/effectiveness, `ReactorId`, device
   links, the installed parts.
 * Normalise before the save: `NextProcess`, `NextAlert`, `NextGravityPull`, `NextCountdownAnnounce`,
-  `MeltdownAt`, `MeltdownCountdownIndex`, `WarningState`, `ReactorEndTimes`, `AlarmStream`,
-  `OverheatStream`. The restored machine is exactly what a normal shutdown produces.
+  `MeltdownAt`, `WarningState`, `ReactorEndTimes`, `AlarmStream`, `OverheatStream`. The restored
+  machine is exactly what a normal shutdown produces.
 * Do **not** zero `Temperature`, `DesiredK` or `IsRunning` at save time. The gate already guarantees a
   cold, stopped reactor; zeroing the setpoint throws away the player's configuration, and the pipe
   network comes back empty, so a "faithful" hot restore would be a second state machine that can

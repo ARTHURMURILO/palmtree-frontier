@@ -275,22 +275,10 @@ public sealed partial class StormdriveComponent : Component
     public TimeSpan MeltdownDelay = TimeSpan.FromSeconds(18);
 
     /// <summary>
-    ///     Seconds-remaining marks at which the armed meltdown counts itself down over the radio.
+    ///     When the next countdown mark is due. The fuse is counted on its own one-second clock,
+    ///     mirroring the supermatter's delamination countdown: a five-second beat above five
+    ///     seconds, then one mark per second.
     /// </summary>
-    /// <remarks>
-    ///     Ten, eight and six are two apart because the drive itself only ticks every two seconds,
-    ///     and a mark per tick is as fast as the early fuse needs to talk. From six down the marks
-    ///     are one second apart and are announced by a dedicated one-second timer rather than the
-    ///     process tick, so the last seconds of the fuse are heard every second. Descending; each
-    ///     mark fires once per fuse.
-    /// </remarks>
-    [DataField]
-    public int[] MeltdownCountdownStages = { 10, 8, 6, 5, 4, 3, 2, 1 };
-
-    /// <summary>How far through <see cref="MeltdownCountdownStages"/> the current fuse is.</summary>
-    public int MeltdownCountdownIndex;
-
-    /// <summary>When the next per-second countdown mark is due. Set when the fuse arms.</summary>
     [ViewVariables(VVAccess.ReadOnly)]
     public TimeSpan NextCountdownAnnounce;
 
@@ -333,7 +321,11 @@ public sealed partial class StormdriveComponent : Component
     [DataField]
     public SoundSpecifier ExplosionSound = new SoundPathSpecifier("/Audio/_NSV13/Reactor/explode.ogg");
 
-    /// <summary>Anomalies a critically unstable core can tear loose.</summary>
+    /// <summary>
+    ///     Anomalies a critically unstable core can tear loose. These are inert stock anomalies
+    ///     (see <c>stormdrive_anomalies.yml</c>): a visual warning, scannable and containable, but
+    ///     they do not pulse or explode.
+    /// </summary>
     [DataField]
     public EntProtoId SurgeAnomaly = "StormdriveAnomalySurge";
 
