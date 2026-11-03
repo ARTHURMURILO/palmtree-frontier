@@ -670,6 +670,12 @@ so these fail only in CI:
   `SubscribeLocalEvent<NodeContainerComponent, ComponentStartup>` throws
   `Duplicate Subscriptions` during system initialization. `NodeContainerSystem` owns that pair; add
   a broadcast hook instead (`NodeContainerStartedEvent` was added for the pipe-node summary).
+- **RPD compressed matter is not 1:1.** `RCDAmmoSystem` treats one cartridge charge as two tool
+  charges when `RCDComponent.IsRpd` is set. It consumes only the cartridge charges needed for the
+  missing tool charges, and rounds the consumption up when the multiplier does not divide evenly,
+  so a partially filled tool can leave a partial cartridge behind. The RCD stays 1:1; don't apply
+  the multiplier in the deconstruction refund path without deciding whether recovered matter
+  should also be worth double.
 
 - **`RCDComponent.SpeedMultiplier` divides delays, so >1 is faster.** It is applied in
   `OnAfterInteract` to prototype and per-entity deconstruct delays; a non-positive value is ignored

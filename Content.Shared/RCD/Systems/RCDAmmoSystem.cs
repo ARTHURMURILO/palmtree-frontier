@@ -10,6 +10,12 @@ namespace Content.Shared.RCD.Systems;
 
 public sealed class RCDAmmoSystem : EntitySystem
 {
+    /// <summary>
+    /// Palmtree: the RPD's 60-charge tank should take one standard 30-charge compressed-matter
+    /// cartridge, so its cartridge charges are worth two tool charges each. The RCD stays 1:1.
+    /// </summary>
+    private const int RpdAmmoChargeMultiplier = 2;
+
     [Dependency] private readonly SharedChargesSystem _sharedCharges = default!;
     [Dependency] private readonly SharedPopupSystem _popup = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
@@ -54,16 +60,24 @@ public sealed class RCDAmmoSystem : EntitySystem
         }
 
         args.Handled = true;
-        var count = Math.Min(charges.MaxCharges - current, comp.Charges);
+
+        // Palmtree: the RPD gets more tool charges out of the same cartridge, so one standard
+        // compressed-matter cartridge fills its larger tank. The cartridge is consumed at the
+        // normal rate: only as many of its charges as are needed to fill the tool are used.
+        var multiplier = rcdComponent.IsRpd ? RpdAmmoChargeMultiplier : 1;
+        var missing = charges.MaxCharges - current;
+        var count = (int) Math.Min(missing, (long) comp.Charges * multiplier);
         if (count <= 0)
         {
             _popup.PopupClient(Loc.GetString("rcd-ammo-component-after-interact-full"), target, user);
             return;
         }
 
+        var consumed = (int) (((long) count + multiplier - 1) / multiplier);
+
         _popup.PopupClient(Loc.GetString("rcd-ammo-component-after-interact-refilled"), target, user);
         _sharedCharges.AddCharges(target, count);
-        comp.Charges -= count;
+        comp.Charges -= consumed;
         Dirty(uid, comp);
 
         // prevent having useless ammo with 0 charges
