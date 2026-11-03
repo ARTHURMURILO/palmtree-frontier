@@ -12,7 +12,7 @@
     graph: BonfireStake
     node: bonfireStake
   - type: Sprite
-    sprite: Structures/Decoration/bonfire_stake.rsi
+    sprite: _Goobstation/Structures/Decoration/bonfire_stake.rsi
     layers:
     - state: burning
     offset: "0, 0.5"
