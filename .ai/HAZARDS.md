@@ -670,6 +670,14 @@ so these fail only in CI:
   `SubscribeLocalEvent<NodeContainerComponent, ComponentStartup>` throws
   `Duplicate Subscriptions` during system initialization. `NodeContainerSystem` owns that pair; add
   a broadcast hook instead (`NodeContainerStartedEvent` was added for the pipe-node summary).
+- **The pipe-node summary must not be created on uninitialized maps.**
+  `PrototypeSaveTest.UninitializedSaveTest` spawns every map-savable prototype on an uninitialized
+  map and fails if spawning adds components, so `AtmosPipeNodeInfoSystem` skips `Refresh` unless
+  `SharedMapSystem.IsInitialized(transform.MapID)` and fills the summary from a
+  `NodeContainerComponent/MapInitEvent` hook when the map is initialized. Do **not** move the hook
+  to `MapInitEvent` alone: live ship saves skip `MapInitEvent` for `mapInit: true` entities, and
+  their map is initialized before the entities start, so the `NodeContainerStartedEvent` path is
+  what supplies the summary there.
 - **RPD compressed matter is not 1:1.** `RCDAmmoSystem` treats one cartridge charge as two tool
   charges when `RCDComponent.IsRpd` is set. It consumes only the cartridge charges needed for the
   missing tool charges, and rounds the consumption up when the multiplier does not divide evenly,
