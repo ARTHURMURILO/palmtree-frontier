@@ -1032,3 +1032,26 @@ profile-backed bank (as agreed with the maintainer).
   managers and were deliberately not ported.
 - Validation: full solution build, rebuilt `Content.YAMLLinter` (`No errors found`), `Content.Tests`,
   `_PS|EntityTest|CharacterCreationTest` integration tests and the headless client IL check.
+
+## 29. 2026-11 Biodome ship family (Coyote `_CS`)
+
+Eleven copy-of-a-hull botany ships (`Biodome - Meadow`, `Ice Cave`, `Ice Cave (Sheleg)`, `Beach`,
+`Farm`, `Glass`, `Jungle`, `Sleepover`, `Desert`, `Winter`, `Winter (Sheleg)`). All vessel/map
+prototypes are under `Resources/Prototypes/_CS/Shipyard/biodome*.yml`, the format-7 maps under
+`Resources/Maps/_CS/Shuttles/`, and the models are unmodified from Coyote.
+
+- **Missing prototypes found and fixed**: every map uses `PlatingCornerNE/NW/SE/SW`, which Coyote
+  defines in `Resources/Prototypes/_Mono/Turf/plating.yml`; this fork had no `_Mono/Turf` content,
+  so the maps could not load. The whole tile file (plating corners plus `LatticeCorner*`) and its
+  eight `Resources/Textures/_Mono/Tiles/{plating,lattice}` PNGs were ported, with the missing
+  `tiles-platingcorner*`/`tiles-latticecorner*` names added in `Resources/Locale/en-US/_Mono/tiles.ftl`
+  (Coyote itself never localized them, so they showed raw key names).
+- **Job adaptation**: `CompanionInterview` is Coyote-only and was dropped (same as Salto);
+  `Contractor`/`Pilot`/`Mercenary` use the fork's `[ 0, 0 ]` convention instead of Coyote's
+  `[ 2, 2 ]`. The maps keep the shared `'Biodome {1}'` station name template.
+- `guidebookPage: Null`: Coyote ships have no guidebook pages, so there is nothing to port.
+- **Validation**: `Content.YAMLLinter` reports no errors; `MapChecker` finds no illegal prototypes;
+  `ShipyardTest.CheckAllShuttleGrids` loads all eleven grids. `NoShipyardShipArbitrage` still fails
+  only on the pre-existing `Bocadillo` and `Dragonfly` listings (unrelated to this port); every
+  Biodome price (105000, Sleepover 115000) is well above the 1.05× appraise minimum (appraise
+  ~43196–48110).

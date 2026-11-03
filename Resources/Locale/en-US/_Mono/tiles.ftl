@@ -1,0 +1,8 @@
+tiles-platingcornerNE = plating corner (NE)
+tiles-platingcornerNW = plating corner (NW)
+tiles-platingcornerSE = plating corner (SE)
+tiles-platingcornerSW = plating corner (SW)
+tiles-latticecornerNE = lattice corner (NE)
+tiles-latticecornerNW = lattice corner (NW)
+tiles-latticecornerSE = lattice corner (SE)
+tiles-latticecornerSW = lattice corner (SW)

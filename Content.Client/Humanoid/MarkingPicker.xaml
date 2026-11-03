@@ -19,6 +19,8 @@
                     <Label Text="{Loc 'markings-leg-style'}" />
                     <OptionButton HorizontalExpand="True" Name="CMarkingLegStyle" />
                 </BoxContainer>
+                <CheckBox Name="CSnoutAboveHair" Visible="False"
+                          Text="{Loc 'humanoid-profile-editor-snout-above-hair'}" />
             </BoxContainer>
 
             <!-- Used markings -->

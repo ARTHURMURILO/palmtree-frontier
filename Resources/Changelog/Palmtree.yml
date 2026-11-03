@@ -1706,3 +1706,21 @@ Entries:
   time: '2026-11-03T14:59:51.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/2579b7c40d4923b28b552ac08b063d4046ecaf53
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: Fixed nipples rendering under breasts when facing east or west.
+    - type: Add
+      message: Added a per-character Snout above hair option in the Markings tab.
+  id: 90113
+  time: '2026-11-03T17:36:04.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/e6b227273092dacf9f955d79b283f06b122cf6a0
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Eleven Biodome botany ships are now available at the shipyard.
+  id: 90114
+  time: '2026-11-03T21:25:47.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/a5d75adb8407137a7cce7e758539c2d2869ab781
