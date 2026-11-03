@@ -599,20 +599,23 @@ so these fail only in CI:
   two-sided on purpose: the appearance datum (`PipeColorVisuals.Color`) drives the sprite, while
   `RCDPipeColorAppliedEvent` → `AtmosPipeColorSystem.SetColor` updates `AtmosPipeColorComponent` for
   the atmos monitoring console and the spray painter. Appearance alone leaves those two out of sync.
-- **`LastKnownEyeRotation` is server-only working state: do not network or `Dirty()` it.** The
-  placement mode forwards the local eye rotation (not networked) so the server can resolve the
-  layer. The field is `[ViewVariables]`-only, deliberately not an `[AutoNetworkedField]`: dirtying
-  on every change would network the component each time the player turns, and no client code reads
-  it (the client recomputes the layer in `AlignRPDAtmosPipeLayers`).
+- **The RPD layer is client-authoritative: `RPDLayerEvent` carries it, `LastKnownPipeLayer` stores
+  it.** `AlignRPDAtmosPipeLayers` knows the raw cursor offset; `RCDSystem.OnAfterInteract` only
+  receives a click location that is snapped to the tile centre. Recomputing the layer from that
+  location always picked primary, so the server silently disagreed with the green/red ghost (the
+  playtest symptom: ghost green, "primary atmos layer" popup). The client sends `RPDLayerEvent`
+  whenever its layer changes, the server stores it in `RCDComponent.LastKnownPipeLayer` (server-only
+  working state, never dirtied), and copies it into the do-after event for finalization. Do not
+  reintroduce a server-side offset calculation.
 - **`MapGridComponent.TileSize` is a `ushort`, so `tileSize / 2` is integer division and equals 0.**
   `1 / 2 == 0`, so `CurrentTile.X + tileSize / 2` lands on the tile **corner**, not its centre. Every
   placer in the engine writes `float tileSize = mapGrid.TileSize; //convert from ushort to float`
   for exactly this reason (`AlignTileAny`, `AlignTileDense`, `AlignTileEmpty`, `AlignRCDConstruction`,
   `AlignAtmosPipeLayers`). Writing `var tileSize = ...` compiles fine, passes every static check, and
   then silently misplaces everything by half a tile at runtime — this shipped once and had to be
-  found by playtesting. It bites twice in the RPD: the ghost snaps to the corner, *and*
-  `RCDSystem.OnAfterInteract` measures the layer deadzone from the corner, so almost every click
-  reads as "off centre" and the tool silently prefers the secondary/tertiary layer. Check any new
+  found by playtesting. It still bites the RPD ghost: `AlignRPDAtmosPipeLayers` must measure the
+  layer deadzone from the true tile centre. The server no longer recomputes the layer from the
+  click location (it uses `RPDLayerEvent`), so this is now a client-only calculation. Check any new
   `tileSize` with `grep -n "tileSize = mapGrid.TileSize"`.
 - **Coyote's `- new Vector2(0.5f, 0.5f)` bias in the layer diff was a workaround for the above**, not
   a deliberate offset: with the integer-division bug the "centre" was the corner, and subtracting
@@ -646,11 +649,11 @@ so these fail only in CI:
   another player's placement in between and silently build on the wrong layer. It is carried as
   `RCDDoAfterEvent.Layer` and passed into `FinalizeRCDOperation`. The same applies to anything else
   resolved per-click that is consumed at finalization (direction already worked this way).
-- **Client and server deadzone maths must use the same tile centre.** `AlignRPDAtmosPipeLayers`
-  measures the cursor offset from the *true* tile centre (`CurrentTile + tileSize / 2`), not from
-  the placement point that includes `PlacementOffset` — the server does not know the admin offset,
-  so using it made the ghost and the built pipe disagree when the `ps.placement.offset_*` CVars
-  were set.
+- **Do not derive the RPD layer from the server click location.** The click is snapped to the tile
+  centre, so the old "offset from centre" calculation in `OnAfterInteract` always returned primary.
+  The client sends `RPDLayerEvent` (raw cursor + eye rotation + grid rotation) and the server only
+  stores it. The placement ghost and the built pipe now agree even with the `ps.placement.offset_*`
+  CVars set.
 - **`Unstackable` is for devices only; pipes use node-aware overlap.** `GasPipeSansLayers` must
   *not* carry the tag: `NoUnstackableInTile` (construction) is layer-agnostic, so tagging pipes
   blocks every vent/pump built on the pipe that feeds it. `RCDSystem.IsConstructionLocationValid`

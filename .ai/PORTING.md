@@ -840,7 +840,9 @@ Follow-up on the RCD/RPD after the second pass:
   device-on-pipe placement. Instead the RCD/RPD raises `RCDAtmosOverlapAttemptEvent`, and the
   server's `PipeRestrictOverlapSystem` compares the placement's resolved prototype nodes (mirror
   flip + RPD layer variant included) with the anchored nodes on the tile: only a same-layer,
-  same-direction overlap is vetoed. `Unstackable` remains on the devices themselves (vents, pumps,
+  same-direction overlap is vetoed. The layer itself comes from `RPDLayerEvent`, because the
+  server's click location is snapped to the tile centre; `RCDComponent.LastKnownPipeLayer` is
+  server-only working state and the resolved value rides in `RCDDoAfterEvent.Layer`. `Unstackable` remains on the devices themselves (vents, pumps,
   sensors), so a second device on the same layer is still rejected.
 - **Pipe segments never share a layer.** The `AtmosPipeSegment` tag (`_PS/tags.yml`) marks the five
   plain pipe shapes, the manifold and the broken pipe. Two segments on one layer have the same
