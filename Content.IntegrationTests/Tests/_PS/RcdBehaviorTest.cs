@@ -255,6 +255,8 @@ public sealed class RcdBehaviorTest
         {
             Assert.That(entManager.EntityExists(ammo), Is.False, "A fully consumed cartridge should be deleted.");
         });
+
+        await pair.CleanReturnAsync();
     }
 
     [Test]

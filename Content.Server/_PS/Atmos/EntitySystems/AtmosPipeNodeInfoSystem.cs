@@ -59,10 +59,20 @@ public sealed partial class AtmosPipeNodeInfoSystem : EntitySystem
         // ask for the same ghost prototype on every placement.
         if (!_prototypeNodes.TryGetValue(ev.PrototypeId, out var nodes))
         {
+            if (!_prototypeManager.TryIndex<EntityPrototype>(ev.PrototypeId, out var prototype))
+            {
+                // Never cache ids that do not resolve: PrototypeId comes from the client, so caching
+                // them would let a malicious client grow this dictionary without bound. Answer with
+                // an empty list so the client does not keep the request pending.
+                RaiseNetworkEvent(
+                    new AtmosPipeNodeInfoResponseEvent(ev.PrototypeId, new List<AtmosPipeNodeInfo>()),
+                    session.SenderSession);
+                return;
+            }
+
             nodes = new List<AtmosPipeNodeInfo>();
 
-            if (_prototypeManager.TryIndex<EntityPrototype>(ev.PrototypeId, out var prototype) &&
-                prototype.TryGetComponent<NodeContainerComponent>(out var container, EntityManager.ComponentFactory))
+            if (prototype.TryGetComponent<NodeContainerComponent>(out var container, EntityManager.ComponentFactory))
             {
                 foreach (var node in container.Nodes.Values)
                 {
