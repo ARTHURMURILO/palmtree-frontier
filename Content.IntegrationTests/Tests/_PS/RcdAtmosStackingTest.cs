@@ -13,9 +13,10 @@ using Robust.Shared.Prototypes;
 namespace Content.IntegrationTests.Tests._PS;
 
 /// <summary>
-/// Palmtree: the RPD refuses to stack conflicting pipe nodes on a tile, while still allowing the
-/// legitimate overlaps atmos construction depends on (a vent or pump on the pipe that feeds it,
-/// and the same pipe on a different atmos layer).
+/// Palmtree: the RPD refuses to stack two plain pipe segments on one layer (their sprites share a
+/// draw depth and z-fight) and refuses conflicting pipe nodes, while still allowing the legitimate
+/// overlaps atmos construction depends on (a vent or pump on the pipe that feeds it, and the same
+/// pipe on a different atmos layer).
 /// </summary>
 [TestFixture]
 public sealed class RcdAtmosStackingTest
@@ -160,7 +161,7 @@ public sealed class RcdAtmosStackingTest
     }
 
     [Test]
-    public async Task RpdAllowsNonConflictingPipesOnSameLayer()
+    public async Task RpdBlocksAnyPipeSegmentOnSameLayer()
     {
         await using var pair = await PoolManager.GetServerClient();
         var server = pair.Server;
@@ -191,8 +192,8 @@ public sealed class RcdAtmosStackingTest
             {
                 Assert.That(
                     rcdSystem.IsRCDOperationStillValid(rpd, rcd, grid.Owner, grid.Comp, tile, new Vector2i(0, 0), null, user, false, direction: Direction.East),
-                    Is.True,
-                    "An east-west pipe does not share a node with the north-south pipe already there.");
+                    Is.False,
+                    "Even a non-conflicting pipe segment must not share a layer; the two sprites z-fight.");
 
                 Assert.That(
                     rcdSystem.IsRCDOperationStillValid(rpd, rcd, grid.Owner, grid.Comp, tile, new Vector2i(0, 0), null, user, false, direction: Direction.South),

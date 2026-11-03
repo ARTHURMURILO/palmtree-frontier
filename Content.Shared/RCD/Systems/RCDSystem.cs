@@ -620,9 +620,11 @@ public sealed class RCDSystem : EntitySystem
 
         // Palmtree: atmos pipes/devices carry no fixtures, so the collision check below cannot see
         // them. `Unstackable` blocks a second device on the same atmos layer; plain pipes are not
-        // tagged because a vent or pump is supposed to sit on top of them. Actual pipe node
-        // conflicts are rejected by the node-aware RCDAtmosOverlapAttemptEvent below.
+        // tagged because a vent or pump is supposed to sit on top of them. Two plain pipe segments
+        // on one layer share a draw depth and z-fight, so those are rejected as a pair. Actual pipe
+        // node conflicts are rejected by the node-aware RCDAtmosOverlapAttemptEvent below.
         var buildsUnstackable = false;
+        var buildsPipeSegment = false;
         var buildsAirlock = false;
         var buildsFirelock = false;
         var builtLayer = AtmosPipeLayer.Primary;
@@ -635,6 +637,7 @@ public sealed class RCDSystem : EntitySystem
             // entity of the same kind (the collision check still rejects that).
             buildsAirlock = builtTags != null && _tags.HasTag(builtTags, AirlockTag);
             buildsFirelock = builtProto.HasComponent<FirelockComponent>(EntityManager.ComponentFactory);
+            buildsPipeSegment = builtProto.HasComponent<AtmosPipeSegmentComponent>(EntityManager.ComponentFactory);
 
             if (builtProto.TryGetComponent<AtmosPipeLayersComponent>(out var builtLayers, EntityManager.ComponentFactory))
                 builtLayer = builtLayers.CurrentPipeLayer;
@@ -687,7 +690,25 @@ public sealed class RCDSystem : EntitySystem
                 continue;
             }
 
-            // Palmtree: no stacking pipes/devices on the same layer
+            // Palmtree: two pipe segments on one layer z-fight, so they never stack even when their
+            // node directions would not overlap. Devices use a different draw depth and are exempt.
+            if (buildsPipeSegment && HasComp<AtmosPipeSegmentComponent>(ent))
+            {
+                var existingLayer = AtmosPipeLayer.Primary;
+
+                if (TryComp<AtmosPipeLayersComponent>(ent, out var existingLayers))
+                    existingLayer = existingLayers.CurrentPipeLayer;
+
+                if (existingLayer == builtLayer)
+                {
+                    if (popMsgs)
+                        _popup.PopupClient(Loc.GetString("rcd-component-cannot-build-on-occupied-tile-message"), uid, user);
+
+                    return false;
+                }
+            }
+
+            // Palmtree: no stacking devices on the same layer
             if (buildsUnstackable && _tags.HasTag(ent, UnstackableTag))
             {
                 var existingLayer = AtmosPipeLayer.Primary;

@@ -841,12 +841,17 @@ Follow-up on the RCD/RPD after the second pass:
   server's `PipeRestrictOverlapSystem` compares the placement's resolved prototype nodes (mirror
   flip + RPD layer variant included) with the anchored nodes on the tile: only a same-layer,
   same-direction overlap is vetoed. `Unstackable` remains on the devices themselves (vents, pumps,
-  sensors, manifold), so a second device on the same layer is still rejected. Pipes have no
-  fixtures, which is why the old collision check let duplicates through (the overlap popup came
-  from `PipeRestrictOverlapSystem` after the spawn).
+  sensors), so a second device on the same layer is still rejected.
+- **Pipe segments never share a layer.** `AtmosPipeSegmentComponent` marks the five plain pipe
+  shapes and the manifold. Two segments on one layer have the same sprite draw depth and z-fight
+  even when their node directions do not overlap, so `IsConstructionLocationValid` rejects that
+  pair outright. Devices are exempt: their sprites use a different draw depth, and the node check
+  decides whether they fit. This also gives the client's ghost a visible invalid state for the
+  most common bad placement, because the marker is prototype data (the client cannot read
+  `PipeNode` data).
 - Test: `Content.IntegrationTests/Tests/_PS/RcdAtmosStackingTest.cs` (pipe-on-pipe same layer
   blocked, empty tile allowed, another layer allowed, valid vent-on-pipe allowed, conflicting
-  vent node blocked, non-conflicting pipe orientation allowed, second device blocked).
+  vent node blocked, second device blocked).
 - **Client ghost parity (2026-11)**: the placement ghost used to stay green for a node conflict
   because `NodeContainerComponent.Nodes` is `serverOnly`. The server now maintains a networked
   `AtmosPipeNodeDirectionsComponent` (one `PipeDirection` mask per atmos layer) on entities with
@@ -861,7 +866,6 @@ Follow-up on the RCD/RPD after the second pass:
   half-filling it. The RCD stays 1:1. Only as much of the cartridge as the missing charges need is
   consumed (a half-full RPD uses 15 of the 30, leaving 15). Test: `RcdBehaviorTest`
   (`OneCompressedMatterCartridgeFillsTheTool`, `RpdUsesOnlyAsMuchMatterAsTheMissingCharges`).
-
 
 ## 25. 2026-10 Salto expedition ship (Coyote `_CS`)
 
