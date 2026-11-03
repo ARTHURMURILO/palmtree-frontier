@@ -20,6 +20,9 @@ namespace Content.IntegrationTests.Tests._PS;
 [TestFixture]
 public sealed class RcdAtmosGhostTest
 {
+    private static readonly EntProtoId StraightPipe = "GasPipeStraight";
+    private static readonly EntProtoId StraightPipeAlt1 = "GasPipeStraightAlt1";
+
     [Test]
     public async Task ClientGhostRejectsPipeNodeOverlap()
     {
@@ -31,6 +34,7 @@ public sealed class RcdAtmosGhostTest
         var playerMan = server.ResolveDependency<IPlayerManager>();
         var session = playerMan.Sessions.Single();
         var pipeCoords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
+        EntityUid pipeEntity = default;
         NetEntity pipeNet = default;
 
         await server.WaitPost(() =>
@@ -39,8 +43,8 @@ public sealed class RcdAtmosGhostTest
             var mob = server.EntMan.SpawnEntity("MobHuman", pipeCoords);
             playerMan.SetAttachedEntity(session, mob);
 
-            var pipe = server.EntMan.SpawnEntity("GasPipeStraight", pipeCoords);
-            pipeNet = server.EntMan.GetNetEntity(pipe);
+            pipeEntity = server.EntMan.SpawnEntity("GasPipeStraight", pipeCoords);
+            pipeNet = server.EntMan.GetNetEntity(pipeEntity);
         });
 
         await pair.RunTicksSync(10);
@@ -65,12 +69,18 @@ public sealed class RcdAtmosGhostTest
                 "A straight pipe should expose its south node to the ghost.");
         });
 
-        // The first raise requests the prototype's node data from the server; the reply is cached.
+        // The first raise per prototype requests its node data from the server; the replies are
+        // cached. Prefetch both prototypes so the assertions below exercise the comparison itself
+        // rather than the one-shot request path.
         await client.WaitAssertion(() =>
         {
-            var proto = client.ProtoMan.Index<EntityPrototype>("GasPipeStraight");
+            var proto = client.ProtoMan.Index(StraightPipe);
             var ev = new RCDAtmosOverlapAttemptEvent(proto, testMap.CGridCoords, Angle.Zero);
             client.EntMan.EventBus.RaiseEvent(EventSource.Local, ref ev);
+
+            var altProto = client.ProtoMan.Index(StraightPipeAlt1);
+            var altEv = new RCDAtmosOverlapAttemptEvent(altProto, testMap.CGridCoords, Angle.Zero);
+            client.EntMan.EventBus.RaiseEvent(EventSource.Local, ref altEv);
         });
 
         await pair.RunTicksSync(5);
@@ -78,7 +88,7 @@ public sealed class RcdAtmosGhostTest
         await client.WaitAssertion(() =>
         {
             var sameLayer = new RCDAtmosOverlapAttemptEvent(
-                client.ProtoMan.Index<EntityPrototype>("GasPipeStraight"),
+                client.ProtoMan.Index(StraightPipe),
                 testMap.CGridCoords,
                 Angle.Zero);
 
@@ -90,7 +100,7 @@ public sealed class RcdAtmosGhostTest
                 "The ghost should reject a same-layer straight pipe whose nodes overlap the anchored pipe.");
 
             var otherLayer = new RCDAtmosOverlapAttemptEvent(
-                client.ProtoMan.Index<EntityPrototype>("GasPipeStraightAlt1"),
+                client.ProtoMan.Index(StraightPipeAlt1),
                 testMap.CGridCoords,
                 Angle.Zero);
 
@@ -101,6 +111,49 @@ public sealed class RcdAtmosGhostTest
                 Is.False,
                 "A secondary-layer pipe does not conflict with a primary-layer pipe.");
         });
+
+        // The placement direction is rotated before comparing, so a perpendicular straight pipe
+        // (east-west) does not overlap the anchored north-south pipe.
+        await client.WaitAssertion(() =>
+        {
+            var perpendicular = new RCDAtmosOverlapAttemptEvent(
+                client.ProtoMan.Index(StraightPipe),
+                testMap.CGridCoords,
+                Angle.FromDegrees(90));
+
+            client.EntMan.EventBus.RaiseEvent(EventSource.Local, ref perpendicular);
+
+            Assert.That(
+                perpendicular.Cancelled,
+                Is.False,
+                "A perpendicular straight pipe should not overlap the anchored pipe's nodes.");
+        });
+
+        // The anchored pipe's own rotation must be applied too. Rotate it in place; the matching
+        // east-west placement now overlaps its east-west nodes.
+        await server.WaitPost(() =>
+        {
+            server.System<SharedTransformSystem>().SetLocalRotation(pipeEntity, Angle.FromDegrees(90));
+        });
+
+        await pair.RunTicksSync(5);
+
+        await client.WaitAssertion(() =>
+        {
+            var anchoredRotated = new RCDAtmosOverlapAttemptEvent(
+                client.ProtoMan.Index(StraightPipe),
+                testMap.CGridCoords,
+                Angle.FromDegrees(90));
+
+            client.EntMan.EventBus.RaiseEvent(EventSource.Local, ref anchoredRotated);
+
+            Assert.That(
+                anchoredRotated.Cancelled,
+                Is.True,
+                "The ghost must rotate the anchored pipe's nodes before comparing directions.");
+        });
+
+        await pair.CleanReturnAsync();
     }
 
     [Test]
@@ -136,6 +189,35 @@ public sealed class RcdAtmosGhostTest
                 Assert.That((int) (summary.Secondary & PipeDirection.North), Is.Not.Zero);
                 Assert.That((int) (summary.Secondary & PipeDirection.South), Is.Not.Zero);
             });
+
+            // Locked-layer entities (the manifold) keep a layer per node instead of following the
+            // component's current layer.
+            var manifold = server.EntMan.SpawnEntity(
+                "GasPipeManifold",
+                new EntityCoordinates(testMap.Grid.Owner, new Vector2(1.5f, 0.5f)));
+
+            var manifoldLayers = server.EntMan.GetComponent<AtmosPipeLayersComponent>(manifold);
+            var manifoldSummary = server.EntMan.GetComponent<AtmosPipeNodeDirectionsComponent>(manifold);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(manifoldLayers.PipeLayersLocked, Is.True);
+                Assert.That((int) (manifoldSummary.Primary & PipeDirection.South), Is.Not.Zero);
+                Assert.That((int) (manifoldSummary.Secondary & PipeDirection.South), Is.Not.Zero);
+                Assert.That((int) (manifoldSummary.Tertiary & PipeDirection.South), Is.Not.Zero);
+            });
+
+            // A locked entity ignores layer changes, so its summary must not move either.
+            server.System<SharedAtmosPipeLayersSystem>().SetPipeLayer((manifold, manifoldLayers), AtmosPipeLayer.Secondary);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(manifoldLayers.CurrentPipeLayer, Is.EqualTo(AtmosPipeLayer.Primary));
+                Assert.That((int) (manifoldSummary.Primary & PipeDirection.South), Is.Not.Zero);
+                Assert.That((int) (manifoldSummary.Tertiary & PipeDirection.South), Is.Not.Zero);
+            });
         });
+
+        await pair.CleanReturnAsync();
     }
 }
