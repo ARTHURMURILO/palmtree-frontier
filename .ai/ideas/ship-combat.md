@@ -182,11 +182,14 @@ Both consoles are machines with parts (tactical lock speed uses `Capacitor`). Ta
   save), fire straight for 2 s, then steer towards the grid captured at launch with a limited turn
   rate (20 tiles/s, 20°/s, 60 s lifetime, 150 heat). If the target is outside the seeker arc the
   torpedo gives up and keeps flying straight: **90°** for normal/uranium torpedoes, **120°** for
-  photon torpedoes. Photon torpedo (separate upgraded launcher): 40 tiles/s, 45°/s, steering starts
+  photon torpedoes. Photon torpedo (separate upgraded launcher): 40 tiles/s, 170°/s, steering starts
   at 2 s and ramps to full by 5.5 s, 300 heat, red glow. EMP torpedo (separate launcher): blue, no
   hull damage, bypasses shields (`shieldDamage: 0`) and fires an 8-tile, 30-second EMP pulse via
   `EmpOnTrigger`. Contact fuses still work while steering is inactive, so a torpedo fired near an
-  enemy can still detonate on it. The limited turn rate means a manoeuvring target can make them
+  enemy can still detonate on it. `ps.ship_combat.torpedo_steering_duration` (default 120 s, 0 =
+  unlimited) stops steering after that long so torpedoes cannot orbit a ship forever;
+  `ps.ship_combat.torpedo_turn_rate` (default 0 = each prototype's own value) overrides the turn
+  rate globally. The limited turn rate means a manoeuvring target can make them
   miss.
 - Torpedoes render on the tactical IFF as diamonds: **red** for torpedoes from other ships,
   **green** for the console's own ship (server-driven map-space blips in the console state so

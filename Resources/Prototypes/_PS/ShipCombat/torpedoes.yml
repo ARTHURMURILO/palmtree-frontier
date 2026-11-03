@@ -61,7 +61,7 @@
   components:
   - type: ShipTorpedo
     speed: 40
-    turnRate: 45
+    turnRate: 170
     shieldDamage: 280
     steeringDelay: 2
     steeringRamp: 3.5
