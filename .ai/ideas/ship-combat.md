@@ -279,3 +279,24 @@ existing `BluespaceDock*` tests. Automatic prototype validation via `EntityTest`
 ## Open questions
 
 None — all resolved with the maintainer before implementation (see the decisions table).
+
+## Validation checklist (lessons learned)
+
+Run the **full** integration suite, not just the `_PS` namespace. The `_NF` tests validate global
+content and have caught ship-combat regressions that `_PS` tests cannot see:
+
+- `CheckTechTreeConsistency` (`Content.IntegrationTests/Tests/_NF/TechnologyTreeTests.cs`) requires
+  every `TechnologyPrototype` to have a **globally unique `position`**, across all disciplines. The
+  `PSShipCombat` techs originally reused coordinates already taken by NF/upstream techs and turned
+  master red; they now sit at X 10-13, beyond the highest existing X (5). Check
+  `Resources/Prototypes/_NF/Research/techtree.yml` and `Resources/Prototypes/Research/*.yml` before
+  adding or moving a technology.
+- Adding global prototypes (research, audio, entities) can break `_NF` or upstream tests, so the
+  pipeline for every milestone is:
+  1. `dotnet build SpaceStation14.sln`
+  2. `dotnet build Content.YAMLLinter/Content.YAMLLinter.csproj` then
+     `dotnet run --project Content.YAMLLinter -c Debug --no-build`
+  3. `dotnet test Content.IntegrationTests --filter "FullyQualifiedName~Content.IntegrationTests.Tests._PS|FullyQualifiedName~Content.IntegrationTests.Tests._NF"`
+  4. `EntityTest` and the headless client (`--headless`, expect "Verified IL")
+- The labeler workflows (`pull_request_target`) need a `permissions:` block in the **base branch**;
+  that is repository configuration and cannot be fixed from a PR branch.
