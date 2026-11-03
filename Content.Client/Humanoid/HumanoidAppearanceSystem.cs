@@ -606,6 +606,16 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
                 targLayerAdj = hairLayer + layerOrder;
             }
 
+            // Palmtree: snouts and snout covers draw over hair in side views. Insert them just
+            // before the first layer after the hair group so hair markings (which are added after
+            // the hair base layer) stay behind them.
+            if (layerSlot is HumanoidVisualLayers.Snout or HumanoidVisualLayers.SnoutCover
+                && screenDirection is RsiDirection.East or RsiDirection.West
+                && _sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.HeadSide, out var headSideLayer, false))
+            {
+                targLayerAdj = headSideLayer + layerOrder;
+            }
+
             // Palmtree: keep genital markings beneath clothing while they sit on the genital layer,
             // unless the organ uses the "Never hidden" visibility rule.
             if (layerSlot == HumanoidVisualLayers.Genital)

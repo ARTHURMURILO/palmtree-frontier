@@ -1,4 +1,5 @@
 using System.Numerics;
+using Content.Client._PS.Overlays; // Palmtree: tile overlay guard
 using Content.Client.Graphics;
 using Content.Shared.CCVar;
 using Content.Shared.Maps;
@@ -53,6 +54,12 @@ public sealed class AmbientOcclusionOverlay : Overlay
         var mapId = args.MapId;
         var worldBounds = args.WorldBounds;
         var worldHandle = args.WorldHandle;
+
+        // Palmtree: the tile enumerator recurses per skipped tile, so very large views (huge
+        // viewport, low render scale, zoomed out) would overflow the stack while drawing the
+        // stencil. Ambient occlusion is meaningless at that scale, so skip those views.
+        if (TileEnumerationGuard.TooLarge(_cfgManager, worldBounds.CalcBoundingBox()))
+            return;
         var color = Color.FromHex(_cfgManager.GetCVar(CCVars.AmbientOcclusionColor));
         var distance = _cfgManager.GetCVar(CCVars.AmbientOcclusionDistance);
         //var color = Color.Red;

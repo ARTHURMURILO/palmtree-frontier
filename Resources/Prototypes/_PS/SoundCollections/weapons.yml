@@ -3,3 +3,9 @@
   files:
   - /Audio/_PS/Weapons/Phaser/phaser1.ogg
   - /Audio/_PS/Weapons/Phaser/phaser2.ogg
+
+- type: soundCollection
+  id: ShipPhaser
+  files:
+  - /Audio/_PS/ShipCombat/tng_phaser4_clean_top.ogg
+  - /Audio/_PS/ShipCombat/tng_phaser5_clean.ogg

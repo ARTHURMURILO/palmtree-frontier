@@ -1672,3 +1672,29 @@ Entries:
   time: '2026-11-02T17:51:09.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/3a6f84b007eb3b3716c11ed7d7002d2650367e5b
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        forcedock can store ships of any category, including ships with no
+        recognised vessel identity.
+    - type: Fix
+      message: >-
+        The Ship Registrar can register ships to SSD/offline owners by inserting
+        their ID card, instead of only targeting players in the round.
+    - type: Tweak
+      message: >-
+        The Ship Registrar user-selector dropdown is replaced by an owner ID
+        card slot.
+  id: 90110
+  time: '2026-11-03T03:45:13.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/672cc37b8df9856860b0aa52631c8d16d4d36fc9
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: Fixed snout markings rendering under hair when facing east or west.
+  id: 90111
+  time: '2026-11-03T03:56:48.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/444f6c4bea35664618da2ad3692ab1298b7b386a

@@ -10,9 +10,10 @@ namespace Content.Client._PS.Humanoid;
 /// <summary>
 /// Palmtree: some humanoid layers are ordered differently depending on the direction the sprite is
 /// drawn in on the local client (south-facing genitals above hair/tails, side-facing tails under
-/// hair). Sprite directions are derived from world rotation plus the camera rotation and raise no
-/// event, so this system watches for cardinal changes and rebuilds the humanoid sprite, which
-/// re-applies the direction-aware marking layers in <see cref="HumanoidAppearanceSystem"/>.
+/// hair, side-facing snouts above hair). Sprite directions are derived from world rotation plus the
+/// camera rotation and raise no event, so this system watches for cardinal changes and rebuilds the
+/// humanoid sprite, which re-applies the direction-aware marking layers in
+/// <see cref="HumanoidAppearanceSystem"/>.
 /// </summary>
 public sealed class DirectionalLayerOrderSystem : EntitySystem
 {
@@ -45,7 +46,7 @@ public sealed class DirectionalLayerOrderSystem : EntitySystem
 
             _lastDirection[uid] = direction;
 
-            // Without genitals or tails the direction has no effect on layer order.
+            // Without direction-sensitive markings the direction has no effect on layer order.
             if (!NeedsDirectionalOrder(humanoid))
                 continue;
 
@@ -57,7 +58,9 @@ public sealed class DirectionalLayerOrderSystem : EntitySystem
     {
         return HasMarkings(humanoid, MarkingCategories.Genital)
                || HasMarkings(humanoid, MarkingCategories.Tail)
-               || HasMarkings(humanoid, MarkingCategories.TailExtras);
+               || HasMarkings(humanoid, MarkingCategories.TailExtras)
+               || HasMarkings(humanoid, MarkingCategories.Snout)
+               || HasMarkings(humanoid, MarkingCategories.SnoutCover);
     }
 
     private static bool HasMarkings(HumanoidAppearanceComponent humanoid, MarkingCategories category)
