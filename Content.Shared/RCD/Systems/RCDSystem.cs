@@ -67,6 +67,7 @@ public sealed class RCDSystem : EntitySystem
     private static readonly ProtoId<TagPrototype> CatwalkTag = "Catwalk";
     private static readonly ProtoId<TagPrototype> AirlockTag = "Airlock"; // Palmtree: airlocks and firelocks may share a tile
     private static readonly ProtoId<TagPrototype> UnstackableTag = "Unstackable"; // Palmtree: no stacking atmos pipes/devices
+    private static readonly ProtoId<TagPrototype> PipeSegmentTag = "AtmosPipeSegment"; // Palmtree: two segments on one layer z-fight
     // Palmtree: even the admin RCD must leave these alone.
     private static readonly ProtoId<TagPrototype> RcdUnDeconstructableTag = "RCDUnDeconstructable";
     private static readonly EntProtoId RcdAmmoProto = "RCDAmmo";
@@ -637,7 +638,7 @@ public sealed class RCDSystem : EntitySystem
             // entity of the same kind (the collision check still rejects that).
             buildsAirlock = builtTags != null && _tags.HasTag(builtTags, AirlockTag);
             buildsFirelock = builtProto.HasComponent<FirelockComponent>(EntityManager.ComponentFactory);
-            buildsPipeSegment = builtProto.HasComponent<AtmosPipeSegmentComponent>(EntityManager.ComponentFactory);
+            buildsPipeSegment = builtTags != null && _tags.HasTag(builtTags, PipeSegmentTag);
 
             if (builtProto.TryGetComponent<AtmosPipeLayersComponent>(out var builtLayers, EntityManager.ComponentFactory))
                 builtLayer = builtLayers.CurrentPipeLayer;
@@ -668,7 +669,7 @@ public sealed class RCDSystem : EntitySystem
                 if (overlapEv.Cancelled)
                 {
                     if (popMsgs)
-                        _popup.PopupClient(Loc.GetString("rcd-component-cannot-build-on-occupied-tile-message"), uid, user);
+                        _popup.PopupClient(Loc.GetString("rcd-component-pipe-nodes-overlap-message", ("layer", GetLayerName(builtLayer))), uid, user);
 
                     return false;
                 }
@@ -692,7 +693,7 @@ public sealed class RCDSystem : EntitySystem
 
             // Palmtree: two pipe segments on one layer z-fight, so they never stack even when their
             // node directions would not overlap. Devices use a different draw depth and are exempt.
-            if (buildsPipeSegment && HasComp<AtmosPipeSegmentComponent>(ent))
+            if (buildsPipeSegment && IsPipeSegment(ent))
             {
                 var existingLayer = AtmosPipeLayer.Primary;
 
@@ -702,7 +703,7 @@ public sealed class RCDSystem : EntitySystem
                 if (existingLayer == builtLayer)
                 {
                     if (popMsgs)
-                        _popup.PopupClient(Loc.GetString("rcd-component-cannot-build-on-occupied-tile-message"), uid, user);
+                        _popup.PopupClient(Loc.GetString("rcd-component-pipe-layer-occupied-message", ("layer", GetLayerName(builtLayer))), uid, user);
 
                     return false;
                 }
@@ -989,6 +990,20 @@ public sealed class RCDSystem : EntitySystem
             ammoComp.Charges = overflow;
             Dirty(ammo, ammoComp);
         }
+    }
+
+    /// <summary>
+    /// Palmtree: whether the entity is a plain pipe segment. Tags are networked, so this works on
+    /// the client's placement ghost as well as on the server.
+    /// </summary>
+    private bool IsPipeSegment(EntityUid ent)
+    {
+        return _tags.HasTag(ent, PipeSegmentTag);
+    }
+
+    private string GetLayerName(AtmosPipeLayer layer)
+    {
+        return Loc.GetString("atmos-pipe-layers-component-layer-" + layer.ToString().ToLower());
     }
 
     /// <summary>

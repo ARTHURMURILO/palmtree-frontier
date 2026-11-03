@@ -666,13 +666,13 @@ so these fail only in CI:
   check is what prevents the RCD from spawning an overlapping pipe that
   `PipeRestrictOverlapSystem` would immediately unanchor.
 - **Two pipe segments on one layer z-fight, so they are rejected as a pair.** `RCDSystem` checks
-  `AtmosPipeSegmentComponent` (prototype marker on the plain pipe shapes and the manifold) before
-  the node check; do not remove it or turn it into a tag (a child `Tag` replaces the inherited
-  `Pipe` tags). Devices are exempt because their sprites sit on a different draw depth, and the
-  node check is what decides whether they fit. The marker is also what lets the client's
-  placement ghost turn red for a stacked pipe: the client cannot read the server-only
-  `NodeContainerComponent.Nodes` used by the direction check, so without the marker it would
-  render the invalid pipe-on-pipe placement green.
+  the `AtmosPipeSegment` tag (on the five plain pipe shapes, manifold and broken pipe) before the
+  node check. Devices are exempt because their sprites sit on a different draw depth, and the node
+  check decides whether they fit. The tag is networked, so the client's placement ghost turns red
+  for a stacked pipe even though the client cannot read the server-only
+  `NodeContainerComponent.Nodes` used by the direction check. When adding the tag to a shape,
+  include `Pipe` in the same `Tag` block: a child `Tag` component replaces the inherited tag list
+  rather than extending it.
 - **Component-specific `ComponentStartup` subscriptions are single-handler.** The directed event bus
   stores one subscription per (component, event) pair, so a second
   `SubscribeLocalEvent<NodeContainerComponent, ComponentStartup>` throws
