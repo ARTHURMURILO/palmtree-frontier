@@ -216,6 +216,30 @@ public sealed class RcdAtmosGhostTest
                 Assert.That((int) (manifoldSummary.Primary & PipeDirection.South), Is.Not.Zero);
                 Assert.That((int) (manifoldSummary.Tertiary & PipeDirection.South), Is.Not.Zero);
             });
+
+            // Spawning onto an uninitialized map must not add the summary (PrototypeSaveTest); the
+            // MapInit hook supplies it once the map is initialized.
+            var mapSystem = server.System<SharedMapSystem>();
+            var mapManager = server.ResolveDependency<IMapManager>();
+            mapSystem.CreateMap(out var uninitializedMapId, runMapInit: false);
+            var uninitializedGrid = mapManager.CreateGridEntity(uninitializedMapId);
+            var uninitializedPipe = server.EntMan.SpawnEntity(
+                "GasPipeStraight",
+                new EntityCoordinates(uninitializedGrid.Owner, new Vector2(0.5f, 0.5f)));
+
+            Assert.That(
+                server.EntMan.HasComponent<AtmosPipeNodeDirectionsComponent>(uninitializedPipe),
+                Is.False,
+                "An uninitialized map must not gain the summary at spawn time.");
+
+            mapSystem.InitializeMap(uninitializedMapId);
+
+            Assert.That(
+                server.EntMan.HasComponent<AtmosPipeNodeDirectionsComponent>(uninitializedPipe),
+                Is.True,
+                "Map initialization should fill the summary for entities spawned on an uninitialized map.");
+
+            mapSystem.DeleteMap(uninitializedMapId);
         });
 
         await pair.CleanReturnAsync();

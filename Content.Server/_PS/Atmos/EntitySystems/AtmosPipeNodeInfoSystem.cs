@@ -25,6 +25,7 @@ namespace Content.Server._PS.Atmos.EntitySystems;
 public sealed partial class AtmosPipeNodeInfoSystem : EntitySystem
 {
     [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
+    [Dependency] private readonly SharedMapSystem _map = default!;
 
     private readonly Dictionary<string, List<AtmosPipeNodeInfo>> _prototypeNodes = new();
 
@@ -33,6 +34,7 @@ public sealed partial class AtmosPipeNodeInfoSystem : EntitySystem
         base.Initialize();
 
         SubscribeLocalEvent<NodeContainerStartedEvent>(OnNodeContainerStarted);
+        SubscribeLocalEvent<NodeContainerComponent, MapInitEvent>(OnNodeContainerMapInit);
         SubscribeLocalEvent<AtmosPipeLayersComponent, AtmosPipeLayerChangedEvent>(OnPipeLayerChanged);
         SubscribeNetworkEvent<AtmosPipeNodeInfoRequestEvent>(OnNodeInfoRequest);
         SubscribeLocalEvent<PrototypesReloadedEventArgs>(OnPrototypesReloaded);
@@ -41,6 +43,13 @@ public sealed partial class AtmosPipeNodeInfoSystem : EntitySystem
     private void OnNodeContainerStarted(NodeContainerStartedEvent args)
     {
         Refresh(args.Uid);
+    }
+
+    private void OnNodeContainerMapInit(EntityUid uid, NodeContainerComponent component, MapInitEvent args)
+    {
+        // Entities spawned onto an uninitialized map (mapping, PrototypeSaveTest) get their summary
+        // when the map is initialized, so spawning one never adds a component to map-save data.
+        Refresh(uid, component);
     }
 
     private void OnPipeLayerChanged(EntityUid uid, AtmosPipeLayersComponent component, ref AtmosPipeLayerChangedEvent args)
@@ -90,6 +99,13 @@ public sealed partial class AtmosPipeNodeInfoSystem : EntitySystem
     private void Refresh(EntityUid uid, NodeContainerComponent? container = null)
     {
         if (!Resolve(uid, ref container, false))
+            return;
+
+        // Only summarize entities on an initialized map. This keeps spawn-time code from adding a
+        // component to an uninitialized map (which PrototypeSaveTest forbids because it would end
+        // up in map-save data), and MapInitEvent fills the summary once the map is initialized.
+        // Live ship saves create their map initialized, so they still get the summary on startup.
+        if (!_map.IsInitialized(Transform(uid).MapID))
             return;
 
         AtmosPipeLayersComponent? layers = null;
