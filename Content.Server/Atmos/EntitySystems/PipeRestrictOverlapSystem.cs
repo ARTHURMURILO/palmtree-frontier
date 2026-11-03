@@ -7,6 +7,7 @@ using Content.Shared.Atmos;
 using Content.Shared.Atmos.Components;
 using Content.Shared.Construction.Components;
 using Content.Shared.NodeContainer;
+using Content.Shared.RCD;
 using JetBrains.Annotations;
 using Robust.Server.GameObjects;
 using Robust.Shared.Map.Components;
@@ -30,6 +31,7 @@ public sealed class PipeRestrictOverlapSystem : EntitySystem
     {
         SubscribeLocalEvent<PipeRestrictOverlapComponent, AnchorStateChangedEvent>(OnAnchorStateChanged);
         SubscribeLocalEvent<PipeRestrictOverlapComponent, AnchorAttemptEvent>(OnAnchorAttempt);
+        SubscribeLocalEvent<RCDAtmosOverlapAttemptEvent>(OnRcdAtmosOverlapAttempt); // Palmtree: RPD placement preview
 
         _nodeContainerQuery = GetEntityQuery<NodeContainerComponent>();
     }
@@ -59,6 +61,75 @@ public sealed class PipeRestrictOverlapSystem : EntitySystem
         {
             _popup.PopupEntity(Loc.GetString("pipe-restrict-overlap-popup-blocked", ("pipe", ent.Owner)), ent, args.User);
             args.Cancel();
+        }
+    }
+
+    /// <summary>
+    /// Palmtree: rejects an RCD/RPD placement before it starts when the prototype it would build
+    /// has pipe nodes that overlap an anchored pipe node on the same atmos layer. This is the same
+    /// rule <see cref="CheckOverlap(EntityUid)"/> applies after anchoring, but evaluated against
+    /// the prototype's nodes so valid overlaps (a vent on a pipe, or another layer) still pass.
+    /// </summary>
+    private void OnRcdAtmosOverlapAttempt(ref RCDAtmosOverlapAttemptEvent args)
+    {
+        if (args.Cancelled)
+            return;
+
+        if (!args.Prototype.TryGetComponent<NodeContainerComponent>(out var builtContainer, EntityManager.ComponentFactory))
+            return;
+
+        var builtNodes = builtContainer.Nodes.Values.OfType<PipeNode>().ToList();
+
+        if (builtNodes.Count == 0)
+            return;
+
+        var grid = _xform.GetGrid(args.Coordinates);
+
+        if (grid is not { } gridUid || !TryComp<MapGridComponent>(gridUid, out var gridComp))
+            return;
+
+        // Locked-layer entities (the manifold) keep a layer per node; everything else uses the
+        // entity's current layer, which the RPD layer variant already carries.
+        var builtLayers = args.Prototype.TryGetComponent<AtmosPipeLayersComponent>(out var layers, EntityManager.ComponentFactory)
+            ? layers
+            : null;
+
+        var indices = _map.TileIndicesFor(gridUid, gridComp, args.Coordinates);
+        _anchoredEntities.Clear();
+        _map.GetAnchoredEntities((gridUid, gridComp), indices, _anchoredEntities);
+
+        foreach (var otherEnt in _anchoredEntities)
+        {
+            if (!_nodeContainerQuery.TryComp(otherEnt, out var otherContainer))
+                continue;
+
+            var otherXform = Transform(otherEnt);
+
+            foreach (var node in otherContainer.Nodes.Values)
+            {
+                if (node is not PipeNode otherPipe)
+                    continue;
+
+                var otherDirection = otherPipe.OriginalPipeDirection.RotatePipeDirection(otherXform.LocalRotation);
+
+                foreach (var builtPipe in builtNodes)
+                {
+                    var builtLayer = builtLayers is { PipeLayersLocked: false }
+                        ? builtLayers.CurrentPipeLayer
+                        : builtPipe.CurrentPipeLayer;
+
+                    if (builtLayer != otherPipe.CurrentPipeLayer)
+                        continue;
+
+                    var builtDirection = builtPipe.OriginalPipeDirection.RotatePipeDirection(args.Rotation);
+
+                    if ((builtDirection & otherDirection) == 0)
+                        continue;
+
+                    args.Cancelled = true;
+                    return;
+                }
+            }
         }
     }
 

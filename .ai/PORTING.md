@@ -834,14 +834,19 @@ Follow-up on the RCD/RPD after the second pass:
 - **Speed multiplier**: `RCDComponent.SpeedMultiplier` (default 1, `ViewVariables` read-write)
   divides every construction/deconstruction delay; the `RCD` prototype sets it to 2. Values at or
   below zero are ignored, and `InstantConstruction` still forces a 0 delay.
-- **No atmos stacking**: `GasPipeSansLayers` now carries the `Unstackable` tag (plain pipes were
-  missing it), and `IsConstructionLocationValid` refuses a mode whose built prototype has that tag
-  when the tile already has an `Unstackable` entity on the *same* atmos layer. The layer comes from
-  the do-after event / placement mode, so secondary and tertiary pipes can still share a tile.
-  Pipes have no fixtures, which is why the old collision check let duplicates through (the overlap
-  popup came from `PipeRestrictOverlapSystem` after the spawn).
-- Test: `Content.IntegrationTests/Tests/_PS/RcdAtmosStackingTest.cs` (primary layer blocked, empty
-  tile allowed, another layer allowed).
+- **No atmos stacking (node-aware)**: `GasPipeSansLayers` is deliberately *not* `Unstackable`.
+  A vent, pump or sensor is built onto the pipe that feeds it, and construction's
+  `NoUnstackableInTile` is layer-agnostic, so tagging plain pipes rejected every legitimate
+  device-on-pipe placement. Instead the RCD/RPD raises `RCDAtmosOverlapAttemptEvent`, and the
+  server's `PipeRestrictOverlapSystem` compares the placement's resolved prototype nodes (mirror
+  flip + RPD layer variant included) with the anchored nodes on the tile: only a same-layer,
+  same-direction overlap is vetoed. `Unstackable` remains on the devices themselves (vents, pumps,
+  sensors, manifold), so a second device on the same layer is still rejected. Pipes have no
+  fixtures, which is why the old collision check let duplicates through (the overlap popup came
+  from `PipeRestrictOverlapSystem` after the spawn).
+- Test: `Content.IntegrationTests/Tests/_PS/RcdAtmosStackingTest.cs` (pipe-on-pipe same layer
+  blocked, empty tile allowed, another layer allowed, valid vent-on-pipe allowed, conflicting
+  vent node blocked, non-conflicting pipe orientation allowed, second device blocked).
 
 ## 25. 2026-10 Salto expedition ship (Coyote `_CS`)
 

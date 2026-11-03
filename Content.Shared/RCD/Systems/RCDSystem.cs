@@ -11,6 +11,7 @@ using Content.Shared.Examine;
 using Content.Shared.Hands.EntitySystems;
 using Content.Shared.Interaction;
 using Content.Shared.Maps;
+using Content.Shared.NodeContainer;
 using Content.Shared.Physics;
 using Content.Shared.Popups;
 using Content.Shared.Prototypes;
@@ -221,7 +222,7 @@ public sealed class RCDSystem : EntitySystem
             }
         }
 
-        if (!IsRCDOperationStillValid(uid, component, gridUid.Value, mapGrid, tile, position, args.Target, args.User, layer: layer))
+        if (!IsRCDOperationStillValid(uid, component, gridUid.Value, mapGrid, tile, position, args.Target, args.User, layer: layer, direction: component.ConstructionDirection))
             return;
 
         // Frontier: grid-access restrictions
@@ -360,7 +361,7 @@ public sealed class RCDSystem : EntitySystem
         var tile = _mapSystem.GetTileRef(gridUid.Value, mapGrid, location);
         var position = _mapSystem.TileIndicesFor(gridUid.Value, mapGrid, location);
 
-        if (!IsRCDOperationStillValid(uid, component, gridUid.Value, mapGrid, tile, position, args.Event.Target, args.Event.User, layer: args.Event.Layer))
+        if (!IsRCDOperationStillValid(uid, component, gridUid.Value, mapGrid, tile, position, args.Event.Target, args.Event.User, layer: args.Event.Layer, direction: args.Event.Direction))
             args.Cancel();
     }
 
@@ -390,7 +391,7 @@ public sealed class RCDSystem : EntitySystem
         var position = _mapSystem.TileIndicesFor(gridUid.Value, mapGrid, location);
 
         // Ensure the RCD operation is still valid
-        if (!IsRCDOperationStillValid(uid, component, gridUid.Value, mapGrid, tile, position, args.Target, args.User, layer: args.Layer))
+        if (!IsRCDOperationStillValid(uid, component, gridUid.Value, mapGrid, tile, position, args.Target, args.User, layer: args.Layer, direction: args.Direction))
             return;
 
         // Finalize the operation (this should handle prediction properly)
@@ -487,7 +488,7 @@ public sealed class RCDSystem : EntitySystem
 
     #region Entity construction/deconstruction rule checks
 
-    public bool IsRCDOperationStillValid(EntityUid uid, RCDComponent component, EntityUid gridUid, MapGridComponent mapGrid, TileRef tile, Vector2i position, EntityUid? target, EntityUid user, bool popMsgs = true, AtmosPipeLayer layer = AtmosPipeLayer.Primary)
+    public bool IsRCDOperationStillValid(EntityUid uid, RCDComponent component, EntityUid gridUid, MapGridComponent mapGrid, TileRef tile, Vector2i position, EntityUid? target, EntityUid user, bool popMsgs = true, AtmosPipeLayer layer = AtmosPipeLayer.Primary, Direction? direction = null)
     {
         var prototype = _protoManager.Index(component.ProtoId);
 
@@ -525,7 +526,7 @@ public sealed class RCDSystem : EntitySystem
         {
             case RcdMode.ConstructTile:
             case RcdMode.ConstructObject:
-                return IsConstructionLocationValid(uid, component, gridUid, mapGrid, tile, position, user, popMsgs, layer);
+                return IsConstructionLocationValid(uid, component, gridUid, mapGrid, tile, position, user, popMsgs, layer, direction);
             case RcdMode.Deconstruct:
                 return IsDeconstructionStillValid(uid, component, tile, target, user, popMsgs);
         }
@@ -533,7 +534,7 @@ public sealed class RCDSystem : EntitySystem
         return false;
     }
 
-    private bool IsConstructionLocationValid(EntityUid uid, RCDComponent component, EntityUid gridUid, MapGridComponent mapGrid, TileRef tile, Vector2i position, EntityUid user, bool popMsgs = true, AtmosPipeLayer layer = AtmosPipeLayer.Primary)
+    private bool IsConstructionLocationValid(EntityUid uid, RCDComponent component, EntityUid gridUid, MapGridComponent mapGrid, TileRef tile, Vector2i position, EntityUid user, bool popMsgs = true, AtmosPipeLayer layer = AtmosPipeLayer.Primary, Direction? direction = null)
     {
         var prototype = _protoManager.Index(component.ProtoId);
 
@@ -595,16 +596,38 @@ public sealed class RCDSystem : EntitySystem
         var isWindow = prototype.ConstructionRules.Contains(RcdConstructionRule.IsWindow);
         var isCatwalk = prototype.ConstructionRules.Contains(RcdConstructionRule.IsCatwalk);
 
+        // Palmtree: resolve the prototype that FinalizeRCDOperation will actually spawn. Mirror
+        // flips and the RPD's layer variants change the pipe nodes, so the overlap check below must
+        // inspect the same entity the placement will build.
+        EntityPrototype? builtProto = null;
+
+        if (prototype.Prototype != null)
+        {
+            var builtProtoId = component.UseMirrorPrototype && !string.IsNullOrEmpty(prototype.MirrorPrototype)
+                ? prototype.MirrorPrototype
+                : prototype.Prototype;
+
+            if (component.IsRpd && !prototype.NoLayers &&
+                _protoManager.TryIndex<EntityPrototype>(builtProtoId, out var layeredProto) &&
+                layeredProto.TryGetComponent<AtmosPipeLayersComponent>(out var builtLayers, EntityManager.ComponentFactory) &&
+                _pipeLayers.TryGetAlternativePrototype(builtLayers, layer, out var layeredProtoId))
+            {
+                builtProtoId = layeredProtoId;
+            }
+
+            _protoManager.TryIndex<EntityPrototype>(builtProtoId, out builtProto);
+        }
+
         // Palmtree: atmos pipes/devices carry no fixtures, so the collision check below cannot see
-        // them. Refuse to stack a new pipe/device on the same atmos layer (they share the
-        // `Unstackable` tag with the construction graphs, which have the same restriction).
+        // them. `Unstackable` blocks a second device on the same atmos layer; plain pipes are not
+        // tagged because a vent or pump is supposed to sit on top of them. Actual pipe node
+        // conflicts are rejected by the node-aware RCDAtmosOverlapAttemptEvent below.
         var buildsUnstackable = false;
         var buildsAirlock = false;
         var buildsFirelock = false;
         var builtLayer = AtmosPipeLayer.Primary;
 
-        if (prototype.Prototype != null &&
-            _protoManager.TryIndex<EntityPrototype>(prototype.Prototype, out var builtProto))
+        if (builtProto != null)
         {
             builtProto.TryGetComponent<TagComponent>(out var builtTags, EntityManager.ComponentFactory);
 
@@ -613,15 +636,37 @@ public sealed class RCDSystem : EntitySystem
             buildsAirlock = builtTags != null && _tags.HasTag(builtTags, AirlockTag);
             buildsFirelock = builtProto.HasComponent<FirelockComponent>(EntityManager.ComponentFactory);
 
+            if (builtProto.TryGetComponent<AtmosPipeLayersComponent>(out var builtLayers, EntityManager.ComponentFactory))
+                builtLayer = builtLayers.CurrentPipeLayer;
+
             if (builtTags != null && _tags.HasTag(builtTags, UnstackableTag))
-            {
                 buildsUnstackable = true;
 
-                // Entities without per-layer variants always spawn on the primary layer.
-                if (builtProto.TryGetComponent<AtmosPipeLayersComponent>(out var builtLayers, EntityManager.ComponentFactory) &&
-                    builtLayers.AlternativePrototypes.Count > 0)
+            // Palmtree: only the server has the pipe node data needed to compare directions. On the
+            // client this event has no handler and the do-after attempt repeats the check.
+            if (builtProto.TryGetComponent<NodeContainerComponent>(out _, EntityManager.ComponentFactory))
+            {
+                var rotation = prototype.Rotation switch
                 {
-                    builtLayer = layer;
+                    RcdRotation.Fixed => Angle.Zero,
+                    RcdRotation.Camera => Transform(uid).LocalRotation,
+                    RcdRotation.User => (direction ?? component.ConstructionDirection).ToAngle(),
+                    _ => Angle.Zero
+                };
+
+                var overlapEv = new RCDAtmosOverlapAttemptEvent(
+                    builtProto,
+                    _mapSystem.GridTileToLocal(gridUid, mapGrid, position),
+                    rotation);
+
+                RaiseLocalEvent(ref overlapEv);
+
+                if (overlapEv.Cancelled)
+                {
+                    if (popMsgs)
+                        _popup.PopupClient(Loc.GetString("rcd-component-cannot-build-on-occupied-tile-message"), uid, user);
+
+                    return false;
                 }
             }
         }

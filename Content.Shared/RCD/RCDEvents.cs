@@ -1,3 +1,5 @@
+using Robust.Shared.Map;
+using Robust.Shared.Maths;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Serialization;
 
@@ -45,6 +47,24 @@ public sealed class RPDEyeRotationEvent(NetEntity netEntity, float? eyeRotation)
 {
     public readonly NetEntity NetEntity = netEntity;
     public readonly float? EyeRotation = eyeRotation;
+}
+
+// Palmtree: lets the server veto an RCD/RPD placement that would overlap an existing pipe node.
+// The RCD owns the shared placement rules, but pipe nodes live on the server, so the shared
+// validation cannot compare directions on its own.
+/// <summary>
+/// Raised by the RCD/RPD before building an entity that carries pipe nodes (pipes, pumps, vents,
+/// sensors, ...). A server-side handler cancels it when the new entity's pipe nodes would overlap
+/// an existing pipe's nodes on the same atmos layer, so that legitimate overlaps - a vent on a
+/// pipe, or the same pipe on another layer - still go through.
+/// </summary>
+[ByRefEvent]
+public record struct RCDAtmosOverlapAttemptEvent(
+    EntityPrototype Prototype,
+    EntityCoordinates Coordinates,
+    Angle Rotation)
+{
+    public bool Cancelled;
 }
 
 /// <summary>
