@@ -2,7 +2,7 @@
 - type: rcd
   id: PiratePlating
   name: rcd-component-plating
-  category: PirateWallsAndFlooring
+  category: WallsAndFlooring # Palmtree: merged into the standard walls/flooring category
   sprite: /Textures/Interface/Radial/RCD/plating.png
   mode: ConstructTile
   prototype: Plating
@@ -15,7 +15,7 @@
 
 - type: rcd
   id: PirateCatwalk
-  category: PirateWallsAndFlooring
+  category: WallsAndFlooring # Palmtree: merged into the standard walls/flooring category
   sprite: /Textures/Interface/Radial/RCD/catwalk.png
   mode: ConstructObject
   prototype: Catwalk
@@ -32,7 +32,7 @@
 - type: rcd
   id: FloorDark
   name: rcd-component-floor-dark-steel
-  category: PirateWallsAndFlooring
+  category: WallsAndFlooring # Palmtree: merged into the standard walls/flooring category
   sprite: /Textures/_NF/Interface/Radial/RCD/dark_metal_tile.png
   mode: ConstructTile
   prototype: FloorDark
@@ -46,7 +46,7 @@
 - type: rcd
   id: FloorWood
   name: rcd-component-floor-wood
-  category: PirateWallsAndFlooring
+  category: WallsAndFlooring # Palmtree: merged into the standard walls/flooring category
   sprite: /Textures/_NF/Interface/Radial/RCD/wood_tile.png
   mode: ConstructTile
   prototype: FloorWood
@@ -74,7 +74,7 @@
 
 - type: rcd
   id: PirateCatwalkHazard
-  category: PirateWallsAndFlooring
+  category: WallsAndFlooring # Palmtree: merged into the standard walls/flooring category
   sprite: /Textures/_NF/Interface/Radial/RCD/catwalk_hazard.png
   mode: ConstructObject
   prototype: CatwalkHazard
@@ -230,7 +230,8 @@
 # Lighting
 - type: rcd
   id: PoweredlightRed
-  category: Lighting
+  name: rcd-component-light-tube-red # Palmtree: explicit light variant name
+  category: LightingLamps # Palmtree: nested lamp/bulb light categories
   sprite: /Textures/_NF/Interface/Radial/RCD/red_tube_light.png
   mode: ConstructObject
   prototype: PoweredlightRed
@@ -243,7 +244,8 @@
 
 - type: rcd
   id: PoweredlightUltraviolet
-  category: Lighting
+  name: rcd-component-light-tube-ultraviolet # Palmtree: explicit light variant name
+  category: LightingLamps # Palmtree: nested lamp/bulb light categories
   sprite: /Textures/_NF/Interface/Radial/RCD/ultraviolet_tube_light.png
   mode: ConstructObject
   prototype: PoweredlightUltraviolet

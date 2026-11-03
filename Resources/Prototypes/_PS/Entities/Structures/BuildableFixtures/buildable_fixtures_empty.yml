@@ -1,0 +1,139 @@
+# Palmtree: player-buildable fixtures.
+# Only `*Empty` prototypes are construction targets. The mapping bases and filled variants
+# deliberately stay out of the construction menu.
+
+#region Furniture
+- type: entity
+  id: MirrorEmpty
+  parent: Mirror
+  suffix: Empty
+  components:
+  - type: Construction
+    graph: Mirror
+    node: mirror
+
+- type: entity
+  id: MirrorModernEmpty
+  parent: MirrorModern
+  suffix: Empty, Rectangle
+  components:
+  - type: Construction
+    graph: Mirror
+    node: mirrorModern
+
+- type: entity
+  id: WaterCoolerEmpty
+  parent: WaterCooler
+  suffix: Empty
+  components:
+  - type: SolutionContainerManager
+    solutions:
+      tank:
+        reagents: []
+  - type: Bin
+    initialContents: []
+  - type: Construction
+    graph: WaterCooler
+    node: waterCooler
+    containers:
+    - bin-container
+
+- type: entity
+  id: JukeboxWallmountEmpty
+  parent: JukeboxWallmount
+  suffix: Empty
+  components:
+  - type: StorageFill
+    contents: []
+  - type: Construction
+    graph: JukeboxWallmount
+    node: wallmount
+    containers:
+    - storagebase
+#endregion
+
+#region Utilities
+- type: entity
+  id: WallmountTelevisionEmpty
+  parent: WallmountTelevision
+  suffix: Empty
+  components:
+  - type: Construction
+    graph: WallmountTelevision
+    node: TelevisionEmpty
+#endregion
+
+#region Structures / storage
+- type: entity
+  id: PlasticFlapsAirtightClearEmpty
+  parent: PlasticFlapsAirtightClear
+  suffix: Empty
+  components:
+  - type: Construction
+    graph: PlasticFlapsAirtight
+    node: airtightClear
+
+- type: entity
+  id: PlasticFlapsAirtightOpaqueEmpty
+  parent: PlasticFlapsAirtightOpaque
+  suffix: Empty
+  components:
+  - type: Construction
+    graph: PlasticFlapsAirtight
+    node: airtightOpaque
+
+- type: entity
+  id: SuitStorageEmpty
+  parent: SuitStorageBase
+  suffix: Empty
+  components:
+  - type: Construction
+    graph: SuitStorage
+    node: floor
+    containers:
+    - entity_storage
+
+- type: entity
+  id: SuitStorageWallmountEmpty
+  parent: SuitStorageWallmount
+  suffix: Empty
+  components:
+  - type: Construction
+    graph: SuitStorage
+    node: wallmount
+    containers:
+    - entity_storage
+
+- type: entity
+  id: ExtinguisherCabinetEmpty
+  parent: ExtinguisherCabinet
+  suffix: Empty
+  components:
+  - type: Construction
+    graph: WallCabinets
+    node: extinguisher
+    containers:
+    - ItemCabinet
+
+- type: entity
+  id: DefibrillatorCabinetEmpty
+  parent: DefibrillatorCabinet
+  suffix: Empty
+  components:
+  - type: Construction
+    graph: WallCabinets
+    node: defibrillator
+    containers:
+    - ItemCabinet
+
+- type: entity
+  id: FireAxeCabinetEmpty
+  parent: FireAxeCabinet
+  suffix: Empty
+  components:
+  - type: Construction
+    graph: WallCabinets
+    node: fireAxe
+    containers:
+    - ItemCabinet
+#endregion

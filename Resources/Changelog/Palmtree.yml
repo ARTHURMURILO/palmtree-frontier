@@ -1595,3 +1595,106 @@ Entries:
         appears in chat.
   id: 90105
   time: '2026-10-28T23:27:49.0000000+00:00'
+- author: xTheLifex
+  changes:
+    - type: Tweak
+      message: >-
+        Flickering and rave light effects now come from the fixture itself; the
+        normal bulb only changes the light's color.
+    - type: Remove
+      message: Removed the redundant flickering and rave bulb variants.
+  id: 90106
+  time: '2026-11-02T14:36:06.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/2a0c63d94e23a7bd9fdc86a2b63e076f7d18c10b
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: Fixed balls rendering on top of the penis.
+    - type: Fix
+      message: Fixed genital organs rendering under hair and tails when facing south.
+    - type: Fix
+      message: Fixed tails rendering over hair when facing east or west.
+    - type: Add
+      message: Added a Visible under clothes genital visibility option.
+  id: 90107
+  time: '2026-11-02T15:56:36.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/35e2bfd22749affa61be3b928ed1f528e7df6df3
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Empty Frontier wall locker variants are now constructible.
+    - type: Add
+      message: >-
+        Mirrors, water coolers, wallmount televisions, airtight plastic flaps,
+        suit storage units, and empty wall cabinets are now constructible.
+    - type: Add
+      message: Jukebox flatpacks can be crafted and used to build wallmount jukeboxes.
+  id: 90108
+  time: '2026-11-02T17:00:26.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/2bc17a774abbd9597b70c17e896b55f0ab267a1c
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: RCDs can now build LED and coloured lamp/bulb lights.
+    - type: Add
+      message: >-
+        The experimental RCD can build lockers, hardsuit storage, APCs, SMES,
+        substations, blast doors, shutters, buttons, switches, thrusters,
+        gyroscopes, and other ship fixtures.
+    - type: Add
+      message: >-
+        The experimental RCD can build reinforced and plastitanium walls and
+        windows.
+    - type: Tweak
+      message: >-
+        RCD menus group lights under Lamps/Bulbs, power under Machinery/Wiring,
+        and airlocks under Doors.
+    - type: Tweak
+      message: >-
+        Normal RCDs gain matter from deconstruction; excess matter spills out as
+        compressed matter.
+    - type: Tweak
+      message: Airlocks and firelocks can now share a single tile.
+    - type: Tweak
+      message: >-
+        The experimental RCD deconstructs any wall, fixture, or tile for free,
+        except fans.
+    - type: Fix
+      message: >-
+        SSD characters no longer start breathing again after their player logs
+        off or switches characters.
+    - type: Fix
+      message: Defibrillators now heal asphyxiation on critical patients.
+  id: 90109
+  time: '2026-11-02T17:51:09.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/3a6f84b007eb3b3716c11ed7d7002d2650367e5b
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        forcedock can store ships of any category, including ships with no
+        recognised vessel identity.
+    - type: Fix
+      message: >-
+        The Ship Registrar can register ships to SSD/offline owners by inserting
+        their ID card, instead of only targeting players in the round.
+    - type: Tweak
+      message: >-
+        The Ship Registrar user-selector dropdown is replaced by an owner ID
+        card slot.
+  id: 90110
+  time: '2026-11-03T03:45:13.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/672cc37b8df9856860b0aa52631c8d16d4d36fc9
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: Fixed snout markings rendering under hair when facing east or west.
+  id: 90111
+  time: '2026-11-03T03:56:48.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/444f6c4bea35664618da2ad3692ab1298b7b386a

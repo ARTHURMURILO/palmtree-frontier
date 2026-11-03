@@ -198,7 +198,8 @@
 # Lighting
 - type: rcd
   id: TubeLight
-  category: Lighting
+  name: rcd-component-light-tube # Palmtree: explicit light variant name
+  category: LightingLamps # Palmtree: nested lamp/bulb light categories
   sprite: /Textures/Interface/Radial/RCD/tube_light.png
   mode: ConstructObject
   prototype: Poweredlight
@@ -211,7 +212,8 @@
 
 - type: rcd
   id: BulbLight
-  category: Lighting
+  name: rcd-component-light-bulb # Palmtree: explicit light variant name
+  category: LightingBulbs # Palmtree: nested lamp/bulb light categories
   sprite: /Textures/Interface/Radial/RCD/bulb_light.png
   mode: ConstructObject
   prototype: PoweredSmallLight
@@ -225,7 +227,7 @@
 # Electrical
 - type: rcd
   id: LVCable
-  category: Electrical
+  category: PowerWiring # Palmtree: nested under Power
   sprite: /Textures/Interface/Radial/RCD/lv_coil.png
   mode: ConstructObject
   prototype: CableApcExtension
@@ -238,7 +240,7 @@
 
 - type: rcd
   id: MVCable
-  category: Electrical
+  category: PowerWiring # Palmtree: nested under Power
   sprite: /Textures/Interface/Radial/RCD/mv_coil.png
   mode: ConstructObject
   prototype: CableMV
@@ -251,7 +253,7 @@
 
 - type: rcd
   id: HVCable
-  category: Electrical
+  category: PowerWiring # Palmtree: nested under Power
   sprite: /Textures/Interface/Radial/RCD/hv_coil.png
   mode: ConstructObject
   prototype: CableHV
@@ -264,7 +266,7 @@
 
 - type: rcd
   id: CableTerminal
-  category: Electrical
+  category: PowerWiring # Palmtree: nested under Power
   sprite: /Textures/Interface/Radial/RCD/cable_terminal.png
   mode: ConstructObject
   prototype: CableTerminal

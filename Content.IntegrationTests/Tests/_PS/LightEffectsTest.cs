@@ -41,9 +41,14 @@ public sealed class LightEffectsTest
             var powered = entMan.GetComponent<PoweredLightComponent>(fixture);
             var bulb = powered.LightBulbContainer.ContainedEntity;
 
-            Assert.That(bulb, Is.Not.Null, "The fixture should spawn its flickering bulb.");
-            Assert.That(entMan.HasComponent<FlickeringLightComponent>(bulb!.Value), Is.True);
-            Assert.That(powered.IsBlinking, Is.True, "The flickering bulb should enable the fixture's blinking visuals.");
+            Assert.That(entMan.HasComponent<FlickeringLightComponent>(fixture), Is.True,
+                "The fixture itself should carry the flickering effect.");
+            Assert.That(bulb, Is.Not.Null, "The fixture should spawn its normal bulb.");
+            Assert.That(entMan.GetComponent<MetaDataComponent>(bulb!.Value).EntityPrototype?.ID, Is.EqualTo("LightTube"),
+                "The fixture should spawn the same normal bulb as its parent.");
+            Assert.That(entMan.HasComponent<FlickeringLightComponent>(bulb!.Value), Is.False,
+                "The bulb should only determine the light's color, not the effect.");
+            Assert.That(powered.IsBlinking, Is.True, "The flickering fixture should blink on its own.");
         });
 
         await pair.CleanReturnAsync();
@@ -79,8 +84,9 @@ public sealed class LightEffectsTest
             Assert.That(light!.Enabled, Is.True, "The fixture should be lit.");
 
             Assert.That(entMan.HasComponent<RaveLightComponent>(fixture), Is.True);
-            Assert.That(bulb, Is.Not.Null, "The fixture should still spawn a replaceable rave bulb.");
-            Assert.That(entMan.HasComponent<RaveLightComponent>(bulb!.Value), Is.True);
+            Assert.That(bulb, Is.Not.Null, "The fixture should still spawn its normal replaceable bulb.");
+            Assert.That(entMan.HasComponent<RaveLightComponent>(bulb!.Value), Is.False,
+                "The bulb should only determine the light's color, not the pulse.");
             Assert.That(powered.IsBlinking, Is.False, "Rave lights should not use the flicker blinking visuals.");
         });
 

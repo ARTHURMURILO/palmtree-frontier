@@ -695,10 +695,19 @@ public sealed class BluespaceDockTest
             // A civilian vessel (the registered marker) so the only thing that can block is a body.
             entMan.AddComponent<RegisteredVesselComponent>(grid);
 
-            // The docking requirement is the only check the admin path skips.
             Assert.That(dock.FindStoreBlocker(grid, requireDocked: true, stationGrid: null),
                 Is.EqualTo("bluespace-dock-error-not-docked"));
             Assert.That(dock.FindStoreBlocker(grid, requireDocked: false, stationGrid: null), Is.Null);
+
+            // Force-dock also ignores the ship category: a deed grid with no vessel identity can be
+            // stored by the command, while the normal console path still refuses it.
+            entMan.RemoveComponent<RegisteredVesselComponent>(grid);
+            Assert.That(dock.FindStoreBlocker(grid, requireDocked: false, stationGrid: null),
+                Is.EqualTo("bluespace-dock-error-not-civilian"));
+            Assert.That(dock.FindStoreBlocker(grid, requireDocked: false, stationGrid: null,
+                    requireAllowedGroup: false),
+                Is.Null, "Force-dock must not care about the ship category or a missing vessel identity.");
+            entMan.AddComponent<RegisteredVesselComponent>(grid);
 
             // A character aboard blocks the store, forced or not (FoundOrganics looks for a mind).
             var mindSystem = server.System<MindSystem>();

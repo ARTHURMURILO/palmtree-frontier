@@ -174,6 +174,22 @@
     - interaction-titgrope-message-three
 
 - type: interaction
+  id: AssGrope
+  name: interaction-assgrope-name
+  interactionType: Lewd
+  flags:
+    - Adjacent
+    - OocConsent
+  userRequirements:
+    - Hands
+  cumMessages:
+    - interaction-cum-assgrope
+  messages:
+    - interaction-assgrope-message
+    - interaction-assgrope-message-two
+    - interaction-assgrope-message-three
+
+- type: interaction
   id: Blowjob
   name: interaction-blowjob-name
   interactionType: Lewd
@@ -563,6 +579,8 @@
   cumTarget: exterior
   cumMessages:
     - interaction-cum-masturbate-penis
+  sound:
+    collection: LewdBang
   lust: 30
   messages:
     - interaction-masturbate-penis-message

@@ -17,10 +17,10 @@ using Content.Shared.EntityEffects;
 using Content.Shared.EntityEffects.EffectConditions;
 using Content.Shared.EntityEffects.Effects;
 using Content.Shared.Mobs.Systems;
-using Content.Shared.Mind.Components; // Palmtree: SSD bodies don't suffocate
-using Content.Shared.SSDIndicator; // Palmtree: SSD bodies don't suffocate
 using Content.Shared._PS.Synth; // Palmtree
+using Content.Server._PS.Body; // Palmtree: player characters don't suffocate while SSD
 using JetBrains.Annotations;
+using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Timing;
 
@@ -85,11 +85,14 @@ public sealed class RespiratorSystem : EntitySystem
             if (_mobState.IsDead(uid))
                 continue;
 
-            // Palmtree: SSD clients with a mind don't take air/suffocation damage while
-            // their body sits in an unpowered, airless ship (Coyote behavior).
-            if (TryComp<SSDIndicatorComponent>(uid, out var ssd) && ssd.IsSSD
-                && TryComp<MindContainerComponent>(uid, out var mindContainer)
-                && mindContainer.HasMind)
+            // Palmtree: a character that has been player-controlled stops breathing as soon as
+            // its original player is no longer attached to it (logged off or switched to another
+            // mob). This deliberately ignores any other client that may possess the body (admins),
+            // so an SSD character cannot start suffocating again just because someone took it over.
+            if (TryComp<PlayerCharacterComponent>(uid, out var playerCharacter)
+                && playerCharacter.OriginalPlayer is { } originalPlayer
+                && (!TryComp<ActorComponent>(uid, out var actor)
+                    || actor.PlayerSession.UserId != originalPlayer))
             {
                 continue;
             }
