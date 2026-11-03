@@ -59,8 +59,8 @@ public sealed class ShipTorpedoSystem : EntitySystem
 
     private TimeSpan _nextAlarmScan;
 
-    /// <summary>Global turn rate override in degrees per second (0 = per-prototype).</summary>
-    private float _turnRateOverride;
+    /// <summary>Global tracking arc override in degrees (0 = per-prototype).</summary>
+    private float _trackingArcOverride;
 
     /// <summary>How long torpedoes keep steering before giving up, in seconds (0 = forever).</summary>
     private float _steeringDuration = 120f;
@@ -77,7 +77,7 @@ public sealed class ShipTorpedoSystem : EntitySystem
 
         SubscribeLocalEvent<ShipTorpedoComponent, ProjectileHitEvent>(OnProjectileHit);
 
-        _cfg.OnValueChanged(PSCVars.TorpedoTurnRate, OnTurnRateChanged, true);
+        _cfg.OnValueChanged(PSCVars.TorpedoTrackingArc, OnTrackingArcChanged, true);
         _cfg.OnValueChanged(PSCVars.TorpedoSteeringDuration, OnSteeringDurationChanged, true);
     }
 
@@ -85,13 +85,13 @@ public sealed class ShipTorpedoSystem : EntitySystem
     {
         base.Shutdown();
 
-        _cfg.UnsubValueChanged(PSCVars.TorpedoTurnRate, OnTurnRateChanged);
+        _cfg.UnsubValueChanged(PSCVars.TorpedoTrackingArc, OnTrackingArcChanged);
         _cfg.UnsubValueChanged(PSCVars.TorpedoSteeringDuration, OnSteeringDurationChanged);
     }
 
-    private void OnTurnRateChanged(float value)
+    private void OnTrackingArcChanged(float value)
     {
-        _turnRateOverride = value;
+        _trackingArcOverride = value;
     }
 
     private void OnSteeringDurationChanged(float value)
@@ -430,8 +430,12 @@ public sealed class ShipTorpedoSystem : EntitySystem
                 continue;
             }
 
-            var turnRate = _turnRateOverride > 0f ? _turnRateOverride : torpedo.TurnRate;
-            var maxTurn = Angle.FromDegrees(turnRate * ramp * frameTime).Theta;
+            // Only steer while the target sits inside the seeker arc; otherwise fly straight.
+            var arc = _trackingArcOverride > 0f ? _trackingArcOverride : torpedo.TrackingArc;
+            if (Math.Abs(WrapAngle(desired.Theta - current.Theta)) > Angle.FromDegrees(arc).Theta)
+                continue;
+
+            var maxTurn = Angle.FromDegrees(torpedo.TurnRate * ramp * frameTime).Theta;
             var turn = Math.Clamp(WrapAngle(desired.Theta - current.Theta), -maxTurn, maxTurn);
             var heading = current + new Angle(turn);
 
