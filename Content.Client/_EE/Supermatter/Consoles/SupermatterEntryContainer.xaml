@@ -171,14 +171,14 @@ SPDX-License-Identifier: AGPL-3.0-or-later AND MIT
                     </BoxContainer>
                 </BoxContainer>
 
-                <!--  Radiation display  -->
+                <!--  Lightning display  -->
                 <BoxContainer Margin="0,1" Orientation="Vertical">
                     <BoxContainer Orientation="Horizontal">
                         <Label
                             HorizontalAlignment="Left"
                             HorizontalExpand="True"
-                            Name="RadiationLabel"
-                            Text="{Loc 'supermatter-console-window-label-radiation'}" />
+                            Name="LightningLabel"
+                            Text="{Loc 'supermatter-console-window-label-lightning'}" />
                         <BoxContainer
                             Orientation="Horizontal"
                             SetHeight="24"
@@ -186,26 +186,26 @@ SPDX-License-Identifier: AGPL-3.0-or-later AND MIT
                             <PanelContainer
                                 HorizontalExpand="True"
                                 Margin="0,0,4,0"
-                                Name="RadiationBarBorder">
+                                Name="LightningBarBorder">
                                 <ProgressBar
                                     Margin="1"
                                     MaxValue="30"
                                     MinValue="0"
-                                    Name="RadiationBar">
+                                    Name="LightningBar">
                                     <Label
                                         HorizontalAlignment="Right"
                                         Margin="0,0,4,0"
-                                        Name="RadiationBarLabel" />
+                                        Name="LightningBarLabel" />
                                 </ProgressBar>
                             </PanelContainer>
                             <Button
                                 Margin="-1"
-                                Name="RadiationButton"
+                                Name="LightningButton"
                                 SetWidth="27"
                                 StyleClasses="ButtonSquare">
                                 <TextureRect
                                     Margin="-8,-2,0,0"
-                                    Name="RadiationButtonArrow"
+                                    Name="LightningButtonArrow"
                                     TexturePath="/Textures/_EE/Interface/Supermatter/arrow_down.png"
                                     VerticalAlignment="Center" />
                             </Button>
@@ -213,22 +213,36 @@ SPDX-License-Identifier: AGPL-3.0-or-later AND MIT
                     </BoxContainer>
                     <BoxContainer
                         Margin="16,2,0,0"
-                        Name="RadiationDetailsContainer"
+                        Name="LightningDetailsContainer"
                         Orientation="Vertical"
                         Visible="False">
                         <BoxContainer Orientation="Horizontal">
                             <Label
                                 HorizontalExpand="True"
-                                Name="RadiationBaseLabel"
-                                Text="{Loc 'supermatter-console-window-label-radiation-base'}" />
-                            <Label HorizontalAlignment="Right" Name="RadiationBaseInfoLabel" />
+                                Name="LightningBaseLabel"
+                                Text="{Loc 'supermatter-console-window-label-lightning-base'}" />
+                            <Label HorizontalAlignment="Right" Name="LightningBaseInfoLabel" />
                         </BoxContainer>
                         <BoxContainer Orientation="Horizontal">
                             <Label
                                 HorizontalExpand="True"
-                                Name="RadiationPowerLabel"
-                                Text="{Loc 'supermatter-console-window-label-radiation-power'}" />
-                            <Label HorizontalAlignment="Right" Name="RadiationPowerInfoLabel" />
+                                Name="LightningPowerLabel"
+                                Text="{Loc 'supermatter-console-window-label-lightning-power'}" />
+                            <Label HorizontalAlignment="Right" Name="LightningPowerInfoLabel" />
+                        </BoxContainer>
+                        <BoxContainer Orientation="Horizontal">
+                            <Label
+                                HorizontalExpand="True"
+                                Name="LightningTransmissionLabel"
+                                Text="{Loc 'supermatter-console-window-label-lightning-transmission'}" />
+                            <Label HorizontalAlignment="Right" Name="LightningTransmissionInfoLabel" />
+                        </BoxContainer>
+                        <BoxContainer Orientation="Horizontal">
+                            <Label
+                                HorizontalExpand="True"
+                                Name="RadiationLabel"
+                                Text="{Loc 'supermatter-console-window-label-radiation'}" />
+                            <Label HorizontalAlignment="Right" Name="RadiationInfoLabel" />
                         </BoxContainer>
                     </BoxContainer>
                 </BoxContainer>

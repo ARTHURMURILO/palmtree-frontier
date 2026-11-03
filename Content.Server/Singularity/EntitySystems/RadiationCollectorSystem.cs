@@ -90,7 +90,7 @@ public sealed class RadiationCollectorSystem : EntitySystem
         foreach (var gas in component.RadiationReactiveGases)
         {
             float reactantMol = gasTankComponent.Air.GetMoles(gas.ReactantPrototype);
-            float delta = args.TotalRads * reactantMol * gas.ReactantBreakdownRate;
+            float delta = args.PowerRads * reactantMol * gas.ReactantBreakdownRate;
 
             // We need to offset the huge power gains possible when using very cold gases
             // (they allow you to have a much higher molar concentrations of gas in the tank).
@@ -98,7 +98,7 @@ public sealed class RadiationCollectorSystem : EntitySystem
             // it will heavily penalise the power output of low temperature reactions:
             // 300K = 100% power output, 73K = 49% power output, 1K = 1% power output
             float temperatureMod = 1.5f * gasTankComponent.Air.Temperature / (150f + gasTankComponent.Air.Temperature);
-            charge += args.TotalRads * reactantMol * component.ChargeModifier * gas.PowerGenerationEfficiency * temperatureMod;
+            charge += args.PowerRads * reactantMol * component.ChargeModifier * gas.PowerGenerationEfficiency * temperatureMod;
 
             if (delta > 0)
             {

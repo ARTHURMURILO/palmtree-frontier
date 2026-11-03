@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later AND MIT
 
 using Content.Server.Power.EntitySystems;
+using Content.Server.Tesla.Components;
 using Content.Shared._EE.CCVars;
 using Content.Shared._EE.Supermatter.Components;
 using Content.Shared._EE.Supermatter.Consoles;
@@ -24,6 +25,7 @@ public sealed partial class SupermatterConsoleSystem : SharedSupermatterConsoleS
     [Dependency] private IConfigurationManager _config = default!;
     [Dependency] private IRobustRandom _random = default!;
     [Dependency] private PowerReceiverSystem _power = default!;
+    [Dependency] private EntityLookupSystem _entityLookup = default!;
 
     // Triad: gate the console refresh to 1 Hz. Upstream EE ran this Update() every
     // server tick, pushing a full BUI state (supermatter list + a whole GasMixture) to
@@ -273,14 +275,20 @@ public sealed partial class SupermatterConsoleSystem : SharedSupermatterConsoleS
         if (!TryComp<SupermatterComponent>(focusSupermatter.Value, out var sm))
             return null;
 
-        if (!TryComp<RadiationSourceComponent>(focusSupermatter.Value, out var radiationComp))
-            return null;
-
         var gases = GasMixture.SpaceGas;
         if (sm.GasStorage != null)
             gases = sm.GasStorage;
 
         var tempThreshold = Atmospherics.T0C + _config.GetCVar(ECCVars.SupermatterHeatPenaltyThreshold);
+        var effectivePower = sm.Power * sm.LightningTransmission;
+        var lightningRange = Math.Clamp(effectivePower / 1000f, 2f,
+            _config.GetCVar(ECCVars.SupermatterLightningRange));
+        var teslaCoils = _entityLookup
+            .GetEntitiesInRange<TeslaCoilComponent>(focusSupermatterXform.Coordinates, lightningRange)
+            .Count;
+        var radiation = TryComp<RadiationSourceComponent>(focusSupermatter.Value, out var rad)
+            ? rad.Intensity
+            : 0f;
 
         return new SupermatterFocusData(
             GetNetEntity(focusSupermatter.Value),
@@ -289,7 +297,10 @@ public sealed partial class SupermatterConsoleSystem : SharedSupermatterConsoleS
             GetHeatHealing(sm),
             sm.Power,
             sm.PowerLoss,
-            radiationComp.Intensity,
+            teslaCoils,
+            lightningRange,
+            sm.LightningTransmission,
+            radiation,
             tempThreshold * sm.DynamicHeatResistance,
             sm.HeatModifier,
             sm.GasHeatModifier,

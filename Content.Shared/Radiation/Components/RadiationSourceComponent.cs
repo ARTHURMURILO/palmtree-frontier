@@ -26,4 +26,11 @@ public sealed partial class RadiationSourceComponent : Component
 
     [DataField, ViewVariables(VVAccess.ReadWrite)]
     public bool Enabled = true;
+
+    /// <summary>
+    ///     Whether this radiation can be harvested by radiation collectors. Sources that are
+    ///     purely a hazard can disable this so collectors ignore them entirely.
+    /// </summary>
+    [DataField, ViewVariables(VVAccess.ReadWrite)]
+    public bool AffectsCollectors = true;
 }

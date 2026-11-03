@@ -161,10 +161,26 @@ public sealed partial class SupermatterComponent : Component
     public float HeatModifier;
 
     /// <summary>
-    /// The percentage of the gas on the supermatter's tile that is absorbed each atmos tick.
+    /// The percentage of the gas on the supermatter's tile that is absorbed and processed each
+    /// atmos tick. The sample is merged back after processing; only reacted gases are consumed.
     /// </summary>
     [DataField]
     public float GasEfficiency = 0.15f;
+
+    /// <summary>
+    ///     Multiplier applied to the crystal's lightning power by the current gas mix.
+    ///     This is the SS13-style gas power transmission: plasma/tritium increase it,
+    ///     freon/water vapor decrease it.
+    /// </summary>
+    [DataField]
+    public float LightningTransmission = 1f;
+
+    /// <summary>
+    ///     Multiplier on the delamination blast radius. The shard uses a smaller value,
+    ///     matching SS13's weaker shard explosion.
+    /// </summary>
+    [DataField]
+    public float DelamRadiusMultiplier = 1f;
 
     /// <summary>
     /// Uses <see cref="PowerlossDynamicScaling"/> and <see cref="GasStorage"/> to lessen the effects of our powerloss functions
@@ -435,9 +451,10 @@ public sealed partial class SupermatterComponent : Component
 public struct SupermatterGasFact
 {
     /// <summary>
-    /// Multiplied with the supermatter's power to determine rads
+    ///     SS13-style gas power transmission. Multiplies the crystal's zap power without
+    ///     changing its internal energy. Positive values are stronger; negative values weaken it.
     /// </summary>
-    public float TransmitModifier;
+    public float PowerTransmission;
 
     /// <summary>
     /// Affects the amount of oxygen and plasma that is released during supermatter reactions, as well as the heat generated
@@ -454,9 +471,9 @@ public struct SupermatterGasFact
     /// </summary>
     public float HeatResistance;
 
-    public SupermatterGasFact(float transmitModifier, float heatPenalty, float powerMixRatio, float heatResistance)
+    public SupermatterGasFact(float powerTransmission, float heatPenalty, float powerMixRatio, float heatResistance)
     {
-        TransmitModifier = transmitModifier;
+        PowerTransmission = powerTransmission;
         HeatPenalty = heatPenalty;
         PowerMixRatio = powerMixRatio;
         HeatResistance = heatResistance;
@@ -471,15 +488,15 @@ public static class SupermatterGasData
 
     public static readonly Dictionary<Gas, SupermatterGasFact> GasData = new()
     {
-        { Gas.Oxygen,        new(1.5f, 1f,    1f,  1f) },
-        { Gas.Nitrogen,      new(0f,   -1.5f, -1f, 1f) },
-        { Gas.CarbonDioxide, new(0f,   0.1f,  1f,  1f) },
-        { Gas.Plasma,        new(4f,   15f,   1f,  1f) },
-        { Gas.Tritium,       new(30f,  10f,   1f,  1f) },
-        { Gas.WaterVapor,    new(2f,   12f,   1f,  1f) },
-        { Gas.Ammonia,       new(0f,   1f,    1f , 1f) },
-        { Gas.NitrousOxide,  new(0f,   -5f,   -1f, 6f) },
-        { Gas.Frezon,        new(3f,   -10f,  -1f, 2f) },
+        { Gas.Oxygen,        new(0.15f,  1f,    1f,  1f) },
+        { Gas.Nitrogen,      new(0f,     -1.5f, -1f, 1f) },
+        { Gas.CarbonDioxide, new(0f,     0.1f,  1f,  1f) },
+        { Gas.Plasma,        new(0.4f,   15f,   1f,  1f) },
+        { Gas.Tritium,       new(3f,     10f,   1f,  1f) },
+        { Gas.WaterVapor,    new(-0.25f, 12f,   1f,  1f) },
+        { Gas.Ammonia,       new(0f,     1f,    1f,  1f) },
+        { Gas.NitrousOxide,  new(0f,     -5f,   -1f, 6f) },
+        { Gas.Frezon,        new(-3f,    -10f,  -1f, 2f) },
         // Triad: dropped upstream Gas.Helium and Gas.Respiron entries; those are
         // Einstein Engines custom gases absent from this fork's Gas enum.
         // They can never appear in a mixture here, and CalculateGasMixModifier defaults
@@ -496,9 +513,9 @@ public static class SupermatterGasData
         return modifier;
     }
 
-    public static float GetTransmitModifiers(GasMixture mix)
+    public static float GetPowerTransmission(GasMixture mix)
     {
-        return CalculateGasMixModifier(mix, data => data.TransmitModifier);
+        return CalculateGasMixModifier(mix, data => data.PowerTransmission);
     }
 
     public static float GetHeatPenalties(GasMixture mix)

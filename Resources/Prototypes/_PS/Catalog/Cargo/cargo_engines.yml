@@ -1,9 +1,10 @@
 # SPDX-FileCopyrightText: 2026 Palmtree Frontier contributors
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-# Palmtree: tesla coils and radiation collectors are required to build tesla and
-# supermatter engines. Sell the flatpacks directly so crews are not dependent on
-# the Edison POI bulk crates for every component.
+# Palmtree: tesla coils are required to build the supermatter and tesla engines.
+# Sell the flatpacks directly so crews are not dependent on the Edison POI bulk
+# crates for every component. Radiation collectors are not part of the supermatter
+# power path and are not sold here.
 
 - type: cargoProduct
   id: EngineTeslaCoilFlatpack
@@ -12,16 +13,6 @@
     state: coil
   product: TeslaCoilFlatpack
   cost: 12500
-  category: cargoproduct-category-name-engineering
-  group: market
-
-- type: cargoProduct
-  id: EngineRadiationCollectorFlatpack
-  icon:
-    sprite: Structures/Power/Generation/Singularity/collector.rsi
-    state: ca_on
-  product: RadiationCollectorFullTankFlatpack
-  cost: 15000
   category: cargoproduct-category-name-engineering
   group: market
 

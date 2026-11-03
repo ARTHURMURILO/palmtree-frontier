@@ -29,10 +29,17 @@ supermatter-console-window-label-power = Internal Energy:
 supermatter-console-window-label-power-bar = {$power} {$prefix}eV
 supermatter-console-window-label-power-decay = Internal Power Decay (Δ):
 
+supermatter-console-window-label-lightning = Tesla Coil Output:
+supermatter-console-window-label-lightning-bar = {$lightning}
+supermatter-console-window-label-lightning-base = Lightning Range:
+supermatter-console-window-label-lightning-range-bar = {$range} tiles
+supermatter-console-window-label-lightning-power = Coils in Range:
+supermatter-console-window-label-lightning-coils-bar = {$coils}
+supermatter-console-window-label-lightning-transmission = Power Transmission:
+supermatter-console-window-label-lightning-transmission-bar = {$transmission}%
+
 supermatter-console-window-label-radiation = Radiation Emission:
 supermatter-console-window-label-radiation-bar = {$radiation} rads
-supermatter-console-window-label-radiation-base = Base Radiation Emission:
-supermatter-console-window-label-radiation-power = Power Radiation Emission:
 
 supermatter-console-window-label-moles = Absorbed Moles:
 supermatter-console-window-label-moles-bar = {$moles} Moles
@@ -56,13 +63,13 @@ supermatter-console-window-label-gas = Unknown gas
 supermatter-console-window-label-gas-bar = {$gas}%
 supermatter-console-window-label-details = At 100% composition:
 
-supermatter-console-window-label-gas-transmit = Radiation Emission Bonus:
-supermatter-console-window-label-gas-transmit-bar = {$transmit} rads/GeV
+supermatter-console-window-label-gas-transmit = Power Transmission:
+supermatter-console-window-label-gas-transmit-bar = {$transmit}%
 
 supermatter-console-window-label-gas-waste = Waste Multiplier:
 supermatter-console-window-label-gas-waste-bar = {$waste}%
 
-supermatter-console-window-label-gas-power = Power Transmission Bonus:
+supermatter-console-window-label-gas-power = Heat-to-Power Bonus:
 supermatter-console-window-label-gas-power-bar = {$power} MeV/K/s
 
 supermatter-console-window-label-gas-heat = Heat Resistance:
