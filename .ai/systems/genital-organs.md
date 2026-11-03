@@ -114,7 +114,8 @@ queries).
    Palmtree: layer order follows the direction the sprite is drawn in **on the local client**
    (`world rotation + eye rotation`, see `Content.Client/_PS/Humanoid/DirectionalLayerOrderSystem`).
    Facing south puts exposed genitals above hair and tail layers (unless a jumpsuit/outer garment
-   actually covers them); facing east/west tucks tail markings under the hair layer. Sprite
+   actually covers them); facing east/west tucks tail markings under the hair layer and puts snout
+   and snout-cover markings above it. Sprite
    direction changes raise no event, so the system rebuilds the humanoid sprite when the cardinal
    direction changes. The lobby editor sets <c>HumanoidLayerDirectionComponent</c> on its preview
    dummy so its rotation buttons use the same rules despite rendering through
