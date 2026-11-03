@@ -201,7 +201,10 @@ public sealed class DefibrillatorSystem : EntitySystem
         }
         else
         {
-            if (_mobState.IsDead(target, mob))
+            // Palmtree: a defib also clears asphyxiation while the patient is still critical, so
+            // an alive-but-critical victim can be stabilised instead of only being zapped for the
+            // electrical damage.
+            if (_mobState.IsDead(target, mob) || _mobState.IsCritical(target, mob))
                 _damageable.TryChangeDamage(target, component.ZapHeal, true, origin: uid);
 
             if (_mobThreshold.TryGetThresholdForState(target, MobState.Dead, out var threshold) &&

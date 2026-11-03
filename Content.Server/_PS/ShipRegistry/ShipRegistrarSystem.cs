@@ -37,7 +37,6 @@ using Robust.Shared.Audio.Systems;
 using Robust.Shared.Configuration;
 using Robust.Shared.Containers;
 using Robust.Shared.Map;
-using Robust.Shared.Network;
 using Robust.Shared.Maths;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Physics.Systems;
@@ -71,7 +70,6 @@ public sealed class ShipRegistrarSystem : EntitySystem
     [Dependency] private readonly IServerPreferencesManager _prefs = default!;
     [Dependency] private readonly PopupSystem _popup = default!;
     [Dependency] private readonly PricingSystem _pricing = default!;
-    [Dependency] private readonly SharedIdCardSystem _idCards = default!;
     [Dependency] private readonly StationRecordsSystem _records = default!;
     [Dependency] private readonly ShuttleRecordsSystem _shuttleRecords = default!;
     [Dependency] private readonly ShuttleSystem _shuttle = default!;
@@ -111,8 +109,11 @@ public sealed class ShipRegistrarSystem : EntitySystem
 
     private void OnItemSlotChanged(EntityUid uid, ShipRegistrarConsoleComponent component, ContainerModifiedMessage args)
     {
-        if (args.Container.ID != component.PrivilegedIdSlot.ID)
+        if (args.Container.ID != component.PrivilegedIdSlot.ID
+            && args.Container.ID != component.TargetIdSlot.ID)
+        {
             return;
+        }
 
         if (!TryComp<ActivatableUIComponent>(uid, out var uiComp) || uiComp.Key is null)
             return;
@@ -132,10 +133,15 @@ public sealed class ShipRegistrarSystem : EntitySystem
         var component = Comp<ShipRegistrarConsoleComponent>(consoleUid);
 
         var privilegedId = component.PrivilegedIdSlot.ContainerSlot?.ContainedEntity;
+        var targetId = component.TargetIdSlot.ContainerSlot?.ContainedEntity;
 
         string? privilegedName = null;
         if (privilegedId is { Valid: true } && TryComp<IdCardComponent>(privilegedId, out var privilegedCard))
             privilegedName = privilegedCard.FullName;
+
+        string? targetName = null;
+        if (targetId is { Valid: true } && TryComp<IdCardComponent>(targetId, out var targetCard))
+            targetName = targetCard.FullName;
 
         _bank.TryGetBalance(actor, out var balance);
 
@@ -144,31 +150,11 @@ public sealed class ShipRegistrarSystem : EntitySystem
         _ui.SetUiState(consoleUid, ShipRegistrarUiKey.Key, new ShipRegistrarUiState(
             privilegedId is { Valid: true },
             privilegedName,
-            GetOwnerOptions(),
+            targetId is { Valid: true },
+            targetName,
             balance,
             _cfg.GetCVar(NFCCVars.ShipRegistrarFee),
             grids));
-    }
-
-    /// <summary>
-    /// Players a ship can be registered to, with the character name ownership is keyed on (their
-    /// profile, falling back to the ID card they carry).
-    /// </summary>
-    public List<ShipOwnerOption> GetOwnerOptions()
-    {
-        var owners = new List<ShipOwnerOption>();
-
-        foreach (var session in _player.Sessions)
-        {
-            string? idName = null;
-            if (session.AttachedEntity is { } mob && _idCards.TryFindIdCard(mob, out var idCard))
-                idName = idCard.Comp.FullName;
-
-            owners.Add(new ShipOwnerOption(session.UserId.ToString(),
-                _dockSystem.GetCharacterName(session.UserId, idName, session.AttachedEntity)));
-        }
-
-        return owners;
     }
 
     /// <summary>
@@ -237,9 +223,10 @@ public sealed class ShipRegistrarSystem : EntitySystem
             return;
         }
 
-        if (!TryResolveOwner(args.OwnerUserId, out var ownerUserId, out var ownerName, out var ownerProfile, out var ownerId))
+        if (component.TargetIdSlot.ContainerSlot?.ContainedEntity is not { Valid: true } targetId
+            || !TryResolveOwnerCard(targetId, out var ownerName, out var ownerProfile, out var ownerId))
         {
-            Deny(consoleUid, component, player, "ship-registrar-error-owner");
+            Deny(consoleUid, component, player, "ship-registrar-error-target-id");
             return;
         }
 
@@ -250,7 +237,7 @@ public sealed class ShipRegistrarSystem : EntitySystem
             return;
         }
 
-        if (!TryRegisterVessel(consoleUid, player, grid, ownerUserId, ownerName, ownerId, ownerProfile,
+        if (!TryRegisterVessel(consoleUid, player, grid, ownerName, ownerId, ownerProfile,
                 args.Name, args.Suffix, out var error))
         {
             Deny(consoleUid, component, player, error ?? "ship-registrar-error-unknown");
@@ -267,38 +254,39 @@ public sealed class ShipRegistrarSystem : EntitySystem
     }
 
     /// <summary>
-    /// Resolves the player a ship is registered to: their ckey, the character name ownership is keyed
-    /// on (their profile), their profile and the ID card they are carrying (which takes the deed).
+    /// Resolves an owner from an ID card inserted in the console's target slot. This is the path for
+    /// SSD/offline characters: no session or attached mob is needed, and the card itself takes the
+    /// deed. If the card belongs to an online character, their ckey/profile are recovered so the
+    /// usual Captain record is still written.
     /// </summary>
-    private bool TryResolveOwner(string userId, out string ownerUserId, out string ownerName,
+    private bool TryResolveOwnerCard(EntityUid card, out string ownerName,
         out HumanoidCharacterProfile? profile, out EntityUid ownerId)
     {
-        ownerUserId = userId;
         ownerName = string.Empty;
         profile = null;
-        ownerId = EntityUid.Invalid;
+        ownerId = card;
 
-        if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var guid)
-            || !_player.TryGetSessionById(new NetUserId(guid), out var session))
-        {
-            return false;
-        }
-
-        string? idName = null;
-        if (session.AttachedEntity is { } mob && _idCards.TryFindIdCard(mob, out var idCard))
-        {
-            idName = idCard.Comp.FullName;
-            ownerId = idCard.Owner;
-        }
-
-        ownerName = _dockSystem.GetCharacterName(session.UserId, idName, session.AttachedEntity);
-        if (ownerName.Length == 0 || ownerId == EntityUid.Invalid)
+        if (!TryComp<IdCardComponent>(card, out var idCard) || string.IsNullOrWhiteSpace(idCard.FullName))
             return false;
 
-        if (_prefs.TryGetCachedPreferences(session.UserId, out var prefs)
-            && prefs.SelectedCharacter is HumanoidCharacterProfile selected)
+        ownerName = idCard.FullName;
+
+        // Recover the profile when possible, but never require a session: an SSD/offline
+        // character's card is enough to register and hand them the deed. The card was just moved
+        // into the console, so an online owner is matched by character name.
+        foreach (var session in _player.Sessions)
         {
-            profile = selected;
+            var characterName = _dockSystem.GetCharacterName(session.UserId, null, session.AttachedEntity);
+            if (!string.Equals(characterName, ownerName, StringComparison.Ordinal))
+                continue;
+
+            if (_prefs.TryGetCachedPreferences(session.UserId, out var prefs)
+                && prefs.SelectedCharacter is HumanoidCharacterProfile selected)
+            {
+                profile = selected;
+            }
+
+            break;
         }
 
         return true;
@@ -312,7 +300,6 @@ public sealed class ShipRegistrarSystem : EntitySystem
         EntityUid consoleUid,
         EntityUid actor,
         EntityUid grid,
-        string ownerUserId,
         string ownerName,
         EntityUid ownerId,
         HumanoidCharacterProfile? ownerProfile,
@@ -333,7 +320,7 @@ public sealed class ShipRegistrarSystem : EntitySystem
 
         if (!Exists(ownerId))
         {
-            error = "ship-registrar-error-owner";
+            error = "ship-registrar-error-target-id";
             return false;
         }
 

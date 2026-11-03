@@ -34,6 +34,11 @@ interaction-titgrope-message = gently gropes { $target }'s breasts.
 interaction-titgrope-message-two = softly squeezes { $target }'s breasts.
 interaction-titgrope-message-three = traces a touch across { $target }'s breast.
 
+interaction-assgrope-name = Grope their ass.
+interaction-assgrope-message = gently gropes { $target }'s ass.
+interaction-assgrope-message-two = squeezes { $target }'s rear.
+interaction-assgrope-message-three = lets a hand wander over { $target }'s ass.
+
 interaction-blowjob-name = Suck them off.
 interaction-blowjob-message = takes { $target }'s cock into their mouth.
 interaction-blowjob-message-two = wraps their lips around { $target }'s cock.
@@ -111,6 +116,7 @@ interaction-cumonthem-message = pulls out over { $target }.
 # Context-sensitive finish lines (InteractionPrototype.CumMessages).
 interaction-cum-kiss = shudders and spills against { $target } mid-kiss.
 interaction-cum-titgrope = cums all over { $target }'s breasts.
+interaction-cum-assgrope = cums over { $target }'s ass.
 interaction-cum-blowjob = finishes in { $target }'s mouth.
 interaction-cum-oral = cums over { $target }'s face.
 interaction-cum-handjob = cums all over { $target }'s hand.

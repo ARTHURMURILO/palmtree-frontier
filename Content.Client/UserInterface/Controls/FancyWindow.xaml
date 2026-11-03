@@ -3,11 +3,14 @@
                       xmlns:controls="clr-namespace:Content.Client.UserInterface.Controls"
                       MouseFilter="Stop"
                       MinWidth="200" MinHeight="150">
-    <PanelContainer StyleClasses="AngleRect" />
+    <!-- Palmtree: the window background and heading panels are named so fork windows can tint them
+         (the tactical/shielding consoles use dark red/dark yellow instead of the default gray). -->
+    <PanelContainer StyleClasses="AngleRect" Access="Public" Name="WindowBackgroundPanel" />
 
     <BoxContainer Orientation="Vertical">
         <Control>
-            <PanelContainer StyleClasses="WindowHeadingBackground" />
+            <PanelContainer StyleClasses="WindowHeadingBackground" Access="Public" Name="WindowHeadingPanel" />
+            <!-- End Palmtree -->
             <BoxContainer Margin="4 2 8 0" Orientation="Horizontal">
                 <Label Name="WindowTitle"
                        HorizontalExpand="True" VAlign="Center" StyleClasses="FancyWindowTitle" />

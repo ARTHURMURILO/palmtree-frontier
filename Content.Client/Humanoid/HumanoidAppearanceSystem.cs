@@ -1,5 +1,6 @@
 using System.Numerics;
 using Content.Client._PS.Consent; // Palmtree: NSFW age gate
+using Content.Client._PS.Humanoid; // Palmtree: direction-aware layer ordering
 using Content.Client.DisplacementMap;
 using Content.Shared._CS; // Palmtree/Coyote: leg displacement
 using Content.Shared.CCVar;
@@ -11,7 +12,10 @@ using Content.Shared._PS.Organs; // Palmtree
 using Content.Shared.Inventory;
 using Content.Shared.Preferences;
 using Robust.Client.GameObjects;
+using Robust.Client.Graphics;
 using Robust.Shared.Configuration;
+using Robust.Shared.GameObjects;
+using Robust.Shared.Graphics.RSI;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Utility;
 
@@ -24,6 +28,9 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
     [Dependency] private readonly IConfigurationManager _configurationManager = default!;
     [Dependency] private readonly DisplacementMapSystem _displacement = default!;
     [Dependency] private readonly SpriteSystem _sprite = default!;
+    [Dependency] private readonly IEyeManager _eyeManager = default!;
+    [Dependency] private readonly SharedTransformSystem _transform = default!;
+    [Dependency] private readonly InventorySystem _inventory = default!;
 
     public override void Initialize()
     {
@@ -57,6 +64,37 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
             return;
 
         UpdateSprite((uid, component, sprite));
+    }
+
+    /// <summary>
+    /// Palmtree: the cardinal direction this humanoid is drawn in on the local player's screen.
+    /// The client renderer uses world rotation plus the camera's eye rotation, so layer ordering
+    /// must use the same angle instead of the mob's raw facing.
+    /// </summary>
+    public RsiDirection GetScreenDirection(EntityUid uid)
+    {
+        if (TryComp<HumanoidLayerDirectionComponent>(uid, out var directionOverride))
+            return directionOverride.Direction;
+
+        if (!TryComp<TransformComponent>(uid, out var xform))
+            return RsiDirection.South;
+
+        var angle = _transform.GetWorldRotation(xform) + _eyeManager.CurrentEye.Rotation;
+        return SpriteComponent.Layer.GetDirection(RsiDirectionType.Dir4, angle);
+    }
+
+    /// <summary>
+    /// Palmtree: whether the mob currently wears a garment on a slot that is drawn over genitals.
+    /// Used to keep the south-facing genital layer above hair/tails only when there is nothing
+    /// covering the organ.
+    /// </summary>
+    private bool HasCoveringClothing(EntityUid uid)
+    {
+        if (!TryComp<InventoryComponent>(uid, out var inventory))
+            return false;
+
+        return _inventory.TryGetSlotEntity(uid, "jumpsuit", out _, inventory)
+               || _inventory.TryGetSlotEntity(uid, "outerClothing", out _, inventory);
     }
 
     private void OnCvarChanged(bool value)
@@ -458,6 +496,7 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
         var humanoid = entity.Comp1;
         var sprite = entity.Comp2;
         var markingOffset = offset ?? Vector2.Zero;
+        var screenDirection = GetScreenDirection(entity.Owner); // Palmtree: direction-aware layers
 
         // Palmtree: NSFW age gate. Genital sprites (organ render markings and the legacy genital
         // marking art) are never drawn for players who have not enabled NSFW content.
@@ -554,7 +593,28 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
                 layerDict.Add(layerSlot.ToString(), 0);
             }
 
-            var targLayerAdj = targetLayer + layerDict[layerSlot.ToString()] + 1;
+            var layerOrder = layerDict[layerSlot.ToString()];
+            var targLayerAdj = targetLayer + layerOrder + 1;
+
+            // Palmtree: tails tuck under hair when the character is seen from the side (east/west).
+            // Hair is a marking layer, so insert the tail before the current hair layer instead of
+            // moving the base layer itself. The per-sprite index keeps multi-sprite tails ordered.
+            if (layerSlot is HumanoidVisualLayers.Tail or HumanoidVisualLayers.TailExtras
+                && screenDirection is RsiDirection.East or RsiDirection.West
+                && _sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.Hair, out var hairLayer, false))
+            {
+                targLayerAdj = hairLayer + layerOrder;
+            }
+
+            // Palmtree: snouts and snout covers draw over hair in side views. Insert them just
+            // before the first layer after the hair group so hair markings (which are added after
+            // the hair base layer) stay behind them.
+            if (layerSlot is HumanoidVisualLayers.Snout or HumanoidVisualLayers.SnoutCover
+                && screenDirection is RsiDirection.East or RsiDirection.West
+                && _sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.HeadSide, out var headSideLayer, false))
+            {
+                targLayerAdj = headSideLayer + layerOrder;
+            }
 
             // Palmtree: keep genital markings beneath clothing while they sit on the genital layer,
             // unless the organ uses the "Never hidden" visibility rule.
@@ -565,13 +625,16 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
                     if (_sprite.LayerMapTryGet((entity.Owner, sprite), "outerClothing", out var overLayer, false))
                         targLayerAdj = Math.Max(targLayerAdj, overLayer + 1);
                 }
-                else
+                else if (screenDirection != RsiDirection.South || HasCoveringClothing(entity.Owner))
                 {
-                    if (_sprite.LayerMapTryGet((entity.Owner, sprite), "jumpsuit", out var jumpsuitLayer, false))
+                    // Anchor under-clothing insertions to the stable undergarment layer. Anchoring
+                    // to jumpsuit/outerClothing and inserting just before them shifts their layer
+                    // indices, so every successive organ would end up above the previous one
+                    // (balls over the penis in side views).
+                    if (_sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.UndergarmentTop, out var underwearLayer, false))
+                        targLayerAdj = Math.Min(targLayerAdj, underwearLayer + 1);
+                    else if (_sprite.LayerMapTryGet((entity.Owner, sprite), "jumpsuit", out var jumpsuitLayer, false))
                         targLayerAdj = Math.Min(targLayerAdj, jumpsuitLayer - 1);
-
-                    if (_sprite.LayerMapTryGet((entity.Owner, sprite), "outerClothing", out var outerClothingLayer, false))
-                        targLayerAdj = Math.Min(targLayerAdj, outerClothingLayer - 1);
 
                     if (targLayerAdj < 0)
                         targLayerAdj = 0;

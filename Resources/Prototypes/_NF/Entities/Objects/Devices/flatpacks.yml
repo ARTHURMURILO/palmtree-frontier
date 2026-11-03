@@ -950,6 +950,10 @@
     entity: JukeboxEmpty
   - type: StaticPrice
     price: 250
+  # Palmtree: used by the wallmount jukebox construction recipe.
+  - type: Tag
+    tags:
+    - JukeboxFlatpack
 
 #region Hoverbikes
 - type: entity

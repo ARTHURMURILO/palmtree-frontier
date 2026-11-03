@@ -95,6 +95,13 @@ public sealed class InteractionPanelTest
             Assert.That(genitals.GetExposure(user, GenitalType.Penis), Is.EqualTo(GenitalExposure.Exposed));
             inventory.TryUnequip(user, "jumpsuit", out _, true, true);
 
+            // Visible under clothes: also exposed in a jumpsuit, but the sprite stays under the
+            // clothing layer instead of being lifted over outer clothing.
+            organSystem.SetVisibility(user, GenitalType.Penis, GenitalVisibility.VisibleUnderClothes);
+            inventory.TryEquip(user, jumpsuit, "jumpsuit", true, true);
+            Assert.That(genitals.GetExposure(user, GenitalType.Penis), Is.EqualTo(GenitalExposure.Exposed));
+            inventory.TryUnequip(user, "jumpsuit", out _, true, true);
+
             // Always hidden: never exposed.
             organSystem.SetVisibility(user, GenitalType.Penis, GenitalVisibility.AlwaysHidden);
             Assert.That(genitals.GetExposure(user, GenitalType.Penis), Is.EqualTo(GenitalExposure.Unexposed));
