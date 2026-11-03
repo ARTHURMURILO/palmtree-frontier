@@ -855,6 +855,11 @@ Follow-up on the RCD/RPD after the second pass:
   `AtmosPipeNodeInfoRequestEvent` / `AtmosPipeNodeInfoResponseEvent` (the prototype's `Nodes` are
   server-only too), then runs the same layer/direction comparison in
   `AtmosPipeNodeOverlapClientSystem`. Test: `RcdAtmosGhostTest`.
+- **RPD compressed matter (2026-11)**: `RCDAmmoSystem` gives the RPD two tool charges per
+  compressed-matter charge, so one standard 30-charge cartridge fills its 60-charge tank instead of
+  half-filling it. The RCD stays 1:1. Only as much of the cartridge as the missing charges need is
+  consumed (a half-full RPD uses 15 of the 30, leaving 15). Test: `RcdBehaviorTest`
+  (`OneCompressedMatterCartridgeFillsTheTool`, `RpdUsesOnlyAsMuchMatterAsTheMissingCharges`).
 
 
 ## 25. 2026-10 Salto expedition ship (Coyote `_CS`)
