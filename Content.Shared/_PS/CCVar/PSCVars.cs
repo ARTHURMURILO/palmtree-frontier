@@ -71,6 +71,20 @@ public sealed partial class PSCVars
     public static readonly CVarDef<float> ShipCombatActionPowerDuration =
         CVarDef.Create("ps.ship_combat.action_power_duration_seconds", 1f, CVar.SERVER);
 
+    /// <summary>
+    /// Palmtree: global torpedo tracking arc in degrees. A torpedo only steers towards a target that
+    /// is inside this arc around its current heading. 0 (default) uses each prototype's own arc.
+    /// </summary>
+    public static readonly CVarDef<float> TorpedoTrackingArc =
+        CVarDef.Create("ps.ship_combat.torpedo_tracking_arc", 0f, CVar.SERVER);
+
+    /// <summary>
+    /// Palmtree: how long a torpedo keeps steering before it gives up and flies straight, in seconds.
+    /// Zero disables the limit.
+    /// </summary>
+    public static readonly CVarDef<float> TorpedoSteeringDuration =
+        CVarDef.Create("ps.ship_combat.torpedo_steering_duration", 120f, CVar.SERVER);
+
     /*
      *  Client
      */

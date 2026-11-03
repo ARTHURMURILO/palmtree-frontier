@@ -11,9 +11,16 @@ public sealed partial class ShipTorpedoComponent : Component
     [DataField]
     public float Speed = 20f;
 
-    /// <summary>Maximum turn rate, in degrees per second.</summary>
+    /// <summary>Maximum turn rate, in degrees per second (small and smooth).</summary>
     [DataField]
     public float TurnRate = 20f;
+
+    /// <summary>
+    /// Seeker arc: the torpedo only steers towards a target inside this many degrees of its current
+    /// heading, and flies straight otherwise.
+    /// </summary>
+    [DataField]
+    public float TrackingArc = 45f;
 
     /// <summary>Steering stays off for this long after launch; the torpedo flies straight ahead.</summary>
     [DataField]
