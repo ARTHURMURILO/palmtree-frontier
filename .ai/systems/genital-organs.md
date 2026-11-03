@@ -121,6 +121,10 @@ queries).
    dummy so its rotation buttons use the same rules despite rendering through
    <c>SpriteView.OverrideDirection</c>.
 
+   Under-clothing genital layers are anchored to the undergarment layer rather than
+   `jumpsuit`/`outerClothing`. Inserting before those layers shifts their indices, which used to
+   place each successive organ above the previous one (balls over the penis) in clamped views.
+
 ## Cum, drip and washing
 
 | Piece | Path | Notes |

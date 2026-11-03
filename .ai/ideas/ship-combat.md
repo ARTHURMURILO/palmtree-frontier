@@ -270,12 +270,35 @@ existing `BluespaceDock*` tests. Automatic prototype validation via `EntityTest`
    console, Silent-aware), `critical.ogg` every 5 s on every tactical console while the ship is out
    of peacetime with no powered weapon or torpedo launcher, and per-facing mini-bars on the
    engineering console.
-10. **M10** `PSShipCombat` research discipline and tech tree done (six technologies, all icons from
-    existing prototypes). Devices stay admin-spawn only for now, so circuit boards and lathe recipes
-    are deferred until they get their own art.
+10. **M10** Research done: six technologies (`PSShipCombatConsoles/Power/Shields/Weapons/Torpedoes/
+    Alarms`) live in the NF **Arsenal / Mercenary** tree at positions 5-7, 40-41, right after
+    `NFBasicShuttleArmament` (which Consoles requires), all icons from existing prototypes. Devices
+    stay admin-spawn only for now, so circuit boards and lathe recipes are deferred until they get
+    their own art.
 11. **M11** Docs and the full validation pipeline are done for every milestone so far. Extending the
     bluespace dock round-trip tests with the new consoles/devices/sirens is the one item left.
 
 ## Open questions
 
 None — all resolved with the maintainer before implementation (see the decisions table).
+
+## Validation checklist (lessons learned)
+
+Run the **full** integration suite, not just the `_PS` namespace. The `_NF` tests validate global
+content and have caught ship-combat regressions that `_PS` tests cannot see:
+
+- `CheckTechTreeConsistency` (`Content.IntegrationTests/Tests/_NF/TechnologyTreeTests.cs`) requires
+  every `TechnologyPrototype` to have a **globally unique `position`**, across all disciplines. The
+  `PSShipCombat` techs originally reused coordinates already taken by NF/upstream techs and turned
+  master red; they now sit at X 10-13, beyond the highest existing X (5). Check
+  `Resources/Prototypes/_NF/Research/techtree.yml` and `Resources/Prototypes/Research/*.yml` before
+  adding or moving a technology.
+- Adding global prototypes (research, audio, entities) can break `_NF` or upstream tests, so the
+  pipeline for every milestone is:
+  1. `dotnet build SpaceStation14.sln`
+  2. `dotnet build Content.YAMLLinter/Content.YAMLLinter.csproj` then
+     `dotnet run --project Content.YAMLLinter -c Debug --no-build`
+  3. `dotnet test Content.IntegrationTests --filter "FullyQualifiedName~Content.IntegrationTests.Tests._PS|FullyQualifiedName~Content.IntegrationTests.Tests._NF"`
+  4. `EntityTest` and the headless client (`--headless`, expect "Verified IL")
+- The labeler workflows (`pull_request_target`) need a `permissions:` block in the **base branch**;
+  that is repository configuration and cannot be fixed from a PR branch.
