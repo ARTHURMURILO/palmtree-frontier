@@ -627,11 +627,14 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
                 }
                 else if (screenDirection != RsiDirection.South || HasCoveringClothing(entity.Owner))
                 {
-                    if (_sprite.LayerMapTryGet((entity.Owner, sprite), "jumpsuit", out var jumpsuitLayer, false))
+                    // Anchor under-clothing insertions to the stable undergarment layer. Anchoring
+                    // to jumpsuit/outerClothing and inserting just before them shifts their layer
+                    // indices, so every successive organ would end up above the previous one
+                    // (balls over the penis in side views).
+                    if (_sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.UndergarmentTop, out var underwearLayer, false))
+                        targLayerAdj = Math.Min(targLayerAdj, underwearLayer + 1);
+                    else if (_sprite.LayerMapTryGet((entity.Owner, sprite), "jumpsuit", out var jumpsuitLayer, false))
                         targLayerAdj = Math.Min(targLayerAdj, jumpsuitLayer - 1);
-
-                    if (_sprite.LayerMapTryGet((entity.Owner, sprite), "outerClothing", out var outerClothingLayer, false))
-                        targLayerAdj = Math.Min(targLayerAdj, outerClothingLayer - 1);
 
                     if (targLayerAdj < 0)
                         targLayerAdj = 0;

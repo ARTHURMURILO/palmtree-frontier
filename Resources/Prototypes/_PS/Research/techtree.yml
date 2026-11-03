@@ -4,62 +4,64 @@
   id: PSShipCombatConsoles
   name: ps-research-technology-ship-consoles
   entityIcon: ComputerTacticalConsole
-  discipline: PSShipCombat
+  discipline: NFArsenalMercenary
   tier: 1
   cost: 2500
-  position: 0, 0
+  technologyPrerequisites:
+  - NFBasicShuttleArmament
+  position: 5, 40
 
 - type: technology
   id: PSShipCombatPower
   name: ps-research-technology-ship-power
   entityIcon: BluespacePowerSink
-  discipline: PSShipCombat
+  discipline: NFArsenalMercenary
   tier: 1
   cost: 5000
   technologyPrerequisites:
   - PSShipCombatConsoles
-  position: 1, 0
+  position: 6, 40
 
 - type: technology
   id: PSShipCombatShields
   name: ps-research-technology-ship-shields
   entityIcon: ShieldGenerator
-  discipline: PSShipCombat
+  discipline: NFArsenalMercenary
   tier: 2
   cost: 7500
   technologyPrerequisites:
   - PSShipCombatPower
-  position: 2, 0
+  position: 5, 41
 
 - type: technology
   id: PSShipCombatWeapons
   name: ps-research-technology-ship-weapons
   entityIcon: ShipTurret
-  discipline: PSShipCombat
+  discipline: NFArsenalMercenary
   tier: 2
   cost: 7500
   technologyPrerequisites:
   - PSShipCombatPower
-  position: 2, 1
+  position: 6, 41
 
 - type: technology
   id: PSShipCombatTorpedoes
   name: ps-research-technology-ship-torpedoes
   entityIcon: ShipTorpedoLauncher
-  discipline: PSShipCombat
+  discipline: NFArsenalMercenary
   tier: 2
   cost: 5000
   technologyPrerequisites:
   - PSShipCombatWeapons
-  position: 3, 1
+  position: 7, 41
 
 - type: technology
   id: PSShipCombatAlarms
   name: ps-research-technology-ship-alarms
   entityIcon: ShipConditionSirenRedTos
-  discipline: PSShipCombat
+  discipline: NFArsenalMercenary
   tier: 3
   cost: 5000
   technologyPrerequisites:
   - PSShipCombatConsoles
-  position: 1, 2
+  position: 7, 40

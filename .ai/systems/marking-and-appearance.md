@@ -150,6 +150,9 @@ undershirts) so hiding a parent hides its sublayers.
      east/west-facing tail markings are inserted under the hair layer, and east/west-facing
      snout/snout-cover markings are inserted above hair. A client system
      (`DirectionalLayerOrderSystem`) rebuilds the sprite when the cardinal direction changes.
+     Under-clothing genital insertions anchor to the undergarment layer, not `jumpsuit`/
+     `outerClothing`: inserting before those shifts their indices, which would otherwise reverse
+     the organ stack on each rebuild.
      When a color's glow is > 0 it also creates a companion `<markingId>-<state>-glow` layer with the
      `unshaded` shader, splitting alpha so the composed alpha is preserved.
    - Base markings (`Base*` categories) add their target layer to `HiddenBaseLayers` via
