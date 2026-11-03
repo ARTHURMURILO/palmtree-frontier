@@ -105,6 +105,16 @@ public sealed partial class TrySettingPipeLayerCompletedEvent : SimpleDoAfterEve
     }
 }
 
+/// <summary>
+/// Palmtree: raised after an entity's <see cref="AtmosPipeLayersComponent.CurrentPipeLayer"/> changes,
+/// so client-visible node summaries stay in sync.
+/// </summary>
+[Serializable, NetSerializable]
+public sealed partial class AtmosPipeLayerChangedEvent(AtmosPipeLayer layer) : EntityEventArgs
+{
+    public readonly AtmosPipeLayer Layer = layer;
+}
+
 [Serializable, NetSerializable]
 public enum AtmosPipeLayerVisuals
 {

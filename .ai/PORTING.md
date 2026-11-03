@@ -847,6 +847,15 @@ Follow-up on the RCD/RPD after the second pass:
 - Test: `Content.IntegrationTests/Tests/_PS/RcdAtmosStackingTest.cs` (pipe-on-pipe same layer
   blocked, empty tile allowed, another layer allowed, valid vent-on-pipe allowed, conflicting
   vent node blocked, non-conflicting pipe orientation allowed, second device blocked).
+- **Client ghost parity (2026-11)**: the placement ghost used to stay green for a node conflict
+  because `NodeContainerComponent.Nodes` is `serverOnly`. The server now maintains a networked
+  `AtmosPipeNodeDirectionsComponent` (one `PipeDirection` mask per atmos layer) on every entity
+  with pipe nodes, refreshed by the broadcast `NodeContainerStartedEvent` and by
+  `AtmosPipeLayerChangedEvent`. The client caches each ghost prototype's node directions through
+  `AtmosPipeNodeInfoRequestEvent` / `AtmosPipeNodeInfoResponseEvent` (the prototype's `Nodes` are
+  server-only too), then runs the same layer/direction comparison in
+  `AtmosPipeNodeOverlapClientSystem`. Test: `RcdAtmosGhostTest`.
+
 
 ## 25. 2026-10 Salto expedition ship (Coyote `_CS`)
 

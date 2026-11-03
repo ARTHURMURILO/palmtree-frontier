@@ -137,6 +137,10 @@ namespace Content.Server.NodeContainer.EntitySystems
             {
                 _nodeGroupSystem.QueueReflood(node);
             }
+
+            // Palmtree: let other systems react to initialized nodes without competing for the
+            // single component-Startup subscription.
+            RaiseLocalEvent(new NodeContainerStartedEvent(uid));
         }
 
         private void OnShutdownEvent(EntityUid uid, NodeContainerComponent component, ComponentShutdown args)
