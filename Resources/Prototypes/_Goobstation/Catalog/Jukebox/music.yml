@@ -1,0 +1,122 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Palmtree: lobby / _PS tracks that the base jukebox catalog did not list yet.
+# Reached through the vinyl disks in _Goobstation/Entities/Objects/Fun/vinyls.yml.
+
+- type: jukebox
+  id: PalmtreeAbsconditus
+  name: Absconditus
+  artist: Unknown
+  path:
+    path: /Audio/Lobby/absconditus.ogg
+
+- type: jukebox
+  id: PalmtreeAtomicAmnesia
+  name: Atomic Amnesia
+  artist: Unknown
+  path:
+    path: /Audio/Lobby/atomicamnesiammx.ogg
+
+- type: jukebox
+  id: PalmtreeCometHaley
+  name: Comet Haley
+  artist: Unknown
+  path:
+    path: /Audio/Lobby/comet_haley.ogg
+
+- type: jukebox
+  id: PalmtreeEndlessSpace
+  name: Endless Space
+  artist: Unknown
+  path:
+    path: /Audio/Lobby/endless_space.ogg
+
+- type: jukebox
+  id: PalmtreeEveryLightIsBlinkingAtOnce
+  name: Every Light Is Blinking At Once
+  artist: Unknown
+  path:
+    path: /Audio/Lobby/every_light_is_blinking_at_once.ogg
+
+- type: jukebox
+  id: PalmtreeFlipFlap
+  name: Flip Flap
+  artist: Unknown
+  path:
+    path: /Audio/Lobby/mod.flip-flap.ogg
+
+- type: jukebox
+  id: PalmtreeLasersRipApartTheBulkhead
+  name: Lasers Rip Apart The Bulkhead
+  artist: Unknown
+  path:
+    path: /Audio/Lobby/lasers_rip_apart_the_bulkhead.ogg
+
+- type: jukebox
+  id: PalmtreeNI4NI
+  name: NI4NI
+  artist: Unknown
+  path:
+    path: /Audio/_PS/Lobby/NI4NI.ogg
+
+- type: jukebox
+  id: PalmtreePwmur
+  name: Pwmur
+  artist: Unknown
+  path:
+    path: /Audio/Lobby/pwmur.ogg
+
+- type: jukebox
+  id: PalmtreeSpacStac
+  name: Spac Stac
+  artist: Unknown
+  path:
+    path: /Audio/Lobby/Spac_Stac.ogg
+
+- type: jukebox
+  id: PalmtreeSpaceAsshole
+  name: Space Asshole
+  artist: Unknown
+  path:
+    path: /Audio/Lobby/space_asshole.ogg
+
+- type: jukebox
+  id: PalmtreeTheWizard
+  name: The Wizard
+  artist: Unknown
+  path:
+    path: /Audio/Lobby/the_wizard.ogg
+
+- type: jukebox
+  id: PalmtreeThunderdome
+  name: Thunderdome
+  artist: Unknown
+  path:
+    path: /Audio/Lobby/thunderdome.ogg
+
+- type: jukebox
+  id: PalmtreeTitleII
+  name: Title II
+  artist: Unknown
+  path:
+    path: /Audio/Lobby/title2.ogg
+
+- type: jukebox
+  id: PalmtreeTitleIII
+  name: Title III
+  artist: Unknown
+  path:
+    path: /Audio/Lobby/title3.ogg
+
+- type: jukebox
+  id: PalmtreeUnrealSuperhero
+  name: Unreal Superhero
+  artist: Unknown
+  path:
+    path: /Audio/_PS/Lobby/unrealsuperhero.ogg
+
+- type: jukebox
+  id: PalmtreeWelcomeToOurWorld
+  name: Welcome to Our World
+  artist: Unknown
+  path:
+    path: /Audio/_PS/Lobby/welcometoourworld.ogg

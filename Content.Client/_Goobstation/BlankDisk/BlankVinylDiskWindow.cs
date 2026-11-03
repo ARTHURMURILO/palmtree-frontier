@@ -1,22 +1,36 @@
 using System;
 using System.Collections.Generic;
+using System.Numerics;
+using Robust.Client.Graphics;
 using Robust.Client.UserInterface.Controls;
 using Robust.Client.UserInterface.CustomControls;
 
 namespace Content.Client._Goobstation.BlankDisk;
 
 /// <summary>
-/// List of every vinyl disk the blank disk can be imprinted into.
+/// One selectable record in the blank disk window.
+/// </summary>
+public readonly record struct BlankVinylDiskOption(string Id, string Name, Texture Icon);
+
+/// <summary>
+/// Lets the player pick which record a blank disk should turn into.
 /// </summary>
 public sealed class BlankVinylDiskWindow : DefaultWindow
 {
     public event Action<string>? OnSelected;
 
-    public BlankVinylDiskWindow(List<(string Id, string Name)> options)
+    private readonly List<BlankVinylDiskOption> _options;
+    private readonly List<BlankVinylDiskOption> _filtered = new();
+    private readonly ItemList _list;
+    private readonly LineEdit _search;
+
+    public BlankVinylDiskWindow(List<BlankVinylDiskOption> options)
     {
+        _options = options;
+
         Title = Loc.GetString("blank-vinyl-disk-window-title");
-        MinSize = new System.Numerics.Vector2(420, 420);
-        SetSize = new System.Numerics.Vector2(460, 520);
+        MinSize = new Vector2(340, 380);
+        SetSize = new Vector2(400, 520);
 
         var box = new BoxContainer
         {
@@ -28,33 +42,55 @@ public sealed class BlankVinylDiskWindow : DefaultWindow
         box.AddChild(new Label
         {
             Text = Loc.GetString("blank-vinyl-disk-window-hint"),
-            Margin = new Thickness(2, 2, 2, 6),
+            Margin = new Thickness(2, 2, 2, 0),
         });
 
-        var list = new ItemList
+        _search = new LineEdit
+        {
+            PlaceHolder = Loc.GetString("blank-vinyl-disk-window-search"),
+            HorizontalExpand = true,
+            Margin = new Thickness(2, 0, 2, 2),
+        };
+        _search.OnTextChanged += _ => Rebuild();
+        box.AddChild(_search);
+
+        _list = new ItemList
         {
             VerticalExpand = true,
             HorizontalExpand = true,
         };
-
-        var entries = new List<ItemList.Item>(options.Count);
-        foreach (var (_, name) in options)
+        _list.OnItemSelected += args =>
         {
-            entries.Add(new ItemList.Item(list)
-            {
-                Text = name,
-                Selectable = true,
-            });
-        }
+            if (args.ItemIndex < 0 || args.ItemIndex >= _filtered.Count)
+                return;
 
-        list.SetItems(entries);
-        list.OnItemSelected += args =>
-        {
-            if (args.ItemIndex >= 0 && args.ItemIndex < options.Count)
-                OnSelected?.Invoke(options[args.ItemIndex].Id);
+            OnSelected?.Invoke(_filtered[args.ItemIndex].Id);
         };
 
-        box.AddChild(list);
+        box.AddChild(_list);
         ContentsContainer.AddChild(box);
+
+        Rebuild();
+    }
+
+    private void Rebuild()
+    {
+        var filter = _search.Text.Trim().ToLowerInvariant();
+        _filtered.Clear();
+
+        foreach (var option in _options)
+        {
+            if (filter.Length != 0 && !option.Name.ToLowerInvariant().Contains(filter))
+                continue;
+
+            _filtered.Add(option);
+        }
+
+        _list.Clear();
+
+        foreach (var option in _filtered)
+        {
+            _list.AddItem(option.Name, option.Icon, selectable: true);
+        }
     }
 }

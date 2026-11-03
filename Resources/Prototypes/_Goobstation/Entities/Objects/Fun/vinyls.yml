@@ -1,16 +1,17 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Vinyl disks made from music Palmtree already ships (Lobby / Jukebox / _PS Lobby).
-# No new audio was added: every song path below points at an .ogg already in this repo.
-# Prototype shape ported from Goob Station (_Goobstation/Entities/Objects/Fun/vinyls.yml).
+# Palmtree: vinyl disks for the jukebox/record player. Each one is a regular Frontier
+# record (`JukeboxContainer`) carrying a single track, so it works in the jukebox, the
+# vinyl player and the CD rack alike.
+# No new audio was added: every track below is an .ogg that already ships with the repo.
+# Sprites ported from Goob Station (_Goobstation/Objects/Misc/RadioStation/vinyls.rsi).
 
 - type: entity
   abstract: true
   id: BaseVinylDisk
   name: vinyl disk
   description: A vinyl disk containing music.
-  parent: BaseItem
+  parent: BaseRecord
   components:
-  - type: Vinyl
   - type: Sprite
     sprite: _Goobstation/Objects/Misc/RadioStation/vinyls.rsi
     state: red-vinyl-disk
@@ -62,9 +63,11 @@
   parent: BaseVinylDisk
   id: VinylDiskSpacStac
   name: vinyl disk (Spac Stac)
+  description: A stack of lobby themes pressed flat. Someone drew the sleeve by hand, and it shows.
   components:
-  - type: Vinyl
-    song: /Audio/Lobby/Spac_Stac.ogg
+  - type: JukeboxContainer
+    tracks:
+    - PalmtreeSpacStac
   - type: Sprite
     state: red-vinyl-disk
 
@@ -72,19 +75,23 @@
   parent: BaseVinylDisk
   id: VinylDiskAbsconditus
   name: vinyl disk (Absconditus)
+  description: Latin for 'the one who hides'. The record hides nothing, it just plays.
   components:
-  - type: Vinyl
-    song: /Audio/Lobby/absconditus.ogg
+  - type: JukeboxContainer
+    tracks:
+    - PalmtreeAbsconditus
   - type: Sprite
     state: blue-vinyl-disk
 
 - type: entity
   parent: BaseVinylDisk
   id: VinylDiskAtomicamnesiammx
-  name: vinyl disk (Atomicamnesiammx)
+  name: vinyl disk (Atomic Amnesia)
+  description: Forgetting the end of the world, one side at a time.
   components:
-  - type: Vinyl
-    song: /Audio/Lobby/atomicamnesiammx.ogg
+  - type: JukeboxContainer
+    tracks:
+    - PalmtreeAtomicAmnesia
   - type: Sprite
     state: green-vinyl-disk
 
@@ -92,9 +99,11 @@
   parent: BaseVinylDisk
   id: VinylDiskCometHaley
   name: vinyl disk (Comet Haley)
+  description: Best enjoyed on a long shift with the shutters open.
   components:
-  - type: Vinyl
-    song: /Audio/Lobby/comet_haley.ogg
+  - type: JukeboxContainer
+    tracks:
+    - PalmtreeCometHaley
   - type: Sprite
     state: purple-vinyl-disk
 
@@ -102,9 +111,11 @@
   parent: BaseVinylDisk
   id: VinylDiskEndlessSpace
   name: vinyl disk (Endless Space)
+  description: Side A is long. Side B is longer. Both are the same track.
   components:
-  - type: Vinyl
-    song: /Audio/Lobby/endless_space.ogg
+  - type: JukeboxContainer
+    tracks:
+    - PalmtreeEndlessSpace
   - type: Sprite
     state: orange-vinyl-disk
 
@@ -112,9 +123,11 @@
   parent: BaseVinylDisk
   id: VinylDiskEveryLightIsBlinkingAtOnce
   name: vinyl disk (Every Light Is Blinking At Once)
+  description: Every warning light on the bridge, set to music. Do not play during an actual emergency.
   components:
-  - type: Vinyl
-    song: /Audio/Lobby/every_light_is_blinking_at_once.ogg
+  - type: JukeboxContainer
+    tracks:
+    - PalmtreeEveryLightIsBlinkingAtOnce
   - type: Sprite
     state: pink-vinyl-disk
 
@@ -122,9 +135,11 @@
   parent: BaseVinylDisk
   id: VinylDiskLasersRipApartTheBulkhead
   name: vinyl disk (Lasers Rip Apart The Bulkhead)
+  description: Recorded live. The bulkhead did not survive; the master tape did.
   components:
-  - type: Vinyl
-    song: /Audio/Lobby/lasers_rip_apart_the_bulkhead.ogg
+  - type: JukeboxContainer
+    tracks:
+    - PalmtreeLasersRipApartTheBulkhead
   - type: Sprite
     state: yellow-vinyl-disk
 
@@ -132,9 +147,11 @@
   parent: BaseVinylDisk
   id: VinylDiskModFlipFlap
   name: vinyl disk (Flip Flap)
+  description: Flip. Flap. Flip. Flap. Somebody had far too much fun with a tracker.
   components:
-  - type: Vinyl
-    song: /Audio/Lobby/mod.flip-flap.ogg
+  - type: JukeboxContainer
+    tracks:
+    - PalmtreeFlipFlap
   - type: Sprite
     state: cyan-vinyl-disk
 
@@ -142,9 +159,11 @@
   parent: BaseVinylDisk
   id: VinylDiskPwmur
   name: vinyl disk (Pwmur)
+  description: Nobody knows what it means and the record refuses to explain.
   components:
-  - type: Vinyl
-    song: /Audio/Lobby/pwmur.ogg
+  - type: JukeboxContainer
+    tracks:
+    - PalmtreePwmur
   - type: Sprite
     state: white-vinyl-disk
 
@@ -152,9 +171,11 @@
   parent: BaseVinylDisk
   id: VinylDiskSinguloose
   name: vinyl disk (Singuloose)
+  description: A cautionary tale about a particle accelerator with disappointing security. Heavy on the bass.
   components:
-  - type: Vinyl
-    song: /Audio/Lobby/singuloose.ogg
+  - type: JukeboxContainer
+    tracks:
+    - singuloose
   - type: Sprite
     state: lightblue-vinyl-disk
 
@@ -162,9 +183,11 @@
   parent: BaseVinylDisk
   id: VinylDiskSpaceAsshole
   name: vinyl disk (Space Asshole)
+  description: A loving portrait of a colleague you have definitely worked with.
   components:
-  - type: Vinyl
-    song: /Audio/Lobby/space_asshole.ogg
+  - type: JukeboxContainer
+    tracks:
+    - PalmtreeSpaceAsshole
   - type: Sprite
     state: darkblue-vinyl-disk
 
@@ -172,9 +195,11 @@
   parent: BaseVinylDisk
   id: VinylDiskTheWizard
   name: vinyl disk (The Wizard)
+  description: Smells faintly of ozone. Playing it is almost certainly safe.
   components:
-  - type: Vinyl
-    song: /Audio/Lobby/the_wizard.ogg
+  - type: JukeboxContainer
+    tracks:
+    - PalmtreeTheWizard
   - type: Sprite
     state: lightishred-vinyl-disk
 
@@ -182,29 +207,35 @@
   parent: BaseVinylDisk
   id: VinylDiskThunderdome
   name: vinyl disk (Thunderdome)
+  description: Two stations enter. One record leaves.
   components:
-  - type: Vinyl
-    song: /Audio/Lobby/thunderdome.ogg
+  - type: JukeboxContainer
+    tracks:
+    - PalmtreeThunderdome
   - type: Sprite
     state: glossy-vinyl-disk
 
 - type: entity
   parent: BaseVinylDisk
   id: VinylDiskTitle2
-  name: vinyl disk (Title2)
+  name: vinyl disk (Title II)
+  description: The old station theme, still lodged in the back of everyone's skull.
   components:
-  - type: Vinyl
-    song: /Audio/Lobby/title2.ogg
+  - type: JukeboxContainer
+    tracks:
+    - PalmtreeTitleII
   - type: Sprite
     state: red-vinyl-disk
 
 - type: entity
   parent: BaseVinylDisk
   id: VinylDiskTitle3
-  name: vinyl disk (Title3)
+  name: vinyl disk (Title III)
+  description: A lobby theme for a lobby that has not existed for years.
   components:
-  - type: Vinyl
-    song: /Audio/Lobby/title3.ogg
+  - type: JukeboxContainer
+    tracks:
+    - PalmtreeTitleIII
   - type: Sprite
     state: blue-vinyl-disk
 
@@ -212,9 +243,11 @@
   parent: BaseVinylDisk
   id: VinylDiskConstellations
   name: vinyl disk (Constellations)
+  description: Pressed in starlight, or a convincing approximation. Makes the tavern feel very small.
   components:
-  - type: Vinyl
-    song: /Audio/Jukebox/constellations.ogg
+  - type: JukeboxContainer
+    tracks:
+    - Constellations
   - type: Sprite
     state: green-vinyl-disk
 
@@ -222,29 +255,35 @@
   parent: BaseVinylDisk
   id: VinylDiskDrifting
   name: vinyl disk (Drifting)
+  description: For quiet shifts, when the engine hums in tune with the hull.
   components:
-  - type: Vinyl
-    song: /Audio/Jukebox/drifting.ogg
+  - type: JukeboxContainer
+    tracks:
+    - Drifting
   - type: Sprite
     state: purple-vinyl-disk
 
 - type: entity
   parent: BaseVinylDisk
   id: VinylDiskFlipFlap
-  name: vinyl disk (Flip Flap)
+  name: vinyl disk (Flip Flap - Jukebox Cut)
+  description: The jukebox master. Yes, it is different. No, you cannot tell.
   components:
-  - type: Vinyl
-    song: /Audio/Jukebox/flip-flap.ogg
+  - type: JukeboxContainer
+    tracks:
+    - FlipFlap
   - type: Sprite
     state: orange-vinyl-disk
 
 - type: entity
   parent: BaseVinylDisk
   id: VinylDiskSector11
-  name: vinyl disk (Sector11)
+  name: vinyl disk (Sector 11)
+  description: The channel eleven stinger, extended, with feeling.
   components:
-  - type: Vinyl
-    song: /Audio/Jukebox/sector11.ogg
+  - type: JukeboxContainer
+    tracks:
+    - Thunderdome
   - type: Sprite
     state: pink-vinyl-disk
 
@@ -252,9 +291,11 @@
   parent: BaseVinylDisk
   id: VinylDiskStarlight
   name: vinyl disk (Starlight)
+  description: Warm and slow. Pairs well with a bar stool and nowhere to be.
   components:
-  - type: Vinyl
-    song: /Audio/Jukebox/starlight.ogg
+  - type: JukeboxContainer
+    tracks:
+    - starlight
   - type: Sprite
     state: yellow-vinyl-disk
 
@@ -262,19 +303,23 @@
   parent: BaseVinylDisk
   id: VinylDiskSunset
   name: vinyl disk (Sunset)
+  description: Someone left the shutters open at the end of a red shift. This is what it sounded like.
   components:
-  - type: Vinyl
-    song: /Audio/Jukebox/sunset.ogg
+  - type: JukeboxContainer
+    tracks:
+    - sunset
   - type: Sprite
     state: cyan-vinyl-disk
 
 - type: entity
   parent: BaseVinylDisk
   id: VinylDiskTitle3Jukebox
-  name: vinyl disk (Title3)
+  name: vinyl disk (Title III - Jukebox Cut)
+  description: Title III again, but rounder around the edges.
   components:
-  - type: Vinyl
-    song: /Audio/Jukebox/title3.ogg
+  - type: JukeboxContainer
+    tracks:
+    - Tintin
   - type: Sprite
     state: white-vinyl-disk
 
@@ -282,179 +327,215 @@
   parent: BaseVinylDisk
   id: VinylDiskDosHighUmb
   name: vinyl disk (DOS=HIGH, UMB)
+  description: A boot sequence that refuses to end. Printer not included.
   components:
-  - type: Vinyl
-    song: /Audio/_DV/Jukebox/DOS=HIGH,_UMB.ogg
+  - type: JukeboxContainer
+    tracks:
+    - DosHighUmb
   - type: Sprite
     state: lightblue-vinyl-disk
 
 - type: entity
   parent: BaseVinylDisk
   id: VinylDiskPatriciaTaxxonMinuteMono
-  name: vinyl disk (Patricia Taxxon Minute MONO)
+  name: vinyl disk (Patricia Taxxon - Minute)
+  description: Sixty seconds of Patricia Taxxon that do not feel like sixty seconds.
   components:
-  - type: Vinyl
-    song: /Audio/_DV/Jukebox/Patricia_Taxxon_-_Minute_-_MONO.ogg
+  - type: JukeboxContainer
+    tracks:
+    - PTMinute
   - type: Sprite
     state: darkblue-vinyl-disk
 
 - type: entity
   parent: BaseVinylDisk
   id: VinylDiskPhoronWillMakeUsRichmono2
-  name: vinyl disk (Phoron Will Make Us RichMONO2)
+  name: vinyl disk (Phoron Will Make Us Rich)
+  description: The prospector's anthem, pressed in a strange green plastic.
   components:
-  - type: Vinyl
-    song: /Audio/_DV/Jukebox/Phoron_Will_Make_Us_RichMONO2.ogg
+  - type: JukeboxContainer
+    tracks:
+    - SunbeamPhoron
   - type: Sprite
     state: lightishred-vinyl-disk
 
 - type: entity
   parent: BaseVinylDisk
   id: VinylDiskScratchPostOstMono
-  name: vinyl disk (Scratch Post OST MONO)
+  name: vinyl disk (Scratch Post - OST)
+  description: Soundtrack to a film nobody has seen. The sleeve is clawed to bits.
   components:
-  - type: Vinyl
-    song: /Audio/_DV/Jukebox/Scratch_Post_-_OST_MONO.ogg
+  - type: JukeboxContainer
+    tracks:
+    - GhirScratch
   - type: Sprite
     state: glossy-vinyl-disk
 
 - type: entity
   parent: BaseVinylDisk
   id: VinylDiskADifferentRealityLagoonaRemixXmMono
-  name: vinyl disk (A Different Reality Lagoona Remix.xm MONO)
+  name: vinyl disk (A Different Reality - Lagoona Remix)
+  description: A reality where the shift ended on time. The label does not say which.
   components:
-  - type: Vinyl
-    song: /Audio/_DV/Jukebox/a_different_reality_lagoona_remix.xm-MONO.ogg
+  - type: JukeboxContainer
+    tracks:
+    - ADiffReal
   - type: Sprite
     state: red-vinyl-disk
 
 - type: entity
   parent: BaseVinylDisk
   id: VinylDiskAggravatedItMono
-  name: vinyl disk (Aggravated.it MONO)
+  name: vinyl disk (Aggravated)
+  description: For when comms is down, the shuttle is late, and somebody moved your tools.
   components:
-  - type: Vinyl
-    song: /Audio/_DV/Jukebox/aggravated.it-MONO.ogg
+  - type: JukeboxContainer
+    tracks:
+    - AggAss
   - type: Sprite
     state: blue-vinyl-disk
 
 - type: entity
   parent: BaseVinylDisk
   id: VinylDiskAutumnalEquinoxXmMono
-  name: vinyl disk (Autumnal Equinox.xm MONO)
+  name: vinyl disk (Autumnal Equinox)
+  description: Short, warm, and slightly orange.
   components:
-  - type: Vinyl
-    song: /Audio/_DV/Jukebox/autumnal_equinox.xm-MONO.ogg
+  - type: JukeboxContainer
+    tracks:
+    - AutEqu
   - type: Sprite
     state: green-vinyl-disk
 
 - type: entity
   parent: BaseVinylDisk
   id: VinylDiskDeckTheHallsBMono
-  name: vinyl disk (Deck The Halls B MONO)
+  name: vinyl disk (Deck the Halls)
+  description: A holiday record nobody asked for, in dark purple.
   components:
-  - type: Vinyl
-    song: /Audio/_DV/Jukebox/deck_the_halls_b-MONO.ogg
+  - type: JukeboxContainer
+    tracks:
+    - DeckTheHalls
   - type: Sprite
     state: purple-vinyl-disk
 
 - type: entity
   parent: BaseVinylDisk
   id: VinylDiskDrozerixAloneXmMono
-  name: vinyl disk (Drozerix Alone.xm MONO)
+  name: vinyl disk (Drozerix - Alone)
+  description: One for the empty department at 03:00.
   components:
-  - type: Vinyl
-    song: /Audio/_DV/Jukebox/drozerix_-_alone.xm-MONO.ogg
+  - type: JukeboxContainer
+    tracks:
+    - DrozAlone
   - type: Sprite
     state: orange-vinyl-disk
 
 - type: entity
   parent: BaseVinylDisk
   id: VinylDiskDrozerixLeisurelyVoiceXmMono
-  name: vinyl disk (Drozerix Leisurely Voice.xm MONO)
+  name: vinyl disk (Drozerix - Leisurely Voice)
+  description: Someone narrating a slow afternoon. Contains no narration.
   components:
-  - type: Vinyl
-    song: /Audio/_DV/Jukebox/drozerix_-_leisurely_voice.xm-MONO.ogg
+  - type: JukeboxContainer
+    tracks:
+    - DrozLeisure
   - type: Sprite
     state: pink-vinyl-disk
 
 - type: entity
   parent: BaseVinylDisk
   id: VinylDiskEveryLightIsBlinkingAtOncemono
-  name: vinyl disk (Every Light Is Blinking At onceMONO)
+  name: vinyl disk (Every Light Is Blinking At Once - Mono)
+  description: The mono cut. Half the lights, all of the panic.
   components:
-  - type: Vinyl
-    song: /Audio/_DV/Jukebox/every_light_is_blinking_at_onceMONO.ogg
+  - type: JukeboxContainer
+    tracks:
+    - SunbeamEvery
   - type: Sprite
     state: yellow-vinyl-disk
 
 - type: entity
   parent: BaseVinylDisk
   id: VinylDiskHackersMono
-  name: vinyl disk (Hackers MONO)
+  name: vinyl disk (Hackers)
+  description: Faint typing, a modem handshake, and a ring of red.
   components:
-  - type: Vinyl
-    song: /Audio/_DV/Jukebox/hackers-MONO.ogg
+  - type: JukeboxContainer
+    tracks:
+    - KCHaxors
   - type: Sprite
     state: cyan-vinyl-disk
 
 - type: entity
   parent: BaseVinylDisk
   id: VinylDiskLasersRipApartTheBulkheadmono
-  name: vinyl disk (Lasers Rip Apart The bulkheadMONO)
+  name: vinyl disk (Lasers Rip Apart The Bulkhead - Mono)
+  description: One channel of destruction. Headphones recommended.
   components:
-  - type: Vinyl
-    song: /Audio/_DV/Jukebox/lasers_rip_apart_the_bulkheadMONO.ogg
+  - type: JukeboxContainer
+    tracks:
+    - SunbeamLaser
   - type: Sprite
     state: white-vinyl-disk
 
 - type: entity
   parent: BaseVinylDisk
   id: VinylDiskMarhabaMono
-  name: vinyl disk (Marhaba MONO)
+  name: vinyl disk (Marhaba)
+  description: A greeting, a departure, and a side of warm horns.
   components:
-  - type: Vinyl
-    song: /Audio/_DV/Jukebox/marhaba-MONO.ogg
+  - type: JukeboxContainer
+    tracks:
+    - IanMarhaba
   - type: Sprite
     state: lightblue-vinyl-disk
 
 - type: entity
   parent: BaseVinylDisk
   id: VinylDiskPsiriusNymphsOfTheForestMptmMono
-  name: vinyl disk (Psirius Nymphs Of The Forest.mptm MONO)
+  name: vinyl disk (Nymphs of the Forest)
+  description: Something small and green lives in the grooves.
   components:
-  - type: Vinyl
-    song: /Audio/_DV/Jukebox/psirius_-_nymphs_of_the_forest.mptm-MONO.ogg
+  - type: JukeboxContainer
+    tracks:
+    - NymphsForest
   - type: Sprite
     state: darkblue-vinyl-disk
 
 - type: entity
   parent: BaseVinylDisk
   id: VinylDiskShibamataMono
-  name: vinyl disk (Shibamata MONO)
+  name: vinyl disk (Shibamata)
+  description: A neighbourhood pressed into vinyl. The gate is on the label.
   components:
-  - type: Vinyl
-    song: /Audio/_DV/Jukebox/shibamata-MONO.ogg
+  - type: JukeboxContainer
+    tracks:
+    - JukeShiba
   - type: Sprite
     state: lightishred-vinyl-disk
 
 - type: entity
   parent: BaseVinylDisk
   id: VinylDiskSpaceAssholeMono
-  name: vinyl disk (Space Asshole MONO)
+  name: vinyl disk (Space Asshole - Mono)
+  description: Half the effort, all of the sentiment.
   components:
-  - type: Vinyl
-    song: /Audio/_DV/Jukebox/space_asshole-MONO.ogg
+  - type: JukeboxContainer
+    tracks:
+    - SpaceAsshowl
   - type: Sprite
     state: glossy-vinyl-disk
 
 - type: entity
   parent: BaseVinylDisk
   id: VinylDiskSuperpositionMono
-  name: vinyl disk (Superposition MONO)
+  name: vinyl disk (Superposition)
+  description: Both sides play at once until you pick one.
   components:
-  - type: Vinyl
-    song: /Audio/_DV/Jukebox/superposition-MONO.ogg
+  - type: JukeboxContainer
+    tracks:
+    - AmieSuperpos
   - type: Sprite
     state: red-vinyl-disk
 
@@ -462,28 +543,34 @@
   parent: BaseVinylDisk
   id: VinylDiskNi4Ni
   name: vinyl disk (NI4NI)
+  description: Four letters, two sides, one very confused label.
   components:
-  - type: Vinyl
-    song: /Audio/_PS/Lobby/NI4NI.ogg
+  - type: JukeboxContainer
+    tracks:
+    - PalmtreeNI4NI
   - type: Sprite
     state: blue-vinyl-disk
 
 - type: entity
   parent: BaseVinylDisk
   id: VinylDiskUnrealsuperhero
-  name: vinyl disk (Unrealsuperhero)
+  name: vinyl disk (Unreal Superhero)
+  description: A hero who never returns the uniform. Plays like a Saturday morning.
   components:
-  - type: Vinyl
-    song: /Audio/_PS/Lobby/unrealsuperhero.ogg
+  - type: JukeboxContainer
+    tracks:
+    - PalmtreeUnrealSuperhero
   - type: Sprite
     state: green-vinyl-disk
 
 - type: entity
   parent: BaseVinylDisk
   id: VinylDiskWelcometoourworld
-  name: vinyl disk (Welcometoourworld)
+  name: vinyl disk (Welcome to Our World)
+  description: An invitation, pressed in green and delivered flat.
   components:
-  - type: Vinyl
-    song: /Audio/_PS/Lobby/welcometoourworld.ogg
+  - type: JukeboxContainer
+    tracks:
+    - PalmtreeWelcomeToOurWorld
   - type: Sprite
     state: purple-vinyl-disk

@@ -13,6 +13,7 @@
   - type: ActivatableUI
     key: enum.BlankVinylDiskUiKey.Key
     verbText: blank-vinyl-disk-verb
+    inHandsOnly: true
   - type: UserInterface
     interfaces:
       enum.BlankVinylDiskUiKey.Key:

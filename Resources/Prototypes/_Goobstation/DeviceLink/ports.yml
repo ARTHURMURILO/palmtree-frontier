@@ -7,9 +7,9 @@
   description: signal-port-description-radio-rig
 
 - type: sourcePort
-  id: VinylPlayerPort
-  name: signal-port-name-vinyl-player
-  description: signal-port-description-vinyl-player
+  id: JukeboxMediaPort
+  name: signal-port-name-jukebox-media
+  description: signal-port-description-jukebox-media
 
 - type: sourcePort
   id: StationRadioServerPort

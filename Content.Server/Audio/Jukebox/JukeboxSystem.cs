@@ -65,6 +65,13 @@ public sealed class JukeboxSystem : SharedJukeboxSystem
         if (Exists(ent.Comp.AudioStream))
         {
             Audio.SetState(ent.Comp.AudioStream, AudioState.Playing);
+
+            // Palmtree: resumed playback, tell anything relaying this jukebox
+            if (!string.IsNullOrEmpty(ent.Comp.SelectedSongId) &&
+                _protoManager.TryIndex(ent.Comp.SelectedSongId, out var resumedSong))
+            {
+                RaiseLocalEvent(ent.Owner, new JukeboxSongStartedEvent(resumedSong.Path));
+            }
         }
         else
         {
@@ -98,6 +105,7 @@ public sealed class JukeboxSystem : SharedJukeboxSystem
             if (ent.Comp.AudioStream != null)
             {
                 AddComp<JukeboxMusicComponent>(ent.Comp.AudioStream.Value);
+                RaiseLocalEvent(ent.Owner, new JukeboxSongStartedEvent(jukeboxProto.Path)); // Palmtree
             }
 
             Dirty(ent);
@@ -107,6 +115,7 @@ public sealed class JukeboxSystem : SharedJukeboxSystem
     private void OnJukeboxPause(Entity<JukeboxComponent> ent, ref JukeboxPauseMessage args)
     {
         Audio.SetState(ent.Comp.AudioStream, AudioState.Paused);
+        RaiseLocalEvent(ent.Owner, new JukeboxSongStoppedEvent()); // Palmtree
     }
 
     private void OnJukeboxSetTime(Entity<JukeboxComponent> ent, ref JukeboxSetTimeMessage args)
@@ -138,6 +147,7 @@ public sealed class JukeboxSystem : SharedJukeboxSystem
     {
         Audio.SetState(entity.Comp.AudioStream, AudioState.Stopped);
         Dirty(entity);
+        RaiseLocalEvent(entity.Owner, new JukeboxSongStoppedEvent()); // Palmtree
     }
 
     // Palmtree: the Skip button. Deleting the current stream is the same path a track takes when it
@@ -254,6 +264,7 @@ public sealed class JukeboxSystem : SharedJukeboxSystem
         {
             ent.Comp.SelectedSongId = null;
             ent.Comp.AudioStream = Audio.Stop(ent.Comp.AudioStream);
+            RaiseLocalEvent(ent.Owner, new JukeboxSongStoppedEvent()); // Palmtree
         }
         Dirty(ent);
     }
@@ -318,6 +329,7 @@ public sealed class JukeboxSystem : SharedJukeboxSystem
     private void OnComponentShutdown(Entity<JukeboxComponent> ent, ref ComponentShutdown args)
     {
         ent.Comp.AudioStream = Audio.Stop(ent.Comp.AudioStream);
+        RaiseLocalEvent(ent.Owner, new JukeboxSongStoppedEvent()); // Palmtree
     }
     // End wizden#42210
 

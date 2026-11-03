@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Ported from Goob Station (_Goobstation/Entities/Structures/Furniture/cdrack.yml).
-# Palmtree: storage is whitelisted to vinyl disks (the only disks in this repo) and holds 20 of them.
+# Palmtree: holds up to 20 records (Frontier albums and vinyl disks alike).
 
 - type: entity
   id: CdRack
@@ -25,10 +25,10 @@
   - type: Storage
     maxItemSize: Normal
     grid:
-    - 0,0,1,19
+    - 0,0,3,19 # 20 records, 2x2 each
     whitelist:
       components:
-      - Vinyl
+      - JukeboxContainer
   - type: UserInterface
     interfaces:
       enum.StorageUiKey.Key:

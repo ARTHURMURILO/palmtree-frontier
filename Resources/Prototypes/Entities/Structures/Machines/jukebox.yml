@@ -83,6 +83,11 @@
   - type: StorageFill
     contents:
     - id: NanotrasenRecord
+  # Palmtree: feed the station radio with the jukebox
+  - type: DeviceLinkSource
+    ports:
+    - JukeboxMediaPort
+  - type: JukeboxRadioRelay
   - type: EmptyOnMachineDeconstruct
     containers:
       - storagebase

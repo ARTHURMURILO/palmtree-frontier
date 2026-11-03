@@ -1,74 +1,56 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Ported from Goob Station (_Goobstation/Entities/Structures/Machines/StationRadio/vinyl_player.yml).
+# Palmtree: it is a jukebox in a record player's body. Same playback, same UI, same storage rules;
+# put a record in and pick a track. Drop it on a radio rig to broadcast.
+
 - type: entity
   id: VinylPlayer
   name: vinyl player
-  parent: [ BaseMachinePowered, SmallConstructibleMachine ]
-  description: An old school vinyl record player sat on a set of drawers.
+  parent: Jukebox
+  description: An old school vinyl record player sat on a set of drawers. Insert a record, pick a track, bother the neighbours.
   components:
   - type: Sprite
     sprite: _Goobstation/Structures/Machines/StationRadio/vinylplayer.rsi
     snapCardinals: true
     granularLayersRendering: true
+    drawdepth: SmallObjects
     layers:
     - state: icon
+      map: [ "enum.JukeboxVisualLayers.Base" ]
     - state: unlit
       shader: unshaded
       map: [ "enum.PowerDeviceVisualLayers.Powered" ]
     - state: panel
       map: ["enum.WiresVisualLayers.MaintenancePanel"]
-    drawdepth: SmallObjects
   - type: Fixtures
     fixtures:
       fix1:
         shape:
           !type:PhysShapeAabb
           bounds: "-0.10,-0.10,0.10,0.10"
-        density: 500
         mask:
         - TabletopMachineMask
         layer:
         - BulletImpassable
-  - type: Destructible
-    thresholds:
-    - trigger:
-        !type:DamageTrigger
-        damage: 200
-      behaviors:
-      - !type:PlaySoundBehavior
-        sound:
-          collection: MetalGlassBreak
-      - !type:DoActsBehavior
-        acts: [ "Destruction" ]
-  - type: Appearance
-  - type: WiresPanel
-  - type: WiresVisuals
-  - type: VinylPlayer
+        density: 500
+  - type: Jukebox
+    onState: icon
+    offState: icon
+    selectState: icon
   - type: Machine
     board: VinylPlayerCircuitboard
-  - type: ApcPowerReceiver
-    powerLoad: 300 # This is a simple machine
-  - type: DeviceLinkSource
-    ports:
-    - VinylPlayerPort
-  - type: DeviceList
-  - type: ContainerContainer
-    containers:
-      machine_board: !type:Container
-      machine_parts: !type:Container
-      vinyl: !type:ContainerSlot
-  - type: ItemSlots
-    slots:
-      vinyl:
-        name: vinyl
-        whitelist:
-          components:
-          - Vinyl
-  - type: ItemMapper
-    containerWhitelist: [vinyl]
-    mapLayers:
-      disk_installed:
-        whitelist:
-          components:
-          - Vinyl
+  - type: Storage
+    maxItemSize: Normal
+    grid:
+    - 0,0,1,1 # one 2x2 record
+    openOnActivate: false
+    whitelist:
+      components:
+      - JukeboxContainer
+  - type: StorageFill
+    contents: []
+  - type: WiresPanel
+  - type: WiresVisuals
   - type: GenericVisualizer
     visuals:
       enum.WiresVisualLayers.MaintenancePanel:

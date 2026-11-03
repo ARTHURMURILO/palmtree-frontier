@@ -1,5 +1,5 @@
 using Content.Shared._Goobstation.BlankDisk;
-using Content.Shared._Goobstation.StationRadio.Components;
+using Content.Shared.Audio.Jukebox;
 using Content.Shared.Popups;
 using Robust.Shared.Containers;
 using Robust.Shared.Prototypes;
@@ -27,8 +27,11 @@ public sealed class BlankVinylDiskSystem : EntitySystem
             return;
 
         // Only real, imprintable records are allowed.
-        if (!prototype.TryGetComponent<VinylComponent>("Vinyl", out var vinyl) || vinyl.Song == null)
+        if (!prototype.TryGetComponent<JukeboxContainerComponent>("JukeboxContainer", out var record) ||
+            record.Tracks.Count == 0)
+        {
             return;
+        }
 
         var xform = Transform(ent.Owner);
         var coords = xform.Coordinates;
