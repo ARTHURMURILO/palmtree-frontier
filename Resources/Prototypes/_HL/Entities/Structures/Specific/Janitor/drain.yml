@@ -1,0 +1,31 @@
+# Ported from coyote-frontier (Resources/Prototypes/_HL/Entities/Structures/Specific/Janitor/drain.yml).
+- type: entity
+  id: FloorDrainUnfinished
+  parent: BaseSinkUnfinished
+  name: unfinished drain
+  description: A drain under construction
+  components:
+    - type: Sprite
+      drawdepth: FloorObjects
+      sprite: Objects/Specific/Janitorial/drain.rsi
+      state: icon
+    - type: Destructible
+      thresholds:
+        - trigger:
+            !type:DamageTrigger
+            damage: 200
+          behaviors:
+            - !type:DoActsBehavior
+              acts: [ "Destruction" ]
+        - trigger:
+            !type:DamageTrigger
+            damage: 100
+          behaviors:
+            - !type:DoActsBehavior
+              acts: [ "Destruction" ]
+            - !type:PlaySoundBehavior
+              sound:
+                collection: MetalBreak
+    - type: Construction
+      graph: FloorDrain
+      node: body

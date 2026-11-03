@@ -24,4 +24,10 @@ public interface IAdminLogManager : ISharedAdminLogManager
     IAsyncEnumerable<JsonDocument> CurrentRoundJson(LogFilter? filter = null);
     Task<Round> CurrentRound();
     Task<int> CountLogs(int round);
+
+    /// <summary>
+    ///     Deletes admin logs older than the given number of days.
+    /// </summary>
+    /// <returns>The number of deleted admin log entries.</returns>
+    Task<int> PurgeOldLogs(int days);
 }

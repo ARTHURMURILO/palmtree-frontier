@@ -145,6 +145,10 @@ undershirts) so hiding a parent hides its sublayers.
    - `ApplyMarking` computes per-sprite `layerSlot` (BodyPart or `layering` override), creates layers
      named `<markingId>-<state>`, applies scale/offset, color (with `colorLinks`), visibility and
      displacement, and clamps genital layers below `jumpsuit`/`outerClothing`.
+     Layer order is direction-aware on the client (screen direction = world + eye rotation):
+     south-facing exposed genitals sit above hair/tails when no garment covers them, and
+     east/west-facing tail markings are inserted under the hair layer. A client system
+     (`DirectionalLayerOrderSystem`) rebuilds the sprite when the cardinal direction changes.
      When a color's glow is > 0 it also creates a companion `<markingId>-<state>-glow` layer with the
      `unshaded` shader, splitting alpha so the composed alpha is preserved.
    - Base markings (`Base*` categories) add their target layer to `HiddenBaseLayers` via

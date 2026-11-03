@@ -20,4 +20,11 @@ public enum GenitalVisibility : byte
 
     /// <summary>Always exposed and drawn over clothing ("Never hidden").</summary>
     NeverHidden = 3,
+
+    /// <summary>
+    /// Always exposed, but kept at the normal genital layer so clothing still draws over it
+    /// ("Visible under clothes"). Unlike <see cref="NeverHidden"/> this never raises the sprite
+    /// above outer clothing.
+    /// </summary>
+    VisibleUnderClothes = 4,
 }

@@ -87,7 +87,7 @@ public sealed partial class EmotePrototype : IPrototype
 /// </summary>
 [Flags]
 [Serializable, NetSerializable]
-public enum EmoteCategory : ushort
+public enum EmoteCategory : int
 {
     Invalid = 0,
     Vocal = 1 << 0,
@@ -106,6 +106,8 @@ public enum EmoteCategory : ushort
     Moth = 1 << 13,
     Borg = 1 << 14,
     Felinid = 1 << 15,
-    General = ushort.MaxValue,
+    // Palmtree: SPLURT funny emotes. Includes Vocal so mutes/mumbling still apply.
+    Funny = Vocal | (1 << 16),
+    General = int.MaxValue,
     Sex = 3
 }

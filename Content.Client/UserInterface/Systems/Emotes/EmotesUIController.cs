@@ -69,6 +69,8 @@ public sealed class EmotesUIController : UIController, IOnStateChanged<GameplayS
                 new SpriteSpecifier.Texture(new ResPath("/Textures/_CS/Emojis/plug.png"))),
             [EmoteCategory.Felinid] = ("emote-menu-category-felinid",
                 new SpriteSpecifier.Texture(new ResPath("/Textures/_CS/Emojis/cat.png"))),
+            [EmoteCategory.Funny] = ("emote-menu-category-funny",
+                new SpriteSpecifier.Texture(new ResPath("/Textures/Interface/Emotes/laugh.png"))),
         };
 
     // Palmtree/Coyote: these categories are always visible in the wheel.
@@ -175,12 +177,12 @@ public sealed class EmotesUIController : UIController, IOnStateChanged<GameplayS
         _menu = null;
     }
 
-    private IEnumerable<RadialMenuOption> ConvertToButtons(IEnumerable<EmotePrototype> emotePrototypes)
+    private IEnumerable<RadialMenuOptionBase> ConvertToButtons(IEnumerable<EmotePrototype> emotePrototypes)
     {
         var whitelistSystem = EntitySystemManager.GetEntitySystem<EntityWhitelistSystem>();
         var player = _playerManager.LocalSession?.AttachedEntity;
 
-        Dictionary<EmoteCategory, List<RadialMenuOption>> emotesByCategory = new();
+        Dictionary<EmoteCategory, List<RadialMenuOptionBase>> emotesByCategory = new();
         foreach (var emote in emotePrototypes)
         {
             if (emote.Category == EmoteCategory.Invalid)
@@ -204,26 +206,26 @@ public sealed class EmotesUIController : UIController, IOnStateChanged<GameplayS
 
             if (!emotesByCategory.TryGetValue(emote.Category, out var list))
             {
-                list = new List<RadialMenuOption>();
+                list = new List<RadialMenuOptionBase>();
                 emotesByCategory.Add(emote.Category, list);
             }
 
             var actionOption = new RadialMenuActionOption<EmotePrototype>(HandleRadialButtonClick, emote)
             {
-                Sprite = emote.Icon,
+                IconSpecifier = RadialMenuIconSpecifier.With(emote.Icon),
                 ToolTip = Loc.GetString(emote.Name)
             };
             list.Add(actionOption);
         }
 
-        var sorted = new List<KeyValuePair<EmoteCategory, List<RadialMenuOption>>>(emotesByCategory);
+        var sorted = new List<KeyValuePair<EmoteCategory, List<RadialMenuOptionBase>>>(emotesByCategory);
         sorted.Sort((a, b) =>
             string.Compare(
                 Loc.GetString(EmoteGroupingInfo[a.Key].Tooltip),
                 Loc.GetString(EmoteGroupingInfo[b.Key].Tooltip),
                 StringComparison.Ordinal));
 
-        var models = new RadialMenuOption[sorted.Count];
+        var models = new RadialMenuOptionBase[sorted.Count];
         var i = 0;
         foreach (var pair in sorted)
         {
@@ -233,7 +235,7 @@ public sealed class EmotesUIController : UIController, IOnStateChanged<GameplayS
 
             models[i] = new RadialMenuNestedLayerOption(list)
             {
-                Sprite = tuple.Sprite,
+                IconSpecifier = RadialMenuIconSpecifier.With(tuple.Sprite),
                 ToolTip = Loc.GetString(tuple.Tooltip)
             };
             i++;

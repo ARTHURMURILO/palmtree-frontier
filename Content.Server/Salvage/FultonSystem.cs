@@ -1,5 +1,7 @@
 using System.Numerics;
+using Content.Server.Storage.EntitySystems; // Palmtree
 using Content.Shared.Salvage.Fulton;
+using Content.Shared.Storage.Components; // Palmtree
 using Robust.Shared.Containers;
 using Robust.Shared.Map;
 using Robust.Shared.Random;
@@ -12,6 +14,7 @@ namespace Content.Server.Salvage;
 public sealed class FultonSystem : SharedFultonSystem
 {
     [Dependency] private readonly IRobustRandom _random = default!;
+    [Dependency] private readonly EntityStorageSystem _entityStorage = default!; // Palmtree
 
     public override void Initialize()
     {
@@ -28,6 +31,10 @@ public sealed class FultonSystem : SharedFultonSystem
 
     private void OnFultonedStartup(EntityUid uid, FultonedComponent component, ComponentStartup args)
     {
+        // Palmtree: close storage containers so their contents are carried along with the fulton.
+        if (TryComp<EntityStorageComponent>(uid, out var storage) && storage.Open)
+            _entityStorage.CloseStorage(uid, storage);
+
         if (Exists(component.Effect))
             return;
 
@@ -53,6 +60,10 @@ public sealed class FultonSystem : SharedFultonSystem
 
     private void Fulton(EntityUid uid, FultonedComponent component)
     {
+        // Palmtree: make sure the container is sealed before moving it so its contents come along.
+        if (TryComp<EntityStorageComponent>(uid, out var storage) && storage.Open)
+            _entityStorage.CloseStorage(uid, storage);
+
         if (!Deleted(component.Beacon) &&
             TryComp(component.Beacon, out TransformComponent? beaconXform) &&
             !Container.IsEntityOrParentInContainer(component.Beacon.Value, xform: beaconXform) &&

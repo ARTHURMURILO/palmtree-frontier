@@ -11,8 +11,8 @@ using Robust.Shared.Timing;
 namespace Content.Server._PS.Organs;
 
 /// <summary>
-/// Drains stored semen (<see cref="DrippingCumComponent"/>) into SPLURT-style droplet decals, one
-/// unit per second while the mob is bottomless; the drip pauses while they wear a jumpsuit.
+/// Drains stored semen (<see cref="DrippingCumComponent"/>) into SPLURT-style droplet decals, 10
+/// units per second while the mob is bottomless; the drip pauses while they wear a jumpsuit.
 /// </summary>
 /// <remarks>
 /// Drips only ever make the small droplet sprites (<c>SemenDrip1..5</c>). The full cum decals
@@ -20,8 +20,9 @@ namespace Content.Server._PS.Organs;
 /// Every drop is a new decal placed where the mob actually stands (with a little scatter), so the
 /// floor builds up a mess instead of one decal being upgraded. Decals are cleanable (space cleaner).
 /// A mob only starts dripping after it moved or performed an interaction (see
-/// <see cref="NotifyActivity"/>), and dripping pauses on a tile that already has too many drips on
-/// it. Pausing never consumes stored semen: it waits until the mob can drip again.
+/// <see cref="NotifyActivity"/>); once started, the drip keeps running every second even while the
+/// mob stands still, until the reservoir is empty. Dripping pauses on a tile that already has too
+/// many drips on it. Pausing never consumes stored semen: it waits until the mob can drip again.
 /// </remarks>
 public sealed class DrippingCumSystem : EntitySystem
 {
@@ -31,6 +32,9 @@ public sealed class DrippingCumSystem : EntitySystem
     [Dependency] private readonly IRobustRandom _random = default!;
 
     private static readonly TimeSpan DripInterval = TimeSpan.FromSeconds(1);
+
+    /// <summary>How many units of stored semen each drip consumes (10u per drip).</summary>
+    private const double DripAmount = 10;
 
     /// <summary>Droplet decal ladder. Drips never escalate to the full puddle decals.</summary>
     private static readonly string[] DripDecals =
@@ -49,7 +53,7 @@ public sealed class DrippingCumSystem : EntitySystem
     private const float CumScatter = 0.35f;
 
     /// <summary>Maximum number of drips allowed on a single tile before dripping pauses.</summary>
-    private const int MaxDripsPerTile = 5;
+    private const int MaxDripsPerTile = 20;
 
     /// <summary>How far the mob has to move between drip checks for it to count as activity.</summary>
     private const float MovementThreshold = 0.06f;
@@ -66,6 +70,13 @@ public sealed class DrippingCumSystem : EntitySystem
 
         while (query.MoveNext(out var uid, out var comp))
         {
+            // A zeroed reservoir (e.g. just cleaned) should never leave a ghost drip.
+            if (comp.Amount <= 0)
+            {
+                RemCompDeferred<DrippingCumComponent>(uid);
+                continue;
+            }
+
             if (now < comp.NextDrip)
                 continue;
 
@@ -75,9 +86,9 @@ public sealed class DrippingCumSystem : EntitySystem
             if (_inventory.TryGetSlotEntity(uid, "jumpsuit", out _))
                 continue;
 
-            // Palmtree: stored semen only starts dripping once the mob moves or acts. Movement
-            // refreshes the flag on every check, so walking keeps the drip going; standing still
-            // consumes nothing (there is no idle dripping anymore).
+            // Palmtree: stored semen only starts dripping once the mob moves or acts. That starter
+            // is a latch: after the first movement/interaction the drip keeps running every second
+            // even while standing still, until the reservoir is empty.
             CheckMovement(uid, comp);
             if (!comp.Ready)
                 continue;
@@ -90,8 +101,7 @@ public sealed class DrippingCumSystem : EntitySystem
             if (!TryDrip(uid, comp))
                 continue;
 
-            comp.Ready = false;
-            comp.Amount -= 1;
+            comp.Amount = Math.Max(0, comp.Amount - DripAmount);
             comp.Dripped += 1;
             Dirty(uid, comp);
 
@@ -101,7 +111,7 @@ public sealed class DrippingCumSystem : EntitySystem
     }
 
     /// <summary>
-    /// Palmtree: marks the mob as active (it performed an interaction), which lets the drip run.
+    /// Palmtree: starts the drip when the mob performed an interaction.
     /// </summary>
     public void NotifyActivity(EntityUid uid)
     {
@@ -110,7 +120,8 @@ public sealed class DrippingCumSystem : EntitySystem
     }
 
     /// <summary>
-    /// Palmtree: refreshes the activity flag when the mob moved since the last check.
+    /// Palmtree: starts the drip when the mob moved since the last check. Once set, the latch stays
+    /// on so the drip continues while the mob stands still.
     /// </summary>
     private void CheckMovement(EntityUid uid, DrippingCumComponent comp)
     {
@@ -242,5 +253,11 @@ public sealed class DrippingCumSystem : EntitySystem
     public double GetSemen(EntityUid uid)
     {
         return TryComp<DrippingCumComponent>(uid, out var comp) ? comp.Amount : 0;
+    }
+
+    /// <summary>Removes all stored semen immediately, stopping the drip (the Clean yourself action).</summary>
+    public void ClearSemen(EntityUid uid)
+    {
+        RemComp<DrippingCumComponent>(uid);
     }
 }

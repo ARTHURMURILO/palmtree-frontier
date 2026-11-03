@@ -3,19 +3,44 @@ using System.Linq;
 using System.Numerics;
 using Content.Server._PS.BluespaceDock;
 using Content.Server.Botany.Components;
+using Content.Server.DeviceLinking.Systems;
+using Content.Server.Power.Components;
 using Content.Server.Shuttles.Systems;
+using Content.Server.Storage.Components;
 using Content.Shared._PS.BluespaceDock;
+using Content.Shared._NF.Shipyard.Components;
 using Content.Shared.Climbing.Components;
 using Content.Shared.DoAfter;
+using Content.Shared.Interaction;
+using Content.Shared.Light.Components;
+using Content.Shared.Materials;
 using Content.Shared.Shuttles.Components;
 using Content.Shared.Storage;
+using Content.Shared.Storage.Components;
+using Content.Shared.Storage.EntitySystems;
+using Content.Shared.Timing;
+using Content.Shared.Weapons.Ranged.Components;
+using Content.Shared.DeviceLinking;
+using Content.Shared.Access.Components;
+using Content.Shared.Access.Systems;
+using Content.Shared.Chemistry;
+using Content.Shared.Containers.ItemSlots;
+using Content.Shared.Hands.EntitySystems;
+using Content.Shared.PDA;
+using Content.Shared.SprayPainter.Components;
+using Content.Shared.VendingMachines;
+using Content.Shared.SprayPainter.Prototypes;
+using Content.Shared.SmartFridge;
 using NUnit.Framework;
 using Robust.Server.Containers;
+using Robust.Shared.Containers;
 using Robust.Shared.ContentPack;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
 using Robust.Shared.Map;
 using Robust.Shared.Maths;
+using Robust.Shared.Physics.Components;
+using Robust.Shared.Physics.Systems;
 using Robust.Shared.Utility;
 
 namespace Content.IntegrationTests.Tests._PS;
@@ -126,6 +151,250 @@ public sealed class BluespaceDockSaveTest
     }
 
     /// <summary>
+    /// A used smart fridge (its UI entry cache maps <c>SmartFridgeEntry</c> - a mapping type, so it
+    /// cannot be a dictionary key - to session-scoped <c>NetEntity</c>s) used to fail the whole save
+    /// with "Caught exception while serializing component SmartFridge". The cache is not persisted and
+    /// is rebuilt from the container on startup instead, so the fridge and its contents survive.
+    /// </summary>
+    [Test]
+    public async Task UsedSmartFridgeSurvivesTheSave()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var containers = server.System<ContainerSystem>();
+
+        EntityUid loadedGrid = default;
+        MapId loadedMap = default;
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var hands = server.System<SharedHandsSystem>();
+            var grid = testMap.Grid.Owner;
+
+            var fridge = entMan.SpawnEntity("SmartFridge", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            var apple = entMan.SpawnEntity("FoodApple", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            var user = entMan.SpawnEntity("MobHuman", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            Assert.That(hands.TryForcePickupAnyHand(user, apple), Is.True, "sanity: the user must hold the apple");
+
+            // The real insertion path populates ContainedEntries (the part that could not be saved).
+            var interact = new InteractUsingEvent(user, apple, fridge,
+                entMan.GetComponent<TransformComponent>(fridge).Coordinates);
+            entMan.EventBus.RaiseLocalEvent(fridge, interact);
+            Assert.That(interact.Handled, Is.True, "sanity: the apple was not inserted into the fridge");
+            Assert.That(entMan.GetComponent<SmartFridgeComponent>(fridge).ContainedEntries.Count, Is.EqualTo(1),
+                "sanity: the fridge lists its contents");
+
+            var path = BluespaceDockSystem.GetShipFilePath("smart-fridge-save-test");
+            Assert.That(dock.TrySaveShipFile(grid, path, out var error), Is.True,
+                $"Saving a grid with a used smart fridge failed: {error}");
+            Assert.That(dock.TryLoadShipFile(path, out var loaded), Is.True, "Loading the saved ship failed.");
+            loadedGrid = loaded!.Value;
+            loadedMap = entMan.GetComponent<TransformComponent>(loadedGrid).MapID;
+            dock.DeleteShipFile(path);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var entities = new HashSet<EntityUid>();
+            dock.GetEntitiesOnGrid(loadedGrid, entities);
+
+            EntityUid? loadedFridge = null;
+            foreach (var uid in entities)
+            {
+                if (entMan.GetComponent<MetaDataComponent>(uid).EntityPrototype?.ID == "SmartFridge")
+                    loadedFridge = uid;
+            }
+
+            Assert.That(loadedFridge, Is.Not.Null, "The retrieved ship lost its smart fridge.");
+
+            var containers = server.System<ContainerSystem>();
+            var fridgeComp = entMan.GetComponent<SmartFridgeComponent>(loadedFridge!.Value);
+            Assert.That(containers.TryGetContainer(loadedFridge.Value, fridgeComp.Container, out var container), Is.True);
+
+            var apples = container!.ContainedEntities.Count(uid =>
+                entMan.GetComponent<MetaDataComponent>(uid).EntityPrototype?.ID == "FoodApple");
+            Assert.That(apples, Is.EqualTo(1), "The retrieved fridge lost its contents.");
+
+            // The entry list is rebuilt on startup, so the fridge can still dispense it.
+            Assert.That(fridgeComp.ContainedEntries.Count, Is.EqualTo(1),
+                "The retrieved fridge's entry list was not rebuilt from its contents.");
+        });
+
+        await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));
+        await server.WaitRunTicks(2);
+        await server.WaitAssertion(() => server.System<SharedMapSystem>().DeleteMap(loadedMap));
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    /// The spray painter stores the chosen style only in the runtime appearance data, which is not
+    /// serialized: a painted door silently came back with its default paint after a store/retrieve.
+    /// The style is captured in <c>PaintableComponent.PaintedStyle</c> on save and re-applied on load.
+    /// </summary>
+    [Test]
+    public async Task PaintedDoorKeepsItsPaint()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+
+        EntityUid loadedGrid = default;
+        MapId loadedMap = default;
+        const string style = "AirlockCommand";
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var appearance = server.System<SharedAppearanceSystem>();
+            var grid = testMap.Grid.Owner;
+
+            var door = entMan.SpawnEntity("Airlock", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            Assert.That(entMan.HasComponent<PaintableComponent>(door), Is.True, "sanity: the airlock is paintable");
+
+            // What the spray painter does when it finishes painting.
+            appearance.SetData(door, PaintableVisuals.Prototype, style);
+
+            var path = BluespaceDockSystem.GetShipFilePath("paint-save-test");
+            Assert.That(dock.TrySaveShipFile(grid, path, out var error), Is.True, $"Saving failed: {error}");
+            Assert.That(dock.TryLoadShipFile(path, out var loaded), Is.True, "Loading the saved ship failed.");
+            loadedGrid = loaded!.Value;
+            loadedMap = entMan.GetComponent<TransformComponent>(loadedGrid).MapID;
+            dock.DeleteShipFile(path);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var appearance = server.System<SharedAppearanceSystem>();
+            var entities = new HashSet<EntityUid>();
+            dock.GetEntitiesOnGrid(loadedGrid, entities);
+
+            EntityUid? loadedDoor = null;
+            foreach (var uid in entities)
+            {
+                if (entMan.GetComponent<MetaDataComponent>(uid).EntityPrototype?.ID == "Airlock")
+                    loadedDoor = uid;
+            }
+
+            Assert.That(loadedDoor, Is.Not.Null, "The retrieved ship lost its airlock.");
+            Assert.That(entMan.GetComponent<PaintableComponent>(loadedDoor!.Value).PaintedStyle, Is.EqualTo(style),
+                "The painted style was not saved with the door.");
+            Assert.That(appearance.TryGetData<string>(loadedDoor.Value, PaintableVisuals.Prototype, out var painted)
+                        && painted == style,
+                Is.True, "The retrieved door lost its paint.");
+        });
+
+        await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));
+        await server.WaitRunTicks(2);
+        await server.WaitAssertion(() => server.System<SharedMapSystem>().DeleteMap(loadedMap));
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    /// A PDA carries a <c>StoreComponent</c>, whose <c>StartingMap</c> field holds the map entity it
+    /// was created on - a reference to the saved grid's parent, which a grid file cannot carry (the
+    /// strict save used to fail on it). It also links its ID card in a runtime field that the loader
+    /// never fills, so a retrieved PDA stopped recognizing its own card. Both are restored by the
+    /// dock; the card's name/job/access survive, while its ship deed deliberately does not (the dock
+    /// registry owns the ship identity).
+    /// </summary>
+    [Test]
+    public async Task PdaAndIdCardSurviveTheSave()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var containers = server.System<ContainerSystem>();
+
+        EntityUid loadedGrid = default;
+        MapId loadedMap = default;
+        var beforeTags = string.Empty;
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var sharedDock = server.System<SharedBluespaceDockSystem>();
+            var idCards = server.System<SharedIdCardSystem>();
+            var grid = testMap.Grid.Owner;
+
+            var pda = entMan.SpawnEntity("PassengerPDA", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            var pdaComp = entMan.GetComponent<PdaComponent>(pda);
+            var card = pdaComp.IdSlot.ContainerSlot?.ContainedEntity;
+            Assert.That(card, Is.Not.Null, "sanity: the PDA has no ID card");
+
+            var cardComp = entMan.GetComponent<IdCardComponent>(card!.Value);
+            cardComp.FullName = "Probe Person";
+            idCards.TryChangeJobTitle(card.Value, "Probe Job");
+            beforeTags = string.Join(",", entMan.GetComponent<AccessComponent>(card.Value).Tags);
+
+            // A deed on the card must not survive the store: the registry owns the ship identity.
+            sharedDock.AssignDeed(card.Value, grid, "Deed Ship", null, "Deed Owner");
+            Assert.That(entMan.HasComponent<ShuttleDeedComponent>(card.Value), Is.True, "sanity: deed on the card");
+
+            var path = BluespaceDockSystem.GetShipFilePath("pda-save-test");
+            Assert.That(dock.TrySaveShipFile(grid, path, out var error), Is.True,
+                $"Saving a grid with a PDA failed: {error}");
+            Assert.That(dock.TryLoadShipFile(path, out var loaded), Is.True, "Loading the saved ship failed.");
+            loadedGrid = loaded!.Value;
+            loadedMap = entMan.GetComponent<TransformComponent>(loadedGrid).MapID;
+            dock.DeleteShipFile(path);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var idCards = server.System<SharedIdCardSystem>();
+            var entities = new HashSet<EntityUid>();
+            dock.GetEntitiesOnGrid(loadedGrid, entities);
+
+            EntityUid? loadedPda = null;
+            foreach (var uid in entities)
+            {
+                if (entMan.GetComponent<MetaDataComponent>(uid).EntityPrototype?.ID == "PassengerPDA")
+                    loadedPda = uid;
+            }
+
+            Assert.That(loadedPda, Is.Not.Null, "The retrieved ship lost its PDA.");
+            var pdaComp = entMan.GetComponent<PdaComponent>(loadedPda!.Value);
+
+            var card = pdaComp.IdSlot.ContainerSlot?.ContainedEntity;
+            Assert.That(card, Is.Not.Null, "The retrieved PDA lost its ID card.");
+            Assert.That(pdaComp.PenSlot.ContainerSlot?.ContainedEntity, Is.Not.Null,
+                "The retrieved PDA lost its pen.");
+
+            // The card link is runtime state; without it access checks and the ID UI are dead.
+            Assert.That(pdaComp.ContainedId, Is.EqualTo(card),
+                "The retrieved PDA does not recognize the card in its ID slot.");
+            Assert.That(idCards.TryFindIdCard(loadedPda.Value, out var foundCard) && foundCard.Owner == card,
+                Is.True, "The retrieved PDA has no findable ID card.");
+
+            // The card's identity and access survive...
+            var cardComp = entMan.GetComponent<IdCardComponent>(card!.Value);
+            Assert.That(cardComp.FullName, Is.EqualTo("Probe Person"), "The retrieved ID card lost its name.");
+            Assert.That(string.Join(",", entMan.GetComponent<AccessComponent>(card.Value).Tags), Is.EqualTo(beforeTags),
+                "The retrieved ID card lost its access.");
+
+            // ...but not the deed (it belongs to the dock registry, and the ship it names no longer exists).
+            Assert.That(entMan.HasComponent<ShuttleDeedComponent>(card.Value), Is.False,
+                "A stored ID card came back with its old ship deed.");
+        });
+
+        await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));
+        await server.WaitRunTicks(2);
+        await server.WaitAssertion(() => server.System<SharedMapSystem>().DeleteMap(loadedMap));
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
     /// An update that removes a prototype **inside a container** on a stored ship: the sanitized
     /// copy drops the entity (and its contents), and the containers that named it must not be left
     /// pointing at a uid the copy no longer declares. The deserializer turns those into
@@ -205,6 +474,422 @@ public sealed class BluespaceDockSaveTest
                 "Only the removed item should be gone from the toolbox.");
 
             dock.DeleteShipFile(file);
+        });
+
+        await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));
+        await server.WaitRunTicks(2);
+        await server.WaitAssertion(() => server.System<SharedMapSystem>().DeleteMap(loadedMap));
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    /// Action cooldowns are absolute round times (<see cref="UseDelayInfo.EndTime"/> is compared to
+    /// <c>IGameTiming.CurTime</c>), and the clock restarts every round. A ship stored late in a round
+    /// used to come back with every use-delayed entity - buttons, switches, toolbelts, guns - still
+    /// "on cooldown" until the new round reached the old time: clicks and E did nothing while
+    /// right-click verbs (which bypass the delay) still worked.
+    /// </summary>
+    [Test]
+    public async Task SavedShipForgetsActionCooldowns()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+
+        EntityUid loadedGrid = default;
+        MapId loadedMap = default;
+        var stale = TimeSpan.FromHours(1);
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var interaction = server.System<SharedInteractionSystem>();
+            var useDelaySystem = server.System<UseDelaySystem>();
+            var deviceLink = server.System<DeviceLinkSystem>();
+            var mapSystem = server.System<SharedMapSystem>();
+            var grid = testMap.Grid.Owner;
+
+            // A signal button wired to a light, a toolbelt (E opens its storage) and a gun, so the
+            // three use-delay paths a player hits are covered.
+            var button = entMan.SpawnEntity("SignalButton", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            var light = entMan.SpawnEntity("PoweredSmallLight", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            deviceLink.SaveLinks(null, button, light, new List<(string, string)> { ("Pressed", "Toggle") });
+
+            var belt = entMan.SpawnEntity("ClothingBeltUtilityFilled", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            var gun = entMan.SpawnEntity("PSWeaponRifleAk", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+
+            // Ship machinery with its own round-clock timers: an AME, a thruster and a hydro tray.
+            var ame = entMan.SpawnEntity("AmeController", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            var thruster = entMan.SpawnEntity("Thruster", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            var tray = entMan.SpawnEntity("HydroponicsTrayEmpty", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            var oreBag = entMan.SpawnEntity("OreBag", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+
+            var player = entMan.SpawnEntity("MobHuman", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+
+            // Pretend the ship was stored late in a round: every cooldown is far in the future of a
+            // freshly restarted round.
+            foreach (var uid in new[] { button, belt, gun })
+            {
+                var useDelay = entMan.EnsureComponent<UseDelayComponent>(uid);
+                useDelaySystem.SetLength((uid, useDelay), TimeSpan.FromSeconds(1));
+                foreach (var delay in useDelay.Delays.Values)
+                {
+                    delay.StartTime = stale - TimeSpan.FromSeconds(1);
+                    delay.EndTime = stale;
+                }
+            }
+
+            // These timers are access-restricted to their systems; reflection is only used to fake
+            // the stale values a real save would carry.
+            typeof(GunComponent)
+                .GetField(nameof(GunComponent.NextFire))!
+                .SetValue(entMan.GetComponent<GunComponent>(gun), stale);
+
+            var ameComp = entMan.GetComponent<Content.Server.Ame.Components.AmeControllerComponent>(ame);
+            typeof(Content.Server.Ame.Components.AmeControllerComponent).GetField("LastUpdate")!.SetValue(ameComp, stale - TimeSpan.FromSeconds(10));
+            typeof(Content.Server.Ame.Components.AmeControllerComponent).GetField("NextUpdate")!.SetValue(ameComp, stale);
+            typeof(Content.Server.Ame.Components.AmeControllerComponent).GetField("EffectCooldown")!.SetValue(ameComp, stale);
+
+            typeof(Content.Server.Shuttles.Components.ThrusterComponent)
+                .GetField("NextFire")!
+                .SetValue(entMan.GetComponent<Content.Server.Shuttles.Components.ThrusterComponent>(thruster), stale);
+
+            var plantComp = entMan.GetComponent<Content.Server.Botany.Components.PlantHolderComponent>(tray);
+            plantComp.NextUpdate = stale;
+            plantComp.LastCycle = stale;
+
+            entMan.GetComponent<MagnetPickupComponent>(oreBag).NextScan = stale;
+
+            Assert.That(useDelaySystem.IsDelayed(button), Is.True, "sanity: the button starts on cooldown");
+            Assert.That(interaction.InteractionActivate(player, button), Is.False,
+                "sanity: a click on a cooldown-gated button must be dropped (this is the reported bug)");
+            Assert.That(interaction.UseInHandInteraction(player, belt), Is.True,
+                "sanity: E on a cooldown-gated item is consumed without doing anything");
+
+            var path = BluespaceDockSystem.GetShipFilePath("cooldown-save-test");
+            Assert.That(dock.TrySaveShipFile(grid, path, out var error), Is.True, error);
+            Assert.That(dock.TryLoadShipFile(path, out var loaded), Is.True, "Loading the saved ship failed.");
+            loadedGrid = loaded!.Value;
+            loadedMap = entMan.GetComponent<TransformComponent>(loadedGrid).MapID;
+            dock.DeleteShipFile(path);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var interaction = server.System<SharedInteractionSystem>();
+            var useDelaySystem = server.System<UseDelaySystem>();
+
+            EntityUid button = default;
+            EntityUid belt = default;
+            EntityUid gun = default;
+            EntityUid ame = default;
+            EntityUid thruster = default;
+            EntityUid tray = default;
+            EntityUid oreBag = default;
+            EntityUid player = default;
+
+            var entities = new HashSet<EntityUid>();
+            dock.GetEntitiesOnGrid(loadedGrid, entities);
+            foreach (var uid in entities)
+            {
+                switch (entMan.GetComponent<MetaDataComponent>(uid).EntityPrototype?.ID)
+                {
+                    case "SignalButton":
+                        button = uid;
+                        break;
+                    case "ClothingBeltUtilityFilled":
+                        belt = uid;
+                        break;
+                    case "PSWeaponRifleAk":
+                        gun = uid;
+                        break;
+                    case "AmeController":
+                        ame = uid;
+                        break;
+                    case "Thruster":
+                        thruster = uid;
+                        break;
+                    case "HydroponicsTrayEmpty":
+                        tray = uid;
+                        break;
+                    case "OreBag":
+                        oreBag = uid;
+                        break;
+                }
+            }
+
+            var foundProtos = string.Join(",", entities.Select(u => entMan.GetComponent<MetaDataComponent>(u).EntityPrototype?.ID));
+            Assert.That(button.IsValid() && belt.IsValid() && gun.IsValid(), Is.True,
+                $"The retrieved ship is missing one of the test entities. Found: {foundProtos}");
+
+            // Mobs are not part of a ship file; the interacting player is a fresh one on the grid.
+            player = entMan.SpawnEntity("MobHuman", new EntityCoordinates(loadedGrid, new Vector2(0.5f, 0.5f)));
+
+            Assert.That(useDelaySystem.IsDelayed(button), Is.False,
+                "The retrieved button is still on a cooldown from the previous round.");
+            Assert.That(useDelaySystem.IsDelayed(belt), Is.False,
+                "The retrieved toolbelt is still on a cooldown from the previous round.");
+            Assert.That(entMan.GetComponent<GunComponent>(gun).NextFire, Is.EqualTo(TimeSpan.Zero),
+                "The retrieved gun kept its shot cooldown from the previous round.");
+
+            Assert.That(ame.IsValid() && thruster.IsValid() && tray.IsValid() && oreBag.IsValid(), Is.True,
+                "The retrieved ship is missing one of its machines.");
+
+            var ameComp = entMan.GetComponent<Content.Server.Ame.Components.AmeControllerComponent>(ame);
+            Assert.That(ameComp.LastUpdate, Is.EqualTo(TimeSpan.Zero),
+                "The retrieved AME kept its previous-round update time.");
+            Assert.That(ameComp.NextUpdate, Is.EqualTo(TimeSpan.Zero),
+                "The retrieved AME kept its next update in the previous round (it would not inject fuel).");
+            Assert.That(ameComp.EffectCooldown, Is.EqualTo(TimeSpan.Zero),
+                "The retrieved AME kept its alarm cooldown from the previous round.");
+
+            Assert.That(entMan.GetComponent<Content.Server.Shuttles.Components.ThrusterComponent>(thruster).NextFire,
+                Is.EqualTo(TimeSpan.Zero), "The retrieved thruster kept its damage cooldown from the previous round.");
+
+            var plantComp = entMan.GetComponent<Content.Server.Botany.Components.PlantHolderComponent>(tray);
+            Assert.That(plantComp.NextUpdate, Is.EqualTo(TimeSpan.Zero),
+                "The retrieved hydro tray kept its previous-round update time.");
+            Assert.That(plantComp.LastCycle, Is.EqualTo(TimeSpan.Zero),
+                "The retrieved hydro tray kept its previous-round cycle time.");
+
+            Assert.That(entMan.GetComponent<MagnetPickupComponent>(oreBag).NextScan, Is.EqualTo(TimeSpan.Zero),
+                "The retrieved ore bag kept its previous-round magnet scan time (the magnet stays dead).");
+
+            // The click now goes through and the button's signal reaches the light.
+            Assert.That(interaction.InteractionActivate(player, button), Is.True,
+                "A retrieved button still refuses clicks.");
+        });
+
+        await pair.RunTicksSync(5);
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var entities = new HashSet<EntityUid>();
+            dock.GetEntitiesOnGrid(loadedGrid, entities);
+
+            EntityUid? light = null;
+            foreach (var uid in entities)
+            {
+                if (entMan.GetComponent<MetaDataComponent>(uid).EntityPrototype?.ID == "PoweredSmallLight")
+                    light = uid;
+            }
+
+            Assert.That(light, Is.Not.Null, "The retrieved ship lost its light.");
+            Assert.That(entMan.GetComponent<PoweredLightComponent>(light!.Value).On, Is.False,
+                "The retrieved button's click did not reach the linked light.");
+        });
+
+        await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));
+        await server.WaitRunTicks(2);
+        await server.WaitAssertion(() => server.System<SharedMapSystem>().DeleteMap(loadedMap));
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    /// Reagent dispensers and vending machines register their beaker/cash item slots in MapInit.
+    /// A loaded ship skips MapInit, so without the load-time registration the containers exist but
+    /// the item slots do not: the coffee machine cannot accept, eject or dispense into a beaker and
+    /// the vending machine cannot take cash.
+    /// </summary>
+    [Test]
+    public async Task RetrievedShipRestoresItemSlots()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+
+        EntityUid loadedGrid = default;
+        MapId loadedMap = default;
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var grid = testMap.Grid.Owner;
+
+            entMan.SpawnEntity("ImpCoffeeMachine", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            entMan.SpawnEntity("VendingMachineCoffee", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+
+            var path = BluespaceDockSystem.GetShipFilePath("item-slot-save-test");
+            Assert.That(dock.TrySaveShipFile(grid, path, out var error), Is.True, error);
+            Assert.That(dock.TryLoadShipFile(path, out var loaded), Is.True, "Loading the saved ship failed.");
+            loadedGrid = loaded!.Value;
+            loadedMap = entMan.GetComponent<TransformComponent>(loadedGrid).MapID;
+            dock.DeleteShipFile(path);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var itemSlots = server.System<ItemSlotsSystem>();
+
+            var entities = new HashSet<EntityUid>();
+            dock.GetEntitiesOnGrid(loadedGrid, entities);
+
+            EntityUid? coffee = null;
+            EntityUid? vending = null;
+            foreach (var uid in entities)
+            {
+                switch (entMan.GetComponent<MetaDataComponent>(uid).EntityPrototype?.ID)
+                {
+                    case "ImpCoffeeMachine":
+                        coffee = uid;
+                        break;
+                    case "VendingMachineCoffee":
+                        vending = uid;
+                        break;
+                }
+            }
+
+            Assert.That(coffee, Is.Not.Null, "The retrieved ship lost its coffee machine.");
+            Assert.That(itemSlots.TryGetSlot(coffee!.Value, SharedReagentDispenser.OutputSlotName, out _), Is.True,
+                "The retrieved coffee machine has no beaker slot (it cannot make coffee).");
+
+            Assert.That(vending, Is.Not.Null, "The retrieved ship lost its vending machine.");
+            var vendingComp = entMan.GetComponent<VendingMachineComponent>(vending!.Value);
+            Assert.That(itemSlots.TryGetSlot(vending.Value, vendingComp.CashSlotName!, out _), Is.True,
+                "The retrieved vending machine has no cash slot.");
+        });
+
+        await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));
+        await server.WaitRunTicks(2);
+        await server.WaitAssertion(() => server.System<SharedMapSystem>().DeleteMap(loadedMap));
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    /// Material magnets (lathes, silos/flatpackers and the material reclaimer/shredder) gate their
+    /// scan on an absolute round time. A loaded ship skips MapInit and the dock clears the saved
+    /// timestamp, so the scan gate itself has to treat zero as "scan now" - the old inverted
+    /// comparison skipped forever once the timer was zeroed.
+    /// </summary>
+    [Test]
+    [TestCase("Autolathe")]
+    [TestCase("MaterialReclaimer")]
+    public async Task RetrievedMaterialMagnetsPickUpItems(string proto)
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+
+        EntityUid loadedGrid = default;
+        MapId loadedMap = default;
+        EntityUid loadedMachine = default;
+        EntityUid loadedSheet = default;
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var grid = testMap.Grid.Owner;
+
+            var machine = entMan.SpawnEntity(proto, new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            if (entMan.TryGetComponent<MaterialStorageMagnetPickupComponent>(machine, out var storageMagnet))
+                storageMagnet.MagnetEnabled = true;
+            if (entMan.TryGetComponent<MaterialReclaimerMagnetPickupComponent>(machine, out var reclaimerMagnet))
+                reclaimerMagnet.MagnetEnabled = true;
+            if (entMan.TryGetComponent<MaterialReclaimerComponent>(machine, out var reclaimer))
+            {
+                // Access-restricted to SharedMaterialReclaimerSystem; fake the powered state a
+                // machine wired to an APC would have.
+                typeof(MaterialReclaimerComponent)
+                    .GetField(nameof(MaterialReclaimerComponent.Powered))!
+                    .SetValue(reclaimer, true);
+            }
+
+            var path = BluespaceDockSystem.GetShipFilePath($"material-magnet-save-test-{proto}");
+            Assert.That(dock.TrySaveShipFile(grid, path, out var error), Is.True, error);
+            Assert.That(dock.TryLoadShipFile(path, out var loaded), Is.True, "Loading the saved ship failed.");
+            loadedGrid = loaded!.Value;
+            loadedMap = entMan.GetComponent<TransformComponent>(loadedGrid).MapID;
+            dock.DeleteShipFile(path);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var entities = new HashSet<EntityUid>();
+            dock.GetEntitiesOnGrid(loadedGrid, entities);
+
+            foreach (var uid in entities)
+            {
+                if (entMan.GetComponent<MetaDataComponent>(uid).EntityPrototype?.ID == proto)
+                {
+                    loadedMachine = uid;
+                    break;
+                }
+            }
+
+            Assert.That(loadedMachine.IsValid(), Is.True, $"The retrieved ship lost its {proto}.");
+
+            // The magnet gate is what this test covers; detach the power receiver so the server
+            // material-storage override does not reject the insertion as unpowered.
+            entMan.RemoveComponent<ApcPowerReceiverComponent>(loadedMachine);
+
+            if (entMan.TryGetComponent<MaterialStorageMagnetPickupComponent>(loadedMachine, out var storageMagnet))
+                storageMagnet.MagnetEnabled = true;
+            if (entMan.TryGetComponent<MaterialReclaimerMagnetPickupComponent>(loadedMachine, out var reclaimerMagnet))
+                reclaimerMagnet.MagnetEnabled = true;
+            if (entMan.TryGetComponent<MaterialReclaimerComponent>(loadedMachine, out var reclaimer))
+            {
+                typeof(MaterialReclaimerComponent)
+                    .GetField(nameof(MaterialReclaimerComponent.Powered))!
+                    .SetValue(reclaimer, true);
+            }
+
+            // The reclaimer blacklists the Material component (it takes trash, not sheets), so use
+            // a banana peel there; the lathe takes a steel sheet.
+            var itemProto = proto == "MaterialReclaimer" ? "TrashBananaPeel" : "SheetSteel1";
+            loadedSheet = entMan.SpawnEntity(itemProto,
+                new EntityCoordinates(loadedMachine, new Vector2(0.1f, 0.1f)));
+        });
+
+        await server.WaitRunTicks(2);
+
+        await server.WaitAssertion(() =>
+        {
+            // The periodic magnet update may already have consumed the item during the two ticks
+            // above. If it is still there, force a scan synchronously with the body state set.
+            if (entMan.EntityExists(loadedSheet))
+            {
+                var physics = server.System<SharedPhysicsSystem>();
+                physics.SetBodyStatus(loadedSheet, entMan.GetComponent<PhysicsComponent>(loadedSheet), BodyStatus.OnGround);
+
+                if (proto == "Autolathe")
+                {
+                    var magnet = entMan.GetComponent<MaterialStorageMagnetPickupComponent>(loadedMachine);
+                    magnet.NextScan = TimeSpan.Zero;
+                    server.System<MaterialStorageMagnetPickupSystem>().Update(0f);
+                }
+                else
+                {
+                    var magnet = entMan.GetComponent<MaterialReclaimerMagnetPickupComponent>(loadedMachine);
+                    magnet.NextScan = TimeSpan.Zero;
+                    server.System<MaterialReclaimerMagnetPickupSystem>().Update(0f);
+                }
+            }
+
+            if (proto == "Autolathe")
+            {
+                var materialStorage = server.System<SharedMaterialStorageSystem>();
+                Assert.That(materialStorage.GetMaterialAmount(loadedMachine, "Steel"), Is.GreaterThan(0),
+                    "The retrieved autolathe's magnet did not pick up the steel sheet.");
+            }
+            else if (entMan.EntityExists(loadedSheet))
+            {
+                // The reclaimer may have finished processing the item by now; either it is in the
+                // active container or it has been consumed. An item still on the floor means the
+                // magnet never picked it up.
+                Assert.That(server.System<SharedContainerSystem>()
+                        .TryGetContainingContainer(loadedSheet, out _),
+                    Is.True, "The retrieved material reclaimer's magnet did not pick up the item.");
+            }
         });
 
         await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));

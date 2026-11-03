@@ -4,7 +4,7 @@ using Robust.Shared.GameStates;
 namespace Content.Shared._PS.Organs;
 
 /// <summary>
-/// Semen left inside a mob. <see cref="DrippingCumSystem"/> drains it into floor puddles while the
+/// Semen left inside a mob. <see cref="DrippingCumSystem"/> drains it into floor droplets while the
 /// mob is bottomless (no jumpsuit), pausing while clothed.
 /// </summary>
 [RegisterComponent, NetworkedComponent, AutoGenerateComponentState]
@@ -17,15 +17,16 @@ public sealed partial class DrippingCumComponent : Component
     [DataField, AutoNetworkedField]
     public double Amount;
 
-    /// <summary>Server-only: total units already dripped, used to pick the decal stage.</summary>
+    /// <summary>Server-only: total number of drips already placed, used to pick the decal stage.</summary>
     public double Dripped;
 
     /// <summary>Server-only: next drip tick.</summary>
     public TimeSpan NextDrip;
 
     /// <summary>
-    /// Server-only: set when the mob moved or performed an interaction since the last drip. A drip
-    /// consumes it, so an idle mob never drips.
+    /// Server-only: starts false when semen is first stored. Set once the mob moves or performs an
+    /// interaction; the latch is never consumed by a drip, so the mob keeps dripping while it stands
+    /// still until the reservoir is empty.
     /// </summary>
     public bool Ready;
 

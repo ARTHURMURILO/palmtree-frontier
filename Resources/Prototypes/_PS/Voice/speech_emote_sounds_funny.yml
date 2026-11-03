@@ -1,0 +1,252 @@
+# Funny emote sounds ported from SPLURT-Station-13. Inherited through
+# SupplementalCoyoteEmoteStuff so every vocal species can use them.
+- type: emoteSounds
+  id: SupplementalFunnyEmotes
+  abstract: true
+  params:
+    variation: 0.125
+  sounds:
+    Cackle:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/cackle_yeen.ogg
+    Speen:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/speen.ogg
+    Chitter2:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/moth/mothchitter2.ogg
+    Bruh:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/bruh.ogg
+    Bababooey:
+      collection: PSFunnyBababooey
+    Babafooey:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/bababooey/babafooey.ogg
+    Fafafooey:
+      collection: PSFunnyFafafooey
+    Fafafoggy:
+      collection: PSFunnyFafafoggy
+    Hohohoy:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/bababooey/hohohoy.ogg
+    Ffff:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/bababooey/ffff.ogg
+    Fafafail:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/bababooey/ffffhvh.ogg
+    Boowomp:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/boowomp.ogg
+    Swaos:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/swaos.ogg
+    Eyebrow3:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/moonmen.ogg
+    Blink2:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/blink.ogg
+    Laugh2:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/laugh_king.ogg
+    Laugh3:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/lol.ogg
+    Laugh4:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/laugh_muta.ogg
+    Laugh5:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/laugh_deman.ogg
+    Laugh6:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/laugh6.ogg
+    Breakbad:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/breakbad.ogg
+    Lawyerup:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/lawyerup.ogg
+    Goddamn:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/god_damn.ogg
+    Spoonful:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/spoonful.ogg
+    Ohhmygod:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/OMG.ogg
+    Whatthehell:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/WTH.ogg
+    Fusrodah:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/fusrodah.ogg
+    Skibidi:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/skibidi.ogg
+    Fbi:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/fbi.ogg
+    Illuminati:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/illuminati.ogg
+    Bonerif:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/bonerif.ogg
+    Cry2:
+      collection: PSFunnyCry2
+    Choir:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/choir.ogg
+    Agony:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/agony.ogg
+    Whistletune:
+      collection: PSFunnyWhistletune
+    Wolfwhistle:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/wolfwhistle.ogg
+    Terror:
+      collection: PSFunnyTerror
+    Deathglare:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/deathglare.ogg
+    Sicko:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/sicko.ogg
+    Chill:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/waterphone.ogg
+    Taunt:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/phillyhit.ogg
+    Taunt2:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/orchestrahit.ogg
+    Weh2:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/weh2.ogg
+    Weh3:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/weh3.ogg
+    Weh4:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/weh_s.ogg
+    Waa:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/waa.ogg
+    Bark2:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/bark_alt.ogg
+    Bork:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/bork.ogg
+    Woof:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/woof.ogg
+    Woof2:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/woof2.ogg
+    Coyhowl:
+      collection: PSFunnyCoyhowl
+    Snore2:
+      collection: PSFunnySnore2
+    Yippee:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/yippee.ogg
+    Mewo:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/mewo.ogg
+    Missouri:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/missouri.ogg
+    Facehand:
+      path: /Audio/_PS/Interactions/slap.ogg
+    Facepaw:
+      path: /Audio/_PS/Interactions/slap.ogg
+    Faceclaw:
+      path: /Audio/_PS/Interactions/slap.ogg
+    Facewing:
+      path: /Audio/_PS/Interactions/slap.ogg
+    Facehoof:
+      path: /Audio/_PS/Interactions/slap.ogg
+    Poyo:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/barks/poyo.ogg
+    Buff:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/buff.ogg
+    Merowr:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/merowr.ogg
+    Hoot:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/hoot.ogg
+    Wurble:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/wurble.ogg
+    Warble:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/warble.ogg
+    Trill2:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/trill.ogg
+    Rattle:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/rattle.ogg
+    Rpurr:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/raptor_purr.ogg
+    Bawk:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/bawk.ogg
+    Coo:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/coo.ogg
+    Goosehonk:
+      collection: PSFunnyGoosehonk
+    Scream2:
+      collection: PSFunnyScream2
+    Scream3:
+      collection: PSFunnyScream3
+    Woop:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/gachi/woop.ogg
+    Whatthehell2:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/gachi/wth2.ogg
+    Pardon:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/gachi/sorry.ogg
+    Pardonfor:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/gachi/sorryfor.ogg
+    Fock:
+      collection: PSFunnyFock
+    Letsgo:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/gachi/go.ogg
+    Chuckle2:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/gachi/chuckle.ogg
+    Fockslaves:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/gachi/fokensleves.ogg
+    Getbuttback:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/gachi/assback.ogg
+    Boss:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/gachi/boss.ogg
+    Attention:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/gachi/attention.ogg
+    Ah:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/gachi/ah.ogg
+    Boolets:
+      collection: PSFunnyBoolets
+    Wepon:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/gachi/wepons.ogg
+    Sciteam:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/sciteam.ogg
+    Eekum:
+      collection: PSFunnyEekum
+    Bazinga:
+      collection: PSFunnyBazinga
+    Yooo:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/yooo.ogg
+    BuzzerCorrect:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/buzzer_correct.ogg
+    BuzzerIncorrect:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/buzzer_incorrect.ogg
+    ObjectionGeneric:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_objection_generic.ogg
+    Objection:
+      collection: PSFunnyObjection
+    HoldIt:
+      collection: PSFunnyHoldIt
+    TakeThat:
+      collection: PSFunnyTakeThat
+    Realize:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_realize.ogg
+    Smirk2:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/ace/ace_wubs.ogg
+    Nani:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/nani.ogg
+    Canonevent:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/canon_event.ogg
+    Meow2:
+      collection: PSFunnyMeow2
+    Mrrp:
+      collection: PSFunnyMrrp
+    Mrowl:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/mrowl.ogg
+    Gay:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/gay-echo.ogg
+    Flabbergast:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/flabbergasted.ogg
+    Rawr:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/rawr.ogg
+    Sadness:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/sadness.ogg
+    Malaysia:
+      path: /Audio/_PS/Voice/Emote/Funny/voice/malaysia.ogg
+
+- type: emoteSounds
+  id: SupplementalFunnyMale
+  params:
+    variation: 0.125
+  sounds:
+    Objection:
+      collection: PSFunnyObjectionMale
+    HoldIt:
+      collection: PSFunnyHoldItMale
+    TakeThat:
+      collection: PSFunnyTakeThatMale
+
+- type: emoteSounds
+  id: SupplementalFunnyFemale
+  params:
+    variation: 0.125
+  sounds:
+    Objection:
+      collection: PSFunnyObjectionFemale
+    HoldIt:
+      collection: PSFunnyHoldItFemale
+    TakeThat:
+      collection: PSFunnyTakeThatFemale

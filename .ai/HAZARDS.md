@@ -144,6 +144,13 @@ This engine revision (v267.3.0) differs from commonly documented SS14 APIs:
 `RaiseLocalEvent<T>(msg)` never calls `SubscribeLocalEvent<TComp,TEvent>` handlers. If a handler
 "doesn't fire", check the raise overload and whether the event is `[ComponentEvent]`.
 
+Directed component subscriptions are unique per `(component, event)` across **all** systems: a second
+`SubscribeLocalEvent<TComp, TEvent>` throws `Duplicate Subscriptions` during startup (this crashed
+the server when `JukeboxLocalTracksSystem` also subscribed to `RandomSpawnerComponent/MapInitEvent`,
+which `ConditionalSpawnerSystem` already owned). Subscribe on a different component (e.g.
+`MetaDataComponent`), use an earlier lifecycle event such as `ComponentInit`, or merge the handler.
+Ordering (`before`/`after`) does **not** make a duplicate legal.
+
 ## 9. Subscription lock
 
 Subscribe only in `Initialize()`. Subscribing later throws "Subscription locked." after startup. Use
@@ -456,6 +463,14 @@ so these fail only in CI:
   (`ClothingOuterHardsuitBase` must repeat `storagebase` from `ClothingArmorPlate`). Fixed families:
   hardsuit/EVA `storagebase`, wrapped lollipop `food` solution, `_CS` PDA blip cartridge
   (`BlipCartridgeSystem` now inits on `MapInit`).
+- **The directed event bus allows only one subscription per component/event pair** (`EntAddSubscription`
+  throws `Duplicate Subscriptions for comp=..., event=...`). If a component's `MapInitEvent` is
+  already taken (e.g. `ConditionalSpawnerSystem` owns `RandomSpawnerComponent/MapInitEvent`), do not
+  fall back to `ComponentInit` just to mutate serialized data - that fails `UninitializedSaveTest`.
+  Subscribe to `MetaDataComponent/MapInitEvent` instead, invoke with
+  `before: new[] { typeof(OwnerSystem) }`, and check `HasComp`/`TryComp` for the real component.
+  All subscriptions a system makes to the same event must declare identical ordering
+  (`JukeboxLocalTracksSystem` needed the same `before` on its jukebox handler).
 - **`ItemSpriteTest.AllItemsHaveSpritesTest`** requires every non-abstract prototype with
   `ItemComponent` to have a sprite. Body-part entities that are never held should not inherit
   `BaseItem` (the `_PS` genital organs); real items need a sprite or a visual parent
@@ -467,6 +482,10 @@ so these fail only in CI:
 - **`FailAndStartPresetTest`** readies up; the Palmtree NSFW consent gate blocks `toggleready` until
   the prompt is answered, so the test answers it via `IClientPreferencesManager.UpdateNsfwConsent`
   first.
+- **Deleting a grid while a mover is still relative to it** makes `SharedMoverController.OnMoverGetState`
+  call `GetNetEntity` on a dead uid, which logs `Can't resolve MetaDataComponent` and fails the
+  suite under `NUnit.MapWarningTo=Failed`. The fork guards the state with `Exists(relative)` and
+  sends a null relative entity (triggered by bluespace dock ship storage/evacuation).
 - **`RSI Validator` / `RGA schema validator`** (separate workflows) allow only the CC/CC0 set
   (RSI: no `Custom`; attributions: `Custom` is allowed if the copyright describes the license, and
   `source` may be `"NA"`). Run them locally:
@@ -487,7 +506,11 @@ so these fail only in CI:
   (fire rate, projectile speed, angles) stay at zero: **saved guns refuse to fire and emitter/
   A.P.E. bolts spawn with no velocity and freeze in place**. The bluespace dock compensates with
   `RestoreMapInitRegistration` in `BluespaceDockSystem` - extend that when a new
-  MapInit-registered ship system shows up.
+  MapInit-registered ship system shows up. Two more cases found on 2026-10-24: a reagent dispenser
+  (the spacepresso/coffee machine) registers its `beakerSlot` in MapInit and a vending machine
+  registers `cash_slot` there; `ItemSlotsComponent.Slots` is read-only and not serialized, so a
+  retrieved machine had the container but no item slot and could not use a beaker/cash. Both are
+  re-registered on load in `RestoreMapInitRegistration`.
 - **Never "fix" this by re-raising `MapInitEvent` on the loaded entities.** Live entities already
   had their spawn-time init; running it again re-fires every `StorageFill`/`ContainerFill` and
   duplicates (or spills) whatever players have in their containers. The bluespace dock test
@@ -557,3 +580,195 @@ so these fail only in CI:
 - **`InstantConstruction` skips the do-after delay, not the do-after**: it forces delay 0 and the
   `EffectRCDConstruct0` fx, but validity/charge checks still run every tick (and it zeroes the
   delay on deconstruct operations too).
+
+### RPD second pass (pipe colours + pipe layers)
+
+- **Every new `rpd: true` entity needs an `fx:`.** The deconstruct path in `RCDSystem.OnAfterInteract`
+  does `effectPrototype = destructible.Effect`, and `RCDDeconstructableComponent.Effect` defaults to
+  null — `Spawn(null, ...)` on an fx-less target. The `GasPipeBase` block already sets
+  `fx: EffectRCDConstruct0`; the air alarm / air sensor / gas pipe sensor blocks added with the
+  sensor RPD modes do too.
+- **Which menu opens is decided by `ActivatableUI.key`, not by `UserInterface.interfaces`.** The
+  `RPD` prototype adds its own `UserInterface` entry for `enum.RpdUiKey.Key` and re-points
+  `ActivatableUI.key` off the RCD's `RcdUiKey`, otherwise the item keeps opening the RCD's radial.
+  The inherited `RcdUiKey` mapping may still be merged into `interfaces` and is harmless —
+  `ActivatableUI` is what picks the menu.
+- **Pipe colours travel as a palette key, never as a tuple/`Color` payload.** Palette lives on the
+  entity (`pipeColorPalette:` on the `RCD` component, networked so the menu can draw swatches),
+  `RCDColorChangeMessage` carries the key, and the shared system resolves it. Applying the colour is
+  two-sided on purpose: the appearance datum (`PipeColorVisuals.Color`) drives the sprite, while
+  `RCDPipeColorAppliedEvent` → `AtmosPipeColorSystem.SetColor` updates `AtmosPipeColorComponent` for
+  the atmos monitoring console and the spray painter. Appearance alone leaves those two out of sync.
+- **`LastKnownEyeRotation` is server-only working state: do not network or `Dirty()` it.** The
+  placement mode forwards the local eye rotation (not networked) so the server can resolve the
+  layer. The field is `[ViewVariables]`-only, deliberately not an `[AutoNetworkedField]`: dirtying
+  on every change would network the component each time the player turns, and no client code reads
+  it (the client recomputes the layer in `AlignRPDAtmosPipeLayers`).
+- **`MapGridComponent.TileSize` is a `ushort`, so `tileSize / 2` is integer division and equals 0.**
+  `1 / 2 == 0`, so `CurrentTile.X + tileSize / 2` lands on the tile **corner**, not its centre. Every
+  placer in the engine writes `float tileSize = mapGrid.TileSize; //convert from ushort to float`
+  for exactly this reason (`AlignTileAny`, `AlignTileDense`, `AlignTileEmpty`, `AlignRCDConstruction`,
+  `AlignAtmosPipeLayers`). Writing `var tileSize = ...` compiles fine, passes every static check, and
+  then silently misplaces everything by half a tile at runtime — this shipped once and had to be
+  found by playtesting. It bites twice in the RPD: the ghost snaps to the corner, *and*
+  `RCDSystem.OnAfterInteract` measures the layer deadzone from the corner, so almost every click
+  reads as "off centre" and the tool silently prefers the secondary/tertiary layer. Check any new
+  `tileSize` with `grep -n "tileSize = mapGrid.TileSize"`.
+- **Coyote's `- new Vector2(0.5f, 0.5f)` bias in the layer diff was a workaround for the above**, not
+  a deliberate offset: with the integer-division bug the "centre" was the corner, and subtracting
+  another half tile nudged it back toward the middle. With `float tileSize` the tile centre is
+  genuinely `index + 0.5`, so the bias must stay **out**. The real requirement is that
+  `AlignRPDAtmosPipeLayers` (raw cursor vs snapped centre) and `RCDSystem.OnAfterInteract` (with
+  `args.ClickLocation`) compute the *same* centre; both use `tile.X + tileSize / 2` with a float
+  `tileSize`.
+- **`[Dependency]` works on a `PlacementMode` for managers only, never for a bare `EntitySystem`.**
+  `PlacementMode` instances are built through `PlacementManager.BeginPlacing` →
+  `CreateInstanceImpl`, and `IoCManager.InjectDependencies` throws `UnregisteredDependencyException`
+  for anything the container does not know about. `Content.Client.Hands.Systems.HandsSystem` carries
+  no `[RegisterDependency]`, so `[Dependency] readonly HandsSystem _hands` compiles and then crashes
+  the client the moment the placer is constructed. Resolve systems off the entity manager instead —
+  `_hands = _entityManager.System<HandsSystem>();` — as `AlignRCDConstruction` does. Managers
+  (`IEntityManager`, `IPrototypeManager`, `IPlayerManager`, `IEyeManager`, `IStateManager`, ...) are
+  fine as `[Dependency]`; a `Logger.GetSawmill(...)` static is the way to log from this class, since
+  there is no `Log` property outside `EntitySystem`.
+- **`noLayers: true` is for modes with no layer to pick.** Mode entities need an
+  `AtmosPipeLayersComponent` whose `alternativePrototypes` actually vary; `GasPipeManifold` has
+  `pipeLayersLocked: true`, and wallmounts/sensors have no component at all. The ghost system also
+  gates the layered placer on `RcdMode.ConstructObject`, so deconstruct previews keep the plain
+  placer.
+- **Do not recreate the RPD placer every tick.** `AlignRPDAtmosPipeLayers` rewrites the placer's own
+  `CurrentPermission.EntityType` to the layer prototype, so `RCDConstructionGhostSystem` tracks the
+  *base* prototype it asked for (`_placerBaseProto`) — comparing against
+  `CurrentPermission.EntityType` (Coyote's check) is always unequal and rebuilt the placer at
+  60 Hz.
+- **The resolved pipe layer belongs in the do-after event, not in system state.** `RCDDoAfterEvent`
+  completes on a later tick than `OnAfterInteract`, so a `RCDSystem` field would be overwritten by
+  another player's placement in between and silently build on the wrong layer. It is carried as
+  `RCDDoAfterEvent.Layer` and passed into `FinalizeRCDOperation`. The same applies to anything else
+  resolved per-click that is consumed at finalization (direction already worked this way).
+- **Client and server deadzone maths must use the same tile centre.** `AlignRPDAtmosPipeLayers`
+  measures the cursor offset from the *true* tile centre (`CurrentTile + tileSize / 2`), not from
+  the placement point that includes `PlacementOffset` — the server does not know the admin offset,
+  so using it made the ghost and the built pipe disagree when the `ps.placement.offset_*` CVars
+  were set.
+- **`Unstackable` is the atmos no-stacking marker.** `RCDSystem.IsConstructionLocationValid`
+  applies the check only when the *built* prototype has the tag (all atmos piping via
+  `GasPipeSansLayers`, plus the devices) and compares
+  `AtmosPipeLayersComponent.CurrentPipeLayer`; entities without alternative prototypes count as
+  primary. Pipes have no fixtures, so the collision check cannot catch them — this is why the RCD
+  could "place one anyway" after the popup from `PipeRestrictOverlapSystem` (which only runs on
+  anchoring).
+- **`RCDComponent.SpeedMultiplier` divides delays, so >1 is faster.** It is applied in
+  `OnAfterInteract` to prototype and per-entity deconstruct delays; a non-positive value is ignored
+  (var-edit safety) and `InstantConstruction` still forces 0.
+
+## 27. Absolute round-time cooldowns do not survive a round (2026-10-19)
+
+- `UseDelayInfo.EndTime`, `GunComponent.NextFire` and `MeleeWeaponComponent.NextAttack` are
+  `TimeSpan`s on the **round clock** (`IGameTiming.CurTime`), which restarts at zero every round. A
+  live ship save kept those absolute values, so after a round restart every affected entity was "on
+  cooldown" until the new round clock reached the old time: a ship stored 30 minutes into a round had
+  unusable buttons, switches and toolbelts for the first 30 minutes of the next round (same-round
+  store/retrieve looked fine, which is what made this look random).
+- The symptom misleads: `InteractionActivate` (left click) and `UseInHandInteraction` (E) silently
+  bail when `UseDelaySystem.IsDelayed`, while **right-click verbs bypass the check** - so a button
+  could be toggled from its verb menu while normal clicks and E did nothing.
+- `BluespaceDockSystem.TrySaveShipFile` calls `ResetRuntimeCooldowns` (on save *and* load): all
+  `UseDelay` delays, `SharedGunSystem.ResetCooldown` for guns, melee `NextAttack`,
+  **AME `LastUpdate`/`NextUpdate`/`EffectCooldown`** (`AmeControllerSystem.ResetTimers` - a retrieved
+  AME used to sit idle until the new round clock reached the old time), thruster `NextFire`
+  (`ThrusterSystem.ResetFireCooldown`), hydro tray `NextUpdate`/`LastCycle`, and power-transmission
+  `NextDeposit`/`AccumulatedEnergy`. **Any new component that stores an absolute `TimeSpan`/`GameTick`
+  and gates an action needs a reset there too.** Relative counters are fine
+  (`DoorComponent.SecondsUntilStateChange` stores a relative number of seconds). Note `Dirty()` must
+  not be called on non-networked components (the AME controller is one).
+- **Magnet pickups** (`MagnetPickupComponent`, `MaterialStorageMagnetPickupComponent`,
+  `MaterialReclaimerMagnetPickupComponent`) also gate on an absolute `NextScan`, set to
+  `CurTime`/`CurTime + 1s` in MapInit. A retrieved ore bag kept the previous round's timestamp (live
+  files had values up to ~42 hours), so its magnet never scanned. `ResetRuntimeCooldowns` now zeroes
+  all three. The two material-machine systems also had their comparison **inverted** (`<` instead
+  of `>`); once the timer was zeroed that skipped every scan forever. Both now match
+  `MagnetPickupSystem` (`NextScan > currentTime` skips, then `NextScan = currentTime + ScanDelay`).
+- Regression test: `BluespaceDockSaveTest.SavedShipForgetsActionCooldowns` (fails without the reset;
+  it sets a stale `OreBag` magnet too).
+
+## 28. Emote categories and chat triggers (2026-10)
+
+- **`EmoteCategory` is an `int` flag set now, not `ushort`.** All 16 old bits were taken and
+  SPLURT's `Funny` category needed a new one. `General` is `int.MaxValue`; `Funny` is
+  `Vocal | (1 << 16)` (not just `1 << 16`, or mutes/mumbling stop applying). Keep new categories
+  as flags and update `EmotesUIController.EmoteGroupingInfo` **and**
+  `EmoteCategoryWindow.CategoryTooltips` or the wheel throws on a missing dictionary key.
+- Category persistence is by enum **name** (`ServerDbBase` joins/splits `HiddenEmoteCategories`),
+  so widening the backing type does not need a DB migration. `Sex`/`Vocal`/`Invalid` are stripped
+  on save and forced visible.
+- **`*trigger` is just `EmotePrototype.ChatTriggers`.** ChatSystem strips the `*`, lowercases and
+  trims punctuation before the dictionary lookup. A trigger must be unique across every emote
+  prototype (duplicates only log a warning and the first emote wins), and a prototype with no
+  trigger cannot be used from chat even if it is in the wheel.
+- Funny emote sounds are inherited: `SupplementalFunnyEmotes` (abstract, `_PS`) is the parent of
+  `SupplementalCoyoteEmoteStuff`, which is the `VocalComponent` default. Adding an emote to the
+  wheel without adding it to that `sounds` dictionary still works for chat but is silent.
+- FTL chat messages can use Fluent pronoun helpers (`{POSS-ADJ($entity)}`, `{SUBJECT($entity)}`);
+  plain HTML tags and `[user.p_their()]`-style DM macros are not valid in SS14 locale strings.
+- **Abstract prototypes are not instantiated and cannot be `Index<T>()`-ed.** Use them only as
+  `parent:` data (`SupplementalFunnyEmotes`); a `ProtoId` field/default that points at an abstract
+  prototype fails at runtime with `UnknownPrototypeException` even though the linter accepts it.
+  `SupplementalFunnyMale`/`Female` are therefore concrete `emoteSounds` prototypes.
+- The chat-trigger path (`*trigger`) is separate from `TryEmoteWithChat`: without special handling
+  it sends the raw trigger text, not `ChatMessages`. `SendEntityEmote` now replaces the action with
+  the localized message for `EmoteCategory.Funny` only.
+- `emotelist` runs from the server console with no attached entity; pass a string as the Fluent
+  `entity` argument (neuter fallback) instead of `EntityUid.Invalid`, which logs
+  `MetaDataComponent` KeyNotFound errors for pronoun functions.
+
+## 28. Saving live grids: runtime-only fields are the main failure source (2026-10-22)
+
+- The same rule as §25 keeps surfacing: every `[DataField]` must be writable. Two shapes that look
+  harmless but are not:
+  - **Dictionary keys that are mappings.** `SmartFridgeComponent.ContainedEntries` is a
+    `Dictionary<SmartFridgeEntry, HashSet<NetEntity>>`; `SmartFridgeEntry` is a `[DataRecord]`
+    struct, so the key serializes as a *mapping*, and a dictionary key must be a value node. The
+    save threw `Caught exception while serializing component SmartFridge`; it only failed once the
+    fridge was used (empty dictionary = no keys). Dictionary keys must be scalars (`string`, `int`,
+    `ProtoId`, ...).
+    - **`[DataField] EntityUid?` holding the map.** `StoreComponent.StartingMap` ("the map the store was
+    originally from, used to block refunds if the map is changed") is a direct reference to the map
+    entity. Saving a *grid* truncates the map (it is the grid's parent), and a reference to it makes
+    the component serialization fail: every PDA (they all carry a Store) failed every strict save.
+    Clear such fields before serializing and re-derive them on load (`ClearRuntimeMapReferences`).
+  - **Runtime appearance data is not serialized.** `AppearanceComponent.AppearanceData` is
+    `[ViewVariables]`; only the prototype-supplied `AppearanceDataInit` is (read from YAML). Anything
+    that paints/changes visuals by writing appearance data is lost on save unless the choice is also
+    stored in a `[DataField]` and re-applied on `ComponentStartup` (which runs for loaded entities):
+    the spray painter used to lose its styles that way, fixed with `PaintableComponent.PaintedStyle`
+    (`SharedSprayPainterSystem.OnPaintableStartup`), and the dock captures styles painted before the
+    field existed (`BluespaceDockSystem.CapturePaintStyles`). Note `PaintedComponent.DryTime` is an
+    absolute round time (reset by `ResetRuntimeCooldowns`).
+  - **Session-scoped refs in persisted collections** (`NetEntity` sets/maps): even when they
+    serialize, they describe a round. Prefer `[ViewVariables]`/`[AutoNetworkedField]` plus a rebuild
+    from real entity state (`SmartFridgeComponent.ContainedEntries` is rebuilt from the container).
+- **A save must never be the only copy of the store decision.** `TrySaveShipFile` falls back to
+  `EntityExceptionBehaviour.IgnoreEntityAndChildren` and records what it skipped in the file's
+  `droppedEntities` section; loading spawns fresh copies (`TrySpawnDroppedEntities`). Container
+  contents are re-inserted into their original container (owner prototype + position + container id
+  are recorded); nested containers are not covered. When anchoring a re-created entity, check
+  `xform.Anchored` first - prototypes with an anchored Transform are already anchored on spawn and a
+  second `AnchorEntity` trips the engine's snap-grid assert. The strict attempt still logs an ERRO
+  (the engine does), so a "ship stored with skipped entities" shows up in the log as
+  `entity_serializer: Caught exception` followed by
+  `bluespace_dock: ... falling back to a save that skips them`.
+- **The resilient-save reference prune must use the complete uid set (2026-10-24).** Entity YAML is
+  grouped by prototype, not by containment. `TryRecordDroppedEntities` used to collect the
+  "declared" uids and prune each group inside the same loop, so a container in an early group
+  (`Airlock`, group 18) looked like it referenced a skipped entity when its item was in a later
+  group (`DoorElectronics`, group 219). Charon LV-025 lost **691** valid container/storage
+  references: contents loaded loose on the floor, door boards were empty (every door denied
+  everyone), and machines kept only their early-alphabet parts. There was no duplication - the
+  items were all still in the file, just no longer inserted. Always build the uid set from every
+  group first, then prune. `BluespaceDockResilienceTest` now asserts a normal item whose prototype
+  sorts after its container stays inside (and the skipped item is re-created beside it).
+- **The store strips before it knows the file is good.** Any new failure point after
+  `StripStationReferences`/`UndockShuttle` must go through `RestoreStoreFailure` (station refs, deed,
+  docking to the *grid it was docked to*). A stripped ship has no station member/bound components, so
+  its station-bound machinery and power look "soft-broken" until it is restored.

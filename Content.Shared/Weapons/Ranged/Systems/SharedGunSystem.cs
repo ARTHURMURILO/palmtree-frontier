@@ -543,6 +543,20 @@ public abstract partial class SharedGunSystem : EntitySystem
         // Physics.ApplyLinearImpulse(user, -impulseVector, body: userPhysics); // Frontier: old implementation
     }
 
+    /// <summary>
+    /// Palmtree: clears the shot cooldown. <see cref="GunComponent.NextFire"/> is an absolute round
+    /// time, so a gun saved and loaded across a round restart would refuse to fire until the new
+    /// round clock reached the old time (the bluespace dock resets cooldowns before saving a ship).
+    /// </summary>
+    public void ResetCooldown(Entity<GunComponent?> gun)
+    {
+        if (!Resolve(gun, ref gun.Comp))
+            return;
+
+        gun.Comp.NextFire = TimeSpan.Zero;
+        DirtyField(gun.Owner, gun.Comp, nameof(GunComponent.NextFire));
+    }
+
     public void RefreshModifiers(Entity<GunComponent?> gun)
     {
         if (!Resolve(gun, ref gun.Comp))

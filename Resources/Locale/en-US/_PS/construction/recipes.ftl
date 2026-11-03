@@ -1,0 +1,10 @@
+construction-recipe-locker-wall-generic = grey wall locker
+construction-recipe-locker-wall-generic-blue = blue wall locker
+construction-recipe-locker-wall-generic-green = green wall locker
+construction-recipe-locker-wall-generic-black = black wall locker
+construction-recipe-mirror = mirror
+construction-recipe-mirror-modern = rectangular mirror
+construction-recipe-jukebox-wallmount = wallmount jukebox
+construction-recipe-plastic-flaps-airtight-clear = airtight plastic flaps (clear)
+construction-recipe-plastic-flaps-airtight-opaque = airtight plastic flaps (opaque)
+construction-graph-tag-jukebox-flatpack = jukebox flatpack

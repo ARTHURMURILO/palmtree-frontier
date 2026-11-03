@@ -31,6 +31,12 @@ public sealed class SmartFridgeSystem : EntitySystem
         SubscribeLocalEvent<SmartFridgeComponent, InteractUsingEvent>(OnInteractUsing, after: [typeof(AnchorableSystem)]);
         SubscribeLocalEvent<SmartFridgeComponent, EntRemovedFromContainerMessage>(OnItemRemoved);
 
+        // Palmtree: the entry list is rebuilt from the container contents instead of being serialized;
+        // live saves of a used fridge cannot carry ContainedEntries (see the component's field).
+        // ComponentStartup also runs for entities loaded from a ship file (MapInit is skipped for them).
+        SubscribeLocalEvent<SmartFridgeComponent, ComponentStartup>(OnStartup);
+        SubscribeLocalEvent<SmartFridgeComponent, MapInitEvent>(OnMapInit);
+
         SubscribeLocalEvent<SmartFridgeComponent, GetVerbsEvent<AlternativeVerb>>(OnGetAltVerb);
         SubscribeLocalEvent<SmartFridgeComponent, GetDumpableVerbEvent>(OnGetDumpableVerb);
         SubscribeLocalEvent<SmartFridgeComponent, DumpEvent>(OnDump);
@@ -42,9 +48,46 @@ public sealed class SmartFridgeSystem : EntitySystem
             });
     }
 
-    private bool DoInsert(Entity<SmartFridgeComponent> ent, EntityUid user, IEnumerable<EntityUid> usedItems, bool playSound)
+    /// <summary>
+    /// Palmtree: rebuilds the UI entry list from the fridge's container contents. Called on startup
+    /// (including ship files loaded without MapInit) and on MapInit (covers spawn-time fills).
+    /// </summary>
+    private void OnStartup(Entity<SmartFridgeComponent> ent, ref ComponentStartup args)
+    {
+        RebuildEntries(ent);
+    }
+
+    private void OnMapInit(Entity<SmartFridgeComponent> ent, ref MapInitEvent args)
+    {
+        RebuildEntries(ent);
+    }
+
+    /// <summary>
+    /// Recreates <see cref="SmartFridgeComponent.ContainedEntries"/> from whatever is inside the
+    /// fridge's container, so a fridge that was saved and loaded (or one whose entries were lost)
+    /// still lists and dispenses its contents.
+    /// </summary>
+    public void RebuildEntries(Entity<SmartFridgeComponent> ent)
     {
         if (!_container.TryGetContainer(ent, ent.Comp.Container, out var container))
+            return;
+
+        ent.Comp.ContainedEntries.Clear();
+        foreach (var contained in container.ContainedEntities)
+        {
+            var key = new SmartFridgeEntry(Identity.Name(contained, EntityManager));
+            if (!ent.Comp.Entries.Contains(key))
+                ent.Comp.Entries.Add(key);
+
+            ent.Comp.ContainedEntries.TryAdd(key, new());
+            ent.Comp.ContainedEntries[key].Add(GetNetEntity(contained));
+        }
+
+        Dirty(ent);
+    }
+
+    private bool DoInsert(Entity<SmartFridgeComponent> ent, EntityUid user, IEnumerable<EntityUid> usedItems, bool playSound)
+    {        if (!_container.TryGetContainer(ent, ent.Comp.Container, out var container))
             return false;
 
         if (ent.Comp.CheckAccessOnInsert && !Allowed(ent, user)) // Frontier: add CheckAccessOnInsert

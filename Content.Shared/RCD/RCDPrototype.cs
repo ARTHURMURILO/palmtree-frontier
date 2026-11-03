@@ -121,6 +121,16 @@ public sealed partial class RCDPrototype : IPrototype
     /// </summary>
     [DataField, ViewVariables(VVAccess.ReadOnly)]
     public RcdRotation Rotation { get; private set; } = RcdRotation.User;
+
+    // Palmtree: RPD pipe layer placement (ported from the old Coyote code)
+    /// <summary>
+    /// If true, the RPD places this prototype like a plain RCD does instead of picking one of the
+    /// atmos pipe layers based on where inside the tile the player clicked. Used by modes whose
+    /// entity has no AtmosPipeLayersComponent to choose between (manifolds, wallmounts, sensors).
+    /// </summary>
+    [DataField, ViewVariables(VVAccess.ReadOnly)]
+    public bool NoLayers { get; private set; }
+    // Palmtree end
 }
 
 public enum RcdMode : byte

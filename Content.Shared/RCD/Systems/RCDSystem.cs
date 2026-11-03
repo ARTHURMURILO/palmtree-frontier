@@ -3,14 +3,17 @@ using Content.Shared.Administration.Logs;
 using Content.Shared.Charges.Components;
 using Content.Shared.Charges.Systems;
 using Content.Shared.Construction;
+using Content.Shared.Construction.Components;
 using Content.Shared.Database;
 using Content.Shared.DoAfter;
+using Content.Shared.Doors.Components;
 using Content.Shared.Examine;
 using Content.Shared.Hands.EntitySystems;
 using Content.Shared.Interaction;
 using Content.Shared.Maps;
 using Content.Shared.Physics;
 using Content.Shared.Popups;
+using Content.Shared.Prototypes;
 using Content.Shared.RCD.Components;
 using Content.Shared._NF.GridAccess; // Frontier
 using Content.Shared.Tag;
@@ -26,6 +29,11 @@ using Robust.Shared.Prototypes;
 using Robust.Shared.Serialization;
 using System.Linq;
 using Robust.Shared.Audio;
+// Palmtree: RPD pipe colouring and pipe layer placement (ported from the old Coyote code)
+using System.Numerics;
+using Content.Shared.Atmos.Components;
+using Content.Shared.Atmos.EntitySystems;
+using Content.Shared.Atmos.Piping;
 
 namespace Content.Shared.RCD.Systems;
 
@@ -47,12 +55,21 @@ public sealed class RCDSystem : EntitySystem
     [Dependency] private readonly SharedMapSystem _mapSystem = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
     [Dependency] private readonly TagSystem _tags = default!;
+    // Palmtree: RPD pipe colouring and pipe layer placement
+    [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
+    [Dependency] private readonly SharedAtmosPipeLayersSystem _pipeLayers = default!;
 
     private readonly int _instantConstructionDelay = 0;
     private readonly EntProtoId _instantConstructionFx = "EffectRCDConstruct0";
     private readonly ProtoId<RCDPrototype> _deconstructTileProto = "DeconstructTile";
     private readonly ProtoId<RCDPrototype> _deconstructLatticeProto = "DeconstructLattice";
     private static readonly ProtoId<TagPrototype> CatwalkTag = "Catwalk";
+    private static readonly ProtoId<TagPrototype> AirlockTag = "Airlock"; // Palmtree: airlocks and firelocks may share a tile
+    private static readonly ProtoId<TagPrototype> UnstackableTag = "Unstackable"; // Palmtree: no stacking atmos pipes/devices
+    // Palmtree: even the admin RCD must leave these alone.
+    private static readonly ProtoId<TagPrototype> RcdUnDeconstructableTag = "RCDUnDeconstructable";
+    private static readonly EntProtoId RcdAmmoProto = "RCDAmmo";
+    private static readonly EntProtoId ShipyardRcdAmmoProto = "ShipyardRCDAmmo";
 
     private HashSet<EntityUid> _intersectingEntities = new();
 
@@ -68,6 +85,9 @@ public sealed class RCDSystem : EntitySystem
         SubscribeLocalEvent<RCDComponent, RCDSystemMessage>(OnRCDSystemMessage);
         SubscribeNetworkEvent<RCDConstructionGhostRotationEvent>(OnRCDconstructionGhostRotationEvent);
         SubscribeNetworkEvent<RCDConstructionGhostFlipEvent>(OnRCDConstructionGhostFlipEvent); // Palmtree: mirror prototype flip
+        // Palmtree: RPD pipe colouring and pipe layer placement
+        SubscribeLocalEvent<RCDComponent, RCDColorChangeMessage>(OnColorChange);
+        SubscribeNetworkEvent<RPDEyeRotationEvent>(OnRPDEyeRotationEvent);
     }
 
     #region Event handling
@@ -101,27 +121,53 @@ public sealed class RCDSystem : EntitySystem
         Dirty(uid, component);
     }
 
+    // Palmtree: RPD pipe colour selection
+    private void OnColorChange(EntityUid uid, RCDComponent component, RCDColorChangeMessage args)
+    {
+        // Exit if the message didn't come from the entity it claims to be about
+        if (args.NetEntity != GetNetEntity(uid))
+            return;
+
+        // Only accept palette keys this RCD actually offers (plus the no-paint default)
+        if (args.Key != "default" && !component.PipeColorPalette.ContainsKey(args.Key))
+            return;
+
+        component.PipeColorKey = args.Key;
+        Dirty(uid, component);
+    }
+
     private void OnExamine(EntityUid uid, RCDComponent component, ExaminedEvent args)
     {
         if (!args.IsInDetailsRange)
             return;
 
         var prototype = _protoManager.Index(component.ProtoId);
+        var modeName = GetModeDisplayName(prototype);
 
-        var msg = Loc.GetString("rcd-component-examine-mode-details", ("mode", Loc.GetString(prototype.SetName)));
+        var msg = Loc.GetString("rcd-component-examine-mode-details", ("mode", modeName));
 
         if (prototype.Mode == RcdMode.ConstructTile || prototype.Mode == RcdMode.ConstructObject)
-        {
-            var name = Loc.GetString(prototype.SetName);
-
-            if (prototype.Prototype != null &&
-                _protoManager.TryIndex(prototype.Prototype, out var proto))
-                name = proto.Name;
-
-            msg = Loc.GetString("rcd-component-examine-build-details", ("name", name));
-        }
+            msg = Loc.GetString("rcd-component-examine-build-details", ("name", modeName));
 
         args.PushMarkup(msg);
+    }
+
+    /// <summary>
+    /// Palmtree: explicit mode names win over the entity name so light variants can describe their
+    /// colour and type instead of all reading as "light".
+    /// </summary>
+    private string GetModeDisplayName(RCDPrototype prototype)
+    {
+        if (prototype.SetName != "Unknown")
+            return Loc.GetString(prototype.SetName);
+
+        if (prototype.Prototype != null &&
+            _protoManager.TryIndex(prototype.Prototype, out var proto)) // don't use Resolve because this can be a tile
+        {
+            return proto.Name;
+        }
+
+        return Loc.GetString(prototype.SetName);
     }
 
     private void OnAfterInteract(EntityUid uid, RCDComponent component, AfterInteractEvent args)
@@ -148,7 +194,34 @@ public sealed class RCDSystem : EntitySystem
         var tile = _mapSystem.GetTileRef(gridUid.Value, mapGrid, location);
         var position = _mapSystem.TileIndicesFor(gridUid.Value, mapGrid, location);
 
-        if (!IsRCDOperationStillValid(uid, component, gridUid.Value, mapGrid, tile, position, args.Target, args.User))
+        // Palmtree: work out which atmos pipe layer the click was aimed at, from its offset from
+        // the centre of the tile. Matches what AlignRPDAtmosPipeLayers previews on the client.
+        // The layer travels in the do-after event: the operation finishes on a later tick, so
+        // system-wide state would let concurrent placements overwrite each other's layer.
+        var layer = AtmosPipeLayer.Primary;
+
+        if (component.IsRpd && prototype.Mode == RcdMode.ConstructObject && !prototype.NoLayers)
+        {
+            // TileSize is a ushort: this must be a float, or `/ 2` is integer division (1 / 2 == 0)
+            // and the deadzone ends up measured from the tile corner instead of its centre.
+            float tileSize = mapGrid.TileSize;
+            var tileCenter = new Vector2(tile.X + tileSize / 2, tile.Y + tileSize / 2);
+            var mouseCoordsDiff = args.ClickLocation.Position - tileCenter;
+            const float mouseDeadzoneRadius = 0.25f;
+
+            if (mouseCoordsDiff.Length() > mouseDeadzoneRadius && component.LastKnownEyeRotation.HasValue)
+            {
+                var gridRotation = _transform.GetWorldRotation(gridUid.Value);
+                var angle = new Angle(mouseCoordsDiff);
+                var eyeRotation = new Angle(component.LastKnownEyeRotation.Value);
+                var direction = (angle + eyeRotation + gridRotation + Math.PI / 2).GetCardinalDir();
+                layer = (direction == Direction.North || direction == Direction.East)
+                    ? AtmosPipeLayer.Secondary
+                    : AtmosPipeLayer.Tertiary;
+            }
+        }
+
+        if (!IsRCDOperationStillValid(uid, component, gridUid.Value, mapGrid, tile, position, args.Target, args.User, layer: layer))
             return;
 
         // Frontier: grid-access restrictions
@@ -178,7 +251,7 @@ public sealed class RCDSystem : EntitySystem
 
         // Get the starting cost, delay, and effect from the prototype
         var cost = prototype.Cost;
-        var delay = component.InstantConstruction ? 0 : prototype.Delay; // Palmtree: instant construction
+        var delay = component.InstantConstruction ? 0 : GetSpeedAdjustedDelay(component, prototype.Delay); // Palmtree: instant construction + speed multiplier
         var effectPrototype = component.InstantConstruction ? _instantConstructionFx : prototype.Effect; // Palmtree: instant construction
 
         #region: Operation modifiers
@@ -194,7 +267,7 @@ public sealed class RCDSystem : EntitySystem
                     if (TryComp<RCDDeconstructableComponent>(args.Target, out var destructible))
                     {
                         cost = destructible.Cost;
-                        delay = component.InstantConstruction ? 0 : destructible.Delay; // Palmtree: instant construction
+                        delay = component.InstantConstruction ? 0 : GetSpeedAdjustedDelay(component, destructible.Delay); // Palmtree: instant construction + speed multiplier
                         effectPrototype = component.InstantConstruction ? _instantConstructionFx : destructible.Effect; // Palmtree: instant construction
                     }
                 }
@@ -208,7 +281,7 @@ public sealed class RCDSystem : EntitySystem
                     if (_protoManager.TryIndex(protoName, out var deconProto))
                     {
                         cost = deconProto.Cost;
-                        delay = component.InstantConstruction ? 0 : deconProto.Delay; // Palmtree: instant construction
+                        delay = component.InstantConstruction ? 0 : GetSpeedAdjustedDelay(component, deconProto.Delay); // Palmtree: instant construction + speed multiplier
                         effectPrototype = component.InstantConstruction ? _instantConstructionFx : deconProto.Effect; // Palmtree: instant construction
                     }
                 }
@@ -231,9 +304,18 @@ public sealed class RCDSystem : EntitySystem
 
         #endregion
 
+        // Palmtree: the admin RCD never consumes or returns matter.
+        if (component.Unrestricted)
+            cost = 0;
+
         // Try to start the do after
-        var effect = Spawn(effectPrototype, location);
-        var ev = new RCDDoAfterEvent(GetNetCoordinates(location), component.ConstructionDirection, component.ProtoId, cost, GetNetEntity(effect));
+        EntityUid? effectUid = null;
+
+        if (effectPrototype != null)
+            effectUid = Spawn(effectPrototype.Value, location);
+
+        var effect = effectUid == null ? (NetEntity?) null : GetNetEntity(effectUid.Value);
+        var ev = new RCDDoAfterEvent(GetNetCoordinates(location), component.ConstructionDirection, component.ProtoId, cost, effect, layer);
 
         var doAfterArgs = new DoAfterArgs(EntityManager, user, delay, ev, uid, target: args.Target, used: uid)
         {
@@ -247,8 +329,8 @@ public sealed class RCDSystem : EntitySystem
 
         args.Handled = true;
 
-        if (!_doAfter.TryStartDoAfter(doAfterArgs))
-            QueueDel(effect);
+        if (!_doAfter.TryStartDoAfter(doAfterArgs) && effectUid != null)
+            QueueDel(effectUid.Value);
     }
 
     private void OnDoAfterAttempt(EntityUid uid, RCDComponent component, DoAfterAttemptEvent<RCDDoAfterEvent> args)
@@ -278,7 +360,7 @@ public sealed class RCDSystem : EntitySystem
         var tile = _mapSystem.GetTileRef(gridUid.Value, mapGrid, location);
         var position = _mapSystem.TileIndicesFor(gridUid.Value, mapGrid, location);
 
-        if (!IsRCDOperationStillValid(uid, component, gridUid.Value, mapGrid, tile, position, args.Event.Target, args.Event.User))
+        if (!IsRCDOperationStillValid(uid, component, gridUid.Value, mapGrid, tile, position, args.Event.Target, args.Event.User, layer: args.Event.Layer))
             args.Cancel();
     }
 
@@ -287,8 +369,8 @@ public sealed class RCDSystem : EntitySystem
         if (args.Cancelled)
         {
             // Delete the effect entity if the do-after was cancelled (server-side only)
-            if (_net.IsServer)
-                QueueDel(GetEntity(args.Effect));
+            if (_net.IsServer && args.Effect is { } effect)
+                QueueDel(GetEntity(effect));
             return;
         }
 
@@ -308,15 +390,30 @@ public sealed class RCDSystem : EntitySystem
         var position = _mapSystem.TileIndicesFor(gridUid.Value, mapGrid, location);
 
         // Ensure the RCD operation is still valid
-        if (!IsRCDOperationStillValid(uid, component, gridUid.Value, mapGrid, tile, position, args.Target, args.User))
+        if (!IsRCDOperationStillValid(uid, component, gridUid.Value, mapGrid, tile, position, args.Target, args.User, layer: args.Layer))
             return;
 
         // Finalize the operation (this should handle prediction properly)
-        FinalizeRCDOperation(uid, component, gridUid.Value, mapGrid, tile, position, args.Direction, args.Target, args.User);
+        FinalizeRCDOperation(uid, component, gridUid.Value, mapGrid, tile, position, args.Direction, args.Target, args.User, args.Layer);
 
-        // Play audio and consume charges
+        // Play audio and update charges.
         _audio.PlayPredicted(component.SuccessSound, uid, args.User);
-        _sharedCharges.AddCharges(uid, -args.Cost);
+
+        // Palmtree: the admin RCD neither consumes nor gains matter.
+        if (!component.Unrestricted)
+        {
+            if (!component.IsRpd && _protoManager.Index(component.ProtoId).Mode == RcdMode.Deconstruct)
+            {
+                // Palmtree: RCD deconstruction now returns matter instead of costing it. Any amount
+                // that does not fit in the tool spills out as a fresh compressed-matter cartridge.
+                // The RPD keeps its normal charge cost.
+                AddDeconstructCharges(uid, component, args.Cost, location);
+            }
+            else
+            {
+                _sharedCharges.AddCharges(uid, -args.Cost);
+            }
+        }
     }
 
     private void OnRCDconstructionGhostRotationEvent(RCDConstructionGhostRotationEvent ev, EntitySessionEventArgs session)
@@ -359,19 +456,47 @@ public sealed class RCDSystem : EntitySystem
     }
     // Palmtree end
 
+    // Palmtree: the RPD placement mode forwards the local eye rotation, which is not networked,
+    // so the server can resolve the same pipe layer the client previewed.
+    private void OnRPDEyeRotationEvent(RPDEyeRotationEvent ev, EntitySessionEventArgs session)
+    {
+        var uid = GetEntity(ev.NetEntity);
+
+        // Only accept eye rotations for an RPD this player is actually holding
+        if (session.SenderSession.AttachedEntity is not { } player)
+            return;
+
+        if (_hands.GetActiveItem(player) != uid)
+            return;
+
+        if (!TryComp<RCDComponent>(uid, out var rcd))
+            return;
+
+        if (rcd.LastKnownEyeRotation == ev.EyeRotation)
+            return;
+
+        // Not dirtied: only the server needs this, to resolve the pipe layer in FinalizeRCDOperation,
+        // and network churn every time the player turns their head is not worth it.
+        if (ev.EyeRotation is { } rotation && !float.IsFinite(rotation))
+            return;
+
+        rcd.LastKnownEyeRotation = ev.EyeRotation;
+    }
+
     #endregion
 
     #region Entity construction/deconstruction rule checks
 
-    public bool IsRCDOperationStillValid(EntityUid uid, RCDComponent component, EntityUid gridUid, MapGridComponent mapGrid, TileRef tile, Vector2i position, EntityUid? target, EntityUid user, bool popMsgs = true)
+    public bool IsRCDOperationStillValid(EntityUid uid, RCDComponent component, EntityUid gridUid, MapGridComponent mapGrid, TileRef tile, Vector2i position, EntityUid? target, EntityUid user, bool popMsgs = true, AtmosPipeLayer layer = AtmosPipeLayer.Primary)
     {
         var prototype = _protoManager.Index(component.ProtoId);
 
-        // Check that the RCD has enough ammo to get the job done
+        // Check that the RCD has enough ammo to get the job done.
+        // Palmtree: the admin RCD ignores charges entirely.
         var charges = _sharedCharges.GetCurrentCharges(uid);
 
         // Both of these were messages were suppose to be predicted, but HasInsufficientCharges wasn't being checked on the client for some reason?
-        if (charges == 0)
+        if (!component.Unrestricted && charges == 0)
         {
             if (popMsgs)
                 _popup.PopupClient(Loc.GetString("rcd-component-no-ammo-message"), uid, user);
@@ -379,7 +504,7 @@ public sealed class RCDSystem : EntitySystem
             return false;
         }
 
-        if (prototype.Cost > charges)
+        if (!component.Unrestricted && prototype.Cost > charges)
         {
             if (popMsgs)
                 _popup.PopupClient(Loc.GetString("rcd-component-insufficient-ammo-message"), uid, user);
@@ -400,7 +525,7 @@ public sealed class RCDSystem : EntitySystem
         {
             case RcdMode.ConstructTile:
             case RcdMode.ConstructObject:
-                return IsConstructionLocationValid(uid, component, gridUid, mapGrid, tile, position, user, popMsgs);
+                return IsConstructionLocationValid(uid, component, gridUid, mapGrid, tile, position, user, popMsgs, layer);
             case RcdMode.Deconstruct:
                 return IsDeconstructionStillValid(uid, component, tile, target, user, popMsgs);
         }
@@ -408,7 +533,7 @@ public sealed class RCDSystem : EntitySystem
         return false;
     }
 
-    private bool IsConstructionLocationValid(EntityUid uid, RCDComponent component, EntityUid gridUid, MapGridComponent mapGrid, TileRef tile, Vector2i position, EntityUid user, bool popMsgs = true)
+    private bool IsConstructionLocationValid(EntityUid uid, RCDComponent component, EntityUid gridUid, MapGridComponent mapGrid, TileRef tile, Vector2i position, EntityUid user, bool popMsgs = true, AtmosPipeLayer layer = AtmosPipeLayer.Primary)
     {
         var prototype = _protoManager.Index(component.ProtoId);
 
@@ -470,6 +595,37 @@ public sealed class RCDSystem : EntitySystem
         var isWindow = prototype.ConstructionRules.Contains(RcdConstructionRule.IsWindow);
         var isCatwalk = prototype.ConstructionRules.Contains(RcdConstructionRule.IsCatwalk);
 
+        // Palmtree: atmos pipes/devices carry no fixtures, so the collision check below cannot see
+        // them. Refuse to stack a new pipe/device on the same atmos layer (they share the
+        // `Unstackable` tag with the construction graphs, which have the same restriction).
+        var buildsUnstackable = false;
+        var buildsAirlock = false;
+        var buildsFirelock = false;
+        var builtLayer = AtmosPipeLayer.Primary;
+
+        if (prototype.Prototype != null &&
+            _protoManager.TryIndex<EntityPrototype>(prototype.Prototype, out var builtProto))
+        {
+            builtProto.TryGetComponent<TagComponent>(out var builtTags, EntityManager.ComponentFactory);
+
+            // Palmtree: an airlock may be built over a firelock and vice versa, but never a second
+            // entity of the same kind (the collision check still rejects that).
+            buildsAirlock = builtTags != null && _tags.HasTag(builtTags, AirlockTag);
+            buildsFirelock = builtProto.HasComponent<FirelockComponent>(EntityManager.ComponentFactory);
+
+            if (builtTags != null && _tags.HasTag(builtTags, UnstackableTag))
+            {
+                buildsUnstackable = true;
+
+                // Entities without per-layer variants always spawn on the primary layer.
+                if (builtProto.TryGetComponent<AtmosPipeLayersComponent>(out var builtLayers, EntityManager.ComponentFactory) &&
+                    builtLayers.AlternativePrototypes.Count > 0)
+                {
+                    builtLayer = layer;
+                }
+            }
+        }
+
         _intersectingEntities.Clear();
         _lookup.GetLocalEntitiesIntersecting(gridUid, position, _intersectingEntities, -0.05f, LookupFlags.Uncontained);
 
@@ -477,6 +633,30 @@ public sealed class RCDSystem : EntitySystem
         {
             if (isWindow && HasComp<SharedCanBuildWindowOnTopComponent>(ent))
                 continue;
+
+            // Palmtree: airlocks and firelocks are allowed to coexist on one tile (one of each).
+            if ((buildsAirlock && HasComp<FirelockComponent>(ent))
+                || (buildsFirelock && _tags.HasTag(ent, AirlockTag)))
+            {
+                continue;
+            }
+
+            // Palmtree: no stacking pipes/devices on the same layer
+            if (buildsUnstackable && _tags.HasTag(ent, UnstackableTag))
+            {
+                var existingLayer = AtmosPipeLayer.Primary;
+
+                if (TryComp<AtmosPipeLayersComponent>(ent, out var existingLayers))
+                    existingLayer = existingLayers.CurrentPipeLayer;
+
+                if (existingLayer == builtLayer)
+                {
+                    if (popMsgs)
+                        _popup.PopupClient(Loc.GetString("rcd-component-cannot-build-on-occupied-tile-message"), uid, user);
+
+                    return false;
+                }
+            }
 
             if (isCatwalk && _tags.HasTag(ent, CatwalkTag))
             {
@@ -544,10 +724,10 @@ public sealed class RCDSystem : EntitySystem
                 return false;
             }
 
-            // The tile cannot be destroyed
+            // The tile cannot be destroyed. The admin RCD deliberately ignores this.
             var tileDef = _turf.GetContentTileDefinition(tile);
 
-            if (tileDef.Indestructible)
+            if (!component.Unrestricted && tileDef.Indestructible)
             {
                 if (popMsgs)
                     _popup.PopupClient(Loc.GetString("rcd-component-tile-indestructible-message"), uid, user);
@@ -559,8 +739,8 @@ public sealed class RCDSystem : EntitySystem
         // Attempt to deconstruct an object
         else
         {
-            // Palmtree: the object has no deconstructable component at all
-            if (!TryComp<RCDDeconstructableComponent>(target, out var deconstructible))
+            // Palmtree: even the admin RCD must not remove directional/tiny fans.
+            if (_tags.HasTag(target.Value, RcdUnDeconstructableTag))
             {
                 if (popMsgs)
                     _popup.PopupClient(Loc.GetString("rcd-component-deconstruct-target-not-on-whitelist-message"), uid, user);
@@ -568,15 +748,42 @@ public sealed class RCDSystem : EntitySystem
                 return false;
             }
 
-            // Palmtree: `rpd:` gates the RPD, `deconstructable:` gates the RCD (ported from the old Coyote code)
-            if (component.IsRpd ? !deconstructible.RpdDeconstructable : !deconstructible.Deconstructable)
+            // Palmtree: the admin RCD can remove any anchored fixture, not just whitelisted ones.
+            // Unanchored entities (items, mobs, ...) are still rejected so a click cannot delete
+            // something that merely happens to lie on the tile.
+            if (component.Unrestricted)
             {
-                if (popMsgs)
-                    _popup.PopupClient(Loc.GetString("rcd-component-deconstruct-target-not-on-whitelist-message"), uid, user);
+                if (!HasComp<RCDDeconstructableComponent>(target)
+                    && !Transform(target.Value).Anchored
+                    && !HasComp<AnchorableComponent>(target))
+                {
+                    if (popMsgs)
+                        _popup.PopupClient(Loc.GetString("rcd-component-deconstruct-target-not-on-whitelist-message"), uid, user);
 
-                return false;
+                    return false;
+                }
             }
-            // Palmtree end
+            else
+            {
+                // Palmtree: the object has no deconstructable component at all
+                if (!TryComp<RCDDeconstructableComponent>(target, out var deconstructible))
+                {
+                    if (popMsgs)
+                        _popup.PopupClient(Loc.GetString("rcd-component-deconstruct-target-not-on-whitelist-message"), uid, user);
+
+                    return false;
+                }
+
+                // Palmtree: `rpd:` gates the RPD, `deconstructable:` gates the RCD (ported from the old Coyote code)
+                if (component.IsRpd ? !deconstructible.RpdDeconstructable : !deconstructible.Deconstructable)
+                {
+                    if (popMsgs)
+                        _popup.PopupClient(Loc.GetString("rcd-component-deconstruct-target-not-on-whitelist-message"), uid, user);
+
+                    return false;
+                }
+                // Palmtree end
+            }
         }
 
         return true;
@@ -586,7 +793,7 @@ public sealed class RCDSystem : EntitySystem
 
     #region Entity construction/deconstruction
 
-    private void FinalizeRCDOperation(EntityUid uid, RCDComponent component, EntityUid gridUid, MapGridComponent mapGrid, TileRef tile, Vector2i position, Direction direction, EntityUid? target, EntityUid user)
+    private void FinalizeRCDOperation(EntityUid uid, RCDComponent component, EntityUid gridUid, MapGridComponent mapGrid, TileRef tile, Vector2i position, Direction direction, EntityUid? target, EntityUid user, AtmosPipeLayer layer)
     {
         if (!_net.IsServer)
             return;
@@ -596,11 +803,14 @@ public sealed class RCDSystem : EntitySystem
         if (prototype.Prototype == null)
             return;
 
+        // Palmtree: log RPD operations too, naming the tool so atmos construction stays auditable
+        var toolName = component.IsRpd ? "RPD" : "RCD";
+
         switch (prototype.Mode)
         {
             case RcdMode.ConstructTile:
                 _mapSystem.SetTile(gridUid, mapGrid, position, new Tile(_tileDefMan[prototype.Prototype].TileId));
-                _adminLogger.Add(LogType.RCD, LogImpact.High, $"{ToPrettyString(user):user} used RCD to set grid: {gridUid} {position} to {prototype.Prototype}");
+                _adminLogger.Add(LogType.RCD, LogImpact.High, $"{ToPrettyString(user):user} used {toolName} to set grid: {gridUid} {position} to {prototype.Prototype}");
                 break;
 
             case RcdMode.ConstructObject:
@@ -609,6 +819,17 @@ public sealed class RCDSystem : EntitySystem
                     !string.IsNullOrEmpty(prototype.MirrorPrototype))
                     ? prototype.MirrorPrototype
                     : prototype.Prototype;
+
+                // Palmtree: build onto the atmos pipe layer the player aimed at
+                if (component.IsRpd && !prototype.NoLayers && proto != null)
+                {
+                    if (_protoManager.TryIndex<EntityPrototype>(proto, out var layeredProto) &&
+                        layeredProto.TryGetComponent<AtmosPipeLayersComponent>(out var pipeLayers, EntityManager.ComponentFactory) &&
+                        _pipeLayers.TryGetAlternativePrototype(pipeLayers, layer, out var layeredProtoId))
+                    {
+                        proto = layeredProtoId;
+                    }
+                }
 
                 // Calculate rotation and apply it before spawning
                 var rotation = prototype.Rotation switch
@@ -623,9 +844,30 @@ public sealed class RCDSystem : EntitySystem
                 var entityCoords = _mapSystem.GridTileToLocal(gridUid, mapGrid, position);
                 var mapCoords = _transform.ToMapCoordinates(entityCoords);
                 var ent = Spawn(proto, mapCoords, rotation: rotation);
+
+                // Palmtree: structures that are normally anchored by their construction graph
+                // (signal switches/buttons, for example) are anchored here as well; the RCD only
+                // spawns entities, it does not run the graph.
+                if (TryComp<TransformComponent>(ent, out var builtXform)
+                    && !builtXform.Anchored
+                    && HasComp<AnchorableComponent>(ent))
+                {
+                    _transform.AnchorEntity(ent, builtXform);
+                }
                 // Palmtree end
 
-                _adminLogger.Add(LogType.RCD, LogImpact.High, $"{ToPrettyString(user):user} used RCD to spawn {ToPrettyString(ent)} at {position} on grid {gridUid}");
+                // Palmtree: paint the new pipe with the RPD's selected colour
+                if (component.IsRpd && component.PipeColorPalette.TryGetValue(component.PipeColorKey, out var pipeColor))
+                {
+                    _appearance.SetData(ent, PipeColorVisuals.Color, pipeColor);
+
+                    // Let the server mirror the colour onto the functional pipe colour component,
+                    // so atmos monitoring consoles and the spray painter see the same colour.
+                    var colorEv = new RCDPipeColorAppliedEvent(pipeColor);
+                    RaiseLocalEvent(ent, ref colorEv);
+                }
+
+                _adminLogger.Add(LogType.RCD, LogImpact.High, $"{ToPrettyString(user):user} used {toolName} to spawn {ToPrettyString(ent)} at {position} on grid {gridUid}");
                 break;
 
             case RcdMode.Deconstruct:
@@ -635,12 +877,12 @@ public sealed class RCDSystem : EntitySystem
                     // Deconstruct tile (either converts the tile to lattice, or removes lattice)
                     var tileDef = (_turf.GetContentTileDefinition(tile).ID != "Lattice") ? new Tile(_tileDefMan["Lattice"].TileId) : Tile.Empty;
                     _mapSystem.SetTile(gridUid, mapGrid, position, tileDef);
-                    _adminLogger.Add(LogType.RCD, LogImpact.High, $"{ToPrettyString(user):user} used RCD to set grid: {gridUid} tile: {position} open to space");
+                    _adminLogger.Add(LogType.RCD, LogImpact.High, $"{ToPrettyString(user):user} used {toolName} to set grid: {gridUid} tile: {position} open to space");
                 }
                 else
                 {
                     // Deconstruct object
-                    _adminLogger.Add(LogType.RCD, LogImpact.High, $"{ToPrettyString(user):user} used RCD to delete {ToPrettyString(target):target}");
+                    _adminLogger.Add(LogType.RCD, LogImpact.High, $"{ToPrettyString(user):user} used {toolName} to delete {ToPrettyString(target):target}");
                     QueueDel(target);
                 }
 
@@ -651,6 +893,45 @@ public sealed class RCDSystem : EntitySystem
     #endregion
 
     #region Utility functions
+
+    /// <summary>
+    /// Palmtree: returns the matter gained by deconstructing something. Matter that does not fit in
+    /// the tool is dropped as a compressed-matter cartridge instead of being silently lost.
+    /// </summary>
+    private void AddDeconstructCharges(EntityUid uid, RCDComponent component, int amount, EntityCoordinates coordinates)
+    {
+        if (amount <= 0 || !TryComp<LimitedChargesComponent>(uid, out var charges))
+            return;
+
+        var current = _sharedCharges.GetCurrentCharges((uid, charges));
+        var free = Math.Max(0, charges.MaxCharges - current);
+        var stored = Math.Min(amount, free);
+
+        if (stored > 0)
+            _sharedCharges.AddCharges((uid, charges), stored);
+
+        var overflow = amount - stored;
+
+        if (overflow <= 0 || !_net.IsServer)
+            return;
+
+        var ammo = Spawn(component.IsShipyardRCD ? ShipyardRcdAmmoProto : RcdAmmoProto, coordinates);
+
+        if (TryComp<RCDAmmoComponent>(ammo, out var ammoComp))
+        {
+            ammoComp.Charges = overflow;
+            Dirty(ammo, ammoComp);
+        }
+    }
+
+    /// <summary>
+    /// Palmtree: applies <see cref="RCDComponent.SpeedMultiplier"/> to an operation delay.
+    /// Non-positive multipliers are ignored so a bad var-edit cannot break the do-after.
+    /// </summary>
+    private static float GetSpeedAdjustedDelay(RCDComponent component, float delay)
+    {
+        return component.SpeedMultiplier > 0f ? delay / component.SpeedMultiplier : delay;
+    }
 
     private bool DoesCustomBoundsIntersectWithFixture(PolygonShape boundingPolygon, Transform boundingTransform, EntityUid fixtureOwner, Fixture fixture)
     {
@@ -681,15 +962,24 @@ public sealed partial class RCDDoAfterEvent : DoAfterEvent
     [DataField("fx")]
     public NetEntity? Effect { get; private set; }
 
+    /// <summary>
+    /// Palmtree: the atmos pipe layer the RPD resolved when the operation was started. Carried in
+    /// the event because the operation finishes on a later tick, when system-wide state could have
+    /// been overwritten by another placement.
+    /// </summary>
+    [DataField]
+    public AtmosPipeLayer Layer { get; private set; }
+
     private RCDDoAfterEvent() { }
 
-    public RCDDoAfterEvent(NetCoordinates location, Direction direction, ProtoId<RCDPrototype> startingProtoId, int cost, NetEntity? effect = null)
+    public RCDDoAfterEvent(NetCoordinates location, Direction direction, ProtoId<RCDPrototype> startingProtoId, int cost, NetEntity? effect = null, AtmosPipeLayer layer = AtmosPipeLayer.Primary)
     {
         Location = location;
         Direction = direction;
         StartingProtoId = startingProtoId;
         Cost = cost;
         Effect = effect;
+        Layer = layer;
     }
 
     public override DoAfterEvent Clone()

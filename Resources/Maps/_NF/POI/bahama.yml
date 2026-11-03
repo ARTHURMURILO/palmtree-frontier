@@ -17462,7 +17462,7 @@ entities:
       parent: 2
     - type: DisableToolUse
       anchoring: True
-- proto: SellOnlyMothershipComputer
+- proto: ComputerBluespaceDock
   entities:
   - uid: 2447
     components:

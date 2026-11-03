@@ -54,13 +54,14 @@ public sealed class RoofOverlay : Overlay
 
         var worldHandle = args.WorldHandle;
         var lightoverlay = _overlay.GetOverlay<BeforeLightTargetOverlay>();
+        var lightRes = lightoverlay.GetCachedForViewport(args.Viewport);
         var bounds = lightoverlay.EnlargedBounds;
 
         // Palmtree: the tile enumerator recurses per skipped tile; skip very large views instead of
         // overflowing the stack (see TileEnumerationGuard).
         if (TileEnumerationGuard.TooLarge(_cfg, bounds.CalcBoundingBox()))
             return;
-        var target = lightoverlay.EnlargedLightTarget;
+        var target = lightRes.EnlargedLightTarget;
 
         _grids.Clear();
         _mapManager.FindGridsIntersecting(args.MapId, bounds, ref _grids, approx: true, includeMap: true);

@@ -39,6 +39,7 @@ public abstract class SharedSprayPainterSystem : EntitySystem
         SubscribeLocalEvent<SprayPainterComponent, MapInitEvent>(OnMapInit);
 
         SubscribeLocalEvent<SprayPainterComponent, SprayPainterDoAfterEvent>(OnPainterDoAfter);
+        SubscribeLocalEvent<PaintableComponent, ComponentStartup>(OnPaintableStartup);
         SubscribeLocalEvent<SprayPainterComponent, GetVerbsEvent<AlternativeVerb>>(OnPainterGetAltVerbs);
         SubscribeLocalEvent<PaintableComponent, InteractUsingEvent>(OnPaintableInteract);
         SubscribeLocalEvent<PaintedComponent, ExaminedEvent>(OnPainedExamined);
@@ -94,10 +95,14 @@ public abstract class SharedSprayPainterSystem : EntitySystem
         if (args.Args.Target is not { } target)
             return;
 
-        if (!HasComp<PaintableComponent>(target))
+        if (!TryComp<PaintableComponent>(target, out var paintable))
             return;
 
         Appearance.SetData(target, PaintableVisuals.Prototype, args.Prototype);
+
+        // Palmtree: remember the style so it survives a save/load (appearance data is runtime-only).
+        paintable.PaintedStyle = args.Prototype;
+        Dirty(target, paintable);
         Audio.PlayPredicted(ent.Comp.SpraySound, ent, args.Args.User);
         Charges.TryUseCharges(new Entity<LimitedChargesComponent?>(ent, EnsureComp<LimitedChargesComponent>(ent)), args.Cost);
 
@@ -117,6 +122,16 @@ public abstract class SharedSprayPainterSystem : EntitySystem
             $"{ToPrettyString(args.Args.User):user} painted {ToPrettyString(args.Args.Target.Value):target}");
 
         args.Handled = true;
+    }
+
+    /// <summary>
+    /// Palmtree: re-applies a painted style when the entity starts up, e.g. after its ship was loaded
+    /// from a file (the appearance data itself is not serialized).
+    /// </summary>
+    private void OnPaintableStartup(Entity<PaintableComponent> ent, ref ComponentStartup args)
+    {
+        if (ent.Comp.PaintedStyle is { } style)
+            Appearance.SetData(ent.Owner, PaintableVisuals.Prototype, style);
     }
 
     private void OnPainterGetAltVerbs(Entity<SprayPainterComponent> ent, ref GetVerbsEvent<AlternativeVerb> args)

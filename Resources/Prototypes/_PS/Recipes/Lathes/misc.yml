@@ -1,0 +1,8 @@
+- type: latheRecipe
+  id: JukeboxFlatpack
+  result: JukeboxFlatpack
+  completetime: 5
+  materials:
+    Steel: 2000
+    Glass: 1000
+    Plastic: 500

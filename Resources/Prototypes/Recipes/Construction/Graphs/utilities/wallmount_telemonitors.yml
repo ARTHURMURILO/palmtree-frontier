@@ -156,6 +156,15 @@
               amount: 2
               doAfter: 2
 
+        # Palmtree: build the player-facing empty television.
+        - to: TelevisionEmpty
+          steps:
+            - tool: Screwing
+              doAfter: 2
+            - material: Glass
+              amount: 2
+              doAfter: 2
+
         - to: Wired
           completed:
             - !type:GivePrototype
@@ -168,6 +177,15 @@
 
     - node: Television
       entity: WallmountTelevision
+      edges:
+        - to: Screen
+          steps:
+            - tool: Screwing
+              doAfter: 3
+
+    # Palmtree: empty variant used by the construction recipe.
+    - node: TelevisionEmpty
+      entity: WallmountTelevisionEmpty
       edges:
         - to: Screen
           steps:

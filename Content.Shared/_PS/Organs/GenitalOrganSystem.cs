@@ -105,13 +105,14 @@ public sealed class GenitalOrganSystem : EntitySystem
 
     private void OnDidEquip(EntityUid uid, HumanoidAppearanceComponent component, DidEquipEvent args)
     {
-        if (args.Slot == "jumpsuit")
+        // Outer clothing also changes the layer clamp used by genitals; jumpsuit changes exposure.
+        if (args.Slot is "jumpsuit" or "outerClothing")
             SyncRender(uid);
     }
 
     private void OnDidUnequip(EntityUid uid, HumanoidAppearanceComponent component, DidUnequipEvent args)
     {
-        if (args.Slot == "jumpsuit")
+        if (args.Slot is "jumpsuit" or "outerClothing")
             SyncRender(uid);
     }
 
@@ -268,9 +269,11 @@ public sealed class GenitalOrganSystem : EntitySystem
 
         humanoid.MarkingSet.RemoveCategory(MarkingCategories.Genital);
 
-        // Draw order inside the Genital layer is the order the organs are added: back/mid organs
-        // first, then the belly (which covers the groin) and the breasts on top of it.
-        foreach (var (_, organ) in GetOrgans(mob).OrderBy(o => GetRenderPriority(o.Comp.GenitalType)))
+        // Marking layers inserted at the same index render newest-first, so add the organs in
+        // reverse priority order. The final stack is still butt, vagina, balls, penis, belly,
+        // breasts (bottom to top): the penis draws over the balls, the belly draws over the groin,
+        // and the breasts are the only organ drawn over the belly.
+        foreach (var (_, organ) in GetOrgans(mob).OrderByDescending(o => GetRenderPriority(o.Comp.GenitalType)))
         {
             // The visibility rule controls rendering directly: covered organs are not drawn at all
             // (layer overlap alone lets oversized sprites poke out of clothing).
@@ -408,6 +411,9 @@ public sealed class GenitalOrganSystem : EntitySystem
                 return false;
 
             case GenitalVisibility.NeverHidden:
+                return true;
+
+            case GenitalVisibility.VisibleUnderClothes:
                 return true;
 
             case GenitalVisibility.HiddenByUnderwear:

@@ -5,6 +5,8 @@
   id: BaseMobAnthromorph
   abstract: true
   components:
+  - type: Hunger
+  - type: Thirst
   # misc stuff (mostly copy-pasted from humans)
   - type: Butcherable
     butcheringType: Spike

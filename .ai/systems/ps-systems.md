@@ -166,6 +166,12 @@ Properties:
 - **1.5x speed**: Synth legs carry `MovementBodyPart walkSpeed: 3.75 / sprintSpeed: 6.75` (human
   2.5/4.5). The `Body` system derives base speed from leg parts, so this must be done on the parts,
   not only on the mob's `MovementSpeedModifier`. (Higher values caused client prediction instability.)
+- **No speed boosts**: synths ignore every positive movement-speed modifier (speed boots, stimulants,
+  wieldable/held speed items, etc.). `MovementSpeedModifierSystem.RefreshMovementSpeedModifiers` sets
+  `RefreshMovementSpeedModifiersEvent.IgnoreSpeedBoosts` for entities with `SynthComponent`; the event
+  clamps each incoming multiplier to at most 1, so slowdowns (damage, carrying, puddles) still apply.
+  `SynthComponent` is networked so client-side movement prediction uses the same rule. The synth's
+  1.5x base leg speed is unaffected because it comes from the body parts, not this event.
 - **3x durability**: `MobThresholds` 300 Critical / 600 Dead (human 100/200); `SlowOnDamage` and gib
   thresholds scaled.
 - **IPC-like**: custom `Synth` damage container (Brute/Burn groups, Radiation/Bloodloss types),
@@ -249,11 +255,15 @@ Upstream actions/implants/inventory/equipment visuals, `ContentAudioSystem`/lobb
 
 `HilbertHotelTest` covers room-map loading and the hotel lifecycle; `InteractionPanelTest` covers
 the interaction/organ plumbing; `SynthTest` covers synth physiology (reboot, pressure immunity,
-heat/shock/radiation, EMP lethality, built-in prying) and that bodies no longer rot.
+heat/shock/radiation, EMP lethality, built-in prying, ignoring speed boots while still taking
+slowdowns) and that bodies no longer rot.
 `BluespaceDockTest` covers the dock registry/ship-file round trip and its self-heal sweep,
 `BluespaceDockSaveTest` covers the save-side hazards (a used plant analyzer / an in-progress do-after
-must not fail a save, migrated files must not keep references to dropped contents, and radar targets
-must not outlive the ship they point at), `BluespaceDockPowerTest` covers APC power after a
+must not fail a save, migrated files must not keep references to dropped contents, retrieved
+dispensers/vending machines keep their beaker/cash item slots, a retrieved ore bag's magnet timer is
+cleared, and radar targets must not outlive the ship they point at), `BluespaceDockResilienceTest`
+covers the resilient save (a skipped entity is re-created empty and a normal container item whose
+prototype sorts after its container stays inside), `BluespaceDockPowerTest` covers APC power after a
 store/retrieve round trip and the load-time re-link, `BluespaceDockExpeditionTest` covers a retrieved
 expedition ship keeping its station's expedition data, `BluespaceDockShipSystemsTest` and
 `BluespaceDockDeviceLinkTest` cover the map-init registration (guns, emitters, device links,
@@ -271,8 +281,19 @@ feature.
 - **Emote category picker**: `HumanoidCharacterProfile.HiddenEmoteCategories` (DB column
   `hiddenemotecategories`, comma-separated), `EmoteCategoryWindow` opened from the traits tab,
   wheel filtering in `EmotesUIController.IsHiddenCategory`, `EmotePrototype.ShowInWheel`.
-  `EmoteCategory` is Coyote's `ushort` flag set (`Vulp`, `Felinid`, `Borg`, ...); `Sex`/`Vocal`
-  are always visible.
+  `EmoteCategory` is Coyote's flag set (`Vulp`, `Felinid`, `Borg`, ...) widened to `int` for
+  Palmtree's `Funny` bit; `Sex`/`Vocal` are always visible.
+- **Funny emotes (SPLURT)**: `EmoteCategory.Funny = Vocal | (1 << 16)`, 116 SPLURT emotes
+  (`Laugh2`-`Laugh6`, `Cackle`, `Bruh`, the gachi/Ace Attorney sets, ...) in
+  `_PS/Voice/speech_emotes_funny.yml`. They are `available: true` with no species restriction, so
+  `*laugh2`/`*laugh3` work for every mob; sounds come from
+  `_PS/Voice/speech_emote_sounds_funny.yml` via `SupplementalFunnyEmotes` (parent of
+  `SupplementalCoyoteEmoteStuff`). Only the 33 headline emotes set `showInWheel: true` - the ring
+  cannot fit all 116 - but every trigger works. The category can be hidden in the picker.
+  Chat triggers send the prototype's localized `ChatMessages` text instead of the raw trigger
+  (`SendEntityEmote`), and `Objection`/`HoldIt`/`TakeThat` use
+  `VocalComponent.SexSupplementalSounds` (`SupplementalFunnyMale`/`Female`) for male/female voices.
+  `emotelist` dumps all triggerable emotes as `[*emote = "text"]`, three per line.
 - **Supplemental emote sounds**: `VocalComponent.SupplementalSounds` (default
   `SupplementalCoyoteEmoteStuff`) lets any vocal mob use any emote sound; `ChatSystem.TryPlayEmoteSound`
   checks the species collection first, then the supplemental one. Server-side `AllowedToUseEmote`
@@ -363,12 +384,22 @@ system (`inventory: None`, `transferDamage/Name: true`, `revertOnDeath/Crit: tru
 
 ## Nutrition rate tuning (2026-10)
 
-- `Content.Shared/_PS/Nutrition/PalmtreeNutrition.cs` holds `DecayRateMultiplier = 1f / 2f`
-  (was `1f / 6f`, retuned to 2x slower).
+- `Content.Shared/_PS/Nutrition/PalmtreeNutrition.cs` holds `DecayRateMultiplier = 1f / 4f`
+  (`1f / 6f` -> `1f / 2f` -> `1f / 4f`; now 4x slower than stock and 2x slower than the previous
+  Vulpkanin baseline).
 - `HungerSystem.DoHungerThresholdEffects` and `ThirstSystem.UpdateEffects` multiply the computed
-  `ActualDecayRate` by it (marked `// Palmtree`), so every species and NPC - including the
-  per-species `baseDecayRate` overrides (Chitinid 33% faster, Avali/Resomi 2x, Diona and Sheleg,
-  etc.) - takes 2x longer to get hungry or thirsty.
+  `ActualDecayRate` by it (marked `// Palmtree`), so every species and NPC - including NPC
+  `baseDecayRate` overrides - takes 4x longer to get hungry or thirsty.
+- Anthropomorph, Ovinia, Rodentia, Tajaran and Gingerbread were missing `Hunger`/`Thirst`
+  entirely and now have both. Synth intentionally has neither, and Skeleton (non-roundstart, no
+  stomach) stays without.
+- Species rates follow their guidebook entries: Vulpkanin and most species use the default
+  `0.02` hunger / `0.1` thirst; Avali hunger is 2x (`0.04`); Ovinia is 25% slower (`0.015` /
+  `0.075`); Rodentia and Chitinid hunger is 33% faster (`0.0266`); Feroxi thirst is 2x (`0.2`);
+  Diona is slower (`0.0083`); Sheleg hunger is slower and thirst faster (`0.0165` / `0.15`);
+  Tajaran hunger is 25% faster (`0.025`). Resomi uses the default.
+- `Content.IntegrationTests/Tests/_PS/SpeciesNutritionTest.cs` guards that every round-start
+  species has `Hunger`/`Thirst`, with Synth as the only exception.
 - Change the one constant to retune; hunger and thirst share it.
 
 ## Weapon detector (2026-10)
@@ -582,6 +613,86 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
   and adds `BluespaceDockConsoleComponent.NewAccessLevels` (Captain by default) to their ID. Without
   the record the ship came back with no crew at all - no captain, nothing on the manifest. The Ship
   Registrar does the same at registration.
+- **Action cooldowns are cleared on save (`ResetRuntimeCooldowns`, 2026-10-19)**: use delays, gun
+  `NextFire`, melee `NextAttack`, the AME controller's `LastUpdate`/`NextUpdate`/`EffectCooldown`
+  (a retrieved AME would not inject fuel until the old round time), thruster `NextFire`, hydro tray
+  `NextUpdate`/`LastCycle`, the power-transmission `NextDeposit` (+ `AccumulatedEnergy`) and the
+  magnet pickups' `NextScan` (ore bags, material silos, reclaimers) are absolute round times, and the
+  round clock restarts every round. Without the reset a ship stored late in a round came back with
+  its buttons, switches and toolbelts still "on cooldown" for as long as the store happened into the
+  round: left click and E silently do nothing while right-click verbs (which bypass `UseDelay`) still
+  work; a retrieved ore bag's magnet stayed dead until the new round reached the old timestamp (live
+  files carried values up to ~42 hours). The material-storage/reclaimer systems also had their
+  `NextScan` comparison inverted; zeroing the timer would have disabled them permanently. They now
+  use the same `NextScan > currentTime` gate as the ore-bag magnet. The save clears them; see
+  `.ai/HAZARDS.md` section 27 for
+  the full trap and the regression test (`BluespaceDockSaveTest.SavedShipForgetsActionCooldowns`).
+- **One unserializable entity no longer fails a store (2026-10-22)**: the save first tries strictly
+  (`IncludeNullspace` then `Ignore`). When something on the grid cannot be serialized at all (a
+  component field the serializer has no data definition for), it retries with
+  `EntityExceptionBehaviour.IgnoreEntityAndChildren`, writes the file without that entity (and its
+  transform children - container contents are transform children of their container, so a dropped
+  machine loses its contents), and records the skipped entities under `droppedEntities` in the file
+  (prototype, local position, rotation, anchored). Entities that lived **inside a container** (fridge,
+  toolbox, machine) are recorded with their container (`containerOwner` prototype + grid-local
+  position, `containerId`) and are re-inserted into it on load; contents of *nested* containers (a
+  toolbox inside a backpack) are not covered. `TryLoadShipFile` then spawns a **fresh copy** of each
+  (`TrySpawnDroppedEntities`) - at its saved position for top-level entities, at its container's tile
+  and inside the container for contents; mobs and ghosts are never recorded. The rewritten file also
+  prunes container/storage references to uids it no longer declares. **The declared-uid set must be
+  collected from every prototype group before pruning anything** (2026-10-24): groups are ordered by
+  prototype, not containment, so a group-at-a-time prune deleted 691 valid references on Charon
+  LV-025 (loose contents, empty door boards, every door denying access). See `.ai/HAZARDS.md`
+  section 28. Diagnostics: `grep "could not be serialized and were skipped"` in the server log.
+- **Store feedback (2026-10-22)**: every store denial from the console is a popup *and* a red server
+  message in that player's chat (`Deny` -> `WarnChat`, private `DispatchServerMessage`), and a store
+  that had to skip items also warns in chat with `bluespace-dock-warning-skipped` (and in the server
+  log). `forcedock` prints the same reason via `shell.WriteError` and the skip count as an error line
+  in the admin console.
+- **Failed stores restore the ship (2026-10-22)**: the store strips station references, the deed and
+  the docking *before* saving, so any failure after that point must undo it. The `TryStoreShip`
+  exception path now calls `RestoreStoreFailure` too (it used to just log), and the restore re-docks
+  to the grid the ship was docked to at store time - it used to pass the ship's *own* station, whose
+  largest grid is the ship itself. A ship left stripped is station-less, which is what made its
+  machinery stop working after a failed store.
+- **Smart fridges are saveable (2026-10-22)**: `SmartFridgeComponent.ContainedEntries` (the UI entry
+  cache: `Dictionary<SmartFridgeEntry, HashSet<NetEntity>>`) is a mapping-keyed dictionary with
+  session-scoped refs and cannot be serialized at all - a live save of a used fridge threw
+  "Caught exception while serializing component SmartFridge" and failed the whole store. It is no
+  longer a `[DataField]`; `SmartFridgeSystem` rebuilds it from the container on `ComponentStartup`
+  and `MapInit` (startup runs for loaded ships, which skip MapInit), so the fridge and its contents
+  survive. This is persistence-only: insertion/ejection behave exactly as before.
+- **PDAs and ID cards (2026-10-22)**: an ID card is normal serializable data - `IdCardComponent`
+  (full name, job title/icon/prototype, departments) and `AccessComponent` (`Tags`) survive a
+  store/retrieve, including extra access someone gave the card. Two things do not:
+  - **`ShuttleDeedComponent` is stripped from every entity on the grid before saving** (see the
+    station-reference strip): a card stored on a ship comes back without its deed. The ship identity
+    is rebuilt from the registry on retrieval, not from the stored card.
+  - **A PDA could not be saved at all**: every PDA has a `StoreComponent`, and
+    `StoreComponent.StartingMap` is a `[DataField] EntityUid?` holding the **map entity** the store
+    was created on. A grid file's parent (the map) is the serializer's truncated entity, so the
+    strict save threw on the Store component. `ClearRuntimeMapReferences` clears `StartingMap`
+    before the save and the load-time registration sweep pins it to the map the ship is loaded onto.
+  - **PDA card link**: `PdaComponent.ContainedId` (and the "card inserted" appearance) is runtime
+    state set by the insert event, which the loader does not raise while filling the slot; the
+    registration sweep restores it from the ID slot, otherwise access checks and the ID UI on a
+    retrieved PDA were dead until the card was re-inserted.
+  - Contents (card in the ID slot, pen, cartridges) are saved as container/slot contents. A card or
+    PDA that still cannot be serialized is covered by the resilient save (fresh copy from its
+    prototype, so a *customized* card loses its custom name/job/access in that case).
+- **Painted entities keep their paint (2026-10-23)**: the spray painter's style lives only in the
+  runtime appearance data (`AppearanceComponent.AppearanceData`, not serialized), so painted doors,
+  airlocks, crates, canisters and lockers lost their paint on retrieval. `PaintableComponent` now has
+  a `[DataField] PaintedStyle`, set when painting and re-applied on `ComponentStartup` (loaded ships
+  skip MapInit, so startup is the hook); `TrySaveShipFile` also captures the current appearance style
+  into that field before serializing, so entities painted before the field existed are preserved on
+  their next store. The fresh-paint `DryTime` timer is cleared with the other cooldowns.
+- **Orphan restores recover shipyard vessel identity (2026-10-27)**: an orphaned ship file has no
+  registry entry carrying `Vessel`, but a shipyard vessel's grid keeps the `BecomesStation` id from
+  its game-map prototype. `TryGetVesselInfo` now falls back to that id when it names both a
+  `VesselPrototype` and a `GameMapPrototype` station, and `TryRetrieveShip` re-derives it for old
+  registry entries with `Vessel=null`. This restores the vessel's station config - including its
+  `StationJobs` slots - so the captain can manage jobs on the records computer again.
 - **Retrieved ships get the shipyard's station (`GetShipStationConfig`, 2026-10-18)**: the station a
   ship lives on carries its capabilities, not the grid. Retrieval used to rebuild *every* ship with a
   plain `StandardFrontierVessel` station, which silently cost expedition ships their
@@ -609,8 +720,11 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
   emitter/A.P.E. bolts spawn with zero velocity and "stay in place"). `TryLoadShipFile` now calls
   `RestoreMapInitRegistration` after loading, which does *only* the registration: `ConnectDevice`
   for every auto-connecting `DeviceNetworkComponent`, `EnsureSinkPorts` for
-  `GunSignalControlComponent` (cannons), and `RefreshModifiers` for every `GunComponent`. Do **not**
-  replace this with a blanket MapInit re-raise - inventories depend on it. Also note device network
+  `GunSignalControlComponent` (cannons), and `RefreshModifiers` for every `GunComponent`; it also
+  re-registers the `beakerSlot` of reagent dispensers and the `cash_slot` of vending machines
+  (2026-10-24 - both are MapInit `AddItemSlot` calls and `ItemSlotsComponent.Slots` is not saved, so
+  retrieved coffee/vending machines could not use their slots). Do **not** replace this with a
+  blanket MapInit re-raise - inventories depend on it. Also note device network
   packets are processed **one tick later** (`DeviceNetworkSystem.SwapQueues`), so a button's effect
   is never visible in the same tick.
   **Fault tolerance (2026-10-18)**: the sweep is per entity in a `try`/`catch` (a single entity that
@@ -681,8 +795,8 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
 `UserData/bluespace_dock/` that no registry entry points at (retrieval keeps the file on purpose, and
 a crash can leave files behind). The tool:
 
-- lists orphans with their save time (`BluespaceDockSystem.GetOrphanedFiles`, `TryDeleteOrphanedFile`,
-  `TryMoveFile`),
+- lists orphans with their save time, newest first (`BluespaceDockSystem.GetOrphanedFiles`,
+  `TryDeleteOrphanedFile`, `TryMoveFile`),
 - previews one with `TryLoadOrphanedFile`, which loads it onto a **paused** map and opens the normal
   `ShipPreviewEui`; the grid and map are deleted when the preview window closes, when another file is
   previewed, when the tool closes, or after one minute as a safety net (`ShipPreviewEui` takes an
@@ -793,6 +907,25 @@ opening a preview replaces any existing one for that session (no camera accumula
   skipped empty tile (`ignoreEmpty` defaults to `true`), so a zoomed-out ghost looking at an FTL
   arrival visualizer over a mostly empty grid used to stack-overflow the client.
 
+## Dungeon lighting variants (flickering / rave)
+
+- Prototypes: `Resources/Prototypes/_PS/Entities/Structures/Lighting/lighting_effects.yml`.
+  Every standard wall/small/post light fixture has `*Flickering` and `*Rave` variants.
+  The variants inherit the parent's normal bulb spawn; the bulb only sets the light's color.
+  `AlwaysPowered...` variants set `ApcPowerReceiver.needsPower: false`, so they light without an
+  APC but still accept bulbs.
+- Flicker: `FlickeringLightComponent` marks the fixture. `Content.Server/_PS/Light/FlickeringLightSystem`
+  enables the existing `IsBlinking` appearance animation on map init (and on component startup).
+  It only touches fixtures carrying the component, so the variation pass's aged-tube flicker is
+  untouched. Rave takes priority over flicker.
+- Rave: `RaveLightComponent` carries `Period` (0.5/1/2 s), optional `MaxEnergy` (peak point-light
+  energy) and `Phase`. The pulse is client-only (`Content.Client/_PS/Light/RaveLightSystem`) so the
+  server does not network `PointLight.Energy` every tick; it animates the point light and glow sprite
+  layer on a triangle wave (100% -> 0% -> 100%). Screwdriver cycles the period through
+  `SharedRaveLightSystem`. The fixture owns the effect, so swapping bulbs only changes the color.
+- Tests: `Content.IntegrationTests/Tests/_PS/LightEffectsTest.cs` (flicker sync, always-power,
+  screwdriver cycle, client pulse).
+
 ## 2026-10 misc additions (walkman, UI sounds, editor QoL, RTG radiation)
 
 Small features that did not get their own section yet:
@@ -825,12 +958,47 @@ Small features that did not get their own section yet:
 - **RPD + RCD improvements** (2026-10, ported from the old Coyote `palm3` code): the RPD tool
   (atmos build modes, 60 charges, radial categories), shuttle-wall RCD mode + cheap/fast shuttle
   wall deconstruct, instant-construction flag for the admeme `RCDExperimental`, and mirror
-  prototypes (gas mixer/filter flip with the placement flip key). RPD modes
-  `Resources/Prototypes/_PS/RCD/rpd.yml`, RCD modes `.../_PS/RCD/rcd.yml`, textures under
-  `Resources/Textures/_PS/...`, locale `Resources/Locale/en-US/_PS/rcd.ftl`. Details:
-  `.ai/PORTING.md` §24; traps: `.ai/HAZARDS.md` §26. The RPD deconstruct whitelist (`rpd: true`)
-  is wired on `GasPipeBase`, so the RPD removes atmos piping while the RCD stays off it.
+  prototypes (gas mixer/filter flip with the placement flip key). A second pass brought the rest of
+  Coyote's RPD: its own menu (`RPDMenu`, mode radial + an always-visible pipe colour strip on the
+  `RpdUiKey` UI key), functional pipe colouring from a YAML palette, layer-aware placement
+  (`AlignRPDAtmosPipeLayers` — click the middle of a tile for primary, either side for
+  secondary/tertiary, with the layer ghost preview and eye-rotation sync) and the last six modes
+  (`PipeHalf`, `ManifoldGas`, `PressureRegulator`, plus a `SensorsMonitors` category with air alarm,
+  air sensor and gas pipe sensor). RPD modes `Resources/Prototypes/_PS/RCD/rpd.yml`, RCD modes
+  `.../_PS/RCD/rcd.yml`, textures under `Resources/Textures/_PS/...`, locale
+  `Resources/Locale/en-US/_PS/rcd.ftl`. A follow-up pass added diagonal solid/shuttle wall modes
+  and mining walls, a per-tool `speedMultiplier` (the RCD ships at 2x), and per-layer
+  anti-stacking so the RPD cannot place a second pipe/vent on an occupied atmos layer. Details:
+  `.ai/PORTING.md` §24-24b; traps: `.ai/HAZARDS.md` §26. The RPD deconstruct whitelist (`rpd: true`)
+  is wired on `GasPipeBase` plus the air alarm, air sensor and gas pipe sensor, so the RPD removes
+  what it builds while the RCD stays off atmos entities.
 - **Salto expedition ship** (2026-10, ported from the old Coyote `_CS` code): `LL0 Salto`, a Small
   Expedition/AME ship, map `Resources/Maps/_CS/Shuttles/Expedition/salto.yml`, vessel prototype
   `Resources/Prototypes/_CS/Shipyard/Expedition/salto.yml`. Details and adaptations (dropped
   `CompanionInterview`, `[ 0, 0 ]` job slots): `.ai/PORTING.md` §25.
+- **Battlemap/tabletop placement** (2026-10): `game.tabletop_place` defaults on. The old
+  `OnInteractUsing` checked the active item on the *board* instead of the user, so placement never
+  ran; it now uses `InteractUsingEvent.Used`. Placed items become a sanitized
+  `PalmtreeTabletopHologram` (`Resources/Prototypes/_PS/Entities/Objects/Fun/Tabletop/`) instead of
+  a copy of the item prototype; the source prototype id travels in
+  `TabletopItemVisuals.Prototype` and the client copies that prototype's `SpriteComponent` (never
+  its components). Cap: 50 pieces per board; placement/removal are admin-logged. Test:
+  `Content.IntegrationTests/Tests/_PS/TabletopPlacementTest.cs`. Upstream tracking: space-wizards
+  issue #34811 and open (conflicting) rewrite PR #44873.
+
+## Jukebox tracks (2026-10)
+
+Copyrighted jukebox tracks live outside the git history. `Resources/Prototypes/_PS/Jukebox/` and
+`Resources/Audio/_PS/Jukebox/` are gitignored and must be uploaded to the live server separately; a
+local `attributions.yml` in the audio folder records the YouTube source of every file.
+
+- Track definitions: `Resources/Prototypes/_PS/Jukebox/Standard.yml`; the record prototypes
+  (`PalmtreeRecord`, shown as "Palm Record", and `StarjunkRecord`) are
+  `Resources/Prototypes/_PS/Jukebox/records.yml`.
+- `Content.Server/_PS/Audio/JukeboxLocalTracksSystem.cs` injects `PalmtreeRecord` into every
+  jukebox on map init and adds `StarjunkRecord` to the `NFJukeboxRecordSpawner` dungeon loot pool,
+  but only when the local prototypes are present, so clean checkouts and CI never reference missing
+  audio.
+- Audio is downloaded with `dlx`, converted with `convertall` and re-encoded to mono Vorbis
+  (`-ac 1`), matching the other jukebox folders.
+

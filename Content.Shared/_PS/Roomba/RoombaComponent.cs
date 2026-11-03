@@ -14,11 +14,33 @@ namespace Content.Shared._PS.Roomba;
 /// The component is shared (not just server-side) because the mob-collision system runs on both
 /// sides: clients predict their own pushes, so the "roomba never shoves mobs" rule has to be known
 /// client-side too (<see cref="SharedRoombaSystem"/>). The HTN task for <c>MobRoomba</c> only keeps
-/// the NPC awake; all movement and cleaning logic lives here.
+/// the NPC awake; the component holds the configuration and runtime state, while
+/// <see cref="Content.Server._PS.Roomba.RoombaSystem"/> runs the movement and cleaning logic.
 /// </remarks>
 [RegisterComponent]
 public sealed partial class RoombaComponent : Component
 {
+    /// <summary>The container holding the roomba's replaceable internal trash bag.</summary>
+    public const string TrashBagContainerId = "roomba_trash_bag";
+
+    /// <summary>
+    /// Whether the roomba is switched on. Roombas are built and mapped switched off and have to be
+    /// clicked (or activated) to start cleaning. While off they do not drive, clean, or speak.
+    /// </summary>
+    [DataField]
+    public bool Enabled;
+
+    /// <summary>
+    /// Whether the roomba vacuums up loose trash. Toggled from the right-click menu; floor scrubbing
+    /// and puddle mopping keep working when this is off.
+    /// </summary>
+    [DataField]
+    public bool CollectTrash = true;
+
+    /// <summary>Whether the roomba's voice module is muted (it stops saying lines entirely).</summary>
+    [DataField]
+    public bool MuteSpeech;
+
     /// <summary>How short a leg may be, in tiles.</summary>
     [DataField]
     public float MinLegDistance = 1f;
@@ -70,6 +92,18 @@ public sealed partial class RoombaComponent : Component
     [DataField]
     public float ScrubRadius = 0.75f;
 
+    /// <summary>Radius, in tiles, of the trash pickup pass around the roomba.</summary>
+    [DataField]
+    public float TrashPickupRadius = 0.75f;
+
+    /// <summary>Maximum number of trash items picked up in a single pass.</summary>
+    [DataField]
+    public int TrashPickupLimit = 10;
+
+    /// <summary>Sound played when the roomba vacuums up trash.</summary>
+    [DataField]
+    public SoundSpecifier TrashPickupSound = new SoundCollectionSpecifier("trashBagRustle");
+
     /// <summary>Water drained from the absorbent solution per decal scrubbed.</summary>
     [DataField]
     public FixedPoint2 WaterPerDecal = FixedPoint2.New(0.5f);
@@ -78,6 +112,11 @@ public sealed partial class RoombaComponent : Component
     [DataField]
     public SoundSpecifier ScrubSound = new SoundPathSpecifier("/Audio/Effects/Fluids/vacuum-cleaner-fast.ogg",
         AudioParams.Default.WithVariation(0.25f));
+
+    /// <summary>Sound played when the roomba is switched on or off.</summary>
+    [DataField]
+    public SoundSpecifier PowerSound = new SoundPathSpecifier("/Audio/Machines/button.ogg",
+        AudioParams.Default.WithVolume(-2f));
 
     /// <summary>Minimum time between scrub sounds, so a very dirty floor does not machine-gun them.</summary>
     [DataField]

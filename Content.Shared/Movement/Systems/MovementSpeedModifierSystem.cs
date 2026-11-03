@@ -1,3 +1,4 @@
+using Content.Shared._PS.Synth;
 using Content.Shared.CCVar;
 using Content.Shared.Inventory;
 using Content.Shared.Movement.Components;
@@ -113,7 +114,11 @@ namespace Content.Shared.Movement.Systems
             if (_timing.ApplyingState)
                 return;
 
-            var ev = new RefreshMovementSpeedModifiersEvent();
+            // Palmtree: synths ignore speed boosts (e.g. speed boots) but still take slowdowns.
+            var ev = new RefreshMovementSpeedModifiersEvent
+            {
+                IgnoreSpeedBoosts = HasComp<SynthComponent>(uid),
+            };
             RaiseLocalEvent(uid, ev);
 
             if (MathHelper.CloseTo(ev.WalkSpeedModifier, move.WalkSpeedModifier) &&
@@ -188,8 +193,20 @@ namespace Content.Shared.Movement.Systems
         public float WalkSpeedModifier { get; private set; } = 1.0f;
         public float SprintSpeedModifier { get; private set; } = 1.0f;
 
+        /// <summary>
+        /// Palmtree: when true, positive speed modifiers are ignored while slowdowns still apply.
+        /// Set for synths, which must not benefit from speed boosts like speed boots.
+        /// </summary>
+        public bool IgnoreSpeedBoosts { get; set; }
+
         public void ModifySpeed(float walk, float sprint)
         {
+            if (IgnoreSpeedBoosts)
+            {
+                walk = MathF.Min(walk, 1.0f);
+                sprint = MathF.Min(sprint, 1.0f);
+            }
+
             WalkSpeedModifier *= walk;
             SprintSpeedModifier *= sprint;
         }

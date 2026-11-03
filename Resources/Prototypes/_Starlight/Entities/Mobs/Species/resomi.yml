@@ -52,9 +52,8 @@
         - MobMask
         layer:
         - MobLayer
-  # Palmtree: Coyote used the RPI Needs system; Hunger/Thirst replace it (same need as Avali).
+  # Palmtree: Coyote used the RPI Needs system; Hunger/Thirst replace it.
   - type: Hunger
-    baseDecayRate: 0.04
   - type: Thirst
   - type: Puller
     needsHands: false

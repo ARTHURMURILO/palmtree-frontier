@@ -105,6 +105,7 @@
     - NFServiceArchetypeStatic
     - NFPietyStatic
     - NFCandlesStatic
+    - CSPlumbingStatic # Palmtree: showers, sinks, drains
   - type: EmagLatheRecipes
     emagStaticPacks:
     - NFServiceTechfabEmagStatic
@@ -199,6 +200,7 @@
     - NFEngineeringMaterialsStatic
     - NFInflatablesStatic
     - NFEngineeringArchetypeStatic
+    - CSPlumbingStatic # Palmtree: showers, sinks, drains
 
   - type: BlueprintReceiver
     whitelist:

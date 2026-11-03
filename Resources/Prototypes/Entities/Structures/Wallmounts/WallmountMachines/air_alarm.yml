@@ -109,6 +109,12 @@
     guides:
     - AirAlarms
     - DeviceMonitoringAndControl
+  - type: RCDDeconstructable # Palmtree: RPD whitelist
+    deconstructable: false
+    rpd: true
+    cost: 2
+    delay: 0
+    fx: EffectRCDConstruct0
 
 - type: entity
   parent: BaseWallmountMetallic

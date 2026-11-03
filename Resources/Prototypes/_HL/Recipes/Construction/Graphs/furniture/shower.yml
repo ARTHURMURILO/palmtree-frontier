@@ -1,6 +1,4 @@
-# Shower construction, ported from coyote-frontier
-# (Resources/Prototypes/_HL/Recipes/Construction/Graphs/furniture/shower.yml).
-# The plumbing node/steps were removed because this fork has no plumbing assembly.
+# Shower
 - type: constructionGraph
   id: Shower
   start: start
@@ -28,6 +26,27 @@
       steps:
       - tool: Screwing
         doAfter: 1
+    - to: plumbing
+      conditions:
+      - !type:EntityAnchored
+      steps:
+      - tag: PlumbingAssembly
+        name: construction-graph-tag-plumbing-assembly
+        icon:
+          sprite: Structures/Piping/Atmospherics/pump.rsi
+          state: pumpManualValve
+        doAfter: 1
+
+  - node: plumbing
+    entity: ShowerUnfinished
+    edges:
+    - to: body
+      completed:
+      - !type:SpawnPrototype
+        prototype: PlumbingAssembly
+      steps:
+      - tool: Prying
+        doAfter: 1
     - to: shower
       steps:
       - tool: Anchoring
@@ -36,7 +55,7 @@
   - node: shower
     entity: Shower
     edges:
-    - to: body
+    - to: plumbing
       completed:
       - !type:SetAnchor
       steps:
