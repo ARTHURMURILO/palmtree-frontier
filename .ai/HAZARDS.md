@@ -658,11 +658,19 @@ so these fail only in CI:
   and additionally raises `RCDAtmosOverlapAttemptEvent` for any prototype with a `NodeContainer`.
   `PipeRestrictOverlapSystem` handles it on the server: it resolves the mirror/RPD-layer prototype,
   then compares `PipeNode.OriginalPipeDirection` rotated by the placement angle against the
-  anchored nodes' directions and layers. The client has no node data (Nodes is `serverOnly`), so
-  its event is a no-op and the server repeats the check in the do-after attempt. Pipes have no
-  fixtures, which is why the collision check cannot catch them — the node check is what prevents
-  the RCD from spawning an overlapping pipe that `PipeRestrictOverlapSystem` would immediately
-  unanchor.
+  anchored nodes' directions and layers. The client has no node data (`Nodes` is `serverOnly`, on
+  entities *and* prototypes), so it uses the networked
+  `AtmosPipeNodeDirectionsComponent` for anchored entities and caches the prototype's nodes through
+  `AtmosPipeNodeInfoRequestEvent` / `AtmosPipeNodeInfoResponseEvent`; both sides then share the same
+  comparison. Pipes have no fixtures, which is why the collision check cannot catch them — the node
+  check is what prevents the RCD from spawning an overlapping pipe that
+  `PipeRestrictOverlapSystem` would immediately unanchor.
+- **Component-specific `ComponentStartup` subscriptions are single-handler.** The directed event bus
+  stores one subscription per (component, event) pair, so a second
+  `SubscribeLocalEvent<NodeContainerComponent, ComponentStartup>` throws
+  `Duplicate Subscriptions` during system initialization. `NodeContainerSystem` owns that pair; add
+  a broadcast hook instead (`NodeContainerStartedEvent` was added for the pipe-node summary).
+
 - **`RCDComponent.SpeedMultiplier` divides delays, so >1 is faster.** It is applied in
   `OnAfterInteract` to prototype and per-entity deconstruct delays; a non-positive value is ignored
   (var-edit safety) and `InstantConstruction` still forces 0.

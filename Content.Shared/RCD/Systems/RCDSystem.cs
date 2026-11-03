@@ -642,8 +642,9 @@ public sealed class RCDSystem : EntitySystem
             if (builtTags != null && _tags.HasTag(builtTags, UnstackableTag))
                 buildsUnstackable = true;
 
-            // Palmtree: only the server has the pipe node data needed to compare directions. On the
-            // client this event has no handler and the do-after attempt repeats the check.
+            // Palmtree: the server compares the real pipe nodes. The client has no node data, so its
+            // AtmosPipeNodeOverlapClientSystem answers from networked node summaries plus a cached
+            // copy of this prototype's nodes; the do-after attempt repeats the authoritative check.
             if (builtProto.TryGetComponent<NodeContainerComponent>(out _, EntityManager.ComponentFactory))
             {
                 var rotation = prototype.Rotation switch
