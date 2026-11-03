@@ -646,6 +646,41 @@ public sealed class ShipWeaponsTest
     }
 
     [Test]
+    public async Task EmpTorpedoDoesEmpWithoutDamage()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+
+        EntityUid torpedo = default;
+        EntityUid launcher = default;
+
+        await server.WaitPost(() =>
+        {
+            torpedo = entMan.SpawnEntity("ShipTorpedoEmp", testMap.GridCoords);
+            launcher = entMan.SpawnEntity("ShipTorpedoLauncherEmp", testMap.GridCoords);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            var projectile = entMan.GetComponent<Content.Shared.Projectiles.ProjectileComponent>(torpedo);
+            Assert.That(projectile.Damage.Empty, Is.True, "The EMP torpedo must not deal hull damage.");
+
+            var emp = entMan.GetComponent<Content.Shared.Trigger.Components.Effects.EmpOnTriggerComponent>(torpedo);
+            Assert.That(emp.Range, Is.EqualTo(8f));
+            Assert.That(emp.DisableDuration, Is.EqualTo(TimeSpan.FromSeconds(30)));
+            Assert.That(entMan.GetComponent<Content.Shared._PS.ShipCombat.Components.ShipTorpedoComponent>(torpedo).ShieldDamage,
+                Is.EqualTo(0f), "The EMP torpedo should bypass shields instead of being absorbed.");
+
+            Assert.That(entMan.GetComponent<Content.Shared._PS.ShipCombat.Components.ShipTorpedoLauncherComponent>(launcher).Torpedo.Id,
+                Is.EqualTo("ShipTorpedoEmp"));
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
     public async Task TorpedoesLaunchSteerAndShowOnTheConsole()
     {
         await using var pair = await PoolManager.GetServerClient();

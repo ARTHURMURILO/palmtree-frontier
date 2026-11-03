@@ -195,3 +195,62 @@
     fireCooldown: 9
     launchSound:
       path: /Audio/_PS/ShipCombat/romulan_torpedo.ogg
+
+# EMP torpedo: no hull damage, but a wide EMP pulse. Blue glow.
+- type: entity
+  parent: BaseBullet
+  id: ShipTorpedoEmp
+  name: EMP torpedo
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: Structures/Power/Generation/Singularity/emitter.rsi
+    color: "#4db8ff"
+    layers:
+    - state: projectile
+      shader: unshaded
+  - type: Ammo
+    muzzleFlash: null
+  - type: Physics
+    bodyType: Dynamic
+    linearDamping: 0
+    angularDamping: 0
+  - type: TileFrictionModifier
+    modifier: 0
+  - type: Fixtures
+    fixtures:
+      projectile:
+        shape:
+          !type:PhysShapeAabb
+          bounds: "-0.2,-0.2,0.2,0.2"
+        hard: false
+        mask:
+        - Impassable
+        - BulletImpassable
+  - type: Projectile
+    deleteOnCollide: false
+    damage: {}
+  - type: ShipTorpedo
+    shieldDamage: 0 # EMP bypasses shields instead of spending itself on them.
+  - type: EmpOnTrigger
+    range: 8
+    energyConsumption: 2700000
+    disableDuration: 30
+  - type: TimedDespawn
+    lifetime: 60
+  - type: PointLight
+    radius: 2.5
+    energy: 3
+    color: "#3388ff"
+    castShadows: false
+
+- type: entity
+  parent: ShipTorpedoLauncher
+  id: ShipTorpedoLauncherEmp
+  name: EMP torpedo launcher
+  description: "Fires blue EMP torpedoes that disable electronics in a wide radius without damaging the hull."
+  suffix: Palmtree
+  components:
+  - type: ShipTorpedoLauncher
+    torpedo: ShipTorpedoEmp
+    fireCooldown: 9
