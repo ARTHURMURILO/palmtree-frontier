@@ -59,8 +59,9 @@ public sealed class DirectionalLayerOrderSystem : EntitySystem
         return HasMarkings(humanoid, MarkingCategories.Genital)
                || HasMarkings(humanoid, MarkingCategories.Tail)
                || HasMarkings(humanoid, MarkingCategories.TailExtras)
-               || HasMarkings(humanoid, MarkingCategories.Snout)
-               || HasMarkings(humanoid, MarkingCategories.SnoutCover);
+               || (humanoid.SnoutAboveHair
+                   && (HasMarkings(humanoid, MarkingCategories.Snout)
+                       || HasMarkings(humanoid, MarkingCategories.SnoutCover)));
     }
 
     private static bool HasMarkings(HumanoidAppearanceComponent humanoid, MarkingCategories category)
