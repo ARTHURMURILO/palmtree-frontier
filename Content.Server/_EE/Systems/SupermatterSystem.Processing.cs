@@ -14,17 +14,23 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using Content.Server.Chat.Systems;
+using Content.Server.Construction.Components;
 using Content.Server._NF.Radio;
 using Content.Server._NF.Speech.Components;
 using Content.Server.Explosion.EntitySystems;
 using Content.Server.Lightning;
+using Content.Server.Power.Components;
 using Content.Server.Singularity.Components;
+using Content.Server.Tesla.Components;
 using Content.Shared._EE.CCVars;
 using Content.Shared._EE.Supermatter.Components;
 using Content.Shared.Atmos;
 using Content.Shared.Audio;
 using Content.Shared.Chat;
+using Content.Shared.Damage;
 using Content.Shared.Eye.Blinding.Components;
+using Content.Shared.FixedPoint;
+using Content.Shared.Ghost;
 using Content.Shared.Mobs;
 using Content.Shared.Mobs.Components;
 using Content.Shared.Physics;
@@ -48,7 +54,7 @@ namespace Content.Server._EE.Supermatter.Systems;
 public sealed partial class SupermatterSystem
 {
     /// <summary>
-    /// Handle power and radiation output depending on atmospheric things.
+    /// Handle power, waste heat and lightning output depending on atmospheric things.
     /// </summary>
     private void ProcessAtmos(EntityUid uid, SupermatterComponent sm)
     {
@@ -56,16 +62,20 @@ public sealed partial class SupermatterSystem
 
         if (mix is not { })
         {
-            ZeroRadiation(uid);
+            sm.LightningTransmission = 1f;
             return;
         }
 
+        // SS13-style gas handling: absorb a portion of the chamber gas, process it, then merge
+        // it back with the reaction products. This is not net consumption of the base gases,
+        // but gases that react (ammonia/miasma here) are genuinely consumed.
         sm.GasStorage = mix.Remove(sm.GasEfficiency * mix.TotalMoles);
+        sm.GasStorage.Volume = mix.Volume * sm.GasEfficiency; // match the chamber pressure
         var moles = sm.GasStorage.TotalMoles;
 
         if (!(moles > 0f))
         {
-            ZeroRadiation(uid);
+            sm.LightningTransmission = 1f;
             return;
         }
 
@@ -84,21 +94,24 @@ public sealed partial class SupermatterSystem
 
         // Affects plasma, o2 and heat output.
         sm.GasHeatModifier = SupermatterGasData.GetHeatPenalties(gasComposition);
-        var transmissionBonus = SupermatterGasData.GetTransmitModifiers(gasComposition);
-
-        var h2OBonus = 1 - gasComposition.GetMoles(Gas.WaterVapor) * 0.25f;
 
         powerRatio = Math.Clamp(powerRatio, 0, 1);
         sm.HeatModifier = Math.Max(sm.GasHeatModifier, 0.5f);
-        transmissionBonus *= h2OBonus;
 
-        // Miasma is really just microscopic particulate. It gets consumed like anything else that touches the crystal.
+        // SS13-style gas power transmission: the gas mix scales zap strength without
+        // changing the crystal's internal energy. Positive gases amplify, negative suppress.
+        var powerTransmission = SupermatterGasData.GetPowerTransmission(gasComposition);
+        sm.LightningTransmission = Math.Clamp(1f + powerTransmission, 0f, 4f);
+
+        // Miasma is not a separate gas in this fork; Ammonia is the miasma analog. It is
+        // consumed like SS13 miasma and converted into matter power.
         var ammoniaProportion = gasComposition.GetMoles(Gas.Ammonia);
 
         if (ammoniaProportion > 0)
         {
             var ammoniaPartialPressure = mix.Pressure * ammoniaProportion;
-            var consumedMiasma = Math.Clamp((ammoniaPartialPressure - _config.GetCVar(ECCVars.SupermatterAmmoniaConsumptionPressure)) /
+            var consumedMiasma = Math.Clamp(
+                (ammoniaPartialPressure - _config.GetCVar(ECCVars.SupermatterAmmoniaConsumptionPressure)) /
                 (ammoniaPartialPressure + _config.GetCVar(ECCVars.SupermatterAmmoniaPressureScaling)) *
                 (1 + powerRatio * _config.GetCVar(ECCVars.SupermatterAmmoniaGasMixScaling)),
                 0f, 1f);
@@ -153,25 +166,6 @@ public sealed partial class SupermatterSystem
         // If there is more frezon and N2 than anything else, we receive no power increase from heat
         sm.Power = Math.Max(sm.GasStorage.Temperature * tempFactor / Atmospherics.T0C * powerRatio + sm.Power, 0);
 
-        // Irradiate stuff. Coyote-style curve: no hard ceiling by default, but the
-        // optional supermatter.max_radiation cvar can impose one for a server.
-        if (TryComp<RadiationSourceComponent>(uid, out var rad))
-        {
-            var intensity =
-                _config.GetCVar(ECCVars.SupermatterRadsBase) +
-                sm.Power
-                * Math.Max(0, 1f + transmissionBonus / 10f)
-                * 0.003f
-                * _config.GetCVar(ECCVars.SupermatterRadsModifier);
-
-            var maxRadiation = _config.GetCVar(ECCVars.SupermatterMaxRadiation);
-            if (maxRadiation > 0f)
-                intensity = Math.Min(intensity, maxRadiation);
-
-            rad.Intensity = intensity;
-            rad.Slope = Math.Clamp(rad.Intensity / 15, 0.2f, 1f);
-        }
-
         // Power * 0.55 * a value between 1 and 0.8
         var energy = sm.Power * _config.GetCVar(ECCVars.SupermatterReactionPowerModifier) * (1f - sm.PsyCoefficient * 0.2f);
 
@@ -211,15 +205,52 @@ public sealed partial class SupermatterSystem
     }
 
     /// <summary>
-    /// Shoot lightning bolts randomly as power increases
-    /// Calling a bunch of random probs isn't great but it works for now
-    /// TODO: make this properly use a formula to determine zap count
+    /// Palmtree: radiation is a hazard, never a power path. The source is flagged
+    /// <c>affectsCollectors: false</c> so radiation collectors ignore it entirely.
+    /// </summary>
+    private void UpdateRadiation(EntityUid uid, SupermatterComponent sm)
+    {
+        if (!TryComp<RadiationSourceComponent>(uid, out var rad))
+            return;
+
+        if (!sm.Activated)
+        {
+            rad.Intensity = 0f;
+            return;
+        }
+
+        // Integrity loss makes the crystal leak more radiation, like SS13.
+        var integrity = GetIntegrity(sm);
+        var damageFactor = 1f + (100f - integrity) / 100f * 2f;
+
+        var intensity = _config.GetCVar(ECCVars.SupermatterRadsBase)
+                        + sm.Power * 0.003f
+                        * _config.GetCVar(ECCVars.SupermatterRadsModifier)
+                        * damageFactor;
+
+        var maxRadiation = _config.GetCVar(ECCVars.SupermatterMaxRadiation);
+        if (maxRadiation > 0f)
+            intensity = Math.Min(intensity, maxRadiation);
+
+        rad.Intensity = intensity;
+        rad.Slope = Math.Clamp(intensity / 15f, 0.2f, 1f);
+    }
+
+    /// <summary>
+    /// Emit lightning as internal energy rises. The arcs into tesla coils are the crystal's
+    /// power path; the other arcs use SS13's target priority: coils, grounding rods, living
+    /// mobs, machinery, then loose objects.
     /// </summary>
     private void SupermatterZap(EntityUid uid, SupermatterComponent sm)
     {
+        // Gas power transmission scales the zap, not the crystal's internal energy.
+        var effectivePower = sm.Power * sm.LightningTransmission;
+        if (effectivePower <= 0f)
+            return;
+
         var zapPower = 0;
         var zapCount = 0;
-        var zapRange = Math.Clamp(sm.Power / 1000, 2, 7);
+        var zapRange = Math.Clamp(effectivePower / 1000f, 2f, _config.GetCVar(ECCVars.SupermatterLightningRange));
 
         if (_random.Prob(0.05f))
             zapCount += 1;
@@ -231,14 +262,10 @@ public sealed partial class SupermatterSystem
             zapCount += 1;
 
         if (sm.Power >= _config.GetCVar(ECCVars.SupermatterPowerPenaltyThreshold))
-        {
             zapPower += 1;
-        }
 
         if (_random.Prob(0.05f) && sm.Power >= _config.GetCVar(ECCVars.SupermatterSeverePowerPenaltyThreshold))
-        {
             zapCount += 1;
-        }
 
         /// Go absolutely mental and constantly shoot out lightning
         if (sm.Power >= _config.GetCVar(ECCVars.SupermatterCriticalPowerPenaltyThreshold))
@@ -247,11 +274,150 @@ public sealed partial class SupermatterSystem
             zapCount += 1;
         }
 
-        if (zapCount >= 1)
-            // Triad: dropped upstream `hitCoordsChance: sm.ZapHitCoordinatesChance` arg;
-            // this fork's LightningSystem.ShootRandomLightnings has no hit-random-coordinates
-            // parameter, so bolts only arc to entities. ZapHitCoordinatesChance is left unused.
-            _lightning.ShootRandomLightnings(uid, zapRange, zapCount, sm.LightningPrototypes[zapPower]);
+        zapPower = Math.Clamp(zapPower, 0, sm.LightningPrototypes.Length - 1);
+        var prototype = sm.LightningPrototypes[zapPower];
+
+        // The main power discharge deliberately feeds coils first.
+        ZapTeslaCoils(uid, sm, effectivePower, zapRange, prototype);
+
+        // Incidental arcs follow SS13's target selection and can hurt crew and machinery.
+        var hit = new HashSet<EntityUid>();
+        for (var i = 0; i < zapCount; i++)
+            ShootSupermatterArc(uid, effectivePower, zapRange, zapPower, prototype, hit);
+    }
+
+    /// <summary>
+    /// Palmtree: arc into nearby tesla coils and refill their batteries.
+    /// </summary>
+    /// <remarks>
+    /// The crystal supports one coil at base power and one more for every
+    /// <see cref="ECCVars.SupermatterLightningPowerPerCoil"/> points of effective power. A coil is
+    /// only struck after it has discharged below
+    /// <see cref="ECCVars.SupermatterLightningCoilRechargeThreshold"/>, so arcs follow the grid's
+    /// actual draw instead of firing every tick.
+    /// </remarks>
+    private void ZapTeslaCoils(EntityUid uid, SupermatterComponent sm, float effectivePower, float range, string prototype)
+    {
+        var candidates = new List<(EntityUid Coil, float DistanceSquared, float ChargeRatio)>();
+        var coordinates = Transform(uid).Coordinates;
+
+        foreach (var coil in _entityLookup.GetEntitiesInRange<TeslaCoilComponent>(coordinates, range))
+        {
+            if (!TryComp<BatteryComponent>(coil, out var battery) || battery.MaxCharge <= 0f)
+                continue;
+
+            var ratio = battery.CurrentCharge / battery.MaxCharge;
+            var distance = (Transform(coil).Coordinates.Position - coordinates.Position).LengthSquared();
+            candidates.Add((coil, distance, ratio));
+        }
+
+        if (candidates.Count == 0)
+            return;
+
+        var powerPerCoil = Math.Max(_config.GetCVar(ECCVars.SupermatterLightningPowerPerCoil), 1f);
+        var maxCoils = 1 + (int) (MathF.Max(effectivePower, 0f) / powerPerCoil);
+
+        // Keep a stable supported set: the nearest coils. Cycling through every coil in
+        // range would let a player bypass the one-coil-per-4000-effective-power limit.
+        var rechargeThreshold = _config.GetCVar(ECCVars.SupermatterLightningCoilRechargeThreshold);
+        var supported = candidates
+            .OrderBy(c => c.DistanceSquared)
+            .Take(maxCoils)
+            .Where(c => c.ChargeRatio < rechargeThreshold)
+            .OrderBy(c => c.ChargeRatio)
+            .ToList();
+
+        // Refill the emptiest supported coils first so they share the load evenly.
+        foreach (var coil in supported)
+            _lightning.ShootLightning(uid, coil.Coil, prototype);
+    }
+
+    /// <summary>
+    /// Fire one SS13-style supermatter arc, then chain into lower-priority targets.
+    /// </summary>
+    private void ShootSupermatterArc(
+        EntityUid uid,
+        float power,
+        float range,
+        int depth,
+        string prototype,
+        HashSet<EntityUid> hit)
+    {
+        if (depth < 0 || range < 2f)
+            return;
+
+        var target = SelectSupermatterLightningTarget(uid, range, hit);
+        if (target is not { } targetUid)
+            return;
+
+        _lightning.ShootLightning(uid, targetUid, prototype);
+        hit.Add(targetUid);
+
+        // Coils and grounding rods handle their own lightning interaction. Everything else
+        // takes an SS13-style shock in addition to whatever its LightningTarget does.
+        if (!HasComp<TeslaCoilComponent>(targetUid) && !HasComp<LightningSparkingComponent>(targetUid))
+        {
+            var shock = Math.Clamp(power / 200f - 10f, 1.5f, 50f);
+            var damage = new DamageSpecifier();
+            damage.DamageDict.Add("Shock", FixedPoint2.New(shock));
+            _damageable.TryChangeDamage(targetUid, damage, true, origin: uid);
+        }
+
+        ShootSupermatterArc(uid, power * 0.8f, range - 1f, depth - 1, prototype, hit);
+    }
+
+    /// <summary>
+    /// SS13 target priority: tesla coil, grounding rod, living mob, machinery, loose object.
+    /// </summary>
+    private EntityUid? SelectSupermatterLightningTarget(EntityUid uid, float range, HashSet<EntityUid> hit)
+    {
+        var candidates = new List<EntityUid>();
+        var bestPriority = 0;
+        var coordinates = Transform(uid).Coordinates;
+
+        foreach (var ent in _entityLookup.GetEntitiesInRange(coordinates, range))
+        {
+            if (ent == uid || hit.Contains(ent) || TerminatingOrDeleted(ent) || HasComp<GhostComponent>(ent))
+                continue;
+
+            // Coils are handled by the dedicated power discharge above. Letting incidental
+            // arcs charge them too would bypass the one-coil-per-4000-effective-power limit.
+            if (HasComp<TeslaCoilComponent>(ent))
+                continue;
+
+            var (priority, chance) = GetSupermatterLightningPriority(ent);
+            if (priority == 0 || !_random.Prob(chance))
+                continue;
+
+            if (priority > bestPriority)
+            {
+                bestPriority = priority;
+                candidates.Clear();
+            }
+
+            if (priority == bestPriority)
+                candidates.Add(ent);
+        }
+
+        return candidates.Count == 0 ? null : _random.Pick(candidates);
+    }
+
+    private (int Priority, float Chance) GetSupermatterLightningPriority(EntityUid ent)
+    {
+        // The grounding rod is the only lightning-sparking non-coil in the engine.
+        if (HasComp<LightningSparkingComponent>(ent))
+            return (4, 1f);
+
+        if (TryComp<MobStateComponent>(ent, out var mob) && mob.CurrentState != MobState.Dead)
+            return (3, 0.2f);
+
+        if (HasComp<MachineComponent>(ent) || HasComp<ApcPowerReceiverComponent>(ent))
+            return (2, 0.4f);
+
+        if (HasComp<PhysicsComponent>(ent) && !HasComp<MapGridComponent>(ent) && !HasComp<MapComponent>(ent))
+            return (1, 1f);
+
+        return (0, 0f);
     }
 
     /// <summary>
@@ -640,16 +806,6 @@ public sealed partial class SupermatterSystem
     }
 
     /// <summary>
-    /// Palmtree: force the crystal's radiation source off. Used while inert or after the
-    /// chamber has been emptied, so a previously active crystal cannot keep feeding collectors.
-    /// </summary>
-    private void ZeroRadiation(EntityUid uid)
-    {
-        if (TryComp<RadiationSourceComponent>(uid, out var rad))
-            rad.Intensity = 0;
-    }
-
-    /// <summary>
     /// Returns the integrity rounded to hundreds, e.g. 100.00%
     /// </summary>
     public static float GetIntegrity(SupermatterComponent sm)
@@ -707,7 +863,8 @@ public sealed partial class SupermatterSystem
         _audio.PlayGlobal(sm.DistortSound, mapFilter, true);
 
         // Spawn the short-lived mini tesla arcs before the explosion deletes the crystal.
-        var coords = Transform(uid).Coordinates;
+        var xform = Transform(uid);
+        var coords = xform.Coordinates;
         for (var i = 0; i < 4; i++)
         {
             var angle = i * MathF.PI / 2f;
@@ -715,7 +872,74 @@ public sealed partial class SupermatterSystem
             Spawn("SupermatterZapBall", coords.Offset(offset));
         }
 
-        _explosion.TriggerExplosive(uid);
+        // The anomaly payload appears on valid ship tiles wherever possible, so science can
+        // reach and neutralize it like any other anomaly.
+        SpawnDelaminationAnomalies(uid, sm, xform.GridUid, coords.Position, GetDelaminationAnomalyCount(sm));
+
+        _explosion.TriggerExplosive(uid, radius: GetDelaminationRadius(sm));
+    }
+
+    /// <summary>
+    /// Palmtree: the blast grows with the energy the crystal was holding. Base radius is 20
+    /// tiles, plus one tile for every 4000 points of internal energy at failure. The shard
+    /// scales the result down, and an optional CVar can put a ceiling on it.
+    /// </summary>
+    public float GetDelaminationRadius(SupermatterComponent sm)
+    {
+        var powerPerRadius = Math.Max(_config.GetCVar(ECCVars.SupermatterDelamPowerPerRadius), 1f);
+        var radius = (_config.GetCVar(ECCVars.SupermatterDelamBaseRadius)
+                      + MathF.Floor(MathF.Max(sm.Power, 0f) / powerPerRadius))
+                     * MathF.Max(sm.DelamRadiusMultiplier, 0f);
+
+        var maxRadius = _config.GetCVar(ECCVars.SupermatterDelamMaxRadius);
+        if (maxRadius > 0f)
+            radius = MathF.Min(radius, maxRadius);
+
+        return radius;
+    }
+
+    /// <summary>
+    /// Palmtree: one hyperflux anomaly at base severity, up to the configured maximum as the
+    /// crystal's internal energy rises.
+    /// </summary>
+    public int GetDelaminationAnomalyCount(SupermatterComponent sm)
+    {
+        var max = Math.Max(_config.GetCVar(ECCVars.SupermatterDelamAnomalyMax), 1);
+        var power = Math.Max(_config.GetCVar(ECCVars.SupermatterDelamAnomalyPower), 1f);
+        var severity = Math.Clamp(sm.Power / power, 0f, 1f);
+        return 1 + (int) MathF.Round(severity * (max - 1));
+    }
+
+    private void SpawnDelaminationAnomalies(
+        EntityUid uid,
+        SupermatterComponent sm,
+        EntityUid? gridUid,
+        Vector2 localPosition,
+        int count)
+    {
+        if (gridUid is not { } grid || count <= 0)
+            return;
+
+        if (TryComp<MapGridComponent>(grid, out var mapGrid))
+        {
+            var tiles = GetSpawningPoints(uid, sm, count);
+            if (tiles is { Count: > 0 })
+            {
+                foreach (var tile in tiles)
+                    Spawn("AnomalyHyperflux", _map.ToCenterCoordinates(tile, mapGrid));
+
+                return;
+            }
+        }
+
+        // Small test maps or unusual grids may not have valid floor tiles nearby.
+        for (var i = 0; i < count; i++)
+        {
+            var angle = _random.NextFloat(0f, MathF.PI * 2f);
+            var distance = _random.NextFloat(8f, 16f);
+            var offset = new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * distance;
+            Spawn("AnomalyHyperflux", new EntityCoordinates(grid, localPosition + offset));
+        }
     }
 
     /// <summary>

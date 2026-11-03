@@ -21,8 +21,8 @@ using Content.Shared._EE.CCVars;
 using Content.Shared._EE.Supermatter.Components;
 using Content.Shared._EE.Supermatter.Consoles;
 using Content.Shared.Atmos;
-using Content.Shared.Radiation.Components;
 using Content.Shared.Audio;
+using Content.Shared.Damage;
 using Content.Shared.Damage.Components;
 using Content.Shared.Database;
 using Content.Shared.DoAfter;
@@ -34,6 +34,7 @@ using Content.Shared.Kitchen.Components;
 using Content.Shared.Mobs.Components;
 using Content.Shared.Popups;
 using Content.Shared.Projectiles;
+using Content.Shared.Radiation.Components;
 using Robust.Server.GameObjects;
 using Robust.Shared.Audio;
 using Robust.Shared.Audio.Systems;
@@ -55,6 +56,7 @@ public sealed partial class SupermatterSystem : EntitySystem
 {
     [Dependency] private AppearanceSystem _appearance = default!;
     [Dependency] private AtmosphereSystem _atmosphere = default!;
+    [Dependency] private DamageableSystem _damageable = default!;
     [Dependency] private DoAfterSystem _doAfter = default!;
     [Dependency] private EntityLookupSystem _entityLookup = default!;
     [Dependency] private ExamineSystem _examine = default!;
@@ -120,7 +122,7 @@ public sealed partial class SupermatterSystem : EntitySystem
         // Palmtree: an inert crystal must not radiate. The source is set to zero in YAML as
         // well, but map-initialized prototypes can override that.
         if (TryComp<RadiationSourceComponent>(uid, out var rad))
-            rad.Intensity = 0;
+            rad.Intensity = 0f;
 
         // Only fill a genuinely empty tile. A player-prepared chamber must keep its gas mix;
         // adding standard air on top of a plasma/N2 setup was both surprising and dangerous.
@@ -139,16 +141,16 @@ public sealed partial class SupermatterSystem : EntitySystem
     public void OnSupermatterUpdated(EntityUid uid, SupermatterComponent sm, AtmosDeviceUpdateEvent args)
     {
         // Palmtree: do not process an inert crystal. This is what makes the visible "inert"
-        // state honest: no gas power, no radiation, no damage before someone activates it.
+        // state honest: no gas power, no arcs, no radiation, no damage before someone activates it.
         if (!sm.Activated)
         {
-            if (TryComp<RadiationSourceComponent>(uid, out var inertRad))
-                inertRad.Intensity = 0;
+            UpdateRadiation(uid, sm);
             return;
         }
 
         ProcessAtmos(uid, sm);
         HandleDamage(uid, sm);
+        UpdateRadiation(uid, sm);
 
         if (sm.Damage >= sm.DamageDelaminationPoint || sm.Delamming)
             HandleDelamination(uid, sm);

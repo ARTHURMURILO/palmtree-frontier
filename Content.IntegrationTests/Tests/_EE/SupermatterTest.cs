@@ -1,12 +1,17 @@
 using System.Linq;
 using Content.Server._EE.Supermatter.Components;
 using Content.Server._EE.Supermatter.Console.Systems;
+using Content.Server._EE.Supermatter.Systems;
 using Content.Server._PS.BluespaceDock;
+using Content.Server.Anomaly.Components;
+using Content.Server.Atmos.Components;
 using Content.Server.Atmos.EntitySystems;
 using Content.Server.Power.Components;
 using Content.Server.Radio.Components;
+using Content.Server.Singularity.EntitySystems;
 using Content.Server.Tesla.Components;
 using Content.Shared._EE.Supermatter.Components;
+using Content.Shared.Anomaly.Components;
 using Content.Shared.Atmos;
 using Content.Shared._EE.Supermatter.Consoles;
 using Content.Shared.Construction.Components;
@@ -27,65 +32,250 @@ namespace Content.IntegrationTests.Tests._EE;
 public sealed class SupermatterTest
 {
     [Test]
-    public async Task InertCrystalDoesNotRadiateUntilActivated()
+    public async Task ActiveCrystalChargesNearbyTeslaCoil()
     {
         await using var pair = await PoolManager.GetServerClient();
         var server = pair.Server;
         var entMan = server.EntMan;
 
         var map = await pair.CreateTestMap();
+        EntityUid sm = default;
+        EntityUid coil = default;
 
         await server.WaitPost(() =>
         {
-            var atmos = server.System<AtmosphereSystem>();
-            var moles = new float[Atmospherics.AdjustedNumberOfGases];
-            moles[(int) Gas.Oxygen] = 21.824779f;
-            moles[(int) Gas.Nitrogen] = 82.10312f;
-            atmos.SetMapAtmosphere(map.MapUid, false, new GasMixture(moles, Atmospherics.T20C));
+            sm = entMan.SpawnEntity("Supermatter", map.GridCoords);
+            coil = entMan.SpawnEntity("TeslaCoil", new EntityCoordinates(map.Grid, 1, 0));
         });
-
-        EntityUid sm = default;
-
-        await server.WaitPost(() => sm = entMan.SpawnEntity("Supermatter", map.GridCoords));
 
         await pair.RunTicksSync(5);
 
         await server.WaitAssertion(() =>
         {
-            var rad = entMan.GetComponent<RadiationSourceComponent>(sm);
-            Assert.That(rad.Intensity, Is.EqualTo(0f),
-                "an inert supermatter must not emit radiation");
+            Assert.That(entMan.HasComponent<RadiationSourceComponent>(sm), Is.True,
+                "the supermatter must be radioactive");
+            Assert.That(entMan.GetComponent<RadiationSourceComponent>(sm).Intensity, Is.EqualTo(0f),
+                "an inert crystal must not radiate");
+            var battery = entMan.GetComponent<BatteryComponent>(coil);
+            Assert.That(battery.CurrentCharge, Is.EqualTo(0f),
+                "an inert crystal must not charge a coil");
         });
 
         await server.WaitAssertion(() =>
         {
             var comp = entMan.GetComponent<SupermatterComponent>(sm);
             comp.Activated = true;
-            comp.Power = 1000f;
+            comp.Power = 5000f;
         });
 
-        await pair.RunTicksSync(3);
+        await pair.RunTicksSync(65);
 
         await server.WaitAssertion(() =>
         {
-            var rad = entMan.GetComponent<RadiationSourceComponent>(sm);
-            Assert.That(rad.Intensity, Is.GreaterThan(0f),
-                "an active supermatter must emit radiation");
+            var battery = entMan.GetComponent<BatteryComponent>(coil);
+            Assert.That(battery.CurrentCharge, Is.GreaterThan(0f),
+                "an active crystal must arc into a nearby tesla coil");
+            Assert.That(entMan.GetComponent<RadiationSourceComponent>(sm).Intensity, Is.GreaterThan(0f),
+                "an active crystal must be radioactive");
         });
 
-        await server.WaitAssertion(() =>
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task AmmoniaMiasmaIsConsumedLikeSS13()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var entMan = server.EntMan;
+        var atmos = server.System<AtmosphereSystem>();
+
+        var map = await pair.CreateTestMap();
+        EntityUid sm = default;
+
+        await server.WaitPost(() =>
         {
-            var comp = entMan.GetComponent<SupermatterComponent>(sm);
-            comp.Activated = false;
+            var moles = new float[Atmospherics.AdjustedNumberOfGases];
+            moles[(int) Gas.Ammonia] = 100f;
+            moles[(int) Gas.Nitrogen] = 1000f;
+
+            if (!entMan.HasComponent<MapAtmosphereComponent>(map.MapUid))
+                entMan.AddComponent<MapAtmosphereComponent>(map.MapUid);
+
+            // The map-atmosphere setter deliberately freezes its mixture. The test needs a
+            // mutable mixture because SS13-style gas handling removes and merges the sample.
+            var mapAtmos = entMan.GetComponent<MapAtmosphereComponent>(map.MapUid);
+            typeof(MapAtmosphereComponent)
+                .GetField(nameof(MapAtmosphereComponent.Mixture))!
+                .SetValue(mapAtmos, new GasMixture(moles, Atmospherics.T20C));
+
+            sm = entMan.SpawnEntity("Supermatter", map.GridCoords);
         });
 
         await pair.RunTicksSync(2);
 
         await server.WaitAssertion(() =>
         {
+            var comp = entMan.GetComponent<SupermatterComponent>(sm);
+            comp.Activated = true;
+            comp.Power = 5000f;
+        });
+
+        var initialAmmonia = 0f;
+        await server.WaitAssertion(() =>
+        {
+            var mix = atmos.GetContainingMixture(sm, true, true);
+            Assert.That(mix, Is.Not.Null);
+            initialAmmonia = mix!.GetMoles(Gas.Ammonia);
+            Assert.That(initialAmmonia, Is.GreaterThan(0f));
+        });
+
+        await pair.RunTicksSync(65);
+
+        await server.WaitAssertion(() =>
+        {
+            var mix = atmos.GetContainingMixture(sm, true, true);
+            Assert.That(mix, Is.Not.Null);
+            Assert.That(mix!.GetMoles(Gas.Ammonia), Is.LessThan(initialAmmonia),
+                "the crystal must consume ammonia/miasma like SS13");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task GasMixModifiesLightningTransmission()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var entMan = server.EntMan;
+        var atmos = server.System<AtmosphereSystem>();
+
+        var map = await pair.CreateTestMap();
+
+        await server.WaitPost(() =>
+        {
+            var moles = new float[Atmospherics.AdjustedNumberOfGases];
+            moles[(int) Gas.Plasma] = 1000f;
+            atmos.SetMapAtmosphere(map.MapUid, false, new GasMixture(moles, Atmospherics.T20C));
+        });
+
+        EntityUid sm = default;
+
+        await server.WaitPost(() => sm = entMan.SpawnEntity("Supermatter", map.GridCoords));
+        await pair.RunTicksSync(2);
+
+        await server.WaitAssertion(() =>
+        {
+            var comp = entMan.GetComponent<SupermatterComponent>(sm);
+            comp.Activated = true;
+            comp.Power = 5000f;
+        });
+
+        await pair.RunTicksSync(65);
+
+        await server.WaitAssertion(() =>
+        {
+            var comp = entMan.GetComponent<SupermatterComponent>(sm);
+            Assert.That(comp.LightningTransmission, Is.GreaterThan(1.1f),
+                "plasma must increase lightning power transmission");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task SupermatterRadiationDoesNotChargeCollectors()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var entMan = server.EntMan;
+        var collectorSystem = server.System<RadiationCollectorSystem>();
+
+        var map = await pair.CreateTestMap();
+        EntityUid sm = default;
+        EntityUid collector = default;
+
+        await server.WaitPost(() =>
+        {
+            sm = entMan.SpawnEntity("Supermatter", map.GridCoords);
+            collector = entMan.SpawnEntity("RadiationCollectorFullTank", new EntityCoordinates(map.Grid, 1, 0));
+            collectorSystem.SetCollectorEnabled(collector, true);
+        });
+
+        await pair.RunTicksSync(2);
+
+        await server.WaitAssertion(() =>
+        {
+            var comp = entMan.GetComponent<SupermatterComponent>(sm);
+            comp.Activated = true;
+            comp.Power = 5000f;
+        });
+
+        await pair.RunTicksSync(65);
+
+        await server.WaitAssertion(() =>
+        {
             var rad = entMan.GetComponent<RadiationSourceComponent>(sm);
-            Assert.That(rad.Intensity, Is.EqualTo(0f),
-                "deactivating the crystal must stop its radiation");
+            Assert.That(rad.Intensity, Is.GreaterThan(0f),
+                "the active crystal must be radioactive");
+
+            var supplier = entMan.GetComponent<PowerSupplierComponent>(collector);
+            Assert.That(supplier.MaxSupply, Is.EqualTo(0f),
+                "supermatter radiation must never charge a radiation collector");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task DelaminationRadiusScalesWithInternalEnergy()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var entMan = server.EntMan;
+        var system = server.System<SupermatterSystem>();
+
+        var map = await pair.CreateTestMap();
+        EntityUid sm = default;
+
+        await server.WaitPost(() => sm = entMan.SpawnEntity("Supermatter", map.GridCoords));
+
+        await server.WaitAssertion(() =>
+        {
+            var comp = entMan.GetComponent<SupermatterComponent>(sm);
+
+            comp.Power = 0f;
+            Assert.That(system.GetDelaminationRadius(comp), Is.EqualTo(20f));
+
+            comp.Power = 3999f;
+            Assert.That(system.GetDelaminationRadius(comp), Is.EqualTo(20f));
+
+            comp.Power = 4000f;
+            Assert.That(system.GetDelaminationRadius(comp), Is.EqualTo(21f));
+
+            comp.Power = 8000f;
+            Assert.That(system.GetDelaminationRadius(comp), Is.EqualTo(22f));
+
+            comp.Power = 20000f;
+            Assert.That(system.GetDelaminationRadius(comp), Is.EqualTo(25f));
+
+            Assert.That(system.GetDelaminationAnomalyCount(comp), Is.EqualTo(6),
+                "maximum severity must spawn six hyperflux anomalies");
+        });
+
+        EntityUid shard = default;
+        await server.WaitPost(() => shard = entMan.SpawnEntity("SupermatterSmall", map.GridCoords));
+
+        await server.WaitAssertion(() =>
+        {
+            var comp = entMan.GetComponent<SupermatterComponent>(shard);
+            comp.Power = 0f;
+            Assert.That(system.GetDelaminationRadius(comp), Is.EqualTo(7f).Within(0.01f),
+                "the shard must have a much smaller blast than the full crystal");
+
+            Assert.That(system.GetDelaminationAnomalyCount(comp), Is.EqualTo(1),
+                "a cold delamination must spawn one hyperflux anomaly");
         });
 
         await pair.CleanReturnAsync();
@@ -129,6 +319,14 @@ public sealed class SupermatterTest
                 "the explosion should leave short-lived supermatter discharge balls");
         });
 
+        await pair.RunTicksSync(65);
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(entMan.Count<AnomalyComponent>(), Is.GreaterThan(0),
+                "delamination should scatter hyperflux anomalies");
+        });
+
         await pair.CleanReturnAsync();
     }
 
@@ -165,6 +363,32 @@ public sealed class SupermatterTest
             Assert.That(entMan.EntityExists(sm), Is.False, "the supermatter should have been purged");
             Assert.That(dock.HasDangerousShipEntities(map.Grid), Is.False,
                 "the grid should no longer contain a dangerous engine");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task HyperfluxAnomalyIsScienceNeutralizable()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var entMan = server.EntMan;
+
+        var map = await pair.CreateTestMap();
+        EntityUid anomaly = default;
+
+        await server.WaitPost(() => anomaly = entMan.SpawnEntity("AnomalyHyperflux", map.GridCoords));
+        await pair.RunTicksSync(2);
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(entMan.HasComponent<AnomalyComponent>(anomaly), Is.True,
+                "hyperflux must use the normal anomaly component");
+            Assert.That(entMan.HasComponent<SecretDataAnomalyComponent>(anomaly), Is.True,
+                "hyperflux must expose secret data to anomaly scanners");
+            Assert.That(entMan.GetComponent<AnomalyComponent>(anomaly).CorePrototype, Is.Not.Null,
+                "hyperflux must have a core prototype so it can be neutralized like any anomaly");
         });
 
         await pair.CleanReturnAsync();

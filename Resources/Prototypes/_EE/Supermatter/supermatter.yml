@@ -101,6 +101,8 @@
       GlowDelam: { state: supermatter-glow-delam }
   - type: Explosive
     explosionType: Supermatter
+    # Palmtree: the radius is passed at runtime (20 tiles + 1 per 4000 internal energy).
+    # This totalIntensity is only a fallback if something triggers the component directly.
     totalIntensity: 100000 #Frontier 120000<100000
     intensitySlope: 5
     maxIntensity: 100
@@ -115,6 +117,8 @@
     joinSystem: true
   - type: RadiationSource
     intensity: 0
+    # Palmtree: radiation is a hazard, not a power source. Radiation collectors ignore it.
+    affectsCollectors: false
   - type: DeviceLinkSource
     ports:
     - SupermatterInactive

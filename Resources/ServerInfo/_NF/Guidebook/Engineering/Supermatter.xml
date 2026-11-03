@@ -7,7 +7,7 @@
     <GuideEntityEmbed Entity="ComputerSupermatter" Caption=""/>
   </Box>
 
-  With proper care and handling, the supermatter can be an incredibly potent power source for the station. While a basic setup will take care of the station's typical power load, the supermatter crystal is affected strongly by gases in many different ways — both beneficial and harmful.
+  With proper care and handling, the supermatter can be an incredibly potent power source for the station. The crystal absorbs a sample of the chamber gas, processes it, and returns most of it; only reactive gases such as ammonia/miasma are consumed. The mix's heat capacity, heat resistance, heat-to-power ratio, and lightning power transmission all matter a great deal. Once the crystal is running, tesla coils harvest its lightning arcs for the grid.
 
   ## Precautions
 
@@ -17,30 +17,27 @@
 
   • Do not power the crystal before the cooling loop has been set up. [color=red]Do not touch the crystal. Do not walk into the crystal.[/color]
 
-  • Wear radiation protection around the crystal at all times.
+  • Keep clear of the crystal's lightning arcs. Insulated gloves and grounding rods are your protection; the arcs will happily strike people and machinery.
 
-  • Do not stare directly into the crystal. Engineering goggles will prevent hallucinations.
+  • Wear radiation protection around the crystal at all times. Supermatter radiation is a hazard, not a power source.
+
+  • Do not stare directly into the crystal. Its light is intense and its arcs are unpredictable.
 
   • If you must approach the crystal, equip and enable magboots.
+
+  • A delamination at high internal energy can level a very large area. See the warning at the end of this entry.
 
   ## Supermatter Crystal
 
   <GuideEntityEmbed Entity="Supermatter" Caption=""/>
 
-  The supermatter crystal is the main focus of the supermatter engine. It slowly siphons and reacts with gases around it, while emitting incredibly harmful — but lucrative — levels of radiation and electricity.
+  The supermatter crystal is the main focus of the supermatter engine. It absorbs a sample of the gas around it, uses the gas as a coolant and working fluid, and emits both radiation and lightning.
 
-  When powered — usually by emitters — the intensity of its emissions will grow, as hot oxygen and plasma are released as waste. To top it all off, [color=red]anything that touches the crystal is instantly vaporized, including you[/color].
+  When powered — usually by emitters — the intensity of its arcs and radiation will grow, as hot oxygen and plasma are released as waste. To top it all off, [color=red]anything that touches the crystal is instantly vaporized, including you[/color].
 
-  ## Radiation Collectors
+  ## Radiation
 
-  <Box>
-    <GuideEntityEmbed Entity="RadiationCollectorNoTank"/>
-    <GuideEntityEmbed Entity="PlasmaTank"/>
-  </Box>
-
-  To harness the radioactive potential of the crystal, radiation collectors are placed nearby. These connect to HV cables, generating power for the station.
-
-  Radiation collectors require a filled tank of plasma gas to operate, which will need to be replaced periodically to maintain power generation.
+  The crystal is radioactive. This radiation is a hazard only: it damages crew and grows worse as the crystal loses integrity, but it will never charge a radiation collector. Radiation collectors are not part of this engine; keep them out of the chamber and rely on tesla coils for power. Wear radiation protection and keep the crystal's integrity high.
 
   ## Tesla Coils
 
@@ -49,19 +46,21 @@
     <GuideEntityEmbed Entity="TeslaGroundingRod"/>
   </Box>
 
-  The Supermatter Crystal will occasionally emit strange arcs of energy. While dangerous, these can be harvested to generate extra power using tesla coils and shielded against using grounding rods.
+  Tesla coils are the crystal's power path. Place them near the chamber, connect them to HV cables, and the crystal will arc directly into them. Each strike charges the coil's internal battery, which then discharges into the grid.
 
-  Both will require occasional welding to prevent them from being destroyed. Ensure they are placed in strategic yet accessible locations.
+  The crystal supports the nearest one coil at base power and one more for every 4,000 points of effective power. It only re-strikes a coil after that coil has discharged, so a coil's output follows the grid's actual draw. Extra coils beyond that supported set are not charged. Gas composition modifies effective power through its power transmission: plasma and tritium amplify it, while freon and water vapor suppress it. Grounding rods protect nearby areas from the incidental arcs.
 
-  The amount, strength, and range of the lightning emissions will increase along with how much energy the crystal contains. Be prepared to deal with the extra arcs if you run a high-power setup.
+  Coils and grounding rods take lightning damage and will require regular welding to prevent them from being destroyed. Ensure they are placed in strategic yet accessible locations.
+
+  The amount, strength, and range of the lightning emissions will increase along with how much energy the crystal contains. Be prepared to deal with the extra arcs if you run a high-power setup. The crystal's main power discharge feeds tesla coils; its incidental arcs use SS13's priority for grounding rods, crew, machinery, and loose objects.
 
   ## Cooling Loop
 
-  At the most fundamental level, the supermatter crystal is kept stable with a "loop" of atmospheric pipes. The chamber is filled with safe, cold gas, whilst any harmful or unwanted byproducts are filtered out of the system.
+  At the most fundamental level, the supermatter crystal is kept stable with a "loop" of atmospheric pipes. The chamber is filled with safe, cold gas, and the loop carries the reaction heat away. Most of the gas is returned after processing, but reactive gases such as ammonia/miasma are consumed and any harmful byproducts should be filtered out of the system.
 
   <GuideEntityEmbed Entity="NitrogenCanister"/>
 
-  Most stations will come with pre-supplied nitrogen canisters: the supermatter reacts very safely with nitrogen, which makes it an ideal gas for a basic setup.
+  Most stations will come with pre-supplied nitrogen canisters: nitrogen is stable and easy to keep cool, which makes it an ideal coolant for a basic setup.
 
   <Box>
     <GuideEntityEmbed Entity="GasPort"/>
@@ -73,7 +72,7 @@
 
   Be careful not to activate the gas pumps inside the interior chamber's airlocks before the full cooling loop is set up. A bypass gas pump is located outside the external airlock; use this to keep gas flowing as you work.
 
-  At least one of the filters that feeds back into the loop should be set to filter nitrogen. This will keep the cooled nitrogen in the loop, ensuring the crystal is kept at safe parameters.
+  At least one of the filters that feeds back into the loop should be set to filter nitrogen. This will keep the cooled nitrogen in the loop, ensuring the crystal is kept at safe parameters. If you deliberately run a different coolant mix, return those gases instead, or the loop will slowly drain the mix.
 
   <GuideEntityEmbed Entity="GasAnalyzer"/>
 
@@ -94,13 +93,13 @@
 
   Using the air alarm, increase the output threshold of each vent, or switch them to internal pressure bounds. The pressure lockout features of each vent should also be disabled.
 
-  The air scrubbers also need adjustment from their default configuration. Ensure each scrubber is set to filter all gases, and that the WideNet feature is enabled for maximum efficiency.
+  The air scrubbers also need adjustment from their default configuration. Ensure each scrubber is set to filter the waste gases you actually need to remove, and that the WideNet feature is enabled for maximum efficiency. If you set a chamber scrubber to filter all gases, its output must pass through the loop filter that returns your coolant; otherwise the scrubber will strip the coolant out of the chamber. If you use a CO2/O2 mix instead of nitrogen, configure the loop filter to return those gases as well.
 
   ## Emitters
 
   <GuideEntityEmbed Entity="Emitter"/>
 
-  Once the cooling loop is fully set up and the radiation collectors are filled, the supermatter engine is ready to start up.
+  Once the cooling loop is fully set up and the tesla coils are wired to the grid, the supermatter engine is ready to start up.
 
   Emitters are the most common way of kickstarting the supermatter and keeping its internal energy high. Interact with an emitter to toggle it on, and it will begin firing lasers at the crystal.
 
@@ -108,9 +107,9 @@
 
   <GuideEntityEmbed Entity="ComputerSupermatter"/>
 
-  Although nitrogen is good at keeping the supermatter safe and stable, it also hinders the supermatter crystal's power generation.
+  Although nitrogen is good at keeping the supermatter safe and stable, it also lowers the crystal's heat-to-power transfer and lightning transmission. Reactive gases such as ammonia/miasma are consumed, so keep an eye on the mix.
 
-  The supermatter monitoring console allows close observation of the crystal and the effects that gases have on it. This is a key piece of equipment for safely experimenting with the supermatter.
+  The supermatter monitoring console allows close observation of the crystal, its tesla coil output, and the effects that gases have on it. This is a key piece of equipment for safely experimenting with the supermatter.
 
   <Box>
     <GuideEntityEmbed Entity="CarbonDioxideCanister" Caption=""/>
@@ -121,7 +120,17 @@
     <GuideEntityEmbed Entity="NitrousOxideCanister" Caption=""/>
   </Box>
 
-  Carbon dioxide is excellent at amplifying the supermatter's internal energy, while nitrous oxide can improve the supermatter's heat tolerance. Try out different gas mixes and see what happens!
+  Carbon dioxide is excellent at amplifying the supermatter's internal energy, while nitrous oxide can improve the supermatter's heat tolerance. Be careful: a CO2-rich mix can suppress power decay almost entirely. If the crystal has no way to shed power, it will run away; keep the mix balanced and watch the console.
+
+  ## Safe Operation
+
+  For a first engine, use a supermatter shard with nitrogen coolant, keep internal energy around 1,500–2,000, use one tesla coil, at least two grounding rods, radiation shutters, and a monitoring console. That produces about 350 kW and a 7-tile failure radius. Do not add plasma, tritium, or a CO2-rich mix until the cooling loop is proven and someone is watching the console.
+
+  ## Delamination
+
+  If the crystal is destroyed, it detonates instead of leaving a singularity or a tesla ball behind. The blast starts at 20 tiles and grows by one tile for every 4,000 points of internal energy it is holding when it fails. The shard uses a much smaller blast, matching its SS13 counterpart. The 60-second countdown can still be averted if the crystal's integrity recovers above the delamination point before it expires.
+
+  Delamination also scatters 1–6 hyperflux anomalies based on how much energy the crystal held. At low energy a single anomaly appears; at maximum severity six are released. Hyperflux anomalies are ordinary science anomalies: they can be scanned, stabilized with the correct particles, or contained in an anomaly vessel like any other anomaly. A high-energy failure can therefore level far more than the chamber. Keep the crystal cool, keep its power controlled, and do not let it reach the delamination point.
 </Document>
 
 <!--

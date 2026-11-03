@@ -33,7 +33,8 @@ public sealed partial class ECCVars
         CVarDef.Create("supermatter.power_penalty_threshold_critical", 9000f, CVar.SERVER);
 
     /// <summary>
-    ///     The minimum pressure for a pure ammonia atmosphere to begin being consumed.
+    ///     The minimum pressure for a pure ammonia (miasma analog in this fork) atmosphere
+    ///     to begin being consumed.
     /// </summary>
     public static readonly CVarDef<float> SupermatterAmmoniaConsumptionPressure =
         CVarDef.Create("supermatter.ammonia_consumption_pressure", Atmospherics.OneAtmosphere * 0.01f, CVar.SERVER);
@@ -114,23 +115,76 @@ public sealed partial class ECCVars
         CVarDef.Create("supermatter.powerloss_inhibition_mole_boost_threshold", 500f, CVar.SERVER);
 
     /// <summary>
-    ///     Base amount of radiation that the supermatter emits.
+    ///     Base amount of radiation the supermatter emits. Radiation is a hazard here,
+    ///     not a power path: supermatter radiation never charges radiation collectors.
     /// </summary>
     public static readonly CVarDef<float> SupermatterRadsBase =
-        CVarDef.Create("supermatter.rads_base", 2f, CVar.SERVER | CVar.REPLICATED); //Frontier: 3<2. Still potentially too high. Rads can reach 60+. // Triad: replicated so the console's client-side base radiation matches server config overrides
+        CVarDef.Create("supermatter.rads_base", 2f, CVar.SERVER | CVar.REPLICATED);
 
     /// <summary>
-    ///     Directly multiplies the amount of rads put out by the supermatter. Be SUPER careful with this.
+    ///     Directly multiplies the radiation put out by the supermatter. Be careful with this.
     /// </summary>
     public static readonly CVarDef<float> SupermatterRadsModifier =
         CVarDef.Create("supermatter.rads_modifier", 1f, CVar.SERVER);
 
     /// <summary>
-    ///     Optional hard ceiling on the supermatter's radiation intensity. Zero disables the
-    ///     ceiling, which is the default: dangerous setups scale with the Coyote curve.
+    ///     Optional hard ceiling on the supermatter's radiation intensity. Zero disables the cap.
     /// </summary>
     public static readonly CVarDef<float> SupermatterMaxRadiation =
         CVarDef.Create("supermatter.max_radiation", 0f, CVar.SERVER);
+
+    /// <summary>
+    ///     Maximum distance, in tiles, that the crystal will arc lightning to a tesla coil.
+    ///     The arc range still scales with internal energy, up to this cap.
+    /// </summary>
+    public static readonly CVarDef<float> SupermatterLightningRange =
+        CVarDef.Create("supermatter.lightning_range", 7f, CVar.SERVER);
+
+    /// <summary>
+    ///     Internal energy required per additional tesla coil the crystal can keep charged.
+    ///     One coil is always supported; every 4000 energy above that adds another.
+    /// </summary>
+    public static readonly CVarDef<float> SupermatterLightningPowerPerCoil =
+        CVarDef.Create("supermatter.lightning_power_per_coil", 4000f, CVar.SERVER);
+
+    /// <summary>
+    ///     A tesla coil is only re-struck once its battery has fallen below this fraction of
+    ///     its maximum charge. This throttles arcs to the coil's actual discharge rate.
+    /// </summary>
+    public static readonly CVarDef<float> SupermatterLightningCoilRechargeThreshold =
+        CVarDef.Create("supermatter.lightning_coil_recharge_threshold", 0.25f, CVar.SERVER);
+
+    /// <summary>
+    ///     Base radius, in tiles, of a supermatter delamination explosion.
+    /// </summary>
+    public static readonly CVarDef<float> SupermatterDelamBaseRadius =
+        CVarDef.Create("supermatter.delam_base_radius", 20f, CVar.SERVER);
+
+    /// <summary>
+    ///     Internal energy per additional tile of delamination blast radius. The radius grows
+    ///     by one tile for every this many points of internal energy at the moment of failure.
+    /// </summary>
+    public static readonly CVarDef<float> SupermatterDelamPowerPerRadius =
+        CVarDef.Create("supermatter.delam_power_per_radius", 4000f, CVar.SERVER);
+
+    /// <summary>
+    ///     Optional hard ceiling on delamination blast radius, in tiles. Zero disables the cap.
+    /// </summary>
+    public static readonly CVarDef<float> SupermatterDelamMaxRadius =
+        CVarDef.Create("supermatter.delam_max_radius", 0f, CVar.SERVER);
+
+    /// <summary>
+    ///     Maximum number of hyperflux anomalies spawned by a delamination. The actual count
+    ///     ramps from one to this value with the crystal's internal energy.
+    /// </summary>
+    public static readonly CVarDef<int> SupermatterDelamAnomalyMax =
+        CVarDef.Create("supermatter.delam_anomaly_max", 6, CVar.SERVER);
+
+    /// <summary>
+    ///     Internal energy at which a delamination spawns the maximum number of anomalies.
+    /// </summary>
+    public static readonly CVarDef<float> SupermatterDelamAnomalyPower =
+        CVarDef.Create("supermatter.delam_anomaly_power", 20000f, CVar.SERVER);
 
     /// <summary>
     ///     Multiplier on the overall power produced during supermatter atmospheric reactions.

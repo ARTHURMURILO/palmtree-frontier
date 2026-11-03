@@ -49,7 +49,6 @@ public sealed partial class SupermatterEntryContainer : BoxContainer
     private readonly string _arrowDown = "/Textures/_EE/Interface/Supermatter/arrow_down.png";
 
     // Supermatter base values
-    private readonly float _radiationBase;
     private readonly float _temperatureLimitBase;
     private readonly float _wasteBase;
 
@@ -73,7 +72,7 @@ public sealed partial class SupermatterEntryContainer : BoxContainer
         {
             { "integrity",   ( IntegrityBarLabel,   IntegrityBar,   IntegrityBarBorder,   0.9f, 0.1f, _colorRed,      _colorOrange, _colorGreen ) },
             { "power",       ( PowerBarLabel,       PowerBar,       PowerBarBorder,       0.9f, 0.1f, _colorGreen,    _colorOrange, _colorRed   ) },
-            { "radiation",   ( RadiationBarLabel,   RadiationBar,   RadiationBarBorder,   0.1f, 0.9f, _colorGreen,    _colorOrange, _colorRed   ) },
+            { "lightning",   ( LightningBarLabel,   LightningBar,   LightningBarBorder,   0.1f, 0.9f, _colorGreen,    _colorOrange, _colorRed   ) },
             { "moles",       ( MolesBarLabel,       MolesBar,       MolesBarBorder,       0.5f, 0.5f, _colorGreen,    _colorOrange, _colorRed   ) },
             { "temperature", ( TemperatureBarLabel, TemperatureBar, TemperatureBarBorder, 0.9f, 0.1f, _colorTurqoise, _colorGreen,  _colorRed   ) },
             { "waste",       ( WasteBarLabel,       WasteBar,       WasteBarBorder,       0.5f, 0.5f, _colorGreen,    _colorOrange, _colorRed   ) }
@@ -94,7 +93,7 @@ public sealed partial class SupermatterEntryContainer : BoxContainer
         {
             ( IntegrityDetailsContainer, IntegrityButton, IntegrityButtonArrow ),
             ( PowerDetailsContainer, PowerButton, PowerButtonArrow ),
-            ( RadiationDetailsContainer, RadiationButton, RadiationButtonArrow ),
+            ( LightningDetailsContainer, LightningButton, LightningButtonArrow ),
             ( TemperatureLimitDetailsContainer, TemperatureLimitButton, TemperatureLimitButtonArrow ),
             ( WasteDetailsContainer, WasteButton, WasteButtonArrow )
         };
@@ -103,7 +102,7 @@ public sealed partial class SupermatterEntryContainer : BoxContainer
         {
             IntegrityLabel,
             PowerLabel,
-            RadiationLabel,
+            LightningLabel,
             MolesLabel,
             TemperatureLabel,
             TemperatureLimitLabel,
@@ -117,9 +116,11 @@ public sealed partial class SupermatterEntryContainer : BoxContainer
             IntegrityHealingInfoLabel,
             PowerBarLabel,
             PowerDecayInfoLabel,
-            RadiationBarLabel,
-            RadiationBaseInfoLabel,
-            RadiationPowerInfoLabel,
+            LightningBarLabel,
+            LightningBaseInfoLabel,
+            LightningPowerInfoLabel,
+            LightningTransmissionInfoLabel,
+            RadiationInfoLabel,
             MolesBarLabel,
             TemperatureBarLabel,
             TemperatureLimitBarLabel,
@@ -135,8 +136,10 @@ public sealed partial class SupermatterEntryContainer : BoxContainer
         {
             IntegrityHealingLabel,
             PowerDecayLabel,
-            RadiationBaseLabel,
-            RadiationPowerLabel,
+            LightningBaseLabel,
+            LightningPowerLabel,
+            LightningTransmissionLabel,
+            RadiationLabel,
             TemperatureLimitBaseLabel,
             TemperatureLimitGasLabel,
             WasteBaseLabel,
@@ -146,11 +149,10 @@ public sealed partial class SupermatterEntryContainer : BoxContainer
         #endregion
 
         // Load values and set base labels
-        _radiationBase = _config.GetCVar(ECCVars.SupermatterRadsBase);
         _temperatureLimitBase = Atmospherics.T0C + _config.GetCVar(ECCVars.SupermatterHeatPenaltyThreshold);
         _wasteBase = 1f;
 
-        RadiationBaseInfoLabel.Text = Loc.GetString("supermatter-console-window-label-radiation-bar", ("radiation", _radiationBase.ToString("0.00")));
+        LightningBaseInfoLabel.Text = Loc.GetString("supermatter-console-window-label-lightning-range-bar", ("range", "0"));
         TemperatureLimitBaseInfoLabel.Text = Loc.GetString("supermatter-console-window-label-temperature-bar", ("temperature", _temperatureLimitBase.ToString("0.00")));
         WasteBaseInfoLabel.Text = Loc.GetString("supermatter-console-window-label-waste-bar", ("waste", _wasteBase.ToString("0.00")));
 
@@ -164,7 +166,7 @@ public sealed partial class SupermatterEntryContainer : BoxContainer
         SupermatterStatusLabel.FontOverride = normalFont;
 
         IntegrityHealingInfoLabel.FontColorOverride = _colorGreen;
-        RadiationBaseInfoLabel.FontColorOverride = _colorGreen;
+        LightningBaseInfoLabel.FontColorOverride = _colorGreen;
         TemperatureLimitBaseInfoLabel.FontColorOverride = _colorGreen;
         WasteBaseInfoLabel.FontColorOverride = _colorRed;
 
@@ -233,7 +235,7 @@ public sealed partial class SupermatterEntryContainer : BoxContainer
                 {
                     { "integrity",   _focusData.Integrity },
                     { "power",       _focusData.Power },
-                    { "radiation",   _focusData.Radiation },
+                    { "lightning",   _focusData.TeslaCoils },
                     { "moles",       _focusData.GasStorage.TotalMoles },
                     { "temperature", _focusData.GasStorage.Temperature },
                     { "waste",       _focusData.HeatModifier }
@@ -251,7 +253,8 @@ public sealed partial class SupermatterEntryContainer : BoxContainer
                     if (bar.Key == "power")
                         continue;
 
-                    current.label.Text = Loc.GetString($"supermatter-console-window-label-{bar.Key}-bar", (bar.Key, value.ToString("0.00")));
+                    var format = bar.Key == "lightning" ? "0" : "0.00";
+                    current.label.Text = Loc.GetString($"supermatter-console-window-label-{bar.Key}-bar", (bar.Key, value.ToString(format)));
                 }
 
                 // Gas bars
@@ -306,10 +309,27 @@ public sealed partial class SupermatterEntryContainer : BoxContainer
                     ("prefix", powerLossPrefix));
                 PowerDecayInfoLabel.FontColorOverride = GetDetailColor(powerLossValue);
 
-                // Radiation emission
-                var radiationPower = _focusData.Radiation - _radiationBase;
-                RadiationPowerInfoLabel.Text = Loc.GetString("supermatter-console-window-label-radiation-bar", ("radiation", radiationPower.ToString("0.00")));
-                RadiationPowerInfoLabel.FontColorOverride = GetDetailColor(radiationPower);
+                // Lightning emission
+                var teslaCoils = _focusData.TeslaCoils;
+                LightningPowerInfoLabel.Text = Loc.GetString(
+                    "supermatter-console-window-label-lightning-coils-bar",
+                    ("coils", teslaCoils.ToString("0")));
+                LightningPowerInfoLabel.FontColorOverride = GetDetailColor(teslaCoils);
+
+                LightningBaseInfoLabel.Text = Loc.GetString(
+                    "supermatter-console-window-label-lightning-range-bar",
+                    ("range", _focusData.LightningRange.ToString("0.0")));
+
+                var transmission = _focusData.LightningTransmission * 100f;
+                LightningTransmissionInfoLabel.Text = Loc.GetString(
+                    "supermatter-console-window-label-lightning-transmission-bar",
+                    ("transmission", transmission.ToString("0")));
+                LightningTransmissionInfoLabel.FontColorOverride = GetDetailColor(transmission - 100f);
+
+                RadiationInfoLabel.Text = Loc.GetString(
+                    "supermatter-console-window-label-radiation-bar",
+                    ("radiation", _focusData.Radiation.ToString("0.00")));
+                RadiationInfoLabel.FontColorOverride = GetDetailColor(_focusData.Radiation);
 
                 // Temperature limit
                 var temperatureLimit = _focusData.TemperatureLimit;

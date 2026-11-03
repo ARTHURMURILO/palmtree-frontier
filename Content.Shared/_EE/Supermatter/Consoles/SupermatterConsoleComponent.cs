@@ -31,6 +31,9 @@ public struct SupermatterFocusData(
     float heatHealing,
     float power,
     float powerLoss,
+    float teslaCoils,
+    float lightningRange,
+    float lightningTransmission,
     float radiation,
     float temperatureLimit,
     float heatModifier,
@@ -51,6 +54,12 @@ public struct SupermatterFocusData(
     public float Power = power;
 
     public float PowerLoss = powerLoss;
+
+    public float TeslaCoils = teslaCoils;
+
+    public float LightningRange = lightningRange;
+
+    public float LightningTransmission = lightningTransmission;
 
     public float Radiation = radiation;
 

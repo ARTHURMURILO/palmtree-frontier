@@ -40,6 +40,9 @@
       GlowDelam: { state: shard-emissive }
   - type: Supermatter
     consoleIcon: { sprite: _PS/Supermatter/supermatter_small.rsi, state: shard }
+    # SS13 shard: smaller gas sample and a much weaker delamination blast than the full crystal.
+    gasEfficiency: 0.125
+    delamRadiusMultiplier: 0.35
 
 - type: entity
   parent: BaseNFFlatpack
