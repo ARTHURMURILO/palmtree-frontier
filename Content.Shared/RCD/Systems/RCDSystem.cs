@@ -89,7 +89,7 @@ public sealed class RCDSystem : EntitySystem
         SubscribeNetworkEvent<RCDConstructionGhostFlipEvent>(OnRCDConstructionGhostFlipEvent); // Palmtree: mirror prototype flip
         // Palmtree: RPD pipe colouring and pipe layer placement
         SubscribeLocalEvent<RCDComponent, RCDColorChangeMessage>(OnColorChange);
-        SubscribeNetworkEvent<RPDEyeRotationEvent>(OnRPDEyeRotationEvent);
+        SubscribeNetworkEvent<RPDLayerEvent>(OnRPDLayerEvent);
     }
 
     #region Event handling
@@ -196,32 +196,15 @@ public sealed class RCDSystem : EntitySystem
         var tile = _mapSystem.GetTileRef(gridUid.Value, mapGrid, location);
         var position = _mapSystem.TileIndicesFor(gridUid.Value, mapGrid, location);
 
-        // Palmtree: work out which atmos pipe layer the click was aimed at, from its offset from
-        // the centre of the tile. Matches what AlignRPDAtmosPipeLayers previews on the client.
+        // Palmtree: the client knows the raw cursor offset and tells us which atmos pipe layer
+        // the ghost is previewing. The server's click location is snapped to the tile centre, so
+        // recomputing the layer here always picked primary and disagreed with the ghost.
         // The layer travels in the do-after event: the operation finishes on a later tick, so
         // system-wide state would let concurrent placements overwrite each other's layer.
         var layer = AtmosPipeLayer.Primary;
 
         if (component.IsRpd && prototype.Mode == RcdMode.ConstructObject && !prototype.NoLayers)
-        {
-            // TileSize is a ushort: this must be a float, or `/ 2` is integer division (1 / 2 == 0)
-            // and the deadzone ends up measured from the tile corner instead of its centre.
-            float tileSize = mapGrid.TileSize;
-            var tileCenter = new Vector2(tile.X + tileSize / 2, tile.Y + tileSize / 2);
-            var mouseCoordsDiff = args.ClickLocation.Position - tileCenter;
-            const float mouseDeadzoneRadius = 0.25f;
-
-            if (mouseCoordsDiff.Length() > mouseDeadzoneRadius && component.LastKnownEyeRotation.HasValue)
-            {
-                var gridRotation = _transform.GetWorldRotation(gridUid.Value);
-                var angle = new Angle(mouseCoordsDiff);
-                var eyeRotation = new Angle(component.LastKnownEyeRotation.Value);
-                var direction = (angle + eyeRotation + gridRotation + Math.PI / 2).GetCardinalDir();
-                layer = (direction == Direction.North || direction == Direction.East)
-                    ? AtmosPipeLayer.Secondary
-                    : AtmosPipeLayer.Tertiary;
-            }
-        }
+            layer = component.LastKnownPipeLayer;
 
         if (!IsRCDOperationStillValid(uid, component, gridUid.Value, mapGrid, tile, position, args.Target, args.User, layer: layer, direction: component.ConstructionDirection))
             return;
@@ -458,13 +441,13 @@ public sealed class RCDSystem : EntitySystem
     }
     // Palmtree end
 
-    // Palmtree: the RPD placement mode forwards the local eye rotation, which is not networked,
-    // so the server can resolve the same pipe layer the client previewed.
-    private void OnRPDEyeRotationEvent(RPDEyeRotationEvent ev, EntitySessionEventArgs session)
+    // Palmtree: the RPD placement mode sends the layer under the cursor, because the server's
+    // click location is snapped to the tile centre and cannot reproduce the cursor offset.
+    private void OnRPDLayerEvent(RPDLayerEvent ev, EntitySessionEventArgs session)
     {
         var uid = GetEntity(ev.NetEntity);
 
-        // Only accept eye rotations for an RPD this player is actually holding
+        // Only accept layer updates for an RPD this player is actually holding
         if (session.SenderSession.AttachedEntity is not { } player)
             return;
 
@@ -474,15 +457,11 @@ public sealed class RCDSystem : EntitySystem
         if (!TryComp<RCDComponent>(uid, out var rcd))
             return;
 
-        if (rcd.LastKnownEyeRotation == ev.EyeRotation)
+        // Not dirtied: only the server needs this, to resolve the pipe layer in FinalizeRCDOperation.
+        if (rcd.LastKnownPipeLayer == ev.Layer)
             return;
 
-        // Not dirtied: only the server needs this, to resolve the pipe layer in FinalizeRCDOperation,
-        // and network churn every time the player turns their head is not worth it.
-        if (ev.EyeRotation is { } rotation && !float.IsFinite(rotation))
-            return;
-
-        rcd.LastKnownEyeRotation = ev.EyeRotation;
+        rcd.LastKnownPipeLayer = ev.Layer;
     }
 
     #endregion

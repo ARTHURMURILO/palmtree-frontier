@@ -1,3 +1,4 @@
+using Content.Shared.Atmos.Components;
 using Robust.Shared.Map;
 using Robust.Shared.Maths;
 using Robust.Shared.Prototypes;
@@ -39,14 +40,15 @@ public sealed class RCDColorChangeMessage(NetEntity netEntity, string key) : Bou
 }
 
 /// <summary>
-/// Sent by the RPD placement mode whenever the local eye rotation changes, because
-/// eye rotation is not networked and the server needs it to resolve the pipe layer.
+/// Sent by the RPD placement mode whenever the layer under the cursor changes. The server's click
+/// location is snapped to the tile centre, so it cannot reproduce the client's cursor offset and
+/// must be told the layer explicitly.
 /// </summary>
 [Serializable, NetSerializable]
-public sealed class RPDEyeRotationEvent(NetEntity netEntity, float? eyeRotation) : EntityEventArgs
+public sealed class RPDLayerEvent(NetEntity netEntity, AtmosPipeLayer layer) : EntityEventArgs
 {
     public readonly NetEntity NetEntity = netEntity;
-    public readonly float? EyeRotation = eyeRotation;
+    public readonly AtmosPipeLayer Layer = layer;
 }
 
 // Palmtree: lets the server veto an RCD/RPD placement that would overlap an existing pipe node.
