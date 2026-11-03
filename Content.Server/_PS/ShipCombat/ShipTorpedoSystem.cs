@@ -1,5 +1,6 @@
 using System.Numerics;
 using Content.Shared._PS.CCVar;
+using Content.Shared._PS.CCVar;
 using Content.Shared._PS.ShipCombat;
 using Content.Shared._PS.ShipCombat.Components;
 using Content.Shared.Maps;
@@ -8,8 +9,10 @@ using Content.Shared.Projectiles;
 using Content.Shared.Trigger;
 using Robust.Shared.Audio.Systems;
 using Robust.Shared.Configuration;
+using Robust.Shared.Configuration;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
+using Robust.Shared.Configuration;
 using Robust.Shared.Map;
 using Robust.Shared.Maths;
 using Robust.Shared.Physics;
@@ -56,6 +59,12 @@ public sealed class ShipTorpedoSystem : EntitySystem
 
     private TimeSpan _nextAlarmScan;
 
+    /// <summary>Global turn rate override in degrees per second (0 = per-prototype).</summary>
+    private float _turnRateOverride;
+
+    /// <summary>How long torpedoes keep steering before giving up, in seconds (0 = forever).</summary>
+    private float _steeringDuration = 120f;
+
     /// <summary>Stagger between two launchers of a ripple volley, in seconds.</summary>
     private const float RippleDelay = 0.25f;
 
@@ -67,6 +76,27 @@ public sealed class ShipTorpedoSystem : EntitySystem
         base.Initialize();
 
         SubscribeLocalEvent<ShipTorpedoComponent, ProjectileHitEvent>(OnProjectileHit);
+
+        _cfg.OnValueChanged(PSCVars.TorpedoTurnRate, OnTurnRateChanged, true);
+        _cfg.OnValueChanged(PSCVars.TorpedoSteeringDuration, OnSteeringDurationChanged, true);
+    }
+
+    public override void Shutdown()
+    {
+        base.Shutdown();
+
+        _cfg.UnsubValueChanged(PSCVars.TorpedoTurnRate, OnTurnRateChanged);
+        _cfg.UnsubValueChanged(PSCVars.TorpedoSteeringDuration, OnSteeringDurationChanged);
+    }
+
+    private void OnTurnRateChanged(float value)
+    {
+        _turnRateOverride = value;
+    }
+
+    private void OnSteeringDurationChanged(float value)
+    {
+        _steeringDuration = value;
     }
 
     private void OnProjectileHit(EntityUid uid, ShipTorpedoComponent torpedo, ref ProjectileHitEvent args)
@@ -370,6 +400,10 @@ public sealed class ShipTorpedoSystem : EntitySystem
             if (age < torpedo.SteeringDelay)
                 continue;
 
+            // Torpedoes give up after a while instead of orbiting a ship forever.
+            if (_steeringDuration > 0f && age > TimeSpan.FromSeconds(_steeringDuration))
+                continue;
+
             var ramp = torpedo.SteeringRamp <= TimeSpan.Zero
                 ? 1f
                 : Math.Clamp((float) ((age - torpedo.SteeringDelay) / torpedo.SteeringRamp), 0f, 1f);
@@ -396,7 +430,8 @@ public sealed class ShipTorpedoSystem : EntitySystem
                 continue;
             }
 
-            var maxTurn = Angle.FromDegrees(torpedo.TurnRate * ramp * frameTime).Theta;
+            var turnRate = _turnRateOverride > 0f ? _turnRateOverride : torpedo.TurnRate;
+            var maxTurn = Angle.FromDegrees(turnRate * ramp * frameTime).Theta;
             var turn = Math.Clamp(WrapAngle(desired.Theta - current.Theta), -maxTurn, maxTurn);
             var heading = current + new Angle(turn);
 
