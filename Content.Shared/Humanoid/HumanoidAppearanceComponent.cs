@@ -47,6 +47,10 @@ public sealed partial class HumanoidAppearanceComponent : Component
     [DataField, AutoNetworkedField]
     public float Width = 1f;
 
+    /// <summary>Palmtree: draw snout/snout-cover markings above hair in side views.</summary>
+    [DataField, AutoNetworkedField]
+    public bool SnoutAboveHair;
+
     /// <summary>
     ///     Any custom base layers this humanoid might have. See:
     ///     limb transplants (potentially), robotic arms, etc.

@@ -141,11 +141,12 @@ public sealed class GenitalRenderTest
     }
 
     /// <summary>
-    /// Palmtree: in side views both the penis and balls use the Genital layer. The penis must keep
-    /// its higher layer index so balls never draw over it.
+    /// Palmtree: in side views organs use the clamped under-clothing layer path. The penis must
+    /// stay above the balls, and a marking's own sprites (breast + nipple) must keep their order.
     /// </summary>
     [Test]
-    public async Task SideViewPenisDrawsAboveBalls()
+    [NonParallelizable] // NsfwGate is a process-wide static and other tests update it.
+    public async Task SideViewOrganLayersKeepTheirOrder()
     {
         await using var pair = await PoolManager.GetServerClient(new PoolSettings
         {
@@ -177,6 +178,12 @@ public sealed class GenitalRenderTest
             settings.Set(GenitalType.Balls, new GenitalOrganData
             {
                 Prototype = "BallsSingle",
+                Size = 1,
+                Visibility = GenitalVisibility.VisibleUnderClothes,
+            });
+            settings.Set(GenitalType.Breasts, new GenitalOrganData
+            {
+                Prototype = "BreastsSplurt",
                 Size = 1,
                 Visibility = GenitalVisibility.VisibleUnderClothes,
             });
@@ -219,6 +226,20 @@ public sealed class GenitalRenderTest
 
                 Assert.That(penisLayer, Is.GreaterThan(ballsLayer),
                     "the penis must render above the balls when facing east or west");
+
+                Assert.That(spriteSystem.LayerMapTryGet(
+                    (mob.Value, sprite),
+                    "PSGenitalBreasts0-m_breasts_pair_0_FRONT_primary",
+                    out var breastLayer,
+                    false), Is.True, "the breast layer must exist in the side view");
+                Assert.That(spriteSystem.LayerMapTryGet(
+                    (mob.Value, sprite),
+                    "PSGenitalBreasts0-m_breasts_pair_0_FRONT_secondary",
+                    out var nippleLayer,
+                    false), Is.True, "the nipple layer must exist in the side view");
+
+                Assert.That(nippleLayer, Is.GreaterThan(breastLayer),
+                    "nipples must render above breasts when facing east or west");
             }
             finally
             {
