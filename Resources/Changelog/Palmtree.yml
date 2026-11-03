@@ -1698,3 +1698,11 @@ Entries:
   time: '2026-11-03T03:56:48.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/444f6c4bea35664618da2ad3692ab1298b7b386a
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: Fixed balls rendering above the penis when facing east or west.
+  id: 90112
+  time: '2026-11-03T14:59:51.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/2579b7c40d4923b28b552ac08b063d4046ecaf53
