@@ -2675,12 +2675,13 @@ public sealed class BluespaceDockSystem : EntitySystem
     /// <summary>
     /// The first thing stopping a ship from being stored, as a localization key (null when it can be
     /// stored). <paramref name="requireDocked"/> is false for the admin force-dock command, which
-    /// skips the "docked to this station" requirement but nothing else. <paramref name="allowOrganics"/>
-    /// is for force-dock too: instead of refusing a ship with living things aboard, the store moves
-    /// them off it (see <see cref="EvacuateGrid"/>).
+    /// skips the "docked to this station" requirement. <paramref name="allowOrganics"/> is for
+    /// force-dock too: instead of refusing a ship with living things aboard, the store moves them off
+    /// it (see <see cref="EvacuateGrid"/>). <paramref name="requireAllowedGroup"/> is also for
+    /// force-dock: admins may store a ship of any category (or one with no vessel identity at all).
     /// </summary>
     public string? FindStoreBlocker(EntityUid shuttleUid, bool requireDocked, EntityUid? stationGrid,
-        bool allowOrganics = false)
+        bool allowOrganics = false, bool requireAllowedGroup = true)
     {
         if (!Exists(shuttleUid) || !HasComp<ShuttleComponent>(shuttleUid))
             return "bluespace-dock-error-no-ship";
@@ -2697,8 +2698,11 @@ public sealed class BluespaceDockSystem : EntitySystem
         if (!allowOrganics && FoundOrganics(shuttleUid) is not null)
             return "bluespace-dock-error-organic-aboard";
 
-        if (!TryGetVesselInfo(shuttleUid, out var vesselInfo) || !IsAllowedGroup(vesselInfo.Group))
+        if (requireAllowedGroup
+            && (!TryGetVesselInfo(shuttleUid, out var vesselInfo) || !IsAllowedGroup(vesselInfo.Group)))
+        {
             return "bluespace-dock-error-not-civilian";
+        }
 
         return null;
     }
