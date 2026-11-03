@@ -60,7 +60,10 @@
   - type: Tag
     tags:
     - Pipe
-    - Unstackable # Palmtree: no stacking with other atmos pipes/devices (RPD placement + construction)
+    # Palmtree: plain pipes are deliberately NOT Unstackable. A vent, pump or sensor is built on
+    # top of the pipe that feeds it, so tagging pipes here makes the construction graphs reject
+    # every legitimate device-on-pipe placement. Real overlaps are caught by the node-aware
+    # PipeRestrictOverlapSystem / RPD placement check instead.
   - type: Physics
     canCollide: false
     bodyType: static
