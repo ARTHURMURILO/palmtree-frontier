@@ -2,7 +2,6 @@ using System.Numerics;
 using Content.Server._PS.BluespaceDock;
 using Content.Server._PS.ShipCombat;
 using Content.Server.Power.Components;
-using Content.Server.Power.EntitySystems;
 using Content.Server.Shuttles.Components;
 using Content.Shared._PS.ShipCombat;
 using Content.Shared._PS.ShipCombat.Components;
@@ -16,7 +15,8 @@ using Robust.Shared.Maths;
 namespace Content.IntegrationTests.Tests._PS;
 
 /// <summary>
-/// Palmtree: the bluespace power budget (pools, presets), remote power and the bluespace thruster.
+/// Palmtree: the bluespace power budget (pools, presets), the transmitter's grid draw, remote power
+/// and the bluespace thruster.
 /// </summary>
 [TestFixture]
 public sealed class ShipPowerTest
@@ -35,32 +35,34 @@ public sealed class ShipPowerTest
             Assert.That(combat.TryEnsureShipCombat(testMap.Grid.Owner, out var state), Is.True);
 
             // Defaults are balanced.
-            Assert.That(Total(state.Comp), Is.EqualTo(200));
+            Assert.That(Total(state.Comp), Is.EqualTo(150));
             Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Weapons), Is.EqualTo(50));
+            Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Shields), Is.EqualTo(50));
+            Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Thrusters), Is.EqualTo(50));
 
             // Raising one pool takes points from the others proportionally.
             power.SetPool(state, ShipPowerPool.Weapons, 100);
             Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Weapons), Is.EqualTo(100));
-            Assert.That(Total(state.Comp), Is.EqualTo(200));
+            Assert.That(Total(state.Comp), Is.EqualTo(150));
             Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Shields), Is.LessThan(50),
                 "Raising weapons should lower the other pools.");
 
             // Out-of-range values are clamped.
             power.SetPool(state, ShipPowerPool.Weapons, 500);
             Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Weapons), Is.LessThanOrEqualTo(125));
-            Assert.That(Total(state.Comp), Is.EqualTo(200));
+            Assert.That(Total(state.Comp), Is.EqualTo(150));
 
             power.SetPool(state, ShipPowerPool.Weapons, 0);
             Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Weapons), Is.GreaterThanOrEqualTo(15));
-            Assert.That(Total(state.Comp), Is.EqualTo(200));
+            Assert.That(Total(state.Comp), Is.EqualTo(150));
 
             // Locked pools do not move.
-            ShipPowerSystem.SetPoolLocked(state.Comp, ShipPowerPool.Auxiliary, true);
-            var auxiliary = ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Auxiliary);
+            ShipPowerSystem.SetPoolLocked(state.Comp, ShipPowerPool.Thrusters, true);
+            var thrusters = ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Thrusters);
             power.SetPool(state, ShipPowerPool.Shields, 125);
-            Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Auxiliary), Is.EqualTo(auxiliary),
+            Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Thrusters), Is.EqualTo(thrusters),
                 "A locked pool must not move.");
-            Assert.That(Total(state.Comp), Is.EqualTo(200));
+            Assert.That(Total(state.Comp), Is.EqualTo(150));
         });
 
         await pair.CleanReturnAsync();
@@ -81,27 +83,62 @@ public sealed class ShipPowerTest
 
             MarkPoolsPresent(state.Comp);
             power.ApplyPreset(state, ShipPowerPreset.Attack);
-            Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Weapons), Is.EqualTo(100));
-            Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Shields), Is.EqualTo(50));
-            Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Thrusters), Is.EqualTo(25));
-            Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Auxiliary), Is.EqualTo(25));
+            Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Weapons), Is.EqualTo(120));
+            Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Shields), Is.EqualTo(15));
+            Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Thrusters), Is.EqualTo(15));
+            Assert.That(Total(state.Comp), Is.EqualTo(150));
 
             MarkPoolsPresent(state.Comp);
             power.ApplyPreset(state, ShipPowerPreset.Defense);
-            Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Shields), Is.EqualTo(100));
-            Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Weapons), Is.EqualTo(50));
+            Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Shields), Is.EqualTo(120));
+            Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Weapons), Is.EqualTo(15));
+            Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Thrusters), Is.EqualTo(15));
 
             MarkPoolsPresent(state.Comp);
             power.ApplyPreset(state, ShipPowerPreset.Balanced);
-            Assert.That(Total(state.Comp), Is.EqualTo(200));
+            Assert.That(Total(state.Comp), Is.EqualTo(150));
             Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Shields), Is.EqualTo(50));
+            Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Weapons), Is.EqualTo(50));
+            Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Thrusters), Is.EqualTo(50));
         });
 
         await pair.CleanReturnAsync();
     }
 
     [Test]
-    public async Task SinkPowersRemoteDevices()
+    public async Task PresetsSkipUnavailablePools()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+
+        await server.WaitAssertion(() =>
+        {
+            var combat = server.System<ShipCombatSystem>();
+            var power = server.System<ShipPowerSystem>();
+            Assert.That(combat.TryEnsureShipCombat(testMap.Grid.Owner, out var state), Is.True);
+
+            // Only weapons are fitted; shields and thrusters are absent.
+            state.Comp.ShieldPoolActive = false;
+            state.Comp.WeaponPoolActive = true;
+            state.Comp.ThrusterPoolActive = false;
+            state.Comp.ShieldPower = 90;
+            state.Comp.ThrusterPower = 80;
+
+            power.ApplyPreset(state, ShipPowerPreset.Attack);
+
+            Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Weapons), Is.EqualTo(120));
+            Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Shields), Is.EqualTo(90),
+                "An unavailable pool must keep its value.");
+            Assert.That(ShipPowerSystem.GetPool(state.Comp, ShipPowerPool.Thrusters), Is.EqualTo(80),
+                "An unavailable pool must keep its value.");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task TransmitterPowersRemoteDevices()
     {
         await using var pair = await PoolManager.GetServerClient();
         var server = pair.Server;
@@ -109,7 +146,6 @@ public sealed class ShipPowerTest
         var entMan = server.ResolveDependency<IEntityManager>();
         var mapSystem = server.System<SharedMapSystem>();
         var mapMan = server.ResolveDependency<IMapManager>();
-        var xform = server.System<SharedTransformSystem>();
 
         EntityUid grid = default;
         EntityUid sink = default;
@@ -118,8 +154,7 @@ public sealed class ShipPowerTest
         await server.WaitPost(() =>
         {
             grid = CreateGrid(entMan, mapSystem, mapMan, testMap.MapId, new Vector2i(0, 0), new Vector2i(1, 0));
-            sink = entMan.SpawnEntity("BluespacePowerSink", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
-            AnchorIfNeeded(entMan, xform, sink);
+            sink = ShipCombatTestHelpers.SpawnPoweredTransmitter(entMan, mapSystem, grid, new Vector2(0.5f, 0.5f));
 
             // A stand-in remote device: an entity with a receiver and the bluespace powered component.
             device = entMan.SpawnEntity(null, new EntityCoordinates(grid, new Vector2(1.5f, 0.5f)));
@@ -129,31 +164,36 @@ public sealed class ShipPowerTest
 
             var powered = entMan.AddComponent<BluespacePoweredComponent>(device);
             powered.Pool = ShipPowerPool.Thrusters;
-            powered.RatedPower = 10000f;
+            powered.RatedPower = 15000f;
 
             server.System<ShipCombatSystem>().TryEnsureShipCombat(grid, out _);
         });
 
-        await pair.RunTicksSync(5);
+        await pair.RunTicksSync(10);
 
         await server.WaitAssertion(() =>
         {
             Assert.That(entMan.GetComponent<ApcPowerReceiverComponent>(device).PowerDisabled, Is.False,
-                "The sink should power the remote device.");
+                "The transmitter should power the remote device.");
             Assert.That(entMan.GetComponent<BluespacePoweredComponent>(device).Performance,
-                Is.EqualTo(1f).Within(0.01f), "Thrusters at 50 should give 100% performance.");
+                Is.EqualTo(50f / 150f).Within(0.01f), "Thrusters at 50 run at one third performance.");
 
-            // The Auxiliary share goes back to the grid through the sink's supplier: 50/200 * 100 kW = 25 kW.
-            Assert.That(entMan.GetComponent<PowerSupplierComponent>(sink).MaxSupply,
-                Is.GreaterThan(0f), "The sink should feed its auxiliary share to the grid.");
+            // The transmitter is a pure consumer: it draws the devices' demand and supplies nothing.
+            Assert.That(entMan.TryGetComponent<PowerSupplierComponent>(sink, out _), Is.False,
+                "The transmitter must not supply the ship's grid.");
+            var consumer = entMan.GetComponent<PowerConsumerComponent>(sink);
+            Assert.That(consumer.DrawRate, Is.EqualTo(5000f).Within(50f),
+                "15000 W at one third performance is a 5 kW draw.");
 
-            // Dropping the pool below the operating minimum cuts the device off.
+            // Dropping the pool below the operating minimum cuts the device off. The fake device has
+            // no bluespace thruster component, so mark its pool present for the public SetPool API.
             var combat = server.System<ShipCombatSystem>();
             Assert.That(combat.TryGetShipCombat(grid, out var state), Is.True);
+            state.Comp.ThrusterPoolActive = true;
             server.System<ShipPowerSystem>().SetPool(state, ShipPowerPool.Thrusters, 15);
         });
 
-        await pair.RunTicksSync(5);
+        await pair.RunTicksSync(10);
 
         await server.WaitAssertion(() =>
         {
@@ -166,7 +206,7 @@ public sealed class ShipPowerTest
     }
 
     [Test]
-    public async Task EmptyBatteryBrownsOut()
+    public async Task TransmitterWithoutGridPowerLeavesDevicesOff()
     {
         await using var pair = await PoolManager.GetServerClient();
         var server = pair.Server;
@@ -174,17 +214,16 @@ public sealed class ShipPowerTest
         var entMan = server.ResolveDependency<IEntityManager>();
         var mapSystem = server.System<SharedMapSystem>();
         var mapMan = server.ResolveDependency<IMapManager>();
-        var xform = server.System<SharedTransformSystem>();
 
         EntityUid grid = default;
-        EntityUid sink = default;
         EntityUid device = default;
 
         await server.WaitPost(() =>
         {
             grid = CreateGrid(entMan, mapSystem, mapMan, testMap.MapId, new Vector2i(0, 0), new Vector2i(1, 0));
-            sink = entMan.SpawnEntity("BluespacePowerSink", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
-            AnchorIfNeeded(entMan, xform, sink);
+
+            // A transmitter with no cable terminal or generator attached.
+            entMan.SpawnEntity("BluespacePowerSink", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
 
             device = entMan.SpawnEntity(null, new EntityCoordinates(grid, new Vector2(1.5f, 0.5f)));
             var receiver = entMan.AddComponent<ApcPowerReceiverComponent>(device);
@@ -193,28 +232,18 @@ public sealed class ShipPowerTest
 
             var powered = entMan.AddComponent<BluespacePoweredComponent>(device);
             powered.Pool = ShipPowerPool.Thrusters;
-            powered.RatedPower = 10000f;
+            powered.RatedPower = 15000f;
 
             server.System<ShipCombatSystem>().TryEnsureShipCombat(grid, out _);
         });
 
-        await pair.RunTicksSync(5);
-
-        await server.WaitAssertion(() =>
-        {
-            Assert.That(entMan.GetComponent<ApcPowerReceiverComponent>(device).PowerDisabled, Is.False);
-
-            // An empty sink cannot power anything.
-            var battery = entMan.GetComponent<BatteryComponent>(sink);
-            server.System<BatterySystem>().SetCharge(sink, 0f, battery);
-        });
-
-        await pair.RunTicksSync(5);
+        await pair.RunTicksSync(10);
 
         await server.WaitAssertion(() =>
         {
             Assert.That(entMan.GetComponent<ApcPowerReceiverComponent>(device).PowerDisabled, Is.True,
-                "An empty sink should brown out its devices.");
+                "A transmitter with no grid power must not power its devices.");
+            Assert.That(entMan.GetComponent<BluespacePoweredComponent>(device).Performance, Is.EqualTo(0f));
         });
 
         await pair.CleanReturnAsync();
@@ -229,22 +258,21 @@ public sealed class ShipPowerTest
         var entMan = server.ResolveDependency<IEntityManager>();
         var mapSystem = server.System<SharedMapSystem>();
         var mapMan = server.ResolveDependency<IMapManager>();
-        var xform = server.System<SharedTransformSystem>();
 
         EntityUid grid = default;
-        EntityUid sink = default;
         EntityUid thruster = default;
 
         await server.WaitPost(() =>
         {
             grid = CreateGrid(entMan, mapSystem, mapMan, testMap.MapId, new Vector2i(0, 0), new Vector2i(1, 0));
-            sink = entMan.SpawnEntity("BluespacePowerSink", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
-            AnchorIfNeeded(entMan, xform, sink);
+            ShipCombatTestHelpers.SpawnPoweredTransmitter(entMan, mapSystem, grid, new Vector2(0.5f, 0.5f));
 
             thruster = entMan.SpawnEntity("BluespaceThruster", new EntityCoordinates(grid, new Vector2(1.5f, 0.5f)));
 
             server.System<ShipCombatSystem>().TryEnsureShipCombat(grid, out _);
         });
+
+        await pair.RunTicksSync(10);
 
         await server.WaitAssertion(() =>
         {
@@ -259,8 +287,8 @@ public sealed class ShipPowerTest
         {
             var thrusterComp = entMan.GetComponent<ThrusterComponent>(thruster);
             Assert.That(thrusterComp.IsOn, Is.True, "A powered bluespace thruster should run.");
-            Assert.That(thrusterComp.Thrust, Is.EqualTo(150f).Within(0.1f),
-                "Thrusters at 100 should run at 150% of their parts thrust.");
+            Assert.That(thrusterComp.Thrust, Is.EqualTo(100f * 100f / 150f).Within(0.1f),
+                "Thrusters at 100 should run at two thirds of their parts thrust.");
 
             var combat = server.System<ShipCombatSystem>();
             Assert.That(combat.TryGetShipCombat(grid, out var state), Is.True);
@@ -288,7 +316,6 @@ public sealed class ShipPowerTest
         var entMan = server.ResolveDependency<IEntityManager>();
         var mapSystem = server.System<SharedMapSystem>();
         var mapMan = server.ResolveDependency<IMapManager>();
-        var xform = server.System<SharedTransformSystem>();
 
         EntityUid grid = default;
         EntityUid loadedGrid = default;
@@ -296,8 +323,7 @@ public sealed class ShipPowerTest
         await server.WaitPost(() =>
         {
             grid = CreateGrid(entMan, mapSystem, mapMan, testMap.MapId, new Vector2i(0, 0));
-            var sink = entMan.SpawnEntity("BluespacePowerSink", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
-            AnchorIfNeeded(entMan, xform, sink);
+            ShipCombatTestHelpers.SpawnPoweredTransmitter(entMan, mapSystem, grid, new Vector2(0.5f, 0.5f));
         });
 
         await pair.RunTicksSync(5);
@@ -323,16 +349,17 @@ public sealed class ShipPowerTest
         {
             Assert.That(entMan.TryGetComponent<ShipCombatComponent>(loadedGrid, out var combat), Is.True,
                 "The loaded ship should keep its ship combat state.");
-            Assert.That(ShipPowerSystem.GetPool(combat!, ShipPowerPool.Weapons), Is.EqualTo(100),
+            Assert.That(ShipPowerSystem.GetPool(combat!, ShipPowerPool.Weapons), Is.EqualTo(120),
                 "The power pools should survive a dock round trip.");
-            Assert.That(ShipPowerSystem.GetPool(combat!, ShipPowerPool.Auxiliary), Is.EqualTo(25));
+            Assert.That(ShipPowerSystem.GetPool(combat!, ShipPowerPool.Shields), Is.EqualTo(15));
+            Assert.That(ShipPowerSystem.GetPool(combat!, ShipPowerPool.Thrusters), Is.EqualTo(15));
         });
 
         await pair.CleanReturnAsync();
     }
 
     [Test]
-    public async Task SinkChargesFromAGeneratorAndFeedsTheShipGrid()
+    public async Task ConnectedTransmitterIsActiveWithoutGeneration()
     {
         await using var pair = await PoolManager.GetServerClient();
         var server = pair.Server;
@@ -340,71 +367,220 @@ public sealed class ShipPowerTest
         var entMan = server.ResolveDependency<IEntityManager>();
         var mapSystem = server.System<SharedMapSystem>();
         var mapMan = server.ResolveDependency<IMapManager>();
-        var xform = server.System<SharedTransformSystem>();
 
+        EntityUid grid = default;
         EntityUid sink = default;
-        EntityUid substation = default;
 
         await server.WaitPost(() =>
         {
-            var grid = mapMan.CreateGridEntity(testMap.MapId);
-            var gridUid = grid.Owner;
-            for (var x = 0; x < 5; x++)
-                mapSystem.SetTile(gridUid, grid.Comp, new Vector2i(x, 0), new Tile(1));
+            grid = CreateGrid(entMan, mapSystem, mapMan, testMap.MapId, new Vector2i(0, 0), new Vector2i(1, 0));
 
-            // Generator side: the RTG's cables run into a terminal facing the sink (its input).
-            entMan.SpawnEntity("GeneratorRTG", new EntityCoordinates(gridUid, new Vector2(0.5f, 0.5f)));
-            entMan.SpawnEntity("CableHV", new EntityCoordinates(gridUid, new Vector2(0.5f, 0.5f)));
-            entMan.SpawnEntity("CableHV", new EntityCoordinates(gridUid, new Vector2(1.5f, 0.5f)));
-            var inputTerminal = entMan.SpawnEntity("CableTerminal", new EntityCoordinates(gridUid, new Vector2(1.5f, 0.5f)));
-            xform.SetLocalRotationNoLerp(inputTerminal, Angle.FromDegrees(90)); // Faces east, towards the sink.
+            // HV cable under the transmitter, but no generator, so this only proves the transmitter
+            // recognises a connected power net.
+            sink = entMan.SpawnEntity("BluespacePowerSink", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            entMan.SpawnEntity("CableHV", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
 
-            // The sink, then the ship's side: cables under it feed the substation (its input is a
-            // cable device node, so it connects to the cable on its own tile).
-            sink = entMan.SpawnEntity("BluespacePowerSink", new EntityCoordinates(gridUid, new Vector2(2.5f, 0.5f)));
-            entMan.SpawnEntity("CableHV", new EntityCoordinates(gridUid, new Vector2(2.5f, 0.5f)));
-            entMan.SpawnEntity("CableHV", new EntityCoordinates(gridUid, new Vector2(3.5f, 0.5f)));
-            entMan.SpawnEntity("CableHV", new EntityCoordinates(gridUid, new Vector2(4.5f, 0.5f)));
-            substation = entMan.SpawnEntity("SubstationBasic", new EntityCoordinates(gridUid, new Vector2(4.5f, 0.5f)));
-
-            server.System<ShipCombatSystem>().TryEnsureShipCombat(gridUid, out _);
+            server.System<ShipCombatSystem>().TryEnsureShipCombat(grid, out _);
         });
 
-        // Start both batteries empty: everything below has to flow through the sink.
-        await server.WaitAssertion(() =>
-        {
-            var batterySystem = server.System<BatterySystem>();
-            batterySystem.SetCharge(sink, 0f, entMan.GetComponent<BatteryComponent>(sink));
-            batterySystem.SetCharge(substation, 0f, entMan.GetComponent<BatteryComponent>(substation));
-        });
-
-        await pair.RunTicksSync(240);
+        await pair.RunTicksSync(10);
 
         await server.WaitAssertion(() =>
         {
-            var supplier = entMan.GetComponent<PowerSupplierComponent>(sink);
-            var charger = entMan.GetComponent<BatteryChargerComponent>(sink);
-            var substationCharger = entMan.GetComponent<BatteryChargerComponent>(substation);
-
-            Assert.That(charger.Net, Is.Not.Null, "The sink's input should be on a power net.");
-            Assert.That(supplier.Net, Is.Not.Null, "The sink's output should be on a power net.");
-            Assert.That(substationCharger.Net, Is.Not.Null, "The substation's input should be on a power net.");
-            Assert.That(ReferenceEquals(supplier.Net, substationCharger.Net), Is.True,
-                "The sink's output and the substation should share a net.");
-            Assert.That(supplier.MaxSupply, Is.GreaterThan(0f), "The sink should supply its auxiliary share.");
-            Assert.That(entMan.GetComponent<BatteryComponent>(sink).CurrentCharge, Is.GreaterThan(0f),
-                "The generator should charge the sink.");
-            Assert.That(entMan.GetComponent<BatteryComponent>(substation).CurrentCharge, Is.GreaterThan(0f),
-                "The sink should feed the ship's grid (the substation charges from it).");
+            var consumer = entMan.GetComponent<PowerConsumerComponent>(sink);
+            Assert.That(consumer.Net, Is.Not.Null, "The transmitter should be attached to a power net.");
+            Assert.That(consumer.Net!.IsConnectedNetwork, Is.True, "The power net should be connected.");
+            Assert.That(entMan.GetComponent<BluespacePowerSinkComponent>(sink).Active, Is.True,
+                "A connected transmitter should be active even before the grid supplies power.");
         });
 
         await pair.CleanReturnAsync();
     }
 
-    private static void AnchorIfNeeded(IEntityManager entMan, SharedTransformSystem xform, EntityUid uid)
+    [Test]
+    public async Task CableUnderTransmitterConnectsIt()
     {
-        if (!entMan.GetComponent<TransformComponent>(uid).Anchored)
-            xform.AnchorEntity(uid);
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var mapSystem = server.System<SharedMapSystem>();
+        var mapMan = server.ResolveDependency<IMapManager>();
+
+        EntityUid grid = default;
+        EntityUid sink = default;
+
+        await server.WaitPost(() =>
+        {
+            grid = CreateGrid(entMan, mapSystem, mapMan, testMap.MapId, new Vector2i(0, 0), new Vector2i(1, 0));
+
+            // The standard machine wiring: a cable underneath the transmitter.
+            sink = entMan.SpawnEntity("BluespacePowerSink", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            entMan.SpawnEntity("CableHV", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            entMan.SpawnEntity("CableHV", new EntityCoordinates(grid, new Vector2(1.5f, 0.5f)));
+
+            server.System<ShipCombatSystem>().TryEnsureShipCombat(grid, out _);
+        });
+
+        await pair.RunTicksSync(10);
+
+        await server.WaitAssertion(() =>
+        {
+            var consumer = entMan.GetComponent<PowerConsumerComponent>(sink);
+            Assert.That(consumer.Net, Is.Not.Null, "A cable under the transmitter should attach it to a net.");
+            Assert.That(consumer.Net!.IsConnectedNetwork, Is.True, "The cable net should be connected.");
+            Assert.That(entMan.GetComponent<BluespacePowerSinkComponent>(sink).Active, Is.True,
+                "A cable-wired transmitter should be active.");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task TransmitterDrawsFromTheGrid()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var mapSystem = server.System<SharedMapSystem>();
+        var mapMan = server.ResolveDependency<IMapManager>();
+
+        EntityUid grid = default;
+        EntityUid sink = default;
+        EntityUid device = default;
+
+        await server.WaitPost(() =>
+        {
+            grid = CreateGrid(entMan, mapSystem, mapMan, testMap.MapId, new Vector2i(0, 0), new Vector2i(1, 0));
+            sink = ShipCombatTestHelpers.SpawnPoweredTransmitter(entMan, mapSystem, grid, new Vector2(0.5f, 0.5f));
+
+            device = entMan.SpawnEntity(null, new EntityCoordinates(grid, new Vector2(1.5f, 0.5f)));
+            var receiver = entMan.AddComponent<ApcPowerReceiverComponent>(device);
+            receiver.NeedsPower = false;
+            receiver.PowerDisabled = true;
+
+            var powered = entMan.AddComponent<BluespacePoweredComponent>(device);
+            powered.Pool = ShipPowerPool.Shields;
+            powered.RatedPower = 9000f;
+
+            server.System<ShipCombatSystem>().TryEnsureShipCombat(grid, out _);
+        });
+
+        await pair.RunTicksSync(10);
+
+        await server.WaitAssertion(() =>
+        {
+            var consumer = entMan.GetComponent<PowerConsumerComponent>(sink);
+            Assert.That(consumer.DrawRate, Is.EqualTo(3000f).Within(50f),
+                "The transmitter should draw 9000 W at one third performance.");
+            Assert.That(consumer.ReceivedPower, Is.GreaterThan(0f),
+                "The generator should supply the transmitter's draw.");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task ShieldGeneratorDrawsItsPassiveMaintenanceCost()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var mapSystem = server.System<SharedMapSystem>();
+        var mapMan = server.ResolveDependency<IMapManager>();
+
+        EntityUid grid = default;
+        EntityUid sink = default;
+
+        await server.WaitPost(() =>
+        {
+            grid = CreateGrid(entMan, mapSystem, mapMan, testMap.MapId, new Vector2i(0, 0), new Vector2i(1, 0));
+            sink = ShipCombatTestHelpers.SpawnPoweredTransmitter(entMan, mapSystem, grid, new Vector2(0.5f, 0.5f));
+            entMan.SpawnEntity("ShieldGenerator", new EntityCoordinates(grid, new Vector2(1.5f, 0.5f)));
+            server.System<ShipCombatSystem>().TryEnsureShipCombat(grid, out _);
+        });
+
+        await pair.RunTicksSync(10);
+
+        await server.WaitAssertion(() =>
+        {
+            var consumer = entMan.GetComponent<PowerConsumerComponent>(sink);
+            Assert.That(consumer.DrawRate, Is.EqualTo(10000f).Within(50f),
+                "A shield generator should draw a fixed 10 kW while maintaining the shields.");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task ExtraTransmittersAreInactiveBackups()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var mapSystem = server.System<SharedMapSystem>();
+        var mapMan = server.ResolveDependency<IMapManager>();
+
+        EntityUid grid = default;
+        EntityUid first = default;
+        EntityUid second = default;
+        EntityUid device = default;
+
+        await server.WaitPost(() =>
+        {
+            grid = CreateGrid(entMan, mapSystem, mapMan, testMap.MapId,
+                new Vector2i(0, 0), new Vector2i(1, 0), new Vector2i(2, 0));
+            first = ShipCombatTestHelpers.SpawnPoweredTransmitter(entMan, mapSystem, grid, new Vector2(0.5f, 0.5f));
+            second = ShipCombatTestHelpers.SpawnPoweredTransmitter(entMan, mapSystem, grid, new Vector2(2.5f, 0.5f));
+
+            device = entMan.SpawnEntity(null, new EntityCoordinates(grid, new Vector2(1.5f, 0.5f)));
+            var receiver = entMan.AddComponent<ApcPowerReceiverComponent>(device);
+            receiver.NeedsPower = false;
+            receiver.PowerDisabled = true;
+
+            var powered = entMan.AddComponent<BluespacePoweredComponent>(device);
+            powered.Pool = ShipPowerPool.Thrusters;
+            powered.RatedPower = 15000f;
+
+            server.System<ShipCombatSystem>().TryEnsureShipCombat(grid, out _);
+        });
+
+        await pair.RunTicksSync(10);
+
+        await server.WaitAssertion(() =>
+        {
+            var firstComp = entMan.GetComponent<BluespacePowerSinkComponent>(first);
+            var secondComp = entMan.GetComponent<BluespacePowerSinkComponent>(second);
+            var firstConsumer = entMan.GetComponent<PowerConsumerComponent>(first);
+            var secondConsumer = entMan.GetComponent<PowerConsumerComponent>(second);
+
+            Assert.That(firstComp.Active ^ secondComp.Active, Is.True,
+                "Exactly one transmitter should be active.");
+            Assert.That(firstConsumer.DrawRate > 0f ^ secondConsumer.DrawRate > 0f, Is.True,
+                "Only the active transmitter should draw.");
+        });
+
+        // Removing the active transmitter hands over to the backup.
+        await server.WaitPost(() =>
+        {
+            var active = entMan.GetComponent<BluespacePowerSinkComponent>(first).Active ? first : second;
+            entMan.QueueDeleteEntity(active);
+        });
+
+        await pair.RunTicksSync(10);
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(entMan.GetComponent<BluespacePowerSinkComponent>(second).Active, Is.True,
+                "The backup should take over when the active transmitter is removed.");
+            Assert.That(entMan.GetComponent<ApcPowerReceiverComponent>(device).PowerDisabled, Is.False,
+                "The backup should keep the remote devices powered.");
+        });
+
+        await pair.CleanReturnAsync();
     }
 
     private static EntityUid CreateGrid(
@@ -429,7 +605,6 @@ public sealed class ShipPowerTest
                      ShipPowerPool.Shields,
                      ShipPowerPool.Weapons,
                      ShipPowerPool.Thrusters,
-                     ShipPowerPool.Auxiliary,
                  })
         {
             sum += ShipPowerSystem.GetPool(combat, pool);

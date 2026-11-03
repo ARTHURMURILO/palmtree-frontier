@@ -18,12 +18,10 @@ public sealed class ShieldingConsoleBoundUserInterfaceState : BoundUserInterface
     public int ShieldPower { get; }
     public int WeaponPower { get; }
     public int ThrusterPower { get; }
-    public int AuxiliaryPower { get; }
 
     public bool ShieldLocked { get; }
     public bool WeaponLocked { get; }
     public bool ThrusterLocked { get; }
-    public bool AuxiliaryLocked { get; }
 
     /// <summary>Current shield charge per facing, indexed by <see cref="ShieldFacing"/>.</summary>
     public float[] Facings { get; }
@@ -42,14 +40,13 @@ public sealed class ShieldingConsoleBoundUserInterfaceState : BoundUserInterface
 
     public bool WeaponsAlert { get; }
     public bool ThrustersAlert { get; }
-    public bool AuxiliaryAlert { get; }
 
     /// <summary>True when the console is muted (no sounds).</summary>
     public bool Silent { get; }
 
     /// <summary>
     /// Which power pools have devices on the ship, indexed by <see cref="ShipPowerPool"/>. Absent
-    /// pools are greyed out and their points feed the grid instead.
+    /// pools are greyed out and keep their value without being normalized.
     /// </summary>
     public bool[] ActivePools { get; }
 
@@ -59,11 +56,9 @@ public sealed class ShieldingConsoleBoundUserInterfaceState : BoundUserInterface
         int shieldPower,
         int weaponPower,
         int thrusterPower,
-        int auxiliaryPower,
         bool shieldLocked,
         bool weaponLocked,
         bool thrusterLocked,
-        bool auxiliaryLocked,
         float[] facings,
         bool[] facingsUp,
         float maxPerFacing,
@@ -71,7 +66,6 @@ public sealed class ShieldingConsoleBoundUserInterfaceState : BoundUserInterface
         bool shieldsAlert,
         bool weaponsAlert,
         bool thrustersAlert,
-        bool auxiliaryAlert,
         bool silent,
         bool[] activePools)
     {
@@ -80,11 +74,9 @@ public sealed class ShieldingConsoleBoundUserInterfaceState : BoundUserInterface
         ShieldPower = shieldPower;
         WeaponPower = weaponPower;
         ThrusterPower = thrusterPower;
-        AuxiliaryPower = auxiliaryPower;
         ShieldLocked = shieldLocked;
         WeaponLocked = weaponLocked;
         ThrusterLocked = thrusterLocked;
-        AuxiliaryLocked = auxiliaryLocked;
         Facings = facings;
         FacingsUp = facingsUp;
         MaxPerFacing = maxPerFacing;
@@ -92,7 +84,6 @@ public sealed class ShieldingConsoleBoundUserInterfaceState : BoundUserInterface
         ShieldsAlert = shieldsAlert;
         WeaponsAlert = weaponsAlert;
         ThrustersAlert = thrustersAlert;
-        AuxiliaryAlert = auxiliaryAlert;
         Silent = silent;
         ActivePools = activePools;
     }

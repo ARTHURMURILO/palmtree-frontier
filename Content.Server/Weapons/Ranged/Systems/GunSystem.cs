@@ -483,20 +483,33 @@ public sealed partial class GunSystem : SharedGunSystem
             }
         }
 
+        EntityCoordinates impactCoordinates = default;
+
         if (hitscan.ImpactFlash != null)
         {
-            var coords = fromCoordinates.Offset(angle.ToVec() * distance);
-            var netCoords = GetNetCoordinates(coords);
+            impactCoordinates = fromCoordinates.Offset(angle.ToVec() * distance);
+            var netCoords = GetNetCoordinates(impactCoordinates);
 
             sprites.Add((netCoords, angle.FlipPositive(), hitscan.ImpactFlash, 1f, hitscan.Color));
         }
 
         if (sprites.Count > 0)
         {
+            // Palmtree: ship weapons engage far outside normal PVS. Include players around the
+            // impact point as well, so the ship being hit can draw the whole beam and not just a
+            // server-spawned hit effect.
+            var filter = Filter.Pvs(fromCoordinates, entityMan: EntityManager);
+            if (shipWeapon)
+            {
+                filter = Filter.Empty().AddPlayersByPvs(fromCoordinates, 24f, EntityManager);
+                if (hitscan.ImpactFlash != null)
+                    filter.AddPlayersByPvs(impactCoordinates, 2f, EntityManager);
+            }
+
             RaiseNetworkEvent(new HitscanEvent
             {
                 Sprites = sprites,
-            }, Filter.Pvs(fromCoordinates, entityMan: EntityManager));
+            }, filter);
         }
     }
 

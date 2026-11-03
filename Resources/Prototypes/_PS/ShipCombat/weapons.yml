@@ -63,25 +63,6 @@
   - type: TimedDespawn
     lifetime: 6
 
-# Bright flash spawned where a ship beam lands; the server gives it a global PVS override so the
-# ship being shot at sees it even from far outside PVS.
-- type: entity
-  id: ShipBeamImpact
-  categories: [ HideSpawnMenu ]
-  components:
-  - type: Sprite
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
-    layers:
-    - state: impact_beam_heavy
-      shader: unshaded
-  - type: PointLight
-    radius: 3
-    energy: 4
-    color: "#ff5555"
-    castShadows: false
-  - type: TimedDespawn
-    lifetime: 0.3
-
 # Beam turret hitscan: a long-range laser beam (ship combat range matches the console radar).
 - type: hitscan
   id: ShipTurretBeam
@@ -109,7 +90,7 @@
   id: ShipTurretBase
   abstract: true
   name: ship turret
-  description: A console-driven turret with a 45-degree firing arc. Powered by the bluespace power transmitter.
+  description: A console-driven turret with a 45-degree firing arc. Powered by the Bluespace Power Relay.
   suffix: Palmtree
   placement:
     mode: SnapgridCenter
@@ -140,7 +121,7 @@
     arcHalfAngle: 22.5
   - type: BluespacePowered
     pool: Weapons
-    ratedPower: 5000
+    ratedPower: 0 # Weapons consume per shot, not passively.
   - type: ApcPowerReceiver
     needsPower: false
     powerDisabled: true
@@ -170,7 +151,7 @@
   parent: ShipTurretBase
   id: ShipTurret
   name: ship turret (bolt)
-  description: A console-driven turret firing travelling energy bolts. 45-degree arc, powered by the bluespace power transmitter.
+  description: A console-driven turret firing travelling energy bolts. 45-degree arc, powered by the Bluespace Power Relay.
   components:
   - type: Gun
     fireRate: 1
@@ -192,7 +173,7 @@
   parent: ShipTurretBase
   id: ShipTurretBeam
   name: ship turret (beam)
-  description: A console-driven turret firing an instant laser beam. 45-degree arc, powered by the bluespace power transmitter.
+  description: A console-driven turret firing an instant laser beam. 45-degree arc, powered by the Bluespace Power Relay.
   components:
   - type: Gun
     fireRate: 0.2
@@ -258,7 +239,7 @@
     count: 2
   - type: BluespacePowered
     pool: Weapons
-    ratedPower: 7500
+    ratedPower: 0 # Weapons consume per shot, not passively.
   - type: ApcPowerReceiver
     needsPower: false
     powerDisabled: true
@@ -288,7 +269,7 @@
   parent: ShipTurret
   id: ShipTurretDisruptor
   name: ship turret (disruptor)
-  description: A console-driven turret firing disruptor bolts. 45-degree arc, powered by the bluespace power transmitter.
+  description: A console-driven turret firing disruptor bolts. 45-degree arc, powered by the Bluespace Power Relay.
   components:
   - type: Gun
     soundGunshot:
@@ -301,7 +282,7 @@
   parent: ShipTurretBeam
   id: ShipTurretPhaser
   name: ship turret (phaser)
-  description: A console-driven turret firing an instant phaser beam. 45-degree arc, powered by the bluespace power transmitter.
+  description: A console-driven turret firing an instant phaser beam. 45-degree arc, powered by the Bluespace Power Relay.
   components:
   - type: Gun
     fireRate: 0.2

@@ -13,7 +13,14 @@
       shader: unshaded
   - type: Ammo
     muzzleFlash: null
+  # Palmtree: torpedoes must keep moving in space. The physics damping stays at zero and the tile
+  # friction modifier stops the space friction controller from grinding them to a halt.
   - type: Physics
+    bodyType: Dynamic
+    linearDamping: 0
+    angularDamping: 0
+  - type: TileFrictionModifier
+    modifier: 0
   - type: Fixtures
     fixtures:
       projectile:
@@ -39,7 +46,7 @@
     canCreateVacuum: false
   - type: ShipTorpedo
   - type: TimedDespawn
-    lifetime: 120
+    lifetime: 60
   - type: PointLight
     radius: 1.5
     energy: 2
@@ -56,8 +63,9 @@
     speed: 40
     turnRate: 45
     shieldDamage: 280
-    steeringDelay: 0.5
+    steeringDelay: 2
     steeringRamp: 3.5
+    maxSteeringAngle: 120
   - type: Sprite
     sprite: Structures/Power/Generation/Singularity/emitter.rsi
     color: "#ff5555"
@@ -113,7 +121,7 @@
   - type: ShipTorpedoLauncher
   - type: BluespacePowered
     pool: Weapons
-    ratedPower: 7500
+    ratedPower: 0 # Launchers consume per torpedo, not passively.
   - type: ApcPowerReceiver
     needsPower: false
     powerDisabled: true

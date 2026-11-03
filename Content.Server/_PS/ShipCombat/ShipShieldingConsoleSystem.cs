@@ -1,5 +1,3 @@
-using Content.Server.Power.Components;
-using Content.Server.Power.NodeGroups;
 using Content.Server.Shuttles.Systems;
 using Content.Shared._PS.ShipCombat;
 using Content.Shared._PS.ShipCombat.Components;
@@ -193,11 +191,9 @@ public sealed class ShipShieldingConsoleSystem : EntitySystem
             combat.ShieldPower,
             combat.WeaponPower,
             combat.ThrusterPower,
-            combat.AuxiliaryPower,
             combat.ShieldPowerLocked,
             combat.WeaponPowerLocked,
             combat.ThrusterPowerLocked,
-            combat.AuxiliaryPowerLocked,
             shield?.Facings ?? new float[4],
             shield?.Up ?? new[] { false, false, false, false },
             _shields.GetMaxPerFacing(combat.Owner),
@@ -205,35 +201,13 @@ public sealed class ShipShieldingConsoleSystem : EntitySystem
             shieldsAlert: GetShieldsAlert(combat),
             weaponsAlert: GetWeaponsAlert(combat),
             thrustersAlert: GetThrustersAlert(combat.Owner),
-            auxiliaryAlert: GetAuxiliaryAlert(combat),
             silent: TryComp<ShipShieldingConsoleComponent>(uid, out var console) && console.Silent,
             activePools: new[]
             {
                 combat.ShieldPoolActive,
                 combat.WeaponPoolActive,
                 combat.ThrusterPoolActive,
-                true,
             });
-    }
-
-    /// <summary>
-    /// Auxiliary alert: the ship's grid load exceeds what the sink can supply (like the power
-    /// monitoring console). A ship whose grid draws less than its share does not alert, even at a
-    /// low Auxiliary setting.
-    /// </summary>
-    private bool GetAuxiliaryAlert(ShipCombatComponent combat)
-    {
-        var query = EntityQueryEnumerator<BluespacePowerSinkComponent, PowerSupplierComponent, TransformComponent>();
-        while (query.MoveNext(out _, out _, out var supplier, out var xform))
-        {
-            if (xform.GridUid != combat.Owner)
-                continue;
-
-            if (supplier.Net is PowerNet net && net.NetworkNode.LastCombinedLoad > supplier.MaxSupply + 1f)
-                return true;
-        }
-
-        return false;
     }
 
     /// <summary>

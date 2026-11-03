@@ -105,14 +105,6 @@
                     <Label Name="ThrusterAlertLabel" Text="/!\" MinWidth="20" Modulate="#ff3b3b" Visible="False"/>
                     <CheckBox Name="ThrusterLockCheck"/>
                 </BoxContainer>
-                <BoxContainer Orientation="Horizontal" Margin="3">
-                    <Label Name="AuxiliaryPoolLabel" Text="{Loc 'shielding-console-pool-auxiliary'}" MinWidth="64"/>
-                    <ps:ThresholdSlider Name="AuxiliarySlider" HorizontalExpand="True"/>
-                    <Label Name="AuxiliaryValueLabel" MinWidth="34" Align="Right"/>
-                    <Label Name="AuxiliaryAlertLabel" Text="/!\" MinWidth="20" Modulate="#ff3b3b" Visible="False"/>
-                    <CheckBox Name="AuxiliaryLockCheck"/>
-                </BoxContainer>
-
                 <BoxContainer Orientation="Horizontal" Margin="3" HorizontalAlignment="Center">
                     <Button Name="PresetAttackButton" Text="{Loc 'shielding-console-preset-attack'}" Margin="2"/>
                     <Button Name="PresetDefenseButton" Text="{Loc 'shielding-console-preset-defense'}" Margin="2"/>

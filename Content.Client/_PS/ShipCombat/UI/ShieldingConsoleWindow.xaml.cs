@@ -92,7 +92,6 @@ public sealed partial class ShieldingConsoleWindow : FancyWindow
         RegisterPool(ShipPowerPool.Shields, ShieldSlider, ShieldValueLabel, ShieldAlertLabel, ShieldLockCheck, ShieldsPoolLabel);
         RegisterPool(ShipPowerPool.Weapons, WeaponSlider, WeaponValueLabel, WeaponAlertLabel, WeaponLockCheck, WeaponsPoolLabel);
         RegisterPool(ShipPowerPool.Thrusters, ThrusterSlider, ThrusterValueLabel, ThrusterAlertLabel, ThrusterLockCheck, ThrustersPoolLabel);
-        RegisterPool(ShipPowerPool.Auxiliary, AuxiliarySlider, AuxiliaryValueLabel, AuxiliaryAlertLabel, AuxiliaryLockCheck, AuxiliaryPoolLabel);
 
         PresetAttackButton.OnPressed += _ => OnPresetSelected?.Invoke(ShipPowerPreset.Attack);
         PresetDefenseButton.OnPressed += _ => OnPresetSelected?.Invoke(ShipPowerPreset.Defense);
@@ -119,7 +118,6 @@ public sealed partial class ShieldingConsoleWindow : FancyWindow
         SetPool(ShipPowerPool.Shields, state.ShieldPower, state.ShieldLocked, state.ShieldsAlert, ShieldsPoolLabel);
         SetPool(ShipPowerPool.Weapons, state.WeaponPower, state.WeaponLocked, state.WeaponsAlert, WeaponsPoolLabel);
         SetPool(ShipPowerPool.Thrusters, state.ThrusterPower, state.ThrusterLocked, state.ThrustersAlert, ThrustersPoolLabel);
-        SetPool(ShipPowerPool.Auxiliary, state.AuxiliaryPower, state.AuxiliaryLocked, state.AuxiliaryAlert, AuxiliaryPoolLabel);
 
         // Facings: charge / maximum, with a DOWN marker for collapsed ones.
         SetFacing(FacingForeLabel, FacingForeBar, state, ShieldFacing.Fore);
@@ -133,8 +131,8 @@ public sealed partial class ShieldingConsoleWindow : FancyWindow
 
         SilentCheck.Pressed = state.Silent;
 
-        // Absent systems are greyed out: their points feed the grid instead.
-        for (var i = 0; i < 4; i++)
+        // Absent systems are greyed out and keep their value without being normalized.
+        for (var i = 0; i < 3; i++)
         {
             var pool = (ShipPowerPool) i;
             var active = state.ActivePools[i];

@@ -42,7 +42,6 @@ shielding-console-power = Power
 shielding-console-pool-shields = Shields
 shielding-console-pool-weapons = Weapons
 shielding-console-pool-thrusters = Thrusters
-shielding-console-pool-auxiliary = Auxiliary
 shielding-console-facing-fore = Fore
 shielding-console-facing-starboard = Starboard
 shielding-console-facing-aft = Aft
@@ -54,10 +53,13 @@ shielding-console-preset-attack = ATTACK
 shielding-console-preset-defense = DEFENSE
 shielding-console-preset-balanced = BALANCED
 
-bluespace-power-sink-examine-charge = Charge: { $charge } kJ / { $max } kJ.
-bluespace-power-sink-examine-budget = It can split up to { $throughput } kW between the ship's power pools.
-bluespace-power-sink-examine-wiring = Generators connect to a cable terminal placed next to it and facing it (the input); cables under it feed the ship's power grid (the output).
-bluespace-power-sink-examine-same-net = [color=red]Warning: its input and output are on the same power segment. Put the generators on their own segment, separated from the ship's grid.[/color]
+bluespace-power-sink-examine-draw = Draw: { $draw } kW.
+bluespace-power-sink-examine-budget = Rated draw: { $throughput } kW.
+bluespace-power-sink-examine-grid = Power grid: { $supply } kW available, { $received } kW received.
+bluespace-power-sink-examine-wiring = Run an HV cable under it to connect it to the ship's power grid. The grid has to supply everything it draws.
+bluespace-power-sink-examine-standby = [color=yellow]Standby: another relay on this ship is drawing the power.[/color]
+bluespace-power-sink-examine-unconnected = [color=red]Not connected: run an HV cable under it.[/color]
+bluespace-power-sink-examine-nopower = [color=yellow]No power received: the ship's grid is not supplying the relay.[/color]
 
 signal-port-name-ship-weapon-primary = Primary weapons
 signal-port-description-ship-weapon-primary = Weapons linked on this port fire with the PRIMARY group.

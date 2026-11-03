@@ -1,9 +1,11 @@
 using System.Numerics;
+using Content.Shared._PS.CCVar;
 using Content.Shared._PS.ShipCombat;
 using Content.Shared._PS.ShipCombat.Components;
 using Robust.Shared.Audio;
 using Robust.Shared.Audio.Systems;
 using Content.Shared.Damage;
+using Robust.Shared.Configuration;
 using Robust.Shared.Map;
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Timing;
@@ -31,6 +33,7 @@ public sealed class ShipShieldSystem : EntitySystem
     /// <summary>Cooldown between instant shield redistributions.</summary>
     public static readonly TimeSpan RedistributionCooldown = TimeSpan.FromSeconds(25);
 
+    [Dependency] private readonly IConfigurationManager _cfg = default!;
     [Dependency] private readonly ShipCombatSystem _combat = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
@@ -272,7 +275,12 @@ public sealed class ShipShieldSystem : EntitySystem
         }
 
         if (max <= 0f)
+        {
+            if (_combat.TryGetShipCombat(grid, out var noGeneratorCombat))
+                noGeneratorCombat.Comp.ShieldRegenPowerDraw = 0f;
+
             return;
+        }
 
         if (!shield.Initialized)
         {
@@ -292,11 +300,15 @@ public sealed class ShipShieldSystem : EntitySystem
 
         shield.NextPulse = _timing.CurTime + TimeSpan.FromSeconds(PulseInterval);
 
-        // STO: every pulse adds the regeneration to each facing.
+        // STO: every pulse adds the regeneration to each facing. The relay is charged 0.6 kW for
+        // every hit point restored, kept as a draw until the next pulse.
+        var restored = 0f;
         for (var i = 0; i < 4; i++)
         {
-            var value = MathF.Min(shield.Facings[i] + regen, max);
+            var before = shield.Facings[i];
+            var value = MathF.Min(before + regen, max);
             shield.Facings[i] = value;
+            restored += value - before;
 
             if (!shield.Up[i] && value > max * shield.ReArmFraction)
             {
@@ -305,6 +317,12 @@ public sealed class ShipShieldSystem : EntitySystem
                 _sawmill.Info($"{ToPrettyString(grid)} {(ShieldFacing) i} shields re-armed");
                 PlayShieldingAlarm(grid, ShieldAlarm.Restored);
             }
+        }
+
+        if (_combat.TryGetShipCombat(grid, out var combat))
+        {
+            var cost = _cfg.GetCVar(PSCVars.ShipCombatShieldRegenPowerPerHp) * 1000f;
+            combat.Comp.ShieldRegenPowerDraw = restored * cost;
         }
     }
 

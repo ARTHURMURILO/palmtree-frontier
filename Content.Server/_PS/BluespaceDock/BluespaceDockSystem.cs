@@ -1669,6 +1669,16 @@ public sealed class BluespaceDockSystem : EntitySystem
         if (TryComp<GunComponent>(uid, out var gun))
             _gunSystem.RefreshModifiers((uid, gun));
 
+        // Palmtree: ships saved before the transmitter rework may still carry the old SMES battery
+        // and grid supplier. Strip them so the transmitter is a pure grid consumer after loading.
+        if (HasComp<BluespacePowerSinkComponent>(uid))
+        {
+            RemComp<BatteryComponent>(uid);
+            RemComp<BatteryChargerComponent>(uid);
+            RemComp<PowerSupplierComponent>(uid);
+            RemComp<PowerNetworkBatteryComponent>(uid);
+        }
+
         // Palmtree: a loaded ship with a tactical console or power sink must get its ship combat
         // state back (grids saved before the feature, or a file whose grid state was stripped). The
         // state itself is saved on the grid, so this is idempotent.

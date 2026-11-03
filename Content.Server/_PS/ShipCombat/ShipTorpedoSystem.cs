@@ -1,4 +1,5 @@
 using System.Numerics;
+using Content.Shared._PS.CCVar;
 using Content.Shared._PS.ShipCombat;
 using Content.Shared._PS.ShipCombat.Components;
 using Content.Shared.Maps;
@@ -6,6 +7,7 @@ using Content.Shared.Physics;
 using Content.Shared.Projectiles;
 using Content.Shared.Trigger;
 using Robust.Shared.Audio.Systems;
+using Robust.Shared.Configuration;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Map;
@@ -21,14 +23,18 @@ namespace Content.Server._PS.ShipCombat;
 /// Palmtree: launches, steers and tracks ship torpedoes, and runs the incoming-torpedo alarms.
 /// </summary>
 /// <remarks>
-/// Torpedoes are ordinary projectiles (so the bluespace dock's projectile cleanup applies) that are
-/// steered towards the grid captured at launch with a limited turn rate: a manoeuvring target can
-/// make them miss. Launchers are fired manually from the tactical console (never automatically),
-/// need a set lock, power and exposed space in front, and each has its own cooldown.
+/// Torpedoes are ordinary projectiles (so the bluespace dock's projectile cleanup applies) that fire
+/// straight out of the launcher, coast for two seconds, then steer towards the grid captured at
+/// launch with a limited turn rate. A target outside the seeker arc (90 degrees, 160 for photon) is
+/// treated as a miss: the torpedo gives up and keeps flying straight. Launchers are fired manually
+/// from the tactical console (never automatically), need a set lock, power and exposed space in
+/// front, and each has its own cooldown.
 /// </remarks>
 public sealed class ShipTorpedoSystem : EntitySystem
 {
+    [Dependency] private readonly IConfigurationManager _cfg = default!;
     [Dependency] private readonly ShipCombatSystem _combat = default!;
+    [Dependency] private readonly ShipPowerSystem _power = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!;
     [Dependency] private readonly SharedPhysicsSystem _physics = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
@@ -183,7 +189,7 @@ public sealed class ShipTorpedoSystem : EntitySystem
     }
 
     /// <summary>
-    /// Spawns one torpedo from a launcher, aimed like the weapons are.
+    /// Spawns one torpedo from a launcher and sends it straight forwards.
     /// </summary>
     private void LaunchOne(EntityUid uid, ShipTorpedoLauncherComponent launcher, TransformComponent xform,
         EntityUid target, ShipCombatComponent combat)
@@ -193,8 +199,10 @@ public sealed class ShipTorpedoSystem : EntitySystem
 
         launcher.NextFire = _timing.CurTime + launcher.FireCooldown;
 
-        // Launch from the exposed muzzle, in front of the launcher.
-        var from = _transform.GetMapCoordinates(xform).Position + xform.LocalRotation.ToWorldVec() * 1.5f;
+        // Launch from the exposed muzzle, in front of the launcher. Use the world rotation: a rotated
+        // ship must not fire its torpedoes back through its own hull.
+        var launchRotation = _transform.GetWorldRotation(xform);
+        var from = _transform.GetMapCoordinates(xform).Position + launchRotation.ToWorldVec() * 1f;
         var torpedo = Spawn(launcher.Torpedo.Id, new MapCoordinates(from, xform.MapID));
 
         if (!TryComp<ShipTorpedoComponent>(torpedo, out var torpedoComp))
@@ -213,16 +221,16 @@ public sealed class ShipTorpedoSystem : EntitySystem
         if (combat.TargetMode != ShipTargetMode.Crew && combat.AimTarget is { } aimEntity && Exists(aimEntity))
             torpedoComp.TargetEntity = aimEntity;
 
-        var aim = GridCenter(target);
-        var direction = aim - from;
-        if (direction.LengthSquared() > 0.01f)
-        {
-            var heading = direction.ToWorldAngle();
-            if (TryComp<PhysicsComponent>(torpedo, out var physics))
-                _physics.SetLinearVelocity(torpedo, heading.ToWorldVec() * torpedoComp.Speed, body: physics);
+        // Fire straight out of the tube. Steering (after the torpedo's delay) turns it towards the
+        // locked target; aiming it at the target on launch made it reverse into its own ship.
+        if (TryComp<PhysicsComponent>(torpedo, out var physics))
+            _physics.SetLinearVelocity(torpedo, launchRotation.ToWorldVec() * torpedoComp.Speed, body: physics);
 
-            _transform.SetWorldRotationNoLerp(torpedo, heading);
-        }
+        _transform.SetWorldRotationNoLerp(torpedo, launchRotation);
+
+        // Each torpedo launch is a transient draw on the relay.
+        _power.AddActionPowerDraw(combat.Owner,
+            _cfg.GetCVar(PSCVars.ShipCombatTorpedoLaunchPower) * 1000f);
 
         if (launcher.LaunchSound != null)
             _audio.PlayPvs(launcher.LaunchSound, torpedo);
@@ -349,8 +357,14 @@ public sealed class ShipTorpedoSystem : EntitySystem
         var query = EntityQueryEnumerator<ShipTorpedoComponent, PhysicsComponent, TransformComponent>();
         while (query.MoveNext(out var uid, out var torpedo, out var physics, out var xform))
         {
-            if (torpedo.Target is not { } target || !Exists(target) || !HasComp<MapGridComponent>(target))
+            if (torpedo.Detonating
+                || torpedo.SteeringAbandoned
+                || torpedo.Target is not { } target
+                || !Exists(target)
+                || !HasComp<MapGridComponent>(target))
+            {
                 continue;
+            }
 
             var age = _timing.CurTime - torpedo.LaunchTime;
             if (age < torpedo.SteeringDelay)
@@ -372,6 +386,15 @@ public sealed class ShipTorpedoSystem : EntitySystem
                 ? toTarget.ToWorldAngle()
                 : physics.LinearVelocity.ToWorldAngle();
             var desired = toTarget.ToWorldAngle();
+
+            // A target outside the seeker arc is a miss: give up instead of doing a U-turn back
+            // through the launching ship. The torpedo keeps its current heading and coast.
+            var offAngle = Math.Abs(WrapAngle(desired.Theta - current.Theta));
+            if (offAngle > Angle.FromDegrees(torpedo.MaxSteeringAngle).Theta)
+            {
+                torpedo.SteeringAbandoned = true;
+                continue;
+            }
 
             var maxTurn = Angle.FromDegrees(torpedo.TurnRate * ramp * frameTime).Theta;
             var turn = Math.Clamp(WrapAngle(desired.Theta - current.Theta), -maxTurn, maxTurn);

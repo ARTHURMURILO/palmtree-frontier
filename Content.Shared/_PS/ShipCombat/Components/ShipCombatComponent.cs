@@ -49,7 +49,8 @@ public sealed partial class ShipCombatComponent : Component
     public ShipTargetMode TargetMode = ShipTargetMode.Random;
 
     /// <summary>
-    /// Shield power pool (STO-adapted 200-point budget; every pool is 15-125 and they sum to 200).
+    /// Shield power pool (STO-adapted 150-point budget; every pool is 15-125 and the active pools
+    /// sum to 150).
     /// </summary>
     [DataField, ViewVariables(VVAccess.ReadWrite)]
     public int ShieldPower = 50;
@@ -62,10 +63,6 @@ public sealed partial class ShipCombatComponent : Component
     [DataField, ViewVariables(VVAccess.ReadWrite)]
     public int ThrusterPower = 50;
 
-    /// <summary>Auxiliary power pool: the share returned to the ship's normal power grid.</summary>
-    [DataField, ViewVariables(VVAccess.ReadWrite)]
-    public int AuxiliaryPower = 50;
-
     /// <summary>Locked pools do not move when another pool is adjusted.</summary>
     [DataField]
     public bool ShieldPowerLocked;
@@ -77,10 +74,6 @@ public sealed partial class ShipCombatComponent : Component
     /// <summary>Locked pools do not move when another pool is adjusted.</summary>
     [DataField]
     public bool ThrusterPowerLocked;
-
-    /// <summary>Locked pools do not move when another pool is adjusted.</summary>
-    [DataField]
-    public bool AuxiliaryPowerLocked;
 
     // Runtime-only lock state. These are deliberately not [DataField]s: the bluespace dock drops
     // them with the save, so a retrieved ship never carries a stale lock reference.
@@ -106,7 +99,7 @@ public sealed partial class ShipCombatComponent : Component
     /// </summary>
     public bool WeaponsBlocked;
 
-    /// <summary>True when the ship has any shield generator (runtime; absent pools feed the grid).</summary>
+    /// <summary>True when the ship has any shield generator (runtime).</summary>
     public bool ShieldPoolActive = true;
 
     /// <summary>True when the ship has any weapon or torpedo launcher (runtime).</summary>
@@ -115,8 +108,19 @@ public sealed partial class ShipCombatComponent : Component
     /// <summary>True when the ship has any bluespace thruster (runtime).</summary>
     public bool ThrusterPoolActive = true;
 
-    /// <summary>True once the emergency auxiliary distribution was applied (runtime).</summary>
-    public bool EmergencyAuxSet;
+    /// <summary>
+    /// Transient extra relay draw from weapon shots and torpedo launches, in watts (runtime).
+    /// </summary>
+    public float ActionPowerDraw;
+
+    /// <summary>When <see cref="ActionPowerDraw"/> stops (runtime).</summary>
+    public TimeSpan ActionPowerDrawUntil;
+
+    /// <summary>
+    /// Extra relay draw for regenerating shield hit points during the last pulse, in watts
+    /// (runtime). Refreshed on every shield pulse.
+    /// </summary>
+    public float ShieldRegenPowerDraw;
 
     /// <summary>True while at least one hostile torpedo is inbound (runtime).</summary>
     public bool IncomingMissile;

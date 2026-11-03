@@ -73,6 +73,24 @@ public sealed class ShipWeaponsTest
                 "Firing should have spawned a projectile.");
         });
 
+        await pair.RunTicksSync(1);
+
+        await server.WaitAssertion(() =>
+        {
+            var query = entMan.EntityQueryEnumerator<BluespacePowerSinkComponent, PowerConsumerComponent, TransformComponent>();
+            while (query.MoveNext(out _, out _, out var consumer, out var xform))
+            {
+                if (xform.GridUid != grid)
+                    continue;
+
+                Assert.That(consumer.DrawRate, Is.GreaterThanOrEqualTo(2000f),
+                    "A bolt shot should add a 2 kW transient draw to the relay.");
+                return;
+            }
+
+            Assert.Fail("No transmitter on the grid.");
+        });
+
         await pair.CleanReturnAsync();
     }
 
@@ -155,9 +173,8 @@ public sealed class ShipWeaponsTest
             state.Comp.WeaponMode = ShipWeaponMode.All;
             state.Comp.LockTarget = targetGrid;
 
-            // Drain the sink: the weapon loses power on the next power tick.
-            var sink = FindSink(entMan, grid);
-            server.System<BatterySystem>().SetCharge(sink, 0f, entMan.GetComponent<BatteryComponent>(sink));
+            // Cut the generator: the weapon loses power on the next power tick.
+            FindSupplier(entMan, grid).Enabled = false;
         });
 
         await pair.RunTicksSync(10);
@@ -240,7 +257,7 @@ public sealed class ShipWeaponsTest
             for (var x = 0; x < 4; x++)
                 mapSystem.SetTile(grid, gridEnt.Comp, new Vector2i(x, 0), new Tile(1));
 
-            entMan.SpawnEntity("BluespacePowerSink", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            ShipCombatTestHelpers.SpawnPoweredTransmitter(entMan, mapSystem, grid, new Vector2(0.5f, 0.5f));
             entMan.SpawnEntity("ShieldGenerator", new EntityCoordinates(grid, new Vector2(1.5f, 0.5f)));
             weapon = entMan.SpawnEntity("ShipStationaryWeapon", new EntityCoordinates(grid, new Vector2(2.5f, 0.5f)));
             wall = entMan.SpawnEntity("WallSolid", new EntityCoordinates(grid, new Vector2(3.5f, 0.5f)));
@@ -352,7 +369,7 @@ public sealed class ShipWeaponsTest
             for (var x = 0; x < 5; x++)
                 mapSystem.SetTile(grid, gridEnt.Comp, new Vector2i(x, 0), new Tile(1));
 
-            entMan.SpawnEntity("BluespacePowerSink", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            ShipCombatTestHelpers.SpawnPoweredTransmitter(entMan, mapSystem, grid, new Vector2(0.5f, 0.5f));
             console = entMan.SpawnEntity("ComputerTacticalConsole", new EntityCoordinates(grid, new Vector2(1.5f, 0.5f)));
             turret = entMan.SpawnEntity("ShipTurretBeam", new EntityCoordinates(grid, new Vector2(2.5f, 0.5f)));
 
@@ -422,7 +439,7 @@ public sealed class ShipWeaponsTest
             for (var x = 0; x < 5; x++)
                 mapSystem.SetTile(grid, gridEnt.Comp, new Vector2i(x, 0), new Tile(1));
 
-            entMan.SpawnEntity("BluespacePowerSink", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            ShipCombatTestHelpers.SpawnPoweredTransmitter(entMan, mapSystem, grid, new Vector2(0.5f, 0.5f));
             console = entMan.SpawnEntity("ComputerTacticalConsole", new EntityCoordinates(grid, new Vector2(1.5f, 0.5f)));
             turret = entMan.SpawnEntity("ShipTurret", new EntityCoordinates(grid, new Vector2(2.5f, 0.5f)));
 
@@ -650,7 +667,7 @@ public sealed class ShipWeaponsTest
             for (var x = 0; x < 3; x++)
                 mapSystem.SetTile(grid, gridEnt.Comp, new Vector2i(x, 0), new Tile(1));
 
-            entMan.SpawnEntity("BluespacePowerSink", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            ShipCombatTestHelpers.SpawnPoweredTransmitter(entMan, mapSystem, grid, new Vector2(0.5f, 0.5f));
             console = entMan.SpawnEntity("ComputerTacticalConsole", new EntityCoordinates(grid, new Vector2(1.5f, 0.5f)));
 
             // A launcher at the east edge, its muzzle facing open space.
@@ -660,8 +677,9 @@ public sealed class ShipWeaponsTest
             var target = mapMan.CreateGridEntity(testMap.MapId);
             targetGrid = target.Owner;
             mapSystem.SetTile(targetGrid, target.Comp, new Vector2i(0, 0), new Tile(1));
-            // South of the launcher, so the torpedo has to steer after launching east.
-            xform.SetWorldPosition(targetGrid, new Vector2(60f, -40f));
+            // North east of the launcher, inside the seeker arc: the torpedo has to steer after
+            // launching east.
+            xform.SetWorldPosition(targetGrid, new Vector2(60f, 40f));
         });
 
         await pair.RunTicksSync(10);
@@ -687,12 +705,14 @@ public sealed class ShipWeaponsTest
 
         });
 
-        // Steering: the torpedo was launched east but must turn towards the target to the south east.
-        await pair.RunTicksSync(60);
+        // Before the steering delay the torpedo must fly straight out of the tube, not turn at the
+        // target immediately (which used to send it back through its own ship).
+        await pair.RunTicksSync(30);
+
+        EntityUid torpedo = default;
 
         await server.WaitAssertion(() =>
         {
-            EntityUid torpedo = default;
             var query = entMan.EntityQueryEnumerator<Content.Shared._PS.ShipCombat.Components.ShipTorpedoComponent>();
             Assert.That(query.MoveNext(out torpedo, out var torpedoComp), Is.True, "A torpedo should exist.");
             Assert.That(torpedoComp.Target, Is.EqualTo(targetGrid));
@@ -707,10 +727,106 @@ public sealed class ShipWeaponsTest
 
             var velocity = entMan.GetComponent<PhysicsComponent>(torpedo).LinearVelocity;
             Assert.That(velocity.Length(), Is.GreaterThan(0.5f), "The torpedo should be moving.");
+            Assert.That(Math.Abs(velocity.ToWorldAngle().Degrees - 90d), Is.LessThan(10d),
+                "The torpedo must fly straight out of the launcher before steering.");
+            Assert.That(xform.GetWorldPosition(torpedo).X, Is.GreaterThan(3f),
+                "The torpedo must spawn in front of the launcher, not on top of the ship.");
+        });
 
-            // East is Angle.FromDegrees(90); steering south puts the heading well away from it.
+        // After the 2 s delay it starts turning towards the target.
+        await pair.RunTicksSync(180);
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(entMan.EntityExists(torpedo), Is.True, "The torpedo should still be in flight.");
+            var velocity = entMan.GetComponent<PhysicsComponent>(torpedo).LinearVelocity;
+
+            // East is Angle.FromDegrees(90); steering north puts the heading well away from it.
             Assert.That(Math.Abs(velocity.ToWorldAngle().Degrees - 90d), Is.GreaterThan(10d),
-                "The torpedo should steer towards the target.");
+                "The torpedo should steer towards the target after the delay.");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task TorpedoesLaunchForwardEvenWhenTheTargetIsBehind()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var mapSystem = server.System<SharedMapSystem>();
+        var mapMan = server.ResolveDependency<IMapManager>();
+        var xform = server.System<SharedTransformSystem>();
+
+        EntityUid console = default;
+        EntityUid grid = default;
+        EntityUid targetGrid = default;
+
+        await server.WaitPost(() =>
+        {
+            var gridEnt = mapMan.CreateGridEntity(testMap.MapId);
+            grid = gridEnt.Owner;
+            for (var x = 0; x < 3; x++)
+                mapSystem.SetTile(grid, gridEnt.Comp, new Vector2i(x, 0), new Tile(1));
+
+            ShipCombatTestHelpers.SpawnPoweredTransmitter(entMan, mapSystem, grid, new Vector2(0.5f, 0.5f));
+            console = entMan.SpawnEntity("ComputerTacticalConsole", new EntityCoordinates(grid, new Vector2(1.5f, 0.5f)));
+
+            // Launcher facing north (180 degrees in this angle convention), target to the south.
+            var launcher = entMan.SpawnEntity("ShipTorpedoLauncher", new EntityCoordinates(grid, new Vector2(2.5f, 0.5f)));
+            xform.SetLocalRotationNoLerp(launcher, Angle.FromDegrees(180));
+
+            var target = mapMan.CreateGridEntity(testMap.MapId);
+            targetGrid = target.Owner;
+            mapSystem.SetTile(targetGrid, target.Comp, new Vector2i(0, 0), new Tile(1));
+            xform.SetWorldPosition(targetGrid, new Vector2(0f, -40f));
+        });
+
+        await pair.RunTicksSync(10);
+
+        await server.WaitAssertion(() =>
+        {
+            var combat = server.System<ShipCombatSystem>();
+            var torpedoes = server.System<ShipTorpedoSystem>();
+            Assert.That(combat.TryGetShipCombat(grid, out var state), Is.True);
+            combat.SetCondition(state, ShipCondition.Yellow);
+            state.Comp.WeaponMode = ShipWeaponMode.All;
+            state.Comp.LockTarget = targetGrid;
+
+            Assert.That(torpedoes.TryLaunch(console), Is.True, "The launcher should fire.");
+        });
+
+        await pair.RunTicksSync(30);
+
+        EntityUid torpedo = default;
+
+        await server.WaitAssertion(() =>
+        {
+            var query = entMan.EntityQueryEnumerator<Content.Shared._PS.ShipCombat.Components.ShipTorpedoComponent>();
+            Assert.That(query.MoveNext(out torpedo, out _), Is.True,
+                "The torpedo must not detonate on its own ship.");
+
+            var velocity = entMan.GetComponent<PhysicsComponent>(torpedo).LinearVelocity;
+            Assert.That(velocity.Y, Is.GreaterThan(0f),
+                "A north-facing launcher must fire north even when the target is south.");
+            Assert.That(xform.GetWorldPosition(torpedo).Y, Is.GreaterThan(2f),
+                "The torpedo must spawn in front of the launcher, not on top of the ship.");
+        });
+
+        // The target is behind the seeker arc: the torpedo must give up rather than turn 180 into
+        // its own ship.
+        await pair.RunTicksSync(180);
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(entMan.EntityExists(torpedo), Is.True, "The torpedo should still be in flight.");
+            var torpedoComp = entMan.GetComponent<Content.Shared._PS.ShipCombat.Components.ShipTorpedoComponent>(torpedo);
+            Assert.That(torpedoComp.SteeringAbandoned, Is.True, "The torpedo should give up on a target behind it.");
+
+            var velocity = entMan.GetComponent<PhysicsComponent>(torpedo).LinearVelocity;
+            Assert.That(velocity.Y, Is.GreaterThan(0f), "The torpedo should keep flying forwards after giving up.");
         });
 
         await pair.CleanReturnAsync();
@@ -826,7 +942,7 @@ public sealed class ShipWeaponsTest
         for (var x = 0; x < 4; x++)
             mapSystem.SetTile(grid, gridEnt.Comp, new Vector2i(x, 0), new Tile(1));
 
-        entMan.SpawnEntity("BluespacePowerSink", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+        ShipCombatTestHelpers.SpawnPoweredTransmitter(entMan, mapSystem, grid, new Vector2(0.5f, 0.5f));
         var console = entMan.SpawnEntity("ComputerTacticalConsole", new EntityCoordinates(grid, new Vector2(1.5f, 0.5f)));
         var turret = entMan.SpawnEntity("ShipTurret", new EntityCoordinates(grid, new Vector2(2.5f, 0.5f)));
 
@@ -857,16 +973,16 @@ public sealed class ShipWeaponsTest
         return count;
     }
 
-    private static EntityUid FindSink(IEntityManager entMan, EntityUid grid)
+    private static PowerSupplierComponent FindSupplier(IEntityManager entMan, EntityUid grid)
     {
-        var query = entMan.EntityQueryEnumerator<BluespacePowerSinkComponent, TransformComponent>();
-        while (query.MoveNext(out var uid, out _, out var xform))
+        var query = entMan.EntityQueryEnumerator<PowerSupplierComponent, TransformComponent>();
+        while (query.MoveNext(out _, out var supplier, out var xform))
         {
             if (xform.GridUid == grid)
-                return uid;
+                return supplier;
         }
 
-        Assert.Fail("No power sink on the grid.");
-        return default;
+        Assert.Fail("No power supplier on the grid.");
+        return default!;
     }
 }

@@ -39,7 +39,7 @@ public sealed class ShipShieldTest
 
         await server.WaitPost(() =>
         {
-            (grid, _, _, wall) = CreateShieldedShip(entMan, mapSystem, mapMan, xform, testMap.MapId);
+            (grid, _, _, wall) = CreateShieldedShip(entMan, mapSystem, mapMan, testMap.MapId);
 
             // An attacker grid east of the ship.
             var attackerGrid = mapMan.CreateGridEntity(testMap.MapId);
@@ -90,7 +90,7 @@ public sealed class ShipShieldTest
 
         await server.WaitPost(() =>
         {
-            (grid, _, _, wall) = CreateShieldedShip(entMan, mapSystem, mapMan, xform, testMap.MapId);
+            (grid, _, _, wall) = CreateShieldedShip(entMan, mapSystem, mapMan, testMap.MapId);
 
             var attackerGrid = mapMan.CreateGridEntity(testMap.MapId);
             mapSystem.SetTile(attackerGrid.Owner, attackerGrid.Comp, new Vector2i(0, 0), new Tile(1));
@@ -136,7 +136,7 @@ public sealed class ShipShieldTest
 
         await server.WaitPost(() =>
         {
-            (grid, _, _, _) = CreateShieldedShip(entMan, mapSystem, mapMan, xform, testMap.MapId);
+            (grid, _, _, _) = CreateShieldedShip(entMan, mapSystem, mapMan, testMap.MapId);
         });
 
         await pair.RunTicksSync(10);
@@ -182,7 +182,7 @@ public sealed class ShipShieldTest
 
         await server.WaitPost(() =>
         {
-            (grid, _, _, _) = CreateShieldedShip(entMan, mapSystem, mapMan, xform, testMap.MapId);
+            (grid, _, _, _) = CreateShieldedShip(entMan, mapSystem, mapMan, testMap.MapId);
         });
 
         await pair.RunTicksSync(10);
@@ -234,7 +234,7 @@ public sealed class ShipShieldTest
 
         await server.WaitPost(() =>
         {
-            (grid, _, _, wall) = CreateShieldedShip(entMan, mapSystem, mapMan, xform, testMap.MapId);
+            (grid, _, _, wall) = CreateShieldedShip(entMan, mapSystem, mapMan, testMap.MapId);
 
             var attackerGrid = mapMan.CreateGridEntity(testMap.MapId);
             mapSystem.SetTile(attackerGrid.Owner, attackerGrid.Comp, new Vector2i(0, 0), new Tile(1));
@@ -282,7 +282,7 @@ public sealed class ShipShieldTest
 
         await server.WaitPost(() =>
         {
-            (grid, _, _, _) = CreateShieldedShip(entMan, mapSystem, mapMan, xform, testMap.MapId);
+            (grid, _, _, _) = CreateShieldedShip(entMan, mapSystem, mapMan, testMap.MapId);
         });
 
         await pair.RunTicksSync(10);
@@ -307,7 +307,6 @@ public sealed class ShipShieldTest
         IEntityManager entMan,
         SharedMapSystem mapSystem,
         IMapManager mapMan,
-        SharedTransformSystem xform,
         MapId mapId)
     {
         var grid = mapMan.CreateGridEntity(mapId);
@@ -315,7 +314,7 @@ public sealed class ShipShieldTest
         mapSystem.SetTile(grid.Owner, grid.Comp, new Vector2i(1, 0), new Tile(1));
         mapSystem.SetTile(grid.Owner, grid.Comp, new Vector2i(2, 0), new Tile(1));
 
-        var sink = entMan.SpawnEntity("BluespacePowerSink", new EntityCoordinates(grid.Owner, new Vector2(0.5f, 0.5f)));
+        var sink = ShipCombatTestHelpers.SpawnPoweredTransmitter(entMan, mapSystem, grid.Owner, new Vector2(0.5f, 0.5f));
         var generator = entMan.SpawnEntity("ShieldGenerator", new EntityCoordinates(grid.Owner, new Vector2(1.5f, 0.5f)));
         var wall = entMan.SpawnEntity("WallSolid", new EntityCoordinates(grid.Owner, new Vector2(2.5f, 0.5f)));
 

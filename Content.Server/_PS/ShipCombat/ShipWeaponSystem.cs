@@ -22,7 +22,6 @@ using Robust.Shared.Map.Components;
 using Robust.Shared.Physics;
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Physics.Systems;
-using Robust.Server.GameStates;
 using Robust.Shared.Random;
 using Robust.Shared.Timing;
 
@@ -49,6 +48,7 @@ public sealed class ShipWeaponSystem : EntitySystem
     };
 
     [Dependency] private readonly ShipCombatSystem _combat = default!;
+    [Dependency] private readonly ShipPowerSystem _power = default!;
     [Dependency] private readonly SharedGunSystem _gun = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
     [Dependency] private readonly TurfSystem _turf = default!;
@@ -58,7 +58,6 @@ public sealed class ShipWeaponSystem : EntitySystem
     [Dependency] private readonly SharedPhysicsSystem _physics = default!;
     [Dependency] private readonly SharedPopupSystem _popup = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!;
-    [Dependency] private readonly PvsOverrideSystem _pvs = default!;
     [Dependency] private readonly MobStateSystem _mobState = default!;
     [Dependency] private readonly IConfigurationManager _cfg = default!;
 
@@ -81,6 +80,7 @@ public sealed class ShipWeaponSystem : EntitySystem
         _sawmill = Logger.GetSawmill("shipcombat");
 
         SubscribeLocalEvent<ShipWeaponComponent, MapInitEvent>(OnMapInit);
+        SubscribeLocalEvent<ShipWeaponComponent, GunShotEvent>(OnGunShot);
         _cfg.OnValueChanged(PSCVars.ShipCombatTurretsShootThroughHull, OnShootThroughHullChanged, true);
     }
 
@@ -100,6 +100,22 @@ public sealed class ShipWeaponSystem : EntitySystem
     {
         _combat.TryEnsureShipCombat(uid, out _);
         component.BaseAngle = Transform(uid).LocalRotation;
+    }
+
+    /// <summary>
+    /// Charges the relay for each shot that actually fires: 2 kW per bolt, 4 kW per beam.
+    /// </summary>
+    private void OnGunShot(EntityUid uid, ShipWeaponComponent weapon, ref GunShotEvent args)
+    {
+        if (!TryComp<BluespacePoweredComponent>(uid, out var powered) || !powered.Powered)
+            return;
+
+        var cost = HasComp<HitscanBatteryAmmoProviderComponent>(uid)
+            ? _cfg.GetCVar(PSCVars.ShipCombatWeaponBeamPower)
+            : _cfg.GetCVar(PSCVars.ShipCombatWeaponBoltPower);
+
+        if (_combat.TryGetShipCombat(uid, out var combat))
+            _power.AddActionPowerDraw(combat.Owner, cost * 1000f);
     }
 
     public override void Update(float frameTime)
@@ -299,35 +315,9 @@ public sealed class ShipWeaponSystem : EntitySystem
 
         _gun.AttemptShoot(uid, uid, gun, to);
 
-        // Beams are instant: spawn a bright impact flash at whatever the shot hits, with a global PVS
-        // override so the ship being shot at sees where the beam landed even far outside PVS. (The
-        // vanilla hitscan line stays PVS-local.)
-        if (HasComp<HitscanBatteryAmmoProviderComponent>(uid))
-            SpawnBeamImpact(uid, xform, to);
-    }
-
-    /// <summary>
-    /// Spawns the map-wide beam impact flash at the first thing the shot hits.
-    /// </summary>
-    private void SpawnBeamImpact(EntityUid uid, TransformComponent xform, EntityCoordinates target)
-    {
-        var from = _transform.GetMapCoordinates(xform).Position;
-        var to = _transform.ToMapCoordinates(target).Position;
-        var delta = to - from;
-        var distance = delta.Length();
-        if (distance < 0.5f)
-            return;
-
-        var direction = delta / distance;
-        var mask = (int) (CollisionGroup.Impassable | CollisionGroup.BulletImpassable);
-        var ray = new CollisionRay(from, direction, mask);
-        foreach (var hit in _physics.IntersectRay(xform.MapID, ray, distance, uid, true))
-        {
-            var position = from + direction * hit.Distance;
-            var flash = Spawn("ShipBeamImpact", new MapCoordinates(position, xform.MapID));
-            _pvs.AddGlobalOverride(flash);
-            break;
-        }
+        // Beam visuals come from the hitscan event itself. The event is widened for ship weapons in
+        // Content.Server/Weapons/Ranged/Systems/GunSystem.FireEffects, so the target's client gets
+        // the whole beam and the impact flash instead of only a PVS-overridden leftover entity.
     }
 
     private static bool IsArmed(ShipWeaponMode mode, ShipWeaponComponent weapon, ShipWeaponMode? group)

@@ -5,7 +5,7 @@ namespace Content.Shared._PS.ShipCombat.Components;
 /// <summary>
 /// Palmtree: a ship weapon controlled by the tactical console (a turret or a stationary weapon).
 /// Weapons are grouped by the device-link sink port they are linked on (Primary/Secondary/Aux);
-/// they are powered remotely by the bluespace power sink.
+/// they are powered remotely by the Bluespace Power Relay.
 /// </summary>
 [RegisterComponent]
 public sealed partial class ShipWeaponComponent : Component

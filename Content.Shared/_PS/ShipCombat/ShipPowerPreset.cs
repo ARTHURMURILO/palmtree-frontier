@@ -8,10 +8,10 @@ namespace Content.Shared._PS.ShipCombat;
 [Serializable, NetSerializable]
 public enum ShipPowerPreset : byte
 {
-    /// <summary>Weapons 100, Shields 50, Thrusters 25, Auxiliary 25.</summary>
+    /// <summary>Weapons 120, Shields 15, Thrusters 15.</summary>
     Attack,
 
-    /// <summary>Shields 100, Weapons 50, Thrusters 25, Auxiliary 25.</summary>
+    /// <summary>Shields 120, Weapons 15, Thrusters 15.</summary>
     Defense,
 
     /// <summary>Every pool at its 50-point baseline.</summary>

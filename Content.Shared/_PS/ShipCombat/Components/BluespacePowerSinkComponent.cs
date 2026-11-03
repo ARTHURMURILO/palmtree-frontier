@@ -1,16 +1,24 @@
 namespace Content.Shared._PS.ShipCombat.Components;
 
 /// <summary>
-/// Palmtree: splits a ship's generator output between its power pools (shields, weapons, thrusters)
-/// and feeds whatever is left (the Auxiliary pool) back into the ship's power grid. The battery
-/// buffers the difference; when it runs dry everything browns out proportionally.
+/// Palmtree: the Bluespace Power Relay. It is a grid consumer that draws the combined demand of the
+/// ship's active power pools (shields, weapons, thrusters) and feeds those devices remotely. It has
+/// no battery and never supplies the ship's grid.
 /// </summary>
 [RegisterComponent]
 public sealed partial class BluespacePowerSinkComponent : Component
 {
     /// <summary>
-    /// The power budget the engineering console's sliders distribute, in watts.
+    /// Nominal rated draw, in watts. Shown in the examine text; the actual draw is the combined
+    /// demand of the ship's active devices.
     /// </summary>
     [DataField]
     public float RatedThroughput = 60000f;
+
+    /// <summary>
+    /// True when this relay is the one drawing for its grid (runtime). Extra relays are kept as
+    /// inactive backups.
+    /// </summary>
+    [ViewVariables]
+    public bool Active = true;
 }

@@ -1,12 +1,19 @@
+using Content.Server.NodeContainer.Nodes;
 using Content.Server.Power.Components;
 using Content.Server.Power.EntitySystems;
+using Content.Server.Power.NodeGroups;
+using Content.Server.Power.Nodes;
 using Content.Server.Shuttles.Components;
 using Content.Server.Shuttles.Systems;
 using Content.Shared.Construction.Components;
 using Content.Shared._PS.ShipCombat;
 using Content.Shared.Examine;
 using Content.Shared.NodeContainer;
+using Content.Shared._PS.CCVar;
 using Content.Shared._PS.ShipCombat.Components;
+using Robust.Shared.Configuration;
+using Robust.Shared.Map.Components;
+using Robust.Shared.Timing;
 
 namespace Content.Server._PS.ShipCombat;
 
@@ -14,11 +21,12 @@ namespace Content.Server._PS.ShipCombat;
 /// Palmtree: the ship's bluespace power budget.
 /// </summary>
 /// <remarks>
-/// The engineering console's four pools (Shields, Weapons, Thrusters, Auxiliary) are an STO-adapted
-/// 200-point budget: each pool is 15-125 and they sum to 200. This system distributes the sink's
-/// rated throughput across the pools, powers remote devices without wires, scales bluespace
-/// thrusters with the Thrusters pool and returns the Auxiliary share to the ship's power net. The
-/// sink's battery buffers the generator output; when it runs dry everything browns out proportionally.
+/// The engineering console's three pools (Shields, Weapons, Thrusters) are an STO-adapted 150-point
+/// budget: each pool is 15-125 and the active pools sum to 150. The Bluespace Power Relay is a grid
+/// consumer whose draw is the combined demand of the active pools; it powers the ship's weapons,
+/// shields and bluespace thrusters remotely. Shield generators draw a fixed 10 kW each plus 0.6 kW
+/// per regenerated hit point; weapons and torpedoes add transient per-shot draws. A grid brownout
+/// throttles every remote device, and the relay never feeds power back into the ship's grid.
 /// </remarks>
 public sealed class ShipPowerSystem : EntitySystem
 {
@@ -34,23 +42,17 @@ public sealed class ShipPowerSystem : EntitySystem
         ShipPowerPool.Shields,
         ShipPowerPool.Weapons,
         ShipPowerPool.Thrusters,
-        ShipPowerPool.Auxiliary,
     };
 
-    private static readonly ShipPowerPool[] DevicePools =
-    {
-        ShipPowerPool.Shields,
-        ShipPowerPool.Weapons,
-        ShipPowerPool.Thrusters,
-    };
-
-    [Dependency] private readonly BatterySystem _battery = default!;
+    [Dependency] private readonly IConfigurationManager _cfg = default!;
+    [Dependency] private readonly IGameTiming _timing = default!;
+    [Dependency] private readonly ShipCombatSystem _combat = default!;
     [Dependency] private readonly ThrusterSystem _thruster = default!;
 
     private ISawmill _sawmill = default!;
 
-    /// <summary>Sinks whose battery has been logged as depleted (runtime only).</summary>
-    private readonly HashSet<EntityUid> _depletedSinks = new();
+    /// <summary>Transmitters whose grid is currently too weak for the draw (runtime only).</summary>
+    private readonly HashSet<EntityUid> _brownoutSinks = new();
 
     public override void Initialize()
     {
@@ -60,6 +62,8 @@ public sealed class ShipPowerSystem : EntitySystem
 
         UpdatesAfter.Add(typeof(PowerNetSystem));
 
+        SubscribeLocalEvent<BluespacePowerSinkComponent, MapInitEvent>(OnSinkMapInit,
+            after: new[] { typeof(ThrusterSystem) });
         SubscribeLocalEvent<BluespacePowerSinkComponent, ExaminedEvent>(OnSinkExamined);
 
         // Thruster parts refresh after ThrusterSystem, so the captured value is the parts-scaled one.
@@ -76,26 +80,20 @@ public sealed class ShipPowerSystem : EntitySystem
         var query = EntityQueryEnumerator<ShipCombatComponent>();
         while (query.MoveNext(out var grid, out var combat))
         {
-            UpdateGrid(grid, combat, frameTime);
+            UpdateGrid(grid, combat);
         }
     }
 
     /// <summary>
-    /// The performance multiplier a pool gives its devices: 100% at the pool's rated point, less
-    /// when underpowered, more when overpowered. 0 when the pool cannot operate.
+    /// The performance multiplier a pool gives its devices: <c>pool / PoolTotal</c> (50 is one third,
+    /// 125 is five sixths). 0 when the pool cannot operate.
     /// </summary>
-    public static float GetPoolPerformance(ShipPowerPool pool, int value)
+    public static float GetPoolPerformance(int value)
     {
         if (value < MinOperatingPool)
             return 0f;
 
-        return pool switch
-        {
-            ShipPowerPool.Shields => value / 50f,
-            ShipPowerPool.Weapons => (value + 100f) / 200f,
-            ShipPowerPool.Thrusters => 1f + (value - 50f) * 0.01f,
-            _ => 1f,
-        };
+        return value / (float) PoolTotal;
     }
 
     public static int GetPool(ShipCombatComponent combat, ShipPowerPool pool)
@@ -105,7 +103,7 @@ public sealed class ShipPowerSystem : EntitySystem
             ShipPowerPool.Shields => combat.ShieldPower,
             ShipPowerPool.Weapons => combat.WeaponPower,
             ShipPowerPool.Thrusters => combat.ThrusterPower,
-            _ => combat.AuxiliaryPower,
+            _ => combat.ShieldPower,
         };
     }
 
@@ -121,11 +119,8 @@ public sealed class ShipPowerSystem : EntitySystem
             case ShipPowerPool.Weapons:
                 combat.WeaponPower = value;
                 break;
-            case ShipPowerPool.Thrusters:
-                combat.ThrusterPower = value;
-                break;
             default:
-                combat.AuxiliaryPower = value;
+                combat.ThrusterPower = value;
                 break;
         }
     }
@@ -137,7 +132,7 @@ public sealed class ShipPowerSystem : EntitySystem
             ShipPowerPool.Shields => combat.ShieldPowerLocked,
             ShipPowerPool.Weapons => combat.WeaponPowerLocked,
             ShipPowerPool.Thrusters => combat.ThrusterPowerLocked,
-            _ => combat.AuxiliaryPowerLocked,
+            _ => combat.ShieldPowerLocked,
         };
     }
 
@@ -151,36 +146,56 @@ public sealed class ShipPowerSystem : EntitySystem
             case ShipPowerPool.Weapons:
                 combat.WeaponPowerLocked = locked;
                 break;
-            case ShipPowerPool.Thrusters:
-                combat.ThrusterPowerLocked = locked;
-                break;
             default:
-                combat.AuxiliaryPowerLocked = locked;
+                combat.ThrusterPowerLocked = locked;
                 break;
         }
     }
 
+    /// <summary>True when the ship has devices in the pool, so its slider is usable.</summary>
+    public static bool IsPoolActive(ShipCombatComponent combat, ShipPowerPool pool)
+    {
+        return pool switch
+        {
+            ShipPowerPool.Shields => combat.ShieldPoolActive,
+            ShipPowerPool.Weapons => combat.WeaponPoolActive,
+            ShipPowerPool.Thrusters => combat.ThrusterPoolActive,
+            _ => false,
+        };
+    }
+
     /// <summary>
-    /// Adjusts one pool and moves the difference to the other unlocked pools proportionally, so the
-    /// four pools always sum to <see cref="PoolTotal"/>.
+    /// Adjusts one active pool and moves the difference to the other active, unlocked pools
+    /// proportionally. Inactive pools keep their value and are ignored.
     /// </summary>
     public void SetPool(Entity<ShipCombatComponent> combat, ShipPowerPool pool, int value)
     {
+        if (!IsPoolActive(combat.Comp, pool))
+            return;
+
         NormalizePools(combat.Comp);
 
         var others = new List<ShipPowerPool>();
         foreach (var other in AllPools)
         {
-            if (other == pool || IsPoolLocked(combat.Comp, other))
+            if (other == pool || !IsPoolActive(combat.Comp, other) || IsPoolLocked(combat.Comp, other))
                 continue;
 
             others.Add(other);
         }
 
         var current = GetPool(combat.Comp, pool);
-        var delta = Math.Clamp(value, PoolMin, PoolMax) - current;
-        if (delta == 0 || others.Count == 0)
+        var target = Math.Clamp(value, PoolMin, PoolMax);
+        var delta = target - current;
+        if (delta == 0)
             return;
+
+        // A ship with a single active pool has nothing to trade points with.
+        if (others.Count == 0)
+        {
+            SetPoolValue(combat.Comp, pool, target);
+            return;
+        }
 
         var othersTotal = 0f;
         foreach (var other in others)
@@ -214,46 +229,57 @@ public sealed class ShipPowerSystem : EntitySystem
     }
 
     /// <summary>
-    /// Applies a preset split. Presets override locked pools, like the presets in STO.
+    /// Applies a preset split. Presets only touch pools the ship actually has, so unavailable
+    /// sliders (and their devices' absent systems) stay where they are.
     /// </summary>
     public void ApplyPreset(Entity<ShipCombatComponent> combat, ShipPowerPreset preset)
     {
-        var (shields, weapons, thrusters, auxiliary) = preset switch
+        var (shields, weapons, thrusters) = preset switch
         {
-            ShipPowerPreset.Attack => (50, 100, 25, 25),
-            ShipPowerPreset.Defense => (100, 50, 25, 25),
-            _ => (50, 50, 50, 50),
+            ShipPowerPreset.Attack => (15, 120, 15),
+            ShipPowerPreset.Defense => (120, 15, 15),
+            _ => (50, 50, 50),
         };
 
-        SetPoolValue(combat.Comp, ShipPowerPool.Auxiliary, auxiliary);
-
-        // Presets only touch systems the ship actually has: unavailable sliders stay where they are.
         if (combat.Comp.ShieldPoolActive)
             SetPoolValue(combat.Comp, ShipPowerPool.Shields, shields);
         if (combat.Comp.WeaponPoolActive)
             SetPoolValue(combat.Comp, ShipPowerPool.Weapons, weapons);
         if (combat.Comp.ThrusterPoolActive)
             SetPoolValue(combat.Comp, ShipPowerPool.Thrusters, thrusters);
+
+        NormalizePools(combat.Comp);
     }
 
     /// <summary>
-    /// Clamps the pools into range and keeps their sum at <see cref="PoolTotal"/>.
+    /// Clamps every pool into range and keeps the active pools at <see cref="PoolTotal"/> when there
+    /// are at least two of them. Inactive pools keep their value and are not normalized.
     /// </summary>
     public void NormalizePools(ShipCombatComponent combat)
     {
+        var active = new List<ShipPowerPool>();
         var sum = 0;
+
         foreach (var pool in AllPools)
         {
             var value = Math.Clamp(GetPool(combat, pool), PoolMin, PoolMax);
             SetPoolValue(combat, pool, value);
+
+            if (!IsPoolActive(combat, pool))
+                continue;
+
+            active.Add(pool);
             sum += value;
         }
+
+        if (active.Count < 2)
+            return;
 
         var diff = PoolTotal - sum;
         while (diff != 0)
         {
             var changed = false;
-            foreach (var pool in AllPools)
+            foreach (var pool in active)
             {
                 var value = GetPool(combat, pool);
                 if (diff > 0 && value < PoolMax)
@@ -278,29 +304,53 @@ public sealed class ShipPowerSystem : EntitySystem
         }
     }
 
+    private void OnSinkMapInit(EntityUid uid, BluespacePowerSinkComponent component, MapInitEvent args)
+    {
+        _combat.TryEnsureShipCombat(uid, out _);
+    }
+
     /// <summary>
-    /// Explains the sink's wiring, charge and budget, and warns when its input and output share a
-    /// segment (which makes the sink self-charge and never feed the ship).
+    /// Explains the transmitter's current draw, rated draw and wiring, and warns when it is an
+    /// inactive backup.
     /// </summary>
     private void OnSinkExamined(EntityUid uid, BluespacePowerSinkComponent sink, ExaminedEvent args)
     {
         if (!args.IsInDetailsRange)
             return;
 
-        if (TryComp<BatteryComponent>(uid, out var battery))
+        TryComp<PowerConsumerComponent>(uid, out var consumer);
+
+        if (consumer != null)
         {
-            args.PushMarkup(Loc.GetString("bluespace-power-sink-examine-charge",
-                ("charge", MathF.Ceiling(battery.CurrentCharge / 1000f)),
-                ("max", MathF.Ceiling(battery.MaxCharge / 1000f))));
+            args.PushMarkup(Loc.GetString("bluespace-power-sink-examine-draw",
+                ("draw", MathF.Ceiling(consumer.DrawRate / 1000f))));
         }
 
         args.PushMarkup(Loc.GetString("bluespace-power-sink-examine-budget",
             ("throughput", sink.RatedThroughput / 1000f)));
 
+        if (consumer?.Net is { IsConnectedNetwork: true } net)
+        {
+            args.PushMarkup(Loc.GetString("bluespace-power-sink-examine-grid",
+                ("supply", MathF.Ceiling(net.NetworkNode.LastCombinedMaxSupply / 1000f)),
+                ("received", MathF.Ceiling(consumer.ReceivedPower / 1000f))));
+        }
+
         args.PushMarkup(Loc.GetString("bluespace-power-sink-examine-wiring"));
 
-        if (IsInputOutputSameNet(uid))
-            args.PushMarkup(Loc.GetString("bluespace-power-sink-examine-same-net"));
+        if (!sink.Active)
+        {
+            // Distinguish "a second transmitter is the active one" from "this one was never wired
+            // to a proper net": both used to read as standby, which hid wiring mistakes.
+            if (consumer?.Net is { IsConnectedNetwork: true })
+                args.PushMarkup(Loc.GetString("bluespace-power-sink-examine-standby"));
+            else
+                args.PushMarkup(Loc.GetString("bluespace-power-sink-examine-unconnected"));
+        }
+        else if (consumer != null && consumer.DrawRate > 0f && consumer.ReceivedPower <= 0.1f)
+        {
+            args.PushMarkup(Loc.GetString("bluespace-power-sink-examine-nopower"));
+        }
     }
 
     /// <summary>
@@ -318,98 +368,172 @@ public sealed class ShipPowerSystem : EntitySystem
         return false;
     }
 
-    private bool IsInputOutputSameNet(EntityUid uid)
+    /// <summary>
+    /// Attaches the transmitter's consumer to the HV cable on its own tile. This is also the fallback
+    /// for ships saved with an older transmitter node type.
+    /// </summary>
+    private void EnsureCableUnderNet(EntityUid uid, PowerConsumerComponent consumer, EntityUid grid)
     {
-        if (!TryComp<NodeContainerComponent>(uid, out var container))
-            return false;
+        if (!TryComp<MapGridComponent>(grid, out var gridComp))
+            return;
 
-        if (!container.Nodes.TryGetValue("input", out var input)
-            || !container.Nodes.TryGetValue("output", out var output))
-            return false;
+        var xform = Transform(uid);
+        if (!xform.Anchored)
+            return;
 
-        return input.NodeGroup != null && ReferenceEquals(input.NodeGroup, output.NodeGroup);
+        var tile = gridComp.TileIndicesFor(xform.Coordinates);
+        var nodeQuery = GetEntityQuery<NodeContainerComponent>();
+
+        foreach (var cableUid in gridComp.GetAnchoredEntities(tile))
+        {
+            if (!nodeQuery.TryGetComponent(cableUid, out var container))
+                continue;
+
+            foreach (var node in container.Nodes.Values)
+            {
+                if (node is not CableNode { NodeGroup: IBasePowerNet net } || !net.IsConnectedNetwork)
+                    continue;
+
+                if (!ReferenceEquals(consumer.Net, net))
+                    consumer.Net = net;
+
+                return;
+            }
+        }
     }
 
-    private static void SetPools(ShipCombatComponent combat, int shields, int weapons, int thrusters, int auxiliary)    {
-        combat.ShieldPower = shields;
-        combat.WeaponPower = weapons;
-        combat.ThrusterPower = thrusters;
-        combat.AuxiliaryPower = auxiliary;
+    /// <summary>
+    /// Picks the transmitter that draws for the grid. Extra transmitters stay as inactive backups:
+    /// the first one on a connected, supplied power net wins, otherwise the first connected one.
+    /// </summary>
+    private static EntityUid? SelectTransmitter(
+        List<(EntityUid Uid, BluespacePowerSinkComponent Sink, PowerConsumerComponent Consumer)> sinks)
+    {
+        sinks.Sort((a, b) => a.Uid.CompareTo(b.Uid));
+
+        EntityUid? fallback = null;
+        foreach (var (uid, _, consumer) in sinks)
+        {
+            if (consumer.Net is not { IsConnectedNetwork: true } net)
+                continue;
+
+            fallback ??= uid;
+            if (net.NetworkNode.LastCombinedMaxSupply > 0f)
+                return uid;
+        }
+
+        return fallback;
     }
 
-    private void UpdateGrid(EntityUid grid, ShipCombatComponent combat, float frameTime)
+    private void UpdateGrid(EntityUid grid, ShipCombatComponent combat)
     {
-        // The sinks on this grid: their rated throughput is the power budget.
-        var sinks = new List<(EntityUid Uid, BluespacePowerSinkComponent Sink, BatteryComponent Battery)>();
-        var throughput = 0f;
+        // Which pools the ship actually has. Recomputed every tick so refitted ships adjust.
+        combat.ShieldPoolActive = HasDevice<ShieldGeneratorComponent>(grid);
+        combat.WeaponPoolActive = HasDevice<ShipWeaponComponent>(grid) || HasDevice<ShipTorpedoLauncherComponent>(grid);
+        combat.ThrusterPoolActive = HasDevice<BluespaceThrusterComponent>(grid);
 
-        var sinkQuery = EntityQueryEnumerator<BluespacePowerSinkComponent, BatteryComponent, TransformComponent>();
-        while (sinkQuery.MoveNext(out var sinkUid, out var sink, out var battery, out var sinkXform))
+        NormalizePools(combat);
+
+        // Transmitters on this grid, and the remote devices they feed.
+        var sinks = new List<(EntityUid Uid, BluespacePowerSinkComponent Sink, PowerConsumerComponent Consumer)>();
+        var sinkQuery = EntityQueryEnumerator<BluespacePowerSinkComponent, PowerConsumerComponent, TransformComponent>();
+        while (sinkQuery.MoveNext(out var sinkUid, out var sink, out var consumer, out var sinkXform))
         {
             if (sinkXform.GridUid != grid)
                 continue;
 
-            sinks.Add((sinkUid, sink, battery));
-            throughput += sink.RatedThroughput;
+            // The transmitter is meant to be wired with an HV cable under it. Re-attach the consumer
+            // to that cable's net explicitly so ships saved before the input-node change still work.
+            EnsureCableUnderNet(sinkUid, consumer, grid);
+            sinks.Add((sinkUid, sink, consumer));
         }
 
-        // The remote devices on this grid.
         var devices = new List<(EntityUid Uid, BluespacePoweredComponent Powered, ApcPowerReceiverComponent Receiver)>();
         var deviceQuery = EntityQueryEnumerator<BluespacePoweredComponent, ApcPowerReceiverComponent, TransformComponent>();
         while (deviceQuery.MoveNext(out var deviceUid, out var powered, out var receiver, out var deviceXform))
         {
-            if (deviceXform.GridUid != grid)
-                continue;
-
-            devices.Add((deviceUid, powered, receiver));
+            if (deviceXform.GridUid == grid)
+                devices.Add((deviceUid, powered, receiver));
         }
 
-        if (sinks.Count == 0 || throughput <= 0f)
-        {
-            foreach (var (uid, powered, receiver) in devices)
-                SetDevicePower(uid, powered, receiver, 0f);
+        // Performance and power demand per pool.
+        var performance = new float[AllPools.Length];
+        var demand = new float[AllPools.Length];
+        foreach (var pool in AllPools)
+            performance[(int) pool] = GetPoolPerformance(GetPool(combat, pool));
 
-            return;
-        }
+        var shieldMaintenancePower = _cfg.GetCVar(PSCVars.ShipCombatShieldMaintenancePower) * 1000f;
 
-        NormalizePools(combat);
-
-        // Performance and demand per pool.
-        var performance = new float[4];
-        var demand = new float[4];
-        foreach (var pool in DevicePools)
-        {
-            performance[(int) pool] = GetPoolPerformance(pool, GetPool(combat, pool));
-        }
-
-        foreach (var (_, powered, _) in devices)
+        foreach (var (uid, powered, _) in devices)
         {
             var poolPerformance = performance[(int) powered.Pool];
             if (poolPerformance <= 0f)
                 continue;
 
-            demand[(int) powered.Pool] += powered.RatedPower * poolPerformance;
+            // Shield maintenance is a fixed per-generator draw; rated draw scales with pool
+            // performance (thrusters). Weapons use transient per-shot costs instead of either.
+            var passive = HasComp<ShieldGeneratorComponent>(uid) ? shieldMaintenancePower : 0f;
+            demand[(int) powered.Pool] += passive + powered.RatedPower * poolPerformance;
         }
 
-        // Each pool's share of the budget, limited to what its devices actually need.
-        var allocation = new float[4];
-        var totalDraw = 0f;
-        foreach (var pool in DevicePools)
+        // Shield regeneration is charged as a fixed draw until the next regeneration pulse.
+        if (performance[(int) ShipPowerPool.Shields] > 0f)
+            demand[(int) ShipPowerPool.Shields] += combat.ShieldRegenPowerDraw;
+
+        var actionDraw = _timing.CurTime < combat.ActionPowerDrawUntil ? combat.ActionPowerDraw : 0f;
+        if (actionDraw <= 0f)
+            combat.ActionPowerDraw = 0f;
+
+        var totalDraw = actionDraw;
+        foreach (var pool in AllPools)
+            totalDraw += demand[(int) pool];
+
+        // Exactly one transmitter draws for the ship; the rest are inactive backups.
+        var activeUid = SelectTransmitter(sinks);
+        var activeConsumer = default(PowerConsumerComponent);
+        foreach (var (uid, sink, consumer) in sinks)
         {
-            var share = GetPool(combat, pool) / (float) PoolTotal * throughput;
-            allocation[(int) pool] = MathF.Min(share, demand[(int) pool]);
-            totalDraw += allocation[(int) pool];
+            sink.Active = uid == activeUid;
+            consumer.DrawRate = sink.Active ? totalDraw : 0f;
+
+            if (sink.Active)
+                activeConsumer = consumer;
         }
 
-        // The battery has to cover this tick's draw.
-        var charge = 0f;
-        foreach (var (_, _, battery) in sinks)
-            charge += battery.CurrentCharge;
+        // Grid brownout: the transmitter only gets part of what it asked for, so every remote
+        // device throttles by the same ratio. With no current draw there is nothing to brown out;
+        // keep the devices powered so a weapons-only ship can fire its first shot.
+        var supply = 0f;
+        if (activeUid != null)
+        {
+            if (totalDraw > 0f && activeConsumer != null)
+            {
+                var load = activeConsumer.NetworkLoad;
+                supply = Math.Clamp(load.ReceivingPower / totalDraw, 0f, 1f);
+            }
+            else
+            {
+                // Nothing is drawing, but the devices still need a live grid before they can fire.
+                supply = activeConsumer?.Net is { IsConnectedNetwork: true } net
+                         && net.NetworkNode.LastCombinedMaxSupply > 0f
+                    ? 1f
+                    : 0f;
+            }
+        }
 
-        var availableThisTick = frameTime > 0f ? charge / frameTime : 0f;
-        var brownout = totalDraw > 0f ? Math.Clamp(availableThisTick / totalDraw, 0f, 1f) : 1f;
+        if (activeUid is { } active)
+        {
+            if (totalDraw > 0f && supply < 0.999f)
+            {
+                if (_brownoutSinks.Add(active))
+                    _sawmill.Info($"{ToPrettyString(active)} is under-supplied: the ship's grid cannot cover the transmitter's draw");
+            }
+            else
+            {
+                _brownoutSinks.Remove(active);
+            }
+        }
 
-        var used = 0f;
         foreach (var (uid, powered, receiver) in devices)
         {
             var poolPerformance = performance[(int) powered.Pool];
@@ -419,80 +543,22 @@ public sealed class ShipPowerSystem : EntitySystem
                 continue;
             }
 
-            var supply = brownout;
-            var poolDemand = demand[(int) powered.Pool];
-            if (poolDemand > 0f)
-                supply *= MathF.Min(1f, allocation[(int) powered.Pool] / poolDemand);
-
-            var effective = poolPerformance * supply;
-            SetDevicePower(uid, powered, receiver, effective);
-            used += powered.RatedPower * effective * frameTime;
+            SetDevicePower(uid, powered, receiver, poolPerformance * supply);
         }
+    }
 
-        DrainBatteries(sinks, used);
+    /// <summary>
+    /// Adds a transient relay draw for a weapon shot or torpedo launch. The draw lasts
+    /// <c>ps.ship_combat.action_power_duration_seconds</c> from the last event.
+    /// </summary>
+    public void AddActionPowerDraw(EntityUid grid, float watts)
+    {
+        if (watts <= 0f || !TryComp<ShipCombatComponent>(grid, out var combat))
+            return;
 
-        // Whatever the Auxiliary pool holds is fed back to the ship's power net by the sink's
-        // PowerSupplier, limited to what the battery can actually cover this tick (brownout).
-        // Pools with no devices on the ship feed the grid instead of being reserved: a ship without
-        // shields or bluespace thrusters gets that share as auxiliary power.
-        combat.ShieldPoolActive = HasDevice<ShieldGeneratorComponent>(grid);
-        combat.WeaponPoolActive = HasDevice<ShipWeaponComponent>(grid) || HasDevice<ShipTorpedoLauncherComponent>(grid);
-        combat.ThrusterPoolActive = HasDevice<BluespaceThrusterComponent>(grid);
-
-        // If the engineering console is unpowered, fall back to an auxiliary-heavy distribution so
-        // the ship's grid gets what the sink can give.
-        var consoleUnpowered = false;
-        var consoles = EntityQueryEnumerator<ShipShieldingConsoleComponent, ApcPowerReceiverComponent, TransformComponent>();
-        while (consoles.MoveNext(out _, out _, out var consoleReceiver, out var consoleXform))
-        {
-            if (consoleXform.GridUid == grid && !consoleReceiver.Powered)
-                consoleUnpowered = true;
-        }
-
-        if (consoleUnpowered && !combat.EmergencyAuxSet)
-        {
-            combat.EmergencyAuxSet = true;
-            SetPool((grid, combat), ShipPowerPool.Auxiliary, ShipPowerConstants.PoolMax);
-        }
-        else if (!consoleUnpowered)
-        {
-            combat.EmergencyAuxSet = false;
-        }
-
-        var auxPoints = GetPool(combat, ShipPowerPool.Auxiliary);
-        if (!combat.ShieldPoolActive)
-            auxPoints += GetPool(combat, ShipPowerPool.Shields);
-        if (!combat.WeaponPoolActive)
-            auxPoints += GetPool(combat, ShipPowerPool.Weapons);
-        if (!combat.ThrusterPoolActive)
-            auxPoints += GetPool(combat, ShipPowerPool.Thrusters);
-
-        var auxShare = auxPoints / (float) PoolTotal;
-        var auxUsed = 0f;
-        foreach (var (sinkUid, sink, battery) in sinks)
-        {
-            if (!TryComp<PowerSupplierComponent>(sinkUid, out var supplier))
-                continue;
-
-            var share = auxShare * sink.RatedThroughput;
-            var available = frameTime > 0f ? battery.CurrentCharge / frameTime : 0f;
-            supplier.MaxSupply = MathF.Min(share, available);
-
-            if (available < share)
-            {
-                if (_depletedSinks.Add(sinkUid))
-                    _sawmill.Info($"{ToPrettyString(sinkUid)} battery depleted: the ship's grid is power-limited");
-            }
-            else
-            {
-                _depletedSinks.Remove(sinkUid);
-            }
-
-            // The energy the grid actually drew from the sink this tick.
-            auxUsed += supplier.CurrentSupply * frameTime;
-        }
-
-        DrainBatteries(sinks, auxUsed);
+        var duration = MathF.Max(0f, _cfg.GetCVar(PSCVars.ShipCombatActionPowerDuration));
+        combat.ActionPowerDraw += watts;
+        combat.ActionPowerDrawUntil = _timing.CurTime + TimeSpan.FromSeconds(duration);
     }
 
     /// <summary>
@@ -522,27 +588,6 @@ public sealed class ShipPowerSystem : EntitySystem
             bluespace.PartsThrust = thruster.Thrust;
 
         _thruster.SetThrust(uid, thruster, bluespace.PartsThrust * performance);
-    }
-
-    private void DrainBatteries(
-        List<(EntityUid Uid, BluespacePowerSinkComponent Sink, BatteryComponent Battery)> sinks,
-        float joules)
-    {
-        if (joules <= 0f)
-            return;
-
-        var charge = 0f;
-        foreach (var (_, _, battery) in sinks)
-            charge += battery.CurrentCharge;
-
-        if (charge <= 0f)
-            return;
-
-        foreach (var (uid, _, battery) in sinks)
-        {
-            var share = battery.CurrentCharge / charge;
-            _battery.TryUseCharge(uid, joules * share, battery);
-        }
     }
 
     private void OnThrusterMapInit(EntityUid uid, BluespaceThrusterComponent component, MapInitEvent args)

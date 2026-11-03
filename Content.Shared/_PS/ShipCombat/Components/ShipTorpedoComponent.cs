@@ -15,13 +15,20 @@ public sealed partial class ShipTorpedoComponent : Component
     [DataField]
     public float TurnRate = 20f;
 
-    /// <summary>Steering stays off for this long after launch (photon torpedoes).</summary>
+    /// <summary>Steering stays off for this long after launch; the torpedo flies straight ahead.</summary>
     [DataField]
-    public TimeSpan SteeringDelay = TimeSpan.Zero;
+    public TimeSpan SteeringDelay = TimeSpan.FromSeconds(2);
 
     /// <summary>Steering ramps from zero to full over this time after the delay.</summary>
     [DataField]
     public TimeSpan SteeringRamp = TimeSpan.Zero;
+
+    /// <summary>
+    /// The torpedo gives up and flies straight when the target is further than this many degrees off
+    /// its current heading. Photon torpedoes have a wider seeker arc.
+    /// </summary>
+    [DataField]
+    public float MaxSteeringAngle = 90f;
 
     /// <summary>Distance at which the incoming-torpedo alarm starts, in tiles.</summary>
     [DataField]
@@ -49,6 +56,9 @@ public sealed partial class ShipTorpedoComponent : Component
 
     /// <summary>True once the torpedo has actually detonated (runtime).</summary>
     public bool Detonated;
+
+    /// <summary>True when the target left the seeker arc and the torpedo gave up steering (runtime).</summary>
+    public bool SteeringAbandoned;
 
     /// <summary>Last tick's world position, for contact raycasts (runtime).</summary>
     public System.Numerics.Vector2? LastPosition;

@@ -17,7 +17,7 @@ public sealed class SetShipPowerCommand : IConsoleCommand
     [Dependency] private readonly IEntityManager _entMan = default!;
 
     public string Command => "setshippower";
-    public string Description => "Sets a ship power pool (Shields/Weapons/Thrusters/Auxiliary) on the grid you are standing on.";
+    public string Description => "Sets a ship power pool (Shields/Weapons/Thrusters) on the grid you are standing on.";
     public string Help => $"{Command} <pool> <15-125>";
 
     public void Execute(IConsoleShell shell, string argStr, string[] args)
@@ -36,7 +36,7 @@ public sealed class SetShipPowerCommand : IConsoleCommand
 
         if (!Enum.TryParse<ShipPowerPool>(args[0], ignoreCase: true, out var pool))
         {
-            shell.WriteError($"Unknown pool '{args[0]}'. Pools: Shields, Weapons, Thrusters, Auxiliary.");
+            shell.WriteError($"Unknown pool '{args[0]}'. Pools: Shields, Weapons, Thrusters.");
             return;
         }
 
@@ -49,13 +49,13 @@ public sealed class SetShipPowerCommand : IConsoleCommand
         var combat = _entMan.System<ShipCombatSystem>();
         if (!combat.TryGetShipCombat(player, out var state))
         {
-            shell.WriteError("The grid you are on has no ship combat state (place a tactical console or a bluespace power sink first).");
+            shell.WriteError("The grid you are on has no ship combat state (place a tactical console or a Bluespace Power Relay first).");
             return;
         }
 
         _entMan.System<ShipPowerSystem>().SetPool(state, pool, value);
         shell.WriteLine($"Set {pool} to {ShipPowerSystem.GetPool(state.Comp, pool)} " +
                         $"(Shields {state.Comp.ShieldPower}, Weapons {state.Comp.WeaponPower}, " +
-                        $"Thrusters {state.Comp.ThrusterPower}, Auxiliary {state.Comp.AuxiliaryPower}).");
+                        $"Thrusters {state.Comp.ThrusterPower}).");
     }
 }

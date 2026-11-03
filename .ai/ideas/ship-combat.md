@@ -21,13 +21,13 @@ alarms and Condition Sirens, plus the `PSShipCombat` research line.
 | Damage reaction | Automatic condition (and retaliation) trigger on `BeforeDamageChangedEvent`, so being attacked raises the alert even when armour absorbs the whole hit. |
 | Guns | Device-link sink ports `Primary`/`Secondary`/`Aux`. `Automatic Fire` checkbox (default off) fires the selected group at the lock; `MANUAL FIRE` fires the selected group once. Both require a lock and are disabled on MASTER SAFE/GREEN. |
 | Torpedoes | Separate `FIRE TORPEDOES` button below manual fire; always manual (event API left open for future AI ships). Unlimited ammo, per-launcher cooldown, ripple fire. Requires a lock. Launchers are never in auto-fire groups. |
-| Power model | STO-adapted: a fixed 200-point pool across Shields/Weapons/Thrusters/Aux, each settable 15–125, sum always 200, baseline 50, `|` marker at 100, defaults 50/50/50/50. Raising one pool lowers the others proportionally; per-pool locks and Attack/Defense/Balanced presets. Budget = the sink's rated throughput (upgradeable via `PowerCell` parts); the battery buffers and everything browns out proportionally when the battery is empty and intake is short. |
-| Power effects | Weapons damage `(p+100)/200` (torpedoes unaffected, STO rule); shields regen pulse ×`p/50` and hardness 0.2%/pt damage negation; thrusters thrust `1 + (p−50)×1%`; Aux shares `p/200` of throughput to the ship's grid. Offline below 25 points with the `(!)` alert. |
+| Power model | STO-adapted: a fixed 150-point pool across Shields/Weapons/Thrusters, each settable 15–125, the active pools sum to 150, baseline 50, `|` marker at 100, defaults 50/50/50. Raising one pool lowers the others proportionally; per-pool locks and Attack/Defense/Balanced presets (Attack 120/15/15, Defense 120 shields, Balanced 50/50/50). The **Bluespace Power Relay** is a pure `PowerConsumer`: its draw is the combined demand of the active pools, the ship's grid must cover its normal loads **plus** that draw, and it never feeds power back into the grid. Extra relays are inactive backups; only one is active per grid. Inactive pools keep their value and are not normalized. |
+| Power effects | Performance = `pool / 150` (50 → one third, 125 → five sixths), multiplied by the grid supply ratio (brownout throttles everything). Weapons damage scales with performance (torpedoes unaffected); shields regen pulse ×performance and hardness 0.2%/pt damage negation; thrusters thrust = parts thrust × performance. Offline below 25 points with the `(!)` alert. |
 | Shields | 4 facings. `Up` absorbs while charge > 0; at 0 → `Down` (no absorption from that side); re-arms above 20% of max (restored beep `input_ok_1_clean.ogg`). Regen pulse every 6 s adds `ratedRegen × (p/50)` to **each** facing (STO). Arrows = instant energy redistribution: click a facing to drain the other three into it (up to cap), `ALL` evens out; 10 s cooldown. Placeholder blue hit effect. |
 | Alarms | `damagealarm2.ogg` one-shot when a facing collapses (2 s cooldown between collapses); `damagealarm.ogg` on the transition that takes all facings down; every shielding console plays them. `critical.ogg` every 5 s on every tactical console while condition ∈ {YELLOW, RED} and the grid has no powered/intact ship weapon. `consolewarning.ogg` on being locked; `processing*.ogg` during lock; `computerbeep_35.ogg` clear lock; `denybeep1.ogg` denied lock; `computerbeep_71/72.ogg` contacts entering/leaving range (2 s cooldown, only grids **with a shuttle console** count as ships; asteroids/wrecks do not beep but stay lockable). Every console sound plays at the console and is audible to anyone nearby, whether or not the window is open. `alert14/19/18.ogg` torpedo alarms (alert14 one-shot on detection <800; alert19 loops 800→200; alert18, the fast beep, loops <200). |
 | Condition Sirens | Powered strobe-light variants (strong rotating red light + looping ambient). Each variant is tied to one condition and stays off otherwise; unpowered sirens stay off. Suffix naming: `[YELLOW]` (`alert09.ogg`), `[RED, TOS]` (`alert10.ogg`), `[RED, VOYAGER]` (`voy_redalert.ogg`), `[RED, TNG]` (`tng_red_alert1.ogg`), `[RED, DEEP]` (`alertklaxon_clean2.ogg`). Constructible and in the tech tree (M10). |
 | Battle light | A `Poweredlight` variant that switches itself off at RED and back on at YELLOW or GREEN, so ships can black out for battle stations. |
-| Display names | The shielding console is displayed as the **engineering console** (no other engineering console exists, so the tactical console keeps its name) and the bluespace power sink as the **bluespace power bypass**. Prototype ids are unchanged for bluespace dock save compatibility. |
+| Display names | The shielding console is displayed as the **engineering console** (no other engineering console exists, so the tactical console keeps its name) and the bluespace power sink as the **Bluespace Power Relay**. Prototype ids are unchanged for bluespace dock save compatibility. |
 | Research | New `PSShipCombat` tech discipline + nodes, machine/computer boards and lathe recipes for every new machine. |
 | Assets | Console rsi copied from `_NF` blackmarket shipyard states (tactical plain, shielding tinted yellow); torpedo = copied `_NF` `frag-emp`; photon = red tesla sprite + `SingularityDistortionComponent`; launch sound `tng_torpedo_clean.ogg`. |
 
@@ -43,9 +43,9 @@ Content.Client/_PS/ShipCombat/     TacticalConsoleWindow, ShieldingConsoleWindow
 
 `ShipCombatComponent` lives on the **grid** entity and is ensured by any ship-combat device
 (idempotent `ShipCombatSystem.TryEnsureShipCombat`). Saved fields: condition, weapon mode,
-auto-fire/condition/retaliation, the four power pools and their locks. Runtime-only (never
+auto-fire/condition/retaliation, the three power pools and their locks. Runtime-only (never
 serialized): lock target/progress, incoming locks, contacts, inbound torpedoes, shield facing
-HP/states, redistribution cooldown.
+HP/states, redistribution cooldown, active-pool flags and transmitter leadership.
 
 ### Core data (final field list, filled in as milestones land)
 
@@ -68,30 +68,46 @@ event-driven so a future AI brain can raise the same events without a console
 
 ## Power model (STO adaptation)
 
-| Pool | Range | Baseline | `|` | Effect per point |
+| Pool | Range | Baseline | `|` | Performance |
 |---|---|---|---|---|
-| Weapons | 15–125 | 50 | 100 | damage `(p+100)/200`; torpedoes unaffected |
-| Shields | 15–125 | 50 | 100 | regen pulse ×`p/50`; hardness +0.2% damage negation |
-| Thrusters | 15–125 | 50 | 100 | thrust `1 + (p−50)×1%` (STO uses ±2%) |
-| Auxiliary | 15–125 | 50 | 100 | `p/200` of sink throughput feeds the ship's power net |
+| Weapons | 15–125 | 50 | 100 | `p/150` damage multiplier; torpedoes unaffected |
+| Shields | 15–125 | 50 | 100 | `p/150` regen multiplier; hardness +0.2% damage negation |
+| Thrusters | 15–125 | 50 | 100 | `p/150` thrust multiplier |
 
-- Sum is always 200; raising one pool lowers the others proportionally; locks pin a pool; presets
-  Attack (100/50/25/25), Defense (50/100/25/25), Balanced (50/50/50/50). Presets override locks.
-- Sink = SMES-like machine (input node from the generators, output node to the ship grid; must be
-  anchored). Rated throughput is the budget (100 kW placeholder); the battery buffers. When the
-  battery is empty and intake is short, all effective outputs scale by `available/allocated`
-  (brownout). The Auxiliary share (`aux/200 × throughput`) is fed back to the grid by the sink's
-  **`PowerSupplier`** (the output side is deliberately *not* a `BatteryDischarger`: a battery
-  endpoint on both sides can form charger/discharger loops with other batteries, which trips the
-  power solver's DEBUG-only network-height assertion and crashes the server). The system drains the
-  battery by the energy the grid actually drew.
-- Remote devices (bluespace thrusters, later weapons/shields) carry `BluespacePoweredComponent`
+- The active pools sum to 150; raising one lowers the others proportionally; locks pin a pool.
+  Presets Attack (Weapons 120 / Shields 15 / Thrusters 15), Defense (Shields 120 / Weapons 15 /
+  Thrusters 15), Balanced (50/50/50). Presets skip pools with no devices and do not move their
+  sliders. An inactive pool keeps its value and is not normalized.
+- **Bluespace Power Relay** (`BluespacePowerSink` prototype id kept): a `PowerConsumer` on the
+  ship's grid with no battery and no `PowerSupplier`. Every tick `ShipPowerSystem` computes each
+  active pool's demand as `Σ devices: RatedPower × poolPerformance`, sets one relay's `DrawRate` to
+  the combined demand (extra relays are inactive backups), and reads the grid's supply ratio from
+  `NetworkLoad.ReceivingPower / DesiredPower`. Device performance is
+  `poolPerformance × supplyRatio`, so a grid brownout throttles every remote device. A relay with no
+  connected grid (or no received power) leaves all remote devices unpowered.
+- Relay load sources (all tunable by CVar):
+  - **Shield generators:** a fixed **10 kW** maintenance draw each while powered
+    (`ps.ship_combat.shield_maintenance_power_kw`), plus **0.6 kW per shield hit point restored** by
+    the last regeneration pulse (`ps.ship_combat.shield_regen_power_per_hp_kw`, kept as a draw until
+    the next pulse). This is the large, bursty load that forces ships to keep SMES on the grid as
+    capacitors.
+  - **Weapons:** no passive draw. Each shot adds a transient draw of **2 kW per bolt**
+    (`ps.ship_combat.weapon_bolt_power_kw`) or **4 kW per beam**
+    (`ps.ship_combat.weapon_beam_power_kw`).
+  - **Torpedo launchers:** no passive draw. Each launched torpedo adds a transient **20 kW** draw
+    (`ps.ship_combat.torpedo_launch_power_kw`).
+  - **Bluespace thrusters:** `RatedPower × poolPerformance` as before.
+  - Transient weapon/torpedo draws last `ps.ship_combat.action_power_duration_seconds` (default 1 s).
+- The ship's grid always carries the relay's draw: normal generators must cover the ship's own loads
+  **plus** the relay. Three RTGs sustain a weapons-only ship at 50/50/50, but shields need SMES
+  buffering.
+- Remote devices (bluespace thrusters, weapons/shields) carry `BluespacePoweredComponent`
   (pool + rated power) and `ApcPowerReceiverComponent { needsPower: false }`; `ShipPowerSystem`
   toggles `PowerDisabled` + performance each tick. Thrusters additionally scale their thrust via
   `ThrusterSystem.SetThrust` (fork method) and keep their parts thrust in
   `BluespaceThrusterComponent.PartsThrust` (saved, captured on MapInit/parts refresh).
 - Offline below 25 points (shields/weapons/thrusters), `(!)` alerts per the original request
-  (shields below minimum, any weapon unpowered, no/underpowered bluespace thrusters, aux at risk).
+  (shields below minimum, any weapon unpowered, no/underpowered bluespace thrusters).
 
 ## Shields
 
@@ -125,12 +141,14 @@ dropdown (MASTER SAFE / ALL WEAPONS / PRIMARY / SECONDARY / AUX), `FIRE`, `FIRE 
 
 **Shielding (engineering) console** — same radar view, dark yellow window (placeholder yellow tint
 on the console sprite). Right panel: condition display + dropdown with confirmation, the facing
-arrow grid (`^ < ALL > v` plus a redistribution cooldown line), per-facing charge readouts, four
+arrow grid (`^ < ALL > v` plus a redistribution cooldown line), per-facing charge readouts, three
 15–125 sliders with the `|` marker at 100, per-pool lock checkboxes, Attack/Defense/Balanced preset
 buttons and bold red `/!\` alerts (shields below minimum or an unpowered generator, any unpowered
-weapon, no/underpowered bluespace thrusters, Auxiliary below minimum).
+weapon, no/underpowered bluespace thrusters).
 
-Both consoles are machines with parts (tactical lock speed uses `Capacitor`).
+Both consoles are machines with parts (tactical lock speed uses `Capacitor`). Tabletop variants
+(`ComputerTabletopTacticalConsole`, `ComputerTabletopShieldingConsole`) reuse the same systems on the
+`_NF` tabletop computer frame and are admin-spawn only, like the full consoles.
 
 ## Weapons & torpedoes
 
@@ -156,13 +174,18 @@ Both consoles are machines with parts (tactical lock speed uses `Capacitor`).
 - Torpedo launchers (M8): exposed space (muzzle tile must be space), remote power, never
   auto-fire; `FIRE TORPEDOES` fires one torpedo from every ready launcher (ripple), each launcher
   with its own cooldown and no ammo limit. Needs a set lock, a non-GREEN condition and a non-MASTER
-  SAFE weapon mode. Torpedoes launch 1.5 tiles in front of the launcher with the launcher as their
-  shooter (so they ignore it on the way out and a misfire at our own ship bypasses our shields).
+  SAFE weapon mode. Torpedoes launch into the middle of the exposed muzzle tile in front of the
+  launcher, along the launcher's **world** facing, not towards the lock (so a target behind the ship
+  cannot pull the torpedo back through its own hull). The launcher is their shooter, so a misfire at
+  our own ship bypasses our shields.
 - Torpedoes (M8): `ProjectileComponent`-based (the dock's `DeleteProjectiles` cleans them up on
-  save), steered every tick towards the grid captured at launch with a limited turn rate (10 tiles/s,
-  20°/s, 120 s lifetime, 150 heat). Photon torpedo (separate upgraded launcher): 20 tiles/s, 45°/s,
-  steering starts at 0.5 s and ramps to full by 4 s, 300 heat, red glow. The limited turn rate means
-  a manoeuvring target can make them miss.
+  save), fire straight for 2 s, then steer towards the grid captured at launch with a limited turn
+  rate (20 tiles/s, 20°/s, 60 s lifetime, 150 heat). If the target is outside the seeker arc the
+  torpedo gives up and keeps flying straight: **90°** for normal/uranium torpedoes, **120°** for
+  photon torpedoes. Photon torpedo (separate upgraded launcher): 40 tiles/s, 45°/s, steering starts
+  at 2 s and ramps to full by 5.5 s, 300 heat, red glow. Contact fuses still work while steering is
+  inactive, so a torpedo fired near an enemy can still detonate on it. The limited turn rate means a
+  manoeuvring target can make them miss.
 - Torpedoes render on the tactical IFF as diamonds: **red** for torpedoes from other ships,
   **green** for the console's own ship (server-driven map-space blips in the console state so
   long-range torpedoes are visible beyond PVS).
@@ -234,7 +257,7 @@ existing `BluespaceDock*` tests. Automatic prototype validation via `EntityTest`
 1. **M1** Grid component + condition enum/events + ensure/self-heal + tests
 2. **M2** Tactical console shell: prototype, radar, dark-red window, condition UI, contact beeps, audio/sprites copied
 3. **M3** Locking, LOCK/MSL, auto-condition/retaliation
-4. **M4** Power sink + 200-point budget + remote power + bluespace thruster
+4. **M4** Bluespace power transmitter (grid consumer) + 150-point budget + remote power + bluespace thruster
 5. **M5** Shields: facings, 6 s regen, hardness, redistribution, placeholder hit effect
 6. **M6** Shielding console: sliders, locks, presets, arrows, mini-bars, `(!)` alerts
 7. **M7** Weapons: turrets, stationary, group linking, auto/manual fire

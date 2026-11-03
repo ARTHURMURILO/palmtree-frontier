@@ -32,6 +32,32 @@
       state: blackmarket_key
 
 - type: entity
+  parent: [BaseStructureComputerTabletop, ComputerTacticalConsole]
+  id: ComputerTabletopTacticalConsole
+  name: tabletop tactical console
+  description: A compact tactical console for ship weapon control.
+  suffix: Palmtree, Tabletop
+  components:
+  - type: Sprite
+    drawdepth: SmallObjects
+    layers:
+    - map: ["computerLayerBody"]
+      sprite: _NF/Structures/Machines/computer_tabletop.rsi
+      state: computer_tabletop
+    - map: ["computerLayerKeyboard"]
+      sprite: _NF/Structures/Machines/computer_tabletop.rsi
+      state: generic_keyboard_tabletop
+    - map: ["computerLayerScreen"]
+      sprite: _PS/Structures/Machines/tactical_console.rsi
+      state: shipyard_blackmarket
+    - map: ["computerLayerKeys"]
+      sprite: _PS/Structures/Machines/tactical_console.rsi
+      state: blackmarket_key
+    - map: [ "enum.WiresVisualLayers.MaintenancePanel" ]
+      sprite: Structures/Machines/computers.rsi
+      state: generic_panel_open
+
+- type: entity
   parent: BaseComputer
   id: ComputerShieldingConsole
   name: engineering console
@@ -61,3 +87,30 @@
       state: shipyard_blackmarket
     - map: ["computerLayerKeys"]
       state: blackmarket_key
+
+- type: entity
+  parent: [BaseStructureComputerTabletop, ComputerShieldingConsole]
+  id: ComputerTabletopShieldingConsole
+  name: tabletop engineering console
+  description: A compact engineering console for ship power distribution and directional shields.
+  suffix: Palmtree, Tabletop
+  components:
+  - type: Sprite
+    drawdepth: SmallObjects
+    color: "#d8c86a" # Match the full engineering console's placeholder tint.
+    layers:
+    - map: ["computerLayerBody"]
+      sprite: _NF/Structures/Machines/computer_tabletop.rsi
+      state: computer_tabletop
+    - map: ["computerLayerKeyboard"]
+      sprite: _NF/Structures/Machines/computer_tabletop.rsi
+      state: generic_keyboard_tabletop
+    - map: ["computerLayerScreen"]
+      sprite: _PS/Structures/Machines/tactical_console.rsi
+      state: shipyard_blackmarket
+    - map: ["computerLayerKeys"]
+      sprite: _PS/Structures/Machines/tactical_console.rsi
+      state: blackmarket_key
+    - map: [ "enum.WiresVisualLayers.MaintenancePanel" ]
+      sprite: Structures/Machines/computers.rsi
+      state: generic_panel_open

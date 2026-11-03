@@ -1,8 +1,8 @@
 namespace Content.Shared._PS.ShipCombat.Components;
 
 /// <summary>
-/// Palmtree: a thruster fed by the ship's bluespace power sink. Its thrust scales with the Thrusters
-/// pool (0.65x at the minimum to 1.75x at the maximum).
+/// Palmtree: a thruster fed by the ship's Bluespace Power Relay. Its thrust scales with the
+/// Thrusters pool (one third at 50 points, five sixths at 125 points).
 /// </summary>
 [RegisterComponent]
 public sealed partial class BluespaceThrusterComponent : Component
