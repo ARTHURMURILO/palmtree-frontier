@@ -25,6 +25,7 @@ genital-visibility-always-hidden = Always hidden
 genital-visibility-hidden-by-underwear = Hidden by underwear
 genital-visibility-hidden-by-jumpsuit = Hidden by jumpsuit
 genital-visibility-never-hidden = Never hidden
+genital-visibility-visible-under-clothes = Visible under clothes
 
 genital-editor-penis = Penis
 genital-editor-vagina = Vagina

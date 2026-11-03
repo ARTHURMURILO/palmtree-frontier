@@ -58,6 +58,12 @@ public sealed class GenitalRenderTest
                 Size = 3,
                 Visibility = GenitalVisibility.NeverHidden,
             });
+            settings.Set(GenitalType.Balls, new GenitalOrganData
+            {
+                Prototype = "BallsSingle",
+                Size = 1,
+                Visibility = GenitalVisibility.NeverHidden,
+            });
 
             appearance.LoadProfile(mob,
                 HumanoidCharacterProfile.DefaultWithSpecies("Human").WithGenitals(settings));
@@ -65,6 +71,19 @@ public sealed class GenitalRenderTest
             Assert.That(organSystem.TryGetOrgan(mob, GenitalType.Penis, out _, out _), Is.True);
             Assert.That(HasGenitalMarking(serverEntMan.GetComponent<HumanoidAppearanceComponent>(mob)),
                 Is.True, "the server must render the organ marking");
+
+            // Marking layers inserted at the same index render newest-first, so organs are added in
+            // reverse priority order. The penis must therefore appear before the balls in the list
+            // (and above them in the final sprite stack).
+            Assert.That(serverEntMan.GetComponent<HumanoidAppearanceComponent>(mob).MarkingSet
+                    .TryGetCategory(MarkingCategories.Genital, out var genitalMarkings), Is.True);
+            var genitalMarkingList = genitalMarkings.ToList();
+            var penisIndex = genitalMarkingList.FindIndex(m => m.MarkingId == "Genital-Penis-Human-3-0");
+            var ballsIndex = genitalMarkingList.FindIndex(m => m.MarkingId == "Genital-Balls-Single1");
+            Assert.That(penisIndex, Is.GreaterThanOrEqualTo(0), "the penis render marking must exist");
+            Assert.That(ballsIndex, Is.GreaterThanOrEqualTo(0), "the balls render marking must exist");
+            Assert.That(penisIndex, Is.LessThan(ballsIndex),
+                "organs must be added back-to-front so the penis renders above the balls");
         });
 
         await pair.RunTicksSync(10);

@@ -1,0 +1,6 @@
+- type: Tag
+  id: JukeboxFlatpack
+
+# Palmtree: entities the RCD/RPD must never be able to remove, even in admin mode.
+- type: Tag
+  id: RCDUnDeconstructable
