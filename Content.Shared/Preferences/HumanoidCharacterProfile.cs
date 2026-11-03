@@ -143,6 +143,12 @@ namespace Content.Shared.Preferences
         [DataField]
         public float Width { get; set; } = 1f;
 
+        /// <summary>
+        /// Palmtree: draw snout and snout-cover markings above hair in east/west views.
+        /// </summary>
+        [DataField]
+        public bool SnoutAboveHair { get; set; }
+
         public const float MinHeight = 0.5f;
         public const float MaxHeight = 2f;
         public const float MinWidth = 0.5f;
@@ -227,6 +233,7 @@ namespace Content.Shared.Preferences
             Genitals = other.Genitals.Clone(); // Palmtree
             Height = other.Height; // Palmtree
             Width = other.Width; // Palmtree
+            SnoutAboveHair = other.SnoutAboveHair; // Palmtree
         }
 
         /// <summary>Copy constructor</summary>
@@ -252,6 +259,7 @@ namespace Content.Shared.Preferences
             Genitals = other.Genitals.Clone(); // Palmtree
             Height = other.Height; // Palmtree
             Width = other.Width; // Palmtree
+            SnoutAboveHair = other.SnoutAboveHair; // Palmtree
         }
 
         /// <summary>
@@ -391,6 +399,12 @@ namespace Content.Shared.Preferences
         public HumanoidCharacterProfile WithWidth(float width)
         {
             return new(this) { Width = Math.Clamp(width, MinWidth, MaxWidth) };
+        }
+
+        /// <summary>Palmtree: whether snout markings render above hair in side views.</summary>
+        public HumanoidCharacterProfile WithSnoutAboveHair(bool snoutAboveHair)
+        {
+            return new(this) { SnoutAboveHair = snoutAboveHair };
         }
 
         // Palmtree/Coyote: custom species name
@@ -611,6 +625,7 @@ namespace Content.Shared.Preferences
             if (VoiceBark != other.VoiceBark) return false; // Palmtree
             if (Height != other.Height) return false; // Palmtree
             if (Width != other.Width) return false; // Palmtree
+            if (SnoutAboveHair != other.SnoutAboveHair) return false; // Palmtree
             if (BankBalance != other.BankBalance) return false; // Frontier
             if (PreferenceUnavailable != other.PreferenceUnavailable) return false;
             if (SpawnPriority != other.SpawnPriority) return false;
@@ -935,6 +950,7 @@ namespace Content.Shared.Preferences
             hashCode.Add(Genitals); // Palmtree
             hashCode.Add(Height); // Palmtree
             hashCode.Add(Width); // Palmtree
+            hashCode.Add(SnoutAboveHair); // Palmtree
             hashCode.Add(BankBalance); // Frontier
             hashCode.Add((int)SpawnPriority);
             hashCode.Add((int)PreferenceUnavailable);

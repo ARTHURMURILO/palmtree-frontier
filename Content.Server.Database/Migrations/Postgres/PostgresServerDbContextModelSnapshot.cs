@@ -928,6 +928,10 @@ namespace Content.Server.Database.Migrations.Postgres
                         .HasColumnType("integer")
                         .HasColumnName("slot");
 
+                    b.Property<bool>("SnoutAboveHair")
+                        .HasColumnType("boolean")
+                        .HasColumnName("snout_above_hair");
+
                     b.Property<int>("SpawnPriority")
                         .HasColumnType("integer")
                         .HasColumnName("spawn_priority");

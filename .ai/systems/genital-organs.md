@@ -115,7 +115,8 @@ queries).
    (`world rotation + eye rotation`, see `Content.Client/_PS/Humanoid/DirectionalLayerOrderSystem`).
    Facing south puts exposed genitals above hair and tail layers (unless a jumpsuit/outer garment
    actually covers them); facing east/west tucks tail markings under the hair layer and puts snout
-   and snout-cover markings above it. Sprite
+   and snout-cover markings above it when the character's `SnoutAboveHair` option is enabled
+   (default off keeps them under hair). Sprite
    direction changes raise no event, so the system rebuilds the humanoid sprite when the cardinal
    direction changes. The lobby editor sets <c>HumanoidLayerDirectionComponent</c> on its preview
    dummy so its rotation buttons use the same rules despite rendering through
@@ -123,7 +124,9 @@ queries).
 
    Under-clothing genital layers are anchored to the undergarment layer rather than
    `jumpsuit`/`outerClothing`. Inserting before those layers shifts their indices, which used to
-   place each successive organ above the previous one (balls over the penis) in clamped views.
+   place each successive organ above the previous one (balls over the penis) in clamped views. The
+   anchor includes the marking's per-sprite offset, so a breast's nipple sprite still renders above
+   the breast sprite.
 
 ## Cum, drip and washing
 
