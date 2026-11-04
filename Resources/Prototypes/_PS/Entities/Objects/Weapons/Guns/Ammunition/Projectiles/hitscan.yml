@@ -33,6 +33,24 @@
     state: impact_beam_heavy
   maxLength: 30
 
+# Palmtree: hand-modified phaser variant with a purple-pink beam and double damage.
+- type: hitscan
+  id: PhaserLethalLily
+  color: "#ee6bff"
+  damage:
+    types:
+      Heat: 160
+  muzzleFlash:
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/beam.rsi
+    state: muzzle_beam_heavy
+  travelFlash:
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/beam.rsi
+    state: beam_heavy
+  impactFlash:
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/beam.rsi
+    state: impact_beam_heavy
+  maxLength: 30
+
 - type: hitscan
   id: HealBeam
   damage:

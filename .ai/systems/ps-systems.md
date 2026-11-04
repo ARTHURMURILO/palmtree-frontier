@@ -63,8 +63,9 @@ How it works:
 ## Weapons / grenades / hitscan
 
 - `Resources/Prototypes/_PS/Entities/Objects/Weapons/Guns/Battery/battery_guns.yml` — Svalinn 770
-  (prototype id stays `NFWeaponEnergyPistolLaserSvalinnCaspian`), pulse N1984, phaser, medical gun.
-  All four are admin-spawn only and are declared with `StaticPrice: 0` so spawning them cannot
+  (prototype id stays `NFWeaponEnergyPistolLaserSvalinnCaspian`), pulse N1984, phaser, the hand-modified
+  Phaser Lily (purple-pink beam, double damage, lower-pitched shot), medical gun.
+  All five are admin-spawn only and are declared with `StaticPrice: 0` so spawning them cannot
   inject money into the economy.
 - `.../Guns/Launchers/launchers.yml` — China Lake flashbang variants.
 - `.../Guns/Projectiles/projectiles.yml`, `.../Guns/Ammunition/explosives.yml`,
