@@ -24,6 +24,7 @@ using Content.Server.StationRecords.Systems;
 using Content.Server._NF.Shipyard.Systems;
 using Content.Server._NF.Power.Components;
 using Content.Server._NF.Station.Components;
+using Content.Server._PS.ShipCombat;
 using Content.Server.Access.Systems;
 using Content.Server.Administration.Logs;
 using Content.Server.Popups;
@@ -47,6 +48,7 @@ using Content.Shared._NF.Shipyard;
 using Content.Shared._NF.Shipyard.Components;
 using Content.Shared._NF.Shipyard.Prototypes;
 using Content.Shared._PS.BluespaceDock;
+using Content.Shared._PS.ShipCombat.Components;
 using Content.Shared._PS.ShipRegistry;
 using Content.Shared.Access.Components;
 using Content.Shared.Chemistry;
@@ -153,6 +155,7 @@ public sealed class BluespaceDockSystem : EntitySystem
     [Dependency] private readonly GunSystem _gunSystem = default!;
     [Dependency] private readonly SharedRadarConsoleSystem _radar = default!;
     [Dependency] private readonly ExtensionCableSystem _extensionCable = default!;
+    [Dependency] private readonly ShipCombatSystem _shipCombat = default!;
     [Dependency] private readonly SmartFridgeSystem _smartFridge = default!;
     [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
     [Dependency] private readonly AmeControllerSystem _ameController = default!;
@@ -2206,6 +2209,22 @@ public sealed class BluespaceDockSystem : EntitySystem
         // loaded gun, so saved guns cannot fire and emitter bolts spawn with no velocity.
         if (TryComp<GunComponent>(uid, out var gun))
             _gunSystem.RefreshModifiers((uid, gun));
+
+        // Palmtree: ships saved before the transmitter rework may still carry the old SMES battery
+        // and grid supplier. Strip them so the transmitter is a pure grid consumer after loading.
+        if (HasComp<BluespacePowerSinkComponent>(uid))
+        {
+            RemComp<BatteryComponent>(uid);
+            RemComp<BatteryChargerComponent>(uid);
+            RemComp<PowerSupplierComponent>(uid);
+            RemComp<PowerNetworkBatteryComponent>(uid);
+        }
+
+        // Palmtree: a loaded ship with a tactical console or power sink must get its ship combat
+        // state back (grids saved before the feature, or a file whose grid state was stripped). The
+        // state itself is saved on the grid, so this is idempotent.
+        if (HasComp<ShipTargetingConsoleComponent>(uid) || HasComp<BluespacePowerSinkComponent>(uid))
+            _shipCombat.TryEnsureShipCombat(uid, out _);
     }
 
     /// <summary>
@@ -2669,12 +2688,15 @@ public sealed class BluespaceDockSystem : EntitySystem
     /// <summary>
     /// The first thing stopping a ship from being stored, as a localization key (null when it can be
     /// stored). <paramref name="requireDocked"/> is false for the admin force-dock command, which
-    /// skips the "docked to this station" requirement but nothing else. <paramref name="allowOrganics"/>
-    /// is for force-dock too: instead of refusing a ship with living things aboard, the store moves
-    /// them off it (see <see cref="EvacuateGrid"/>).
+    /// skips the "docked to this station" requirement. <paramref name="allowOrganics"/> is for
+    /// force-dock too: instead of refusing a ship with living things aboard, the store moves them off
+    /// it (see <see cref="EvacuateGrid"/>). <paramref name="requireAllowedGroup"/> is also for
+    /// force-dock: admins may store a ship of any category (or one with no vessel identity at all).
+    /// <paramref name="allowDangerousEngines"/> is for force-dock too: the dangerous engine check is
+    /// skipped so the command can purge the engine state instead of refusing the ship.
     /// </summary>
     public string? FindStoreBlocker(EntityUid shuttleUid, bool requireDocked, EntityUid? stationGrid,
-        bool allowOrganics = false, bool allowDangerousEngines = false)
+        bool allowOrganics = false, bool requireAllowedGroup = true, bool allowDangerousEngines = false)
     {
         if (!Exists(shuttleUid) || !HasComp<ShuttleComponent>(shuttleUid))
             return "bluespace-dock-error-no-ship";
@@ -2694,8 +2716,11 @@ public sealed class BluespaceDockSystem : EntitySystem
         if (!allowOrganics && FoundOrganics(shuttleUid) is not null)
             return "bluespace-dock-error-organic-aboard";
 
-        if (!TryGetVesselInfo(shuttleUid, out var vesselInfo) || !IsAllowedGroup(vesselInfo.Group))
+        if (requireAllowedGroup
+            && (!TryGetVesselInfo(shuttleUid, out var vesselInfo) || !IsAllowedGroup(vesselInfo.Group)))
+        {
             return "bluespace-dock-error-not-civilian";
+        }
 
         return null;
     }

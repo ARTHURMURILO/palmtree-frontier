@@ -377,6 +377,7 @@ namespace Content.Server.Database
                 Genitals = GenitalOrganSettings.FromDbString(profile.Genitals), // Palmtree
                 Height = profile.Height, // Palmtree
                 Width = profile.Width, // Palmtree
+                SnoutAboveHair = profile.SnoutAboveHair, // Palmtree
             };
         }
 
@@ -399,6 +400,7 @@ namespace Content.Server.Database
             profile.Genitals = humanoid.Genitals.ToDbString(); // Palmtree
             profile.Height = humanoid.Height; // Palmtree
             profile.Width = humanoid.Width; // Palmtree
+            profile.SnoutAboveHair = humanoid.SnoutAboveHair; // Palmtree
             profile.LegStyle = appearance.LegStyle.ToString(); // Palmtree/Coyote
             profile.Age = humanoid.Age;
             profile.Sex = humanoid.Sex.ToString();

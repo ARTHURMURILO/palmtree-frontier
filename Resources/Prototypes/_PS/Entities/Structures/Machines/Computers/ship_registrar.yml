@@ -31,6 +31,15 @@
       whitelist:
         components:
         - IdCard
+    targetIdSlot:
+      name: id-card-console-target-id
+      ejectSound: /Audio/Machines/id_swipe.ogg
+      insertSound: /Audio/Weapons/Guns/MagIn/batrifle_magin.ogg
+      ejectOnBreak: false
+      swap: true
+      whitelist:
+        components:
+        - IdCard
   - type: AccessReader
     access: [["HeadOfPersonnel"]]
   - type: ActivatableUI
@@ -46,6 +55,7 @@
     containers:
       board: !type:Container
       ShipRegistrar-privilegedId: !type:ContainerSlot
+      ShipRegistrar-targetId: !type:ContainerSlot
   - type: Computer
     board: Null
 

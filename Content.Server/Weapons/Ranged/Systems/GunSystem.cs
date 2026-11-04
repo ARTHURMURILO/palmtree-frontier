@@ -15,6 +15,8 @@ using Content.Shared.Weapons.Ranged.Events;
 using Content.Shared.Weapons.Ranged.Systems;
 using Content.Shared.Weapons.Reflect;
 using Content.Shared.Damage.Components;
+using Content.Shared._PS.ShipCombat.Components; // Palmtree: ship weapons fire through their own grid
+using Content.Shared._PS.Weapons; // Palmtree: ship weapon damage scales with the Weapons power pool
 using Robust.Shared.Audio;
 using Robust.Shared.Map;
 using Robust.Shared.Physics;
@@ -167,6 +169,9 @@ public sealed partial class GunSystem : SharedGunSystem
                     //in the situation when user == null, means that the cannon fires on its own (via signals). And we need the gun to not fire by itself in this case
                     var lastUser = user ?? gunUid;
 
+                    // Palmtree: ship weapon effects are map-parented (they must not follow the ship).
+                    var shipWeaponEffects = HasComp<ShipWeaponComponent>(gunUid);
+
                     if (hitscan.Reflective != ReflectType.None)
                     {
                         for (var reflectAttempt = 0; reflectAttempt < 3; reflectAttempt++)
@@ -174,6 +179,17 @@ public sealed partial class GunSystem : SharedGunSystem
                             var ray = new CollisionRay(from.Position, dir, hitscan.CollisionMask);
                             var rayCastResults =
                                 Physics.IntersectRay(from.MapId, ray, hitscan.MaxLength, lastUser, false).ToList();
+
+                            // Palmtree: ship turrets fire through their own grid (the effective
+                            // flag comes from the ps.ship_combat.turrets_shoot_through_hull cvar).
+                            if (TryComp<ShipWeaponComponent>(lastUser, out var shipWeapon)
+                                && shipWeapon.ShootThroughHull
+                                && Transform(lastUser).GridUid is { } shooterGrid)
+                            {
+                                rayCastResults.RemoveAll(hit =>
+                                    hit.HitEntity.IsValid() && Transform(hit.HitEntity).GridUid == shooterGrid);
+                            }
+
                             if (!rayCastResults.Any())
                                 break;
 
@@ -199,7 +215,7 @@ public sealed partial class GunSystem : SharedGunSystem
                             var hit = result.HitEntity;
                             lastHit = hit;
 
-                            FireEffects(fromEffect, result.Distance, dir.Normalized().ToAngle(), hitscan, hit);
+                            FireEffects(fromEffect, result.Distance, dir.Normalized().ToAngle(), hitscan, hit, shipWeaponEffects);
 
                             var ev = new HitScanReflectAttemptEvent(user, gunUid, hitscan.Reflective, dir, false);
                             RaiseLocalEvent(hit, ref ev);
@@ -232,6 +248,10 @@ public sealed partial class GunSystem : SharedGunSystem
                             }
                         }
                         // Frontier end
+                        // Palmtree: ship weapon hitscan damage scales with the ship's Weapons power pool.
+                        if (dmg != null && TryComp<GunDamageMultiplierComponent>(gunUid, out var shipDamageMultiplier))
+                            dmg = dmg * shipDamageMultiplier.Multiplier;
+
                         var hitName = ToPrettyString(hitEntity);
                         if (dmg != null)
                             dmg = Damageable.TryChangeDamage(hitEntity, dmg * Damageable.UniversalHitscanDamageModifier, origin: user);
@@ -264,7 +284,7 @@ public sealed partial class GunSystem : SharedGunSystem
                     }
                     else
                     {
-                        FireEffects(fromEffect, hitscan.MaxLength, dir.ToAngle(), hitscan);
+                        FireEffects(fromEffect, hitscan.MaxLength, dir.ToAngle(), hitscan, shipWeapon: shipWeaponEffects);
                     }
 
                     Audio.PlayPredicted(gun.SoundGunshotModified, gunUid, user);
@@ -412,19 +432,27 @@ public sealed partial class GunSystem : SharedGunSystem
     // TODO: Pseudo RNG so the client can predict these.
     #region Hitscan effects
 
-    private void FireEffects(EntityCoordinates fromCoordinates, float distance, Angle angle, HitscanPrototype hitscan, EntityUid? hitEntity = null)
+    private void FireEffects(EntityCoordinates fromCoordinates, float distance, Angle angle, HitscanPrototype hitscan, EntityUid? hitEntity = null, bool shipWeapon = false)
     {
         // Lord
         // Forgive me for the shitcode I am about to do
         // Effects tempt me not
-        var sprites = new List<(NetCoordinates coordinates, Angle angle, SpriteSpecifier sprite, float scale)>();
+        var sprites = new List<(NetCoordinates coordinates, Angle angle, SpriteSpecifier sprite, float scale, Color color)>();
         var fromXform = Transform(fromCoordinates.EntityId);
 
         // We'll get the effects relative to the grid / map of the firer
         // Look you could probably optimise this a bit with redundant transforms at this point.
 
         var gridUid = fromXform.GridUid;
-        if (gridUid != fromCoordinates.EntityId && TryComp(gridUid, out TransformComponent? gridXform))
+
+        // Palmtree: ship weapon effects are parented to the map instead of the firing grid, so the
+        // beam stays where the shot happened instead of following the ship. The angle stays a world
+        // angle for the same reason.
+        if (shipWeapon && fromXform.MapUid is { } effectMapUid)
+        {
+            fromCoordinates = new EntityCoordinates(effectMapUid, TransformSystem.ToMapCoordinates(fromCoordinates).Position);
+        }
+        else if (gridUid != fromCoordinates.EntityId && TryComp(gridUid, out TransformComponent? gridXform))
         {
             var (_, gridRot, gridInvMatrix) = TransformSystem.GetWorldPositionRotationInvMatrix(gridXform);
             var map = TransformSystem.ToMapCoordinates(fromCoordinates);
@@ -443,7 +471,7 @@ public sealed partial class GunSystem : SharedGunSystem
                 var coords = fromCoordinates.Offset(angle.ToVec().Normalized() / 2);
                 var netCoords = GetNetCoordinates(coords);
 
-                sprites.Add((netCoords, angle, hitscan.MuzzleFlash, 1f));
+                sprites.Add((netCoords, angle, hitscan.MuzzleFlash, 1f, hitscan.Color));
             }
 
             if (hitscan.TravelFlash != null)
@@ -451,24 +479,37 @@ public sealed partial class GunSystem : SharedGunSystem
                 var coords = fromCoordinates.Offset(angle.ToVec() * (distance + 0.5f) / 2);
                 var netCoords = GetNetCoordinates(coords);
 
-                sprites.Add((netCoords, angle, hitscan.TravelFlash, distance - 1.5f));
+                sprites.Add((netCoords, angle, hitscan.TravelFlash, distance - 1.5f, hitscan.Color));
             }
         }
 
+        EntityCoordinates impactCoordinates = default;
+
         if (hitscan.ImpactFlash != null)
         {
-            var coords = fromCoordinates.Offset(angle.ToVec() * distance);
-            var netCoords = GetNetCoordinates(coords);
+            impactCoordinates = fromCoordinates.Offset(angle.ToVec() * distance);
+            var netCoords = GetNetCoordinates(impactCoordinates);
 
-            sprites.Add((netCoords, angle.FlipPositive(), hitscan.ImpactFlash, 1f));
+            sprites.Add((netCoords, angle.FlipPositive(), hitscan.ImpactFlash, 1f, hitscan.Color));
         }
 
         if (sprites.Count > 0)
         {
+            // Palmtree: ship weapons engage far outside normal PVS. Include players around the
+            // impact point as well, so the ship being hit can draw the whole beam and not just a
+            // server-spawned hit effect.
+            var filter = Filter.Pvs(fromCoordinates, entityMan: EntityManager);
+            if (shipWeapon)
+            {
+                filter = Filter.Empty().AddPlayersByPvs(fromCoordinates, 24f, EntityManager);
+                if (hitscan.ImpactFlash != null)
+                    filter.AddPlayersByPvs(impactCoordinates, 2f, EntityManager);
+            }
+
             RaiseNetworkEvent(new HitscanEvent
             {
                 Sprites = sprites,
-            }, Filter.Pvs(fromCoordinates, entityMan: EntityManager));
+            }, filter);
         }
     }
 

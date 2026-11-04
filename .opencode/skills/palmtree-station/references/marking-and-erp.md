@@ -65,9 +65,12 @@ sanitized to `_`). Old strings remain valid and default to self-toggleable. Chan
   - `layering` routes sprites to arbitrary layers; `colorLinks` copies colors (and glow).
   - scale/offset applied per layer; glow creates `<id>-<state>-glow` with `unshaded` shader and
     alpha split; hidden/removed markings clean up glow layers.
-  - genital layers clamp below `jumpsuit`/`outerClothing`; on the client the order is
-    direction-aware (south-facing genitals over hair/tails when uncovered, east/west tails under
-    hair) and `DirectionalLayerOrderSystem` rebuilds on cardinal changes.
+  - genital layers clamp below `jumpsuit`/`outerClothing`; bottom organs render below
+    `UndergarmentBottom` and breasts below `UndergarmentTop` (even facing south when the relevant
+    undergarment is visible), while on the client the order is direction-aware (south-facing
+    uncovered genitals over hair/tails, east/west tails under hair, east/west snouts over hair
+    when `SnoutAboveHair` is enabled) and `DirectionalLayerOrderSystem` rebuilds on cardinal
+    changes.
   - `Base*` categories add to `HiddenBaseLayers`; `UpdateLayersAgain` hides them.
 - `RemoveMarking` removes both base and `-glow` layers.
 

@@ -7,6 +7,7 @@ using Content.Server.Shuttles.Components;
 using Content.Server.Shuttles.Systems;
 using Content.Server.Station.Systems;
 using Content.Shared.Access.Components;
+using Content.Shared.Containers.ItemSlots;
 using Content.Shared._NF.Shipyard.Components;
 using Content.Shared._PS.ShipRegistry;
 using Content.Shared.Shuttles.Components;
@@ -55,6 +56,14 @@ public sealed class ShipRegistrarTest
                 "Test Station");
             var console = entMan.SpawnEntity("ComputerShipRegistrar", new EntityCoordinates(stationGrid, new Vector2(0.5f, 0.5f)));
 
+            // Both ID slots must exist: the SR card authorises the console, the owner card lets an
+            // SSD/offline character receive the deed without a session.
+            var itemSlots = server.System<ItemSlotsSystem>();
+            Assert.That(itemSlots.TryGetSlot(console, ShipRegistrarConsoleComponent.PrivilegedIdCardSlotId, out _), Is.True,
+                "The registrar is missing its privileged ID slot.");
+            Assert.That(itemSlots.TryGetSlot(console, ShipRegistrarConsoleComponent.TargetIdCardSlotId, out _), Is.True,
+                "The registrar is missing its owner ID slot.");
+
             // A hand-built ship grid next to the station, with a dock of its own. Tiles are required:
             // an airlock spawned on a tile-less cell gets reparented onto whatever grid has a tile
             // there (or the map).
@@ -83,7 +92,7 @@ public sealed class ShipRegistrarTest
 
             // Register it.
             Assert.That(
-                registrar.TryRegisterVessel(console, stationGrid, shipGrid, "ckey-test", "Test Character",
+                registrar.TryRegisterVessel(console, stationGrid, shipGrid, "Test Character",
                     targetId, null, "Test Ship", "TS-001", out var error),
                 Is.True,
                 $"Registration failed: {error}");

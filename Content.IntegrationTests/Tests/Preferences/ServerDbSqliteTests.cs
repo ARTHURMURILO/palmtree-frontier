@@ -51,6 +51,7 @@ namespace Content.IntegrationTests.Tests.Preferences
                 Age = 21,
                 Height = 1.75f, // Palmtree: height/width round-trip
                 Width = 0.8f, // Palmtree
+                SnoutAboveHair = true, // Palmtree: snout layer round-trip
                 Appearance = new(
                     "Afro",
                     Color.Aqua,

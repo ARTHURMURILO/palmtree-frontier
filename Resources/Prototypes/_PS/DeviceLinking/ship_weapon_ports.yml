@@ -1,0 +1,20 @@
+- type: sinkPort
+  id: ShipWeaponPrimary
+  name: signal-port-name-ship-weapon-primary
+  description: signal-port-description-ship-weapon-primary
+
+- type: sinkPort
+  id: ShipWeaponSecondary
+  name: signal-port-name-ship-weapon-secondary
+  description: signal-port-description-ship-weapon-secondary
+
+- type: sinkPort
+  id: ShipWeaponAux
+  name: signal-port-name-ship-weapon-aux
+  description: signal-port-description-ship-weapon-aux
+
+- type: sourcePort
+  id: ShipWeaponLink
+  name: signal-port-name-ship-weapon-link
+  description: signal-port-description-ship-weapon-link
+  defaultLinks: [ ShipWeaponPrimary, ShipWeaponSecondary, ShipWeaponAux ]

@@ -12,7 +12,7 @@
   id: Searchlight
   parent: BaseVessel
   name: LVHI Searchlight
-  description: A small vessel outfitted for the search and recovery of wounded NT personnel. Manufactured by Langstad-Voigt Heavy Industries.
+  description: A small vessel outfitted for the search and recovery of wounded Frontier personnel. Manufactured by Langstad-Voigt Heavy Industries.
   price: 34500 # 28475 0.2 34170
   category: Small
   group: Medical
@@ -36,6 +36,7 @@
           mapNameTemplate: 'Searchlight {1}'
           nameGenerator:
             !type:NanotrasenNameGenerator
+            prefix: SG
             prefixCreator: '14'
         - type: StationJobs
           availableJobs:

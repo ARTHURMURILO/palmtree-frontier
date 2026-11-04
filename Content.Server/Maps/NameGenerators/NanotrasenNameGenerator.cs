@@ -11,7 +11,12 @@ public sealed partial class NanotrasenNameGenerator : StationNameGenerator
     /// </summary>
     [DataField("prefixCreator")] public string PrefixCreator = default!;
 
-    private string Prefix => "NT";
+    /// <summary>
+    ///     Registry prefix used for generated vessel names. Defaults to NT for civilian and corporate vessels.
+    ///     Government-issued vessels (Frontier Staff, NFSD, Central Command, Medical Dispatch, public transit) use SG.
+    /// </summary>
+    [DataField("prefix")] public string Prefix = "NT";
+
     private string[] SuffixCodes => new []{ "LV", "NX", "EV", "QT", "PR" };
 
     public override string FormatName(string input)
