@@ -1724,3 +1724,13 @@ Entries:
   time: '2026-11-03T21:25:47.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/a5d75adb8407137a7cce7e758539c2d2869ab781
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        Fixed bottom undergarments rendering under the butt and other bottom
+        organs, including when facing south.
+  id: 90115
+  time: '2026-11-04T00:24:25.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/a14b6be07c45453f906e9fbdf6d0bdd9ac195b6d
