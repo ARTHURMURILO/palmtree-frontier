@@ -1750,3 +1750,30 @@ Entries:
   time: '2026-11-04T01:11:23.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/4cc5d06dc0031e521034bc05adb1af4b2dfbe31f
+- author: xTheLifex
+  changes:
+    - type: Tweak
+      message: >-
+        The Frontier is now presented as a SolGov-administered sector, and
+        players are free contractors or civilians rather than NanoTrasen
+        employees.
+    - type: Add
+      message: >-
+        Added guidebook lore entries for the Trans-Solar Federation, the USSP,
+        and Nanotrasen.
+    - type: Tweak
+      message: >-
+        The NFSD is now described as the Trans-Solar Federation's frontier
+        law-enforcement agency.
+    - type: Tweak
+      message: >-
+        The bank is now the Frontier Galactic Bank, and the currency is space
+        roubles.
+    - type: Tweak
+      message: >-
+        Frontier Staff, NFSD, Central Command, Medical Dispatch, and public
+        transit vessels now use the SG registry prefix.
+  id: 90118
+  time: '2026-11-04T04:28:54.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/e0d33cc92e6f6e4870c0334eea4650d343fd5d17
