@@ -26,4 +26,5 @@
           mapNameTemplate: 'Bus {1}' # Will be overwritten
           nameGenerator:
             !type:NanotrasenNameGenerator
+            prefix: SG
             prefixCreator: '14'
