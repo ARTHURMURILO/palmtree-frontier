@@ -1734,3 +1734,11 @@ Entries:
   time: '2026-11-04T00:24:25.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/a14b6be07c45453f906e9fbdf6d0bdd9ac195b6d
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Four discipline whips are now available from the admin spawn menu.
+  id: 90116
+  time: '2026-11-04T01:10:42.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/8031c9ad39c88939e23238dc15c27ed404721284
