@@ -11,6 +11,7 @@ humanoid-profile-editor-sex-unsexed-text = None
 humanoid-profile-editor-age-label = Age:
 humanoid-profile-editor-height-label = Height: { $height }
 humanoid-profile-editor-width-label = Width: { $width }
+humanoid-profile-editor-snout-above-hair = Snout above hair
 humanoid-profile-editor-skin-color-label = Skin color:
 humanoid-profile-editor-species-label = Species:
 humanoid-profile-editor-customspeciename-label = Custom Species Name:

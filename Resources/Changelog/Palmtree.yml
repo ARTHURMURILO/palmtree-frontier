@@ -1698,3 +1698,39 @@ Entries:
   time: '2026-11-03T03:56:48.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/444f6c4bea35664618da2ad3692ab1298b7b386a
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: Fixed balls rendering above the penis when facing east or west.
+  id: 90112
+  time: '2026-11-03T14:59:51.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/2579b7c40d4923b28b552ac08b063d4046ecaf53
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: Fixed nipples rendering under breasts when facing east or west.
+    - type: Add
+      message: Added a per-character Snout above hair option in the Markings tab.
+  id: 90113
+  time: '2026-11-03T17:36:04.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/e6b227273092dacf9f955d79b283f06b122cf6a0
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Eleven Biodome botany ships are now available at the shipyard.
+  id: 90114
+  time: '2026-11-03T21:25:47.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/a5d75adb8407137a7cce7e758539c2d2869ab781
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        Fixed bottom undergarments rendering under the butt and other bottom
+        organs, including when facing south.
+  id: 90115
+  time: '2026-11-04T00:24:25.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/a14b6be07c45453f906e9fbdf6d0bdd9ac195b6d

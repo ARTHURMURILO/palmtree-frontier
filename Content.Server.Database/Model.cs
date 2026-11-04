@@ -414,6 +414,7 @@ namespace Content.Server.Database
         public string? Genitals { get; set; } // Palmtree: genital organ selection string, null = none
         public float Height { get; set; } = 1f; // Palmtree: visual height multiplier
         public float Width { get; set; } = 1f; // Palmtree: visual width multiplier
+        public bool SnoutAboveHair { get; set; } // Palmtree: snouts render over hair in side views
         public string LegStyle { get; set; } = "Plantigrade"; // Palmtree/Coyote: digitigrade/plantigrade legs
         [Column(TypeName = "jsonb")] public JsonDocument? Markings { get; set; } = null!;
         public string HairName { get; set; } = null!;

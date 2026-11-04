@@ -182,11 +182,15 @@ Both consoles are machines with parts (tactical lock speed uses `Capacitor`). Ta
   save), fire straight for 2 s, then steer towards the grid captured at launch with a limited turn
   rate (20 tiles/s, 20°/s, 60 s lifetime, 150 heat). If the target is outside the seeker arc the
   torpedo gives up and keeps flying straight: **90°** for normal/uranium torpedoes, **120°** for
-  photon torpedoes. Photon torpedo (separate upgraded launcher): 40 tiles/s, 45°/s, steering starts
+  photon torpedoes. Photon torpedo (separate upgraded launcher): 40 tiles/s, 45°/s turn rate with a 170° seeker arc, steering starts
   at 2 s and ramps to full by 5.5 s, 300 heat, red glow. EMP torpedo (separate launcher): blue, no
   hull damage, bypasses shields (`shieldDamage: 0`) and fires an 8-tile, 30-second EMP pulse via
   `EmpOnTrigger`. Contact fuses still work while steering is inactive, so a torpedo fired near an
-  enemy can still detonate on it. The limited turn rate means a manoeuvring target can make them
+  enemy can still detonate on it. `ps.ship_combat.torpedo_steering_duration` (default 120 s, 0 =
+  unlimited) stops steering after that long so torpedoes cannot orbit a ship forever;
+  `ps.ship_combat.torpedo_tracking_arc` (default 0 = each prototype's own arc) overrides the seeker
+  arc globally: a torpedo only steers at targets inside that arc around its heading and flies
+  straight otherwise. The limited turn rate means a manoeuvring target can make them
   miss.
 - Torpedoes render on the tactical IFF as diamonds: **red** for torpedoes from other ships,
   **green** for the console's own ship (server-driven map-space blips in the console state so
@@ -270,12 +274,35 @@ existing `BluespaceDock*` tests. Automatic prototype validation via `EntityTest`
    console, Silent-aware), `critical.ogg` every 5 s on every tactical console while the ship is out
    of peacetime with no powered weapon or torpedo launcher, and per-facing mini-bars on the
    engineering console.
-10. **M10** `PSShipCombat` research discipline and tech tree done (six technologies, all icons from
-    existing prototypes). Devices stay admin-spawn only for now, so circuit boards and lathe recipes
-    are deferred until they get their own art.
+10. **M10** Research done: six technologies (`PSShipCombatConsoles/Power/Shields/Weapons/Torpedoes/
+    Alarms`) live in the NF **Arsenal / Mercenary** tree at positions 5-7, 40-41, right after
+    `NFBasicShuttleArmament` (which Consoles requires), all icons from existing prototypes. Devices
+    stay admin-spawn only for now, so circuit boards and lathe recipes are deferred until they get
+    their own art.
 11. **M11** Docs and the full validation pipeline are done for every milestone so far. Extending the
     bluespace dock round-trip tests with the new consoles/devices/sirens is the one item left.
 
 ## Open questions
 
 None — all resolved with the maintainer before implementation (see the decisions table).
+
+## Validation checklist (lessons learned)
+
+Run the **full** integration suite, not just the `_PS` namespace. The `_NF` tests validate global
+content and have caught ship-combat regressions that `_PS` tests cannot see:
+
+- `CheckTechTreeConsistency` (`Content.IntegrationTests/Tests/_NF/TechnologyTreeTests.cs`) requires
+  every `TechnologyPrototype` to have a **globally unique `position`**, across all disciplines. The
+  `PSShipCombat` techs originally reused coordinates already taken by NF/upstream techs and turned
+  master red; they now sit at X 10-13, beyond the highest existing X (5). Check
+  `Resources/Prototypes/_NF/Research/techtree.yml` and `Resources/Prototypes/Research/*.yml` before
+  adding or moving a technology.
+- Adding global prototypes (research, audio, entities) can break `_NF` or upstream tests, so the
+  pipeline for every milestone is:
+  1. `dotnet build SpaceStation14.sln`
+  2. `dotnet build Content.YAMLLinter/Content.YAMLLinter.csproj` then
+     `dotnet run --project Content.YAMLLinter -c Debug --no-build`
+  3. `dotnet test Content.IntegrationTests --filter "FullyQualifiedName~Content.IntegrationTests.Tests._PS|FullyQualifiedName~Content.IntegrationTests.Tests._NF"`
+  4. `EntityTest` and the headless client (`--headless`, expect "Verified IL")
+- The labeler workflows (`pull_request_target`) need a `permissions:` block in the **base branch**;
+  that is repository configuration and cannot be fixed from a PR branch.
