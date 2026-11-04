@@ -1035,3 +1035,18 @@ prototypes are under `Resources/Prototypes/_CS/Shipyard/biodome*.yml`, the forma
   only on the pre-existing `Bocadillo` and `Dragonfly` listings (unrelated to this port); every
   Biodome price (105000, Sleepover 115000) is well above the 1.05× appraise minimum (appraise
   ~43196–48110).
+
+## 30. 2026-11 Discipline whips (Coyote `Floof`)
+
+Four melee whips ported from Coyote's `Floof/Entities/Objects/Lewd/whips.yml`: `WhipPink`,
+`WhipTeal`, `WhipPinkCrotch` and `WhipTealCrotch`, all parented to the new abstract `BaseWhip`.
+The source file's two paddles (`SpankPinkPaddle`/`SpankTealPaddle`) were deliberately left out at
+the maintainer's request, so the set is admin-spawn only with no crate or vendor wiring.
+
+- **Prototypes**: `Resources/Prototypes/Floof/Entities/Objects/Lewd/whips.yml`.
+- **Assets**: `Resources/Textures/Floof/Objects/Fun/Lewd/Weapons/{whip_pink,whip_teal,crotch_pink,crotch_teal}.rsi`
+  and `Resources/Audio/Floof/Lewd/whip.ogg` (SPLURT, CC-BY-SA-3.0).
+- **Adaptations**: added the `Coyote Frontier` weapon suffix; dropped the EE combat fields already
+  commented out in the source (`heavyRateModifier`, `heavyDamageBaseModifier`, `heavyStaminaCost`,
+  `maxTargets`). Damage/stamina behavior is unchanged (Slash 2, 20 stamina on hit/collide).
+- **Validation**: `Content.YAMLLinter` reports no errors; `EntityTest` passes.
