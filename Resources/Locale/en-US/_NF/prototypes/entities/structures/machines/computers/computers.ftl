@@ -38,10 +38,10 @@ ent-ComputerWallmountCrewMonitoring = crew monitoring console
     .desc = Used to monitor active health sensors built into most of the uniforms in the sector.
 
 ent-ComputerId = ID card computer
-    .desc = Terminal for programming Nanotrasen ID cards to access parts of ships or the stations.
+    .desc = Terminal for programming ID cards to access parts of ships or the stations.
 
 ent-ComputerTabletopId = ID card computer
-    .desc = Terminal for programming Nanotrasen ID cards to access parts of ships or the stations.
+    .desc = Terminal for programming ID cards to access parts of ships or the stations.
 
 ent-ComputerComms = communications computer
     .desc = A computer used to make sectorwide announcements via keyboard or change the alert level.
