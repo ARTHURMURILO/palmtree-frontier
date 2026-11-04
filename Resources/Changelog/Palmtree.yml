@@ -1787,3 +1787,16 @@ Entries:
   time: '2026-11-04T13:18:29.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/1abe34c63bc7044584f6f5e3bc8a5214fdd42310
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: >-
+        Added a batch of admin-only meme mobs: laser carp, medicarp, doomba,
+        bear arms, Honkglock, securitarp, carpenter bee, phantom carp, pyro carp
+        and party carp.
+    - type: Add
+      message: Added the admin-only carp cannon, which fires carp projectiles.
+  id: 90120
+  time: '2026-11-04T13:46:07.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/92fa5806b1192120abd4f249c8b8a33e8c069c51
