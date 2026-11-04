@@ -20,7 +20,7 @@ ledger-tab-Edison = Edison
 # Fallback, if this displays, something's wrong.
 ledger-tab-Unknown = Unknown
 
-ledger-entry-type-TickingIncome = NT Subsidies
+ledger-entry-type-TickingIncome = Frontier Subsidies
 ledger-entry-type-VendorTax = Vendor Taxes
 ledger-entry-type-CargoTax = Cargo Taxes
 ledger-entry-type-MailDelivered = Mail Payments
