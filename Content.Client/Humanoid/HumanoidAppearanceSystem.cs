@@ -97,6 +97,28 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
                || _inventory.TryGetSlotEntity(uid, "outerClothing", out _, inventory);
     }
 
+    private bool HasVisibleUndergarment(HumanoidAppearanceComponent humanoid, MarkingCategories category)
+    {
+        if (humanoid.MarkingSet.TryGetCategory(category, out var markings))
+        {
+            foreach (var marking in markings)
+            {
+                if (marking.Visible)
+                    return true;
+            }
+        }
+
+        var censorNudity = _configurationManager.GetCVar(CCVars.AccessibilityClientCensorNudity)
+                           || _configurationManager.GetCVar(CCVars.AccessibilityServerCensorNudity);
+
+        if (!censorNudity)
+            return false;
+
+        return category == MarkingCategories.UndergarmentTop
+            ? humanoid.UndergarmentTop != null
+            : humanoid.UndergarmentBottom != null;
+    }
+
     private void OnCvarChanged(bool value)
     {
         RefreshAllHumanoids();
@@ -386,7 +408,7 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
                 {
                     // Palmtree/Coyote: swap the marking for its alternate-leg-style version if one exists.
                     markingPrototype = GetMarkingForLegStyle(humanoid, markingPrototype);
-                    ApplyMarking(markingPrototype, marking.MarkingColors, marking.Visible, entity, marking.MarkingScale, marking.MarkingOffset, marking.MarkingGlow, marking.RenderOverClothing);
+                    ApplyMarking(markingPrototype, marking.MarkingColors, marking.Visible, entity, marking.MarkingScale, marking.MarkingOffset, marking.MarkingGlow, marking.RenderOverClothing, marking.RenderUnderTopUndergarment);
                     if (markingPrototype.BodyPart == HumanoidVisualLayers.UndergarmentTop)
                         applyUndergarmentTop = false;
                     else if (markingPrototype.BodyPart == HumanoidVisualLayers.UndergarmentBottom)
@@ -491,7 +513,8 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
         float scale = 1.0f,
         Vector2? offset = null,
         IReadOnlyList<float>? glowLevels = null,
-        bool renderOverClothing = false)
+        bool renderOverClothing = false,
+        bool renderUnderTopUndergarment = false)
         // Palmtree/Coyote End
     {
         var humanoid = entity.Comp1;
@@ -627,20 +650,38 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
                     if (_sprite.LayerMapTryGet((entity.Owner, sprite), "outerClothing", out var overLayer, false))
                         targLayerAdj = Math.Max(targLayerAdj, overLayer + 1);
                 }
-                else if (screenDirection != RsiDirection.South || HasCoveringClothing(entity.Owner))
+                else if (screenDirection != RsiDirection.South
+                         || HasCoveringClothing(entity.Owner)
+                         || HasVisibleUndergarment(humanoid,
+                             renderUnderTopUndergarment
+                                 ? MarkingCategories.UndergarmentTop
+                                 : MarkingCategories.UndergarmentBottom))
                 {
-                    // Anchor under-clothing insertions to the stable undergarment layer. Anchoring
-                    // to jumpsuit/outerClothing and inserting just before them shifts their layer
-                    // indices, so every successive organ would end up above the previous one
-                    // (balls over the penis in side views). Keep the per-sprite offset so a
-                    // marking's own sprites (e.g. breast + nipple) also stay ordered.
+                    // Anchor under-clothing insertions to stable layers. Anchoring to the clothing
+                    // layers themselves shifts their indices as we insert before them, which would
+                    // make every successive organ render above the previous one.
+                    // Bottom organs go below both undergarments; breasts sit between the bottom and
+                    // top undergarment layers. The per-sprite offset keeps multi-sprite markings
+                    // (e.g. breast + nipple, butt front + mid) ordered.
                     var layerAnchor = -1;
-                    if (_sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.UndergarmentTop, out var underwearLayer, false))
-                        layerAnchor = underwearLayer + 1;
-                    else if (_sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.UndergarmentBottom, out var underwearBottomLayer, false))
-                        layerAnchor = underwearBottomLayer + 1;
-                    else if (_sprite.LayerMapTryGet((entity.Owner, sprite), "jumpsuit", out var jumpsuitLayer, false))
+                    if (renderUnderTopUndergarment)
+                    {
+                        if (_sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.UndergarmentBottom, out var underBottomLayer, false))
+                            layerAnchor = underBottomLayer + 1;
+                    }
+                    else
+                    {
+                        if (_sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.LLeg, out var leftLegLayer, false))
+                            layerAnchor = leftLegLayer + 1;
+                        else if (_sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.RLeg, out var rightLegLayer, false))
+                            layerAnchor = rightLegLayer + 1;
+                    }
+
+                    if (layerAnchor < 0 &&
+                        _sprite.LayerMapTryGet((entity.Owner, sprite), "jumpsuit", out var jumpsuitLayer, false))
+                    {
                         layerAnchor = jumpsuitLayer - 1;
+                    }
 
                     if (layerAnchor >= 0)
                         targLayerAdj = Math.Min(targLayerAdj, layerAnchor + layerOrder);
@@ -812,7 +853,7 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
             foreach (var marking in markingList)
             {
                 if (_markingManager.TryGetMarking(marking, out var markingPrototype) && markingPrototype.BodyPart == layer)
-                    ApplyMarking(markingPrototype, marking.MarkingColors, marking.Visible, (ent, ent.Comp, sprite), marking.MarkingScale, marking.MarkingOffset, marking.MarkingGlow, marking.RenderOverClothing);
+                    ApplyMarking(markingPrototype, marking.MarkingColors, marking.Visible, (ent, ent.Comp, sprite), marking.MarkingScale, marking.MarkingOffset, marking.MarkingGlow, marking.RenderOverClothing, marking.RenderUnderTopUndergarment);
             }
         }
     }
