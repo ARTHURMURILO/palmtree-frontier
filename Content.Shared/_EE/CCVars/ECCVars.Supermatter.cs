@@ -134,11 +134,23 @@ public sealed partial class ECCVars
         CVarDef.Create("supermatter.max_radiation", 0f, CVar.SERVER);
 
     /// <summary>
-    ///     Maximum distance, in tiles, that the crystal will arc lightning to a tesla coil.
-    ///     The arc range still scales with internal energy, up to this cap.
+    ///     Maximum distance, in tiles, that the crystal will arc lightning to any target:
+    ///     tesla coils, grounding rods, crew and machinery. The arc range scales with
+    ///     internal energy up to this cap, with a 2 tile floor.
     /// </summary>
     public static readonly CVarDef<float> SupermatterLightningRange =
         CVarDef.Create("supermatter.lightning_range", 7f, CVar.SERVER);
+
+    /// <summary>
+    ///     Extra tiles of reach granted to tesla coils and grounding rods, on top of the
+    ///     crystal's arc range. This is the engine's own hardware rather than a hazard:
+    ///     without it a cold crystal (2 tile arc radius) forces players to crowd coils and
+    ///     rods into the crystal's own tile. The one-coil-per-effective-power limit is
+    ///     enforced by candidate count, not by radius, so the wider search cannot bypass
+    ///     it. Zero disables the bonus.
+    /// </summary>
+    public static readonly CVarDef<float> SupermatterLightningTargetRangeBonus =
+        CVarDef.Create("supermatter.lightning_target_range_bonus", 2f, CVar.SERVER);
 
     /// <summary>
     ///     Internal energy required per additional tesla coil the crystal can keep charged.

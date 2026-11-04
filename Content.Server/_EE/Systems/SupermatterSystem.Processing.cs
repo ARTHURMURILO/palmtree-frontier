@@ -301,7 +301,12 @@ public sealed partial class SupermatterSystem
         var candidates = new List<(EntityUid Coil, float DistanceSquared, float ChargeRatio)>();
         var coordinates = Transform(uid).Coordinates;
 
-        foreach (var coil in _entityLookup.GetEntitiesInRange<TeslaCoilComponent>(coordinates, range))
+        // Palmtree: engine hardware reaches further than the crystal's own hazard radius so
+        // players are not forced to stuff coils into the crystal's tile. The supported-coil
+        // cap below still applies, so a wider search cannot be used to bypass it.
+        var searchRange = range + MathF.Max(_config.GetCVar(ECCVars.SupermatterLightningTargetRangeBonus), 0f);
+
+        foreach (var coil in _entityLookup.GetEntitiesInRange<TeslaCoilComponent>(coordinates, searchRange))
         {
             if (!TryComp<BatteryComponent>(coil, out var battery) || battery.MaxCharge <= 0f)
                 continue;
@@ -375,7 +380,13 @@ public sealed partial class SupermatterSystem
         var bestPriority = 0;
         var coordinates = Transform(uid).Coordinates;
 
-        foreach (var ent in _entityLookup.GetEntitiesInRange(coordinates, range))
+        // Palmtree: engine hardware (rods, coils) reaches further than the crystal's own hazard
+        // radius, so players are not forced to crowd it into the crystal's tile. Only
+        // lightning-sparking entities get the extra reach; crew and machinery do not.
+        var rodRange = range + MathF.Max(_config.GetCVar(ECCVars.SupermatterLightningTargetRangeBonus), 0f);
+        var rangeSq = range * range;
+
+        foreach (var ent in _entityLookup.GetEntitiesInRange(coordinates, rodRange))
         {
             if (ent == uid || hit.Contains(ent) || TerminatingOrDeleted(ent) || HasComp<GhostComponent>(ent))
                 continue;
@@ -386,7 +397,18 @@ public sealed partial class SupermatterSystem
                 continue;
 
             var (priority, chance) = GetSupermatterLightningPriority(ent);
-            if (priority == 0 || !_random.Prob(chance))
+            if (priority == 0)
+                continue;
+
+            // Only lightning-sparking entities (grounding rods) get the extended reach.
+            if (!HasComp<LightningSparkingComponent>(ent))
+            {
+                var delta = Transform(ent).Coordinates.Position - coordinates.Position;
+                if (delta.LengthSquared() > rangeSq)
+                    continue;
+            }
+
+            if (!_random.Prob(chance))
                 continue;
 
             if (priority > bestPriority)
@@ -414,7 +436,13 @@ public sealed partial class SupermatterSystem
         if (HasComp<MachineComponent>(ent) || HasComp<ApcPowerReceiverComponent>(ent))
             return (2, 0.4f);
 
-        if (HasComp<PhysicsComponent>(ent) && !HasComp<MapGridComponent>(ent) && !HasComp<MapComponent>(ent))
+        // Palmtree: "loose objects" means loose. Anchored structures (windows, walls,
+        // containment) must not be arc magnets, or the crystal vents its own chamber
+        // instead of grounding into the rods.
+        if (HasComp<PhysicsComponent>(ent)
+            && !Transform(ent).Anchored
+            && !HasComp<MapGridComponent>(ent)
+            && !HasComp<MapComponent>(ent))
             return (1, 1f);
 
         return (0, 0f);
