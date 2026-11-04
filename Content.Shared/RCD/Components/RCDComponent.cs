@@ -51,6 +51,48 @@ public sealed partial class RCDComponent : Component
     /// </summary>
     [DataField, AutoNetworkedField]
     public bool InstantConstruction { get; set; }
+
+    /// <summary>
+    /// Palmtree: admin/experimental RCD mode. Construction and deconstruction ignore charges
+    /// entirely (no cost, no gain and no loss), and deconstruction accepts any anchored fixture or
+    /// tile instead of only entities carrying <see cref="RCDDeconstructableComponent"/>.
+    /// </summary>
+    [DataField, AutoNetworkedField]
+    public bool Unrestricted { get; set; }
+
+    /// <summary>
+    /// Palmtree: multiplier applied to RCD/RPD operation delays. 2 is twice as fast (half the
+    /// delay); var-edit it or set it per prototype for faster tools. Values at or below zero are
+    /// ignored.
+    /// </summary>
+    [DataField, ViewVariables(VVAccess.ReadWrite)]
+    public float SpeedMultiplier = 1f;
+
+    /// <summary>
+    /// Pipe colours the RPD's colour strip offers, keyed by palette name. Mirrors the spray
+    /// painter's pipe palette so an RPD-tinted pipe looks like a spray painted one.
+    /// </summary>
+    [DataField, AutoNetworkedField]
+    public Dictionary<string, Color> PipeColorPalette = new();
+
+    /// <summary>
+    /// The palette key of the pipe colour the RPD paints newly constructed pipes with.
+    /// "default" means the RPD does not paint at all.
+    /// </summary>
+    [DataField, AutoNetworkedField]
+    public string PipeColorKey = "default";
+
+    /// <summary>
+    /// The player eye rotation, forwarded by the RPD placement mode whenever it changes.
+    /// Eye rotation is not networked, so the server needs it to work out which pipe layer
+    /// a click on a tile was aimed at.
+    /// </summary>
+    /// <remarks>
+    /// Server-only working state: it is never dirtied, so it deliberately stays out of the
+    /// component state. The client recomputes the layer locally in AlignRPDAtmosPipeLayers.
+    /// </remarks>
+    [ViewVariables(VVAccess.ReadOnly)]
+    public float? LastKnownEyeRotation { get; set; }
     // Palmtree end
 
     /// <summary>

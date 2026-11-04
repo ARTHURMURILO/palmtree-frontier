@@ -4,6 +4,7 @@ using Content.Server._PS.BluespaceDock;
 using Content.Server.Mind;
 using Content.Server.Shuttles.Components;
 using Content.Server.Shuttles.Systems;
+using Content.Server.Station.Components;
 using Content.Server.Station.Systems;
 using Content.Shared._NF.BindToStation;
 using Content.Shared._NF.Shipyard.Components;
@@ -694,10 +695,19 @@ public sealed class BluespaceDockTest
             // A civilian vessel (the registered marker) so the only thing that can block is a body.
             entMan.AddComponent<RegisteredVesselComponent>(grid);
 
-            // The docking requirement is the only check the admin path skips.
             Assert.That(dock.FindStoreBlocker(grid, requireDocked: true, stationGrid: null),
                 Is.EqualTo("bluespace-dock-error-not-docked"));
             Assert.That(dock.FindStoreBlocker(grid, requireDocked: false, stationGrid: null), Is.Null);
+
+            // Force-dock also ignores the ship category: a deed grid with no vessel identity can be
+            // stored by the command, while the normal console path still refuses it.
+            entMan.RemoveComponent<RegisteredVesselComponent>(grid);
+            Assert.That(dock.FindStoreBlocker(grid, requireDocked: false, stationGrid: null),
+                Is.EqualTo("bluespace-dock-error-not-civilian"));
+            Assert.That(dock.FindStoreBlocker(grid, requireDocked: false, stationGrid: null,
+                    requireAllowedGroup: false),
+                Is.Null, "Force-dock must not care about the ship category or a missing vessel identity.");
+            entMan.AddComponent<RegisteredVesselComponent>(grid);
 
             // A character aboard blocks the store, forced or not (FoundOrganics looks for a mind).
             var mindSystem = server.System<MindSystem>();
@@ -878,6 +888,44 @@ public sealed class BluespaceDockTest
             Assert.That(BluespaceDockSystem.IsAllowedGroup(ShipyardConsoleUiKey.Security.ToString()), Is.False, "NFSD ships are not storable.");
             Assert.That(BluespaceDockSystem.IsAllowedGroup(ShipyardConsoleUiKey.BlackMarket.ToString()), Is.False, "Black market ships are not storable.");
             Assert.That(BluespaceDockSystem.IsAllowedGroup(ShipyardConsoleUiKey.Sr.ToString()), Is.False, "SR ships are not storable.");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    /// Restoring an orphaned ship file has no registry entry to carry the vessel id. The grid's
+    /// BecomesStation id still names the shipyard map, so use it to recover the vessel identity -
+    /// otherwise the retrieved ship gets the generic StandardFrontierVessel station with no job
+    /// slots, and the captain cannot manage jobs on the records computer.
+    /// </summary>
+    [Test]
+    public async Task OrphanedShipyardVesselRecoversItsJobSlots()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var stations = server.System<StationSystem>();
+            var grid = testMap.Grid.Owner;
+
+            var becomes = entMan.EnsureComponent<BecomesStationComponent>(grid);
+            typeof(BecomesStationComponent)
+                .GetField(nameof(BecomesStationComponent.Id))!
+                .SetValue(becomes, "Bookworm");
+
+            Assert.That(dock.TryGetVesselInfo(grid, out var info), Is.True,
+                "The shipyard vessel identity was not recovered from BecomesStation.");
+            Assert.That(info.Vessel.Value.Id, Is.EqualTo("Bookworm"));
+
+            var station = stations.InitializeNewStation(dock.GetShipStationConfig(info.Vessel), [grid], "Bookworm Test");
+            var jobs = entMan.GetComponent<StationJobsComponent>(station);
+            Assert.That(jobs.SetupAvailableJobs.Keys.Select(key => key.Id), Does.Contain("PilotInterview"),
+                "The restored vessel station has no job slots (records computer would be empty).");
         });
 
         await pair.CleanReturnAsync();

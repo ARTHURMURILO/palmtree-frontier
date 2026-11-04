@@ -110,6 +110,12 @@ public sealed partial class CCVars
         GameRoleTimers = CVarDef.Create("game.role_timers", true, CVar.SERVER | CVar.REPLICATED);
 
     /// <summary>
+    /// If role loadout items should be restricted based on time.
+    /// </summary>
+    public static readonly CVarDef<bool>
+        GameRoleLoadoutTimers = CVarDef.Create("game.role_loadout_timers", true, CVar.SERVER | CVar.REPLICATED);
+
+    /// <summary>
     ///     Override default role requirements using a <see cref="JobRequirementOverridePrototype"/>
     /// </summary>
     public static readonly CVarDef<string>
@@ -374,11 +380,11 @@ public sealed partial class CCVars
     ///     If true, players can place objects onto tabletop games like chess boards.
     /// </summary>
     /// <remarks>
-    ///     This feature is currently highly abusable and can easily be used to crash the server,
-    ///     so it's off by default.
+    ///     Palmtree: enabled by default. Placement now spawns a sanitized dummy piece instead of a
+    ///     copy of the item prototype, so arbitrary components never enter the tabletop map.
     /// </remarks>
     public static readonly CVarDef<bool> GameTabletopPlace =
-        CVarDef.Create("game.tabletop_place", false, CVar.SERVERONLY);
+        CVarDef.Create("game.tabletop_place", true, CVar.SERVERONLY); // Palmtree: false<true
 
     /// <summary>
     ///     If true, contraband severity can be viewed in the examine menu

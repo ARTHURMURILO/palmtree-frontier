@@ -10,9 +10,10 @@ using Robust.Shared.Player;
 namespace Content.Server._PS.Commands;
 
 /// <summary>
-/// Palmtree: stores a player's ship in the bluespace dock without requiring it to be docked. Every
-/// other store check still runs (nothing living aboard, civilian vessel, and so on) and failures are
-/// printed to the console. No tax is charged.
+/// Palmtree: stores a player's ship in the bluespace dock without requiring it to be docked or to
+/// belong to an allowed ship category. Living things aboard are moved off the ship instead of
+/// refusing the store; every other check still runs (not already being processed, and so on) and
+/// failures are printed to the console. No tax is charged.
 /// </summary>
 [AdminCommand(AdminFlags.Admin)]
 public sealed class ForceDockCommand : IConsoleCommand
@@ -95,15 +96,22 @@ public sealed class ForceDockCommand : IConsoleCommand
             }
         }
 
-        // Every store check except "must be docked to this station".
-        if (dock.FindStoreBlocker(ship.Grid, requireDocked: false, stationGrid: null) is { } blocker)
+        // Every store check except the docking, ship-category and "nothing living aboard" rules:
+        // force-dock kicks the occupants out instead of refusing the ship.
+        if (dock.FindStoreBlocker(ship.Grid, requireDocked: false, stationGrid: null, allowOrganics: true,
+                requireAllowedGroup: false) is { } blocker)
         {
             shell.WriteError(Loc.GetString(blocker));
             return;
         }
 
+        // Get everyone off first so the console can say how many were moved. TryStoreShip evacuates
+        // again, which is a no-op by then.
+        var evacuated = dock.EvacuateGrid(ship.Grid);
+
         var value = dock.AppraiseShip(ship.Grid);
-        if (!dock.TryStoreShip(ship.Grid, ownerUserId, ownerName, value, payer: null, cost: 0, out var error))
+        if (!dock.TryStoreShip(ship.Grid, ownerUserId, ownerName, value, payer: null, cost: 0,
+                out var error, out var skipped))
         {
             shell.WriteError(Loc.GetString(error ?? "bluespace-dock-error-save-failed"));
             return;
@@ -113,6 +121,15 @@ public sealed class ForceDockCommand : IConsoleCommand
             $"{shell.Player?.Name ?? "Console"} force-docked ship {ship.Name} into the bluespace dock as {ownerName} ({ownerUserId})");
 
         shell.WriteLine($"Stored {ship.Name} for {ownerName} in the bluespace dock. No tax was charged.");
+
+        if (evacuated > 0)
+            shell.WriteLine($"Moved {evacuated} living thing(s) (or ghosts/corpses) off {ship.Name} before storing it.");
+
+        if (skipped > 0)
+        {
+            shell.WriteError($"{skipped} item(s) could not be saved with {ship.Name} and will come back " +
+                             "as fresh copies when the ship is retrieved (see the server log for which).");
+        }
     }
 
     public CompletionResult GetCompletion(IConsoleShell shell, string[] args)
@@ -126,9 +143,15 @@ public sealed class ForceDockCommand : IConsoleCommand
         if (args.Length == 2)
         {
             var dock = _entMan.System<BluespaceDockSystem>();
-            var owners = _player.Sessions
-                .Select(session => dock.GetCharacterName(session.UserId, null, session.AttachedEntity))
-                .Where(name => name.Length > 0);
+            // Include deed owners as well as connected sessions: an offline/SSD owner has no
+            // session to read a character name from, but their name is still on the ship's deed
+            // and is a valid owner argument (the entry is then keyed by character name alone).
+            var owners = dock.GetDeedShips()
+                .Select(ship => ship.Owner)
+                .Concat(_player.Sessions
+                    .Select(session => dock.GetCharacterName(session.UserId, null, session.AttachedEntity)))
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Distinct(StringComparer.Ordinal);
             return CompletionResult.FromHintOptions(owners, "[owner (defaults to the deed owner)]");
         }
 

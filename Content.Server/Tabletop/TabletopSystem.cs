@@ -1,7 +1,8 @@
-using Content.Server.Hands.Systems;
 using Content.Server.Popups;
 using Content.Server.Tabletop.Components;
+using Content.Shared.Administration.Logs;
 using Content.Shared.CCVar;
+using Content.Shared.Database;
 using Content.Shared.Hands.Components;
 using Content.Shared.Interaction;
 using Content.Shared.Item;
@@ -14,6 +15,7 @@ using Robust.Server.GameObjects;
 using Robust.Shared.Configuration;
 using Robust.Shared.Enums;
 using Robust.Shared.Player;
+using Robust.Shared.Prototypes;
 using Robust.Shared.Utility;
 
 namespace Content.Server.Tabletop
@@ -23,10 +25,23 @@ namespace Content.Server.Tabletop
     {
         [Dependency] private readonly SharedMapSystem _map = default!;
         [Dependency] private readonly EyeSystem _eye = default!;
-        [Dependency] private readonly HandsSystem _hands = default!;
         [Dependency] private readonly ViewSubscriberSystem _viewSubscriberSystem = default!;
         [Dependency] private readonly PopupSystem _popupSystem = default!;
         [Dependency] private readonly IConfigurationManager _cfg = default!;
+        [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
+        [Dependency] private readonly ISharedAdminLogManager _adminLog = default!;
+        [Dependency] private readonly MetaDataSystem _meta = default!;
+
+        /// <summary>
+        /// Palmtree: maximum number of placed pieces per board. Bounds the entity spam that
+        /// originally forced this feature off.
+        /// </summary>
+        private const int MaxHolograms = 50;
+
+        /// <summary>
+        /// Palmtree: sanitized placeholder spawned for every item placed on a board.
+        /// </summary>
+        private static readonly EntProtoId HologramPrototype = "PalmtreeTabletopHologram";
 
         public override void Initialize()
         {
@@ -49,19 +64,18 @@ namespace Content.Server.Tabletop
             if (args.SenderSession is not { } playerSession)
                 return;
 
-            var table = GetEntity(msg.TableUid);
-
-            if (!TryComp(table, out TabletopGameComponent? tabletop) || tabletop.Session is not { } session)
+            if (!TryGetEntity(msg.TableUid, out var table))
                 return;
 
-            if (!msg.Entity.IsValid())
+            if (!TryComp(table.Value, out TabletopGameComponent? tabletop) || tabletop.Session is not { } session)
                 return;
 
-            var entity = GetEntity(msg.Entity);
+            if (!TryGetEntity(msg.Entity, out var entity))
+                return;
 
-            if (!TryComp(entity, out TabletopHologramComponent? hologram))
+            if (!HasComp<TabletopHologramComponent>(entity.Value))
             {
-                _popupSystem.PopupEntity(Loc.GetString("tabletop-error-remove-non-hologram"), table, args.SenderSession);
+                _popupSystem.PopupEntity(Loc.GetString("tabletop-error-remove-non-hologram"), table.Value, playerSession);
                 return;
             }
 
@@ -69,10 +83,14 @@ namespace Content.Server.Tabletop
             if (!session.Players.ContainsKey(playerSession))
                 return;
 
-            // Find the entity, remove it from the session and set it's position to the tabletop
-            session.Entities.TryGetValue(entity, out var result);
-            session.Entities.Remove(result);
-            QueueDel(result);
+            // Only remove pieces that actually belong to this board.
+            if (!session.Entities.Remove(entity.Value))
+                return;
+
+            _adminLog.Add(LogType.Action, LogImpact.Low,
+                $"{playerSession:player} removed tabletop piece {ToPrettyString(entity.Value)} from {ToPrettyString(table.Value)}");
+
+            QueueDel(entity.Value);
         }
 
         private void OnInteractUsing(EntityUid uid, TabletopGameComponent component, InteractUsingEvent args)
@@ -80,27 +98,50 @@ namespace Content.Server.Tabletop
             if (!_cfg.GetCVar(CCVars.GameTabletopPlace))
                 return;
 
-            if (!TryComp(args.User, out HandsComponent? hands))
+            if (!HasComp<HandsComponent>(args.User))
                 return;
 
             if (component.Session is not { } session)
                 return;
 
-            if (!_hands.TryGetActiveItem(uid, out var handEnt))
+            if (!HasComp<ItemComponent>(args.Used))
                 return;
 
-            if (!TryComp<ItemComponent>(handEnt, out var item))
+            // Palmtree: cap placed pieces per board so a malicious client cannot flood the tabletop map.
+            var holograms = 0;
+            foreach (var sessionEntity in session.Entities)
+            {
+                if (HasComp<TabletopHologramComponent>(sessionEntity))
+                    holograms++;
+            }
+
+            if (holograms >= MaxHolograms)
+            {
+                _popupSystem.PopupEntity(Loc.GetString("tabletop-cant-add-more"), uid, args.User);
                 return;
+            }
 
-            var meta = MetaData(handEnt.Value);
-            var protoId = meta.EntityPrototype?.ID;
+            var originalMeta = MetaData(args.Used);
+            var protoId = originalMeta.EntityPrototype?.ID;
 
-            var hologram = Spawn(protoId, session.Position.Offset(-1, 0));
+            // Palmtree: spawn a sanitized dummy instead of a copy of the item. Copying arbitrary
+            // item prototypes let their components (storage, explosives, tools, etc.) into the
+            // tabletop map, which was the original crash/abuse vector. The client mirrors the
+            // source sprite from appearance data instead.
+            var hologram = Spawn(HologramPrototype, session.Position.Offset(-1, 0));
 
             // Make sure the entity can be dragged and can be removed, move it into the board game world and add it to the Entities hashmap
             EnsureComp<TabletopDraggableComponent>(hologram);
             EnsureComp<TabletopHologramComponent>(hologram);
             session.Entities.Add(hologram);
+
+            _meta.SetEntityName(hologram, originalMeta.EntityName);
+
+            if (protoId != null)
+                _appearance.SetData(hologram, TabletopItemVisuals.Prototype, protoId);
+
+            _adminLog.Add(LogType.Action, LogImpact.Low,
+                $"{ToPrettyString(args.User):player} placed {ToPrettyString(args.Used):subject} onto tabletop board {ToPrettyString(uid)}");
 
             _popupSystem.PopupEntity(Loc.GetString("tabletop-added-piece"), uid, args.User);
         }

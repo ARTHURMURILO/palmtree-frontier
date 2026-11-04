@@ -32,8 +32,8 @@ Read this file first, then the document that matches your task.
 - Maintainer constraints (see `.ai/HUMAN_CONTEXT.md`): engine must not be modified; new code goes
   under `_PS` folders; content ported from other forks keeps its original prefix for merge sanity.
 - Current branch: **`master`** (the `ps-erp` port branch was merged and deleted; Frontier base
-  `df24c19f08`, kept current with upstream merges). The port history and decisions are in
-  `.ai/PORTING.md`.
+  `df24c19f08`, last upstream sync `b40510417e` on 2026-10-23 — see
+  `.ai/guides/upstream-sync.md`). The port history and decisions are in `.ai/PORTING.md`.
 
 ## 2. Major architectural layers
 
@@ -50,13 +50,14 @@ Fork modules are folder/namespace prefixes:
 | Prefix | Origin | Used here for |
 |---|---|---|
 | `_NF` | Frontier Station (parent) | Economy/bank, shipyard, sectors, salvage, cryo, pirates |
-| `_PS` | Palmtree (this repo) | Lobby screens/music, concealable clothing backpack implant, weapons/grenades, Synth species, Hilbert's Hotel, Bluespace Dock/Ship Registrar, interaction panel, genital organs |
+| `_PS` | Palmtree (this repo) | Lobby screens/music, concealable clothing backpack implant, weapons/grenades, Synth species, Hilbert's Hotel, Bluespace Dock/Ship Registrar, interaction panel, genital organs, RIX (Rouble PIX) bank transfers |
 | `_Floof` | Floofstation | Marking system extensions, `ModifyUndies` (ERP toggle verbs) |
 | `_CS` | Coyote Sector | Anthromorph species, undergarments, Coyote Bayou clothes (incl. latex), undies locale |
+| `_Funkystation` | Funky Station (via Dumont) | NanoChat group chats, emoji picker and emoji prototypes |
 | `_HL` | HardLight (via Coyote) | Ported shower (prototype, construction, sprite, audio) |
 | `_DEN` | TheDen | Clicker, foot protectors, Ovinia markings/sprites |
 | `_EE` | Einstein Engines | Tajaran species (ported), carrying |
-| `_DV` | Delta-V | Vulpkanin/Harpy/Rodentia species, abilities, markings |
+| `_DV` | Delta-V | Vulpkanin/Harpy/Rodentia species, abilities, markings, NanoChat messaging |
 | `_White` | White Dream | Eastern Dragon reptilian markings |
 | `_Starlight` / `_StarLight` | Starlight | Resomi markings (note both case spellings exist) |
 | others (`_CD`, `_Corvax`, `_EstacaoPirata`, `_Goobstation`, `_Harmony`, `_Impstation`, `_NC`, `_RMC14`) | various | inherited Frontier imports |
@@ -113,6 +114,7 @@ Fork modules are folder/namespace prefixes:
 | `.ai/guides/adding-hotel-rooms.md` | Adding Hilbert's Hotel room maps + archetype prototypes |
 | `.ai/guides/adding-dungeons.md` | Adding dungeon rooms, themes/room packs, `dungeonConfig` wiring and rare boss arenas |
 | `.ai/guides/changelogs.md` | Changelog YAML authoring + `:cl:` automation for this fork |
+| `.ai/guides/upstream-sync.md` | Frontier/Wizden upstream sync: procedure, conflict bias, protected fork patches, sync log |
 | `.ai/ideas/README.md` | Feature designs: statuses range from unimplemented (`highroller-table.md`) to partially implemented (Fallout weapon backlog) and implemented (`bluespace-dock.md`) |
 
 ### Procedural guides

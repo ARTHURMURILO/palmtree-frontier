@@ -41,9 +41,9 @@
     hideLayersOnEquip:
     - Tail
     - HeadTop
-  # Palmtree: Coyote used the RPI Needs system; Hunger/Thirst replace it (Avali hunger was 2x default).
+  # Palmtree: Coyote used the RPI Needs system; Hunger/Thirst replace it.
   - type: Hunger
-    baseDecayRate: 0.04
+    baseDecayRate: 0.04 # Palmtree: guidebook - 2x hunger
   - type: Thirst
   - type: Icon
     sprite: _Starlight/Mobs/Species/Avali/parts.rsi

@@ -120,4 +120,11 @@ public sealed partial class InteractionPrototype : IPrototype
     /// </summary>
     [DataField]
     public bool ForceClimax { get; private set; }
+
+    /// <summary>
+    /// Palmtree: removes the actor's stored semen (and its drip) when performed. Used by the
+    /// "Clean yourself" action. The action does not arouse the actor or add lust.
+    /// </summary>
+    [DataField]
+    public bool ClearsStoredCum { get; private set; }
 }

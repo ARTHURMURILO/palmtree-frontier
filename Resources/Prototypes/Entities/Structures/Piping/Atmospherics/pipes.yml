@@ -60,6 +60,7 @@
   - type: Tag
     tags:
     - Pipe
+    - Unstackable # Palmtree: no stacking with other atmos pipes/devices (RPD placement + construction)
   - type: Physics
     canCollide: false
     bodyType: static

@@ -34,6 +34,11 @@ interaction-titgrope-message = gently gropes { $target }'s breasts.
 interaction-titgrope-message-two = softly squeezes { $target }'s breasts.
 interaction-titgrope-message-three = traces a touch across { $target }'s breast.
 
+interaction-assgrope-name = Grope their ass.
+interaction-assgrope-message = gently gropes { $target }'s ass.
+interaction-assgrope-message-two = squeezes { $target }'s rear.
+interaction-assgrope-message-three = lets a hand wander over { $target }'s ass.
+
 interaction-blowjob-name = Suck them off.
 interaction-blowjob-message = takes { $target }'s cock into their mouth.
 interaction-blowjob-message-two = wraps their lips around { $target }'s cock.
@@ -73,6 +78,20 @@ interaction-breastfuck-message = presses their cock between { $target }'s breast
 interaction-breastfuck-continue = grinds their cock between { $target }'s boobs.
 interaction-breastfuck-continue-two = thrusts into { $target }'s tits.
 
+interaction-giveboobjob-name = Give them a boobjob.
+interaction-giveboobjob-message = presses their breasts around { $target }'s cock.
+interaction-giveboobjob-continue = squeezes their tits around { $target }'s shaft.
+interaction-giveboobjob-continue-two = slides their breasts along { $target }'s length.
+
+interaction-thighjob-name = Fuck their thighs.
+interaction-thighjob-message = slides their cock between { $target }'s thighs.
+interaction-thighjob-continue = thrusts between { $target }'s thighs.
+interaction-thighjob-continue-two = grinds against { $target }'s legs.
+
+interaction-givethighjob-name = Give them a thighjob.
+interaction-givethighjob-message = squeezes their thighs around { $target }'s cock.
+interaction-givethighjob-continue = works their thighs along { $target }'s shaft.
+
 interaction-frotting-name = Rub your penis against theirs.
 interaction-frotting-message = rubs their penis against { $target }'s.
 interaction-frotting-message-two = presses their cock against { $target }'s.
@@ -97,6 +116,7 @@ interaction-cumonthem-message = pulls out over { $target }.
 # Context-sensitive finish lines (InteractionPrototype.CumMessages).
 interaction-cum-kiss = shudders and spills against { $target } mid-kiss.
 interaction-cum-titgrope = cums all over { $target }'s breasts.
+interaction-cum-assgrope = cums over { $target }'s ass.
 interaction-cum-blowjob = finishes in { $target }'s mouth.
 interaction-cum-oral = cums over { $target }'s face.
 interaction-cum-handjob = cums all over { $target }'s hand.
@@ -105,6 +125,7 @@ interaction-cum-fingerass = makes a mess over { $target }.
 interaction-cum-fuck = fills { $target }'s pussy up.
 interaction-cum-fuckanal = fills { $target }'s ass up.
 interaction-cum-breastfuck = cums all over { $target }'s breasts.
+interaction-cum-thighjob = cums between { $target }'s thighs.
 interaction-cum-frotting = cums over { $target }'s cock.
 interaction-cum-tribadism = cums against { $target }.
 interaction-cum-nipsuck = cums over { $target }'s chest.
@@ -140,6 +161,10 @@ interaction-masturbate-anus-continue = works a finger inside themselves.
 interaction-masturbate-breasts-name = Grope your own breasts.
 interaction-masturbate-breasts-message = gropes their own breasts.
 interaction-masturbate-breasts-continue = squeezes and teases their own chest.
+
+interaction-cleanyourself-name = Clean yourself up.
+interaction-cleanyourself-message = cleans the leftover cum off their body.
+interaction-cleanyourself-message-two = wipes the mess off their thighs.
 
 interaction-climax-action-name = Climax
 interaction-climax-action-message = shudders.

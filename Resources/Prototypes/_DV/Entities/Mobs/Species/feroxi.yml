@@ -16,6 +16,7 @@
   - type: Inventory
     speciesId: feroxi
   - type: Thirst
+    baseDecayRate: 0.2 # Palmtree: guidebook - 100% faster
   - type: Icon
     sprite: DeltaV/Mobs/Species/Feroxi/parts.rsi
     state: full

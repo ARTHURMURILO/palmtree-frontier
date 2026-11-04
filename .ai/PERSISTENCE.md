@@ -7,7 +7,7 @@
 
 | Area | Tables/columns | Notes |
 |---|---|---|
-| Preferences | `Preference` + `Profile` | Profile includes `Markings` (jsonb), nullable `VoiceBark` (Palmtree voice bark, `voice_bark` column), nullable `Genitals` (Palmtree genital organ selection string, `genitals` column, migration `GenitalOrgans`), `Height`/`Width` (`height`/`width` real columns, migration `HeightWidth`) and `LegStyle` (`leg_style` text column, migration `AddLegStyle`, default `Plantigrade`); `Preference.NsfwConsent` is a nullable bool (`nsfw_consent` column, migration `NsfwConsent`; null = age gate unanswered). `CharacterConsentFreetext` is **absent here** |
+| Preferences | `Preference` + `Profile` | Profile includes `Markings` (jsonb), nullable `VoiceBark` (Palmtree voice bark, `voice_bark` column), nullable `Genitals` (Palmtree genital organ selection string, `genitals` column, migration `GenitalOrgans`), `Height`/`Width` (`height`/`width` real columns, migration `HeightWidth`), `SnoutAboveHair` (`snout_above_hair` bool column, migration `SnoutAboveHair`) and `LegStyle` (`leg_style` text column, migration `AddLegStyle`, default `Plantigrade`); `Preference.NsfwConsent` is a nullable bool (`nsfw_consent` column, migration `NsfwConsent`; null = age gate unanswered). `CharacterConsentFreetext` is **absent here**. Palmtree bank account numbers are derived at runtime from `NetUserId` + character slot (no DB column) |
 | Admin | `Admin`, `AdminRank`, notes, bans, role bans | `LogType` numeric values are load-bearing |
 | Playtime | playtime/role time tracking | Frontier/job requirements |
 | Whitelist / Patreon | whitelist, patreon tiers | server config dependent |
@@ -42,9 +42,9 @@ markingId@#rrggbb,...@m3@cCustom Name               # Palmtree: + toggle flags (
   `GenitalOrganSettings.ToDbString`), `HeightWidth` (`height`/`width` real columns, default 1 —
   the generated migration was patched from default 0 so existing characters do not shrink),
   `AddLegStyle` (`leg_style` text column, default `Plantigrade` — patched from the generated empty
-  default; `ServerDbBase` falls back to `Plantigrade` for unparseable values) and `NsfwConsent`
+  default; `ServerDbBase` falls back to `Plantigrade` for unparseable values), `NsfwConsent`
   (`nsfw_consent` nullable bool on `preference`; null = age gate unanswered, so existing rows are
-  prompted once).
+  prompted once) and `SnoutAboveHair` (`snout_above_hair` bool on `profile`, default false).
 - Migration IDs/order matter; don't renumber or hand-edit old migrations.
 - A drift test compares the model to migrations; keep it green.
 

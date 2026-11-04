@@ -1,0 +1,5 @@
+# Ported from coyote-frontier (Resources/Prototypes/_CS/Recipes/Lathes/Packs/plumbing.yml).
+- type: latheRecipePack
+  id: CSPlumbingStatic
+  recipes:
+  - PlumbingAssemblyRecipe

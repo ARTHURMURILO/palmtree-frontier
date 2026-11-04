@@ -73,10 +73,10 @@
   notification sound option.
 - **Shower** (`_HL` prefix, from Coyote's HardLight content): `Shower`/`ShowerUnfinished`, the
   `Shower` construction graph/recipe, sprite (`_HL/Structures/Furniture/shower.rsi`) and toggle
-  audio (`_HL/Ambience/Shower/*`). Adaptations: the unfinished prototype inlines the `_HL` sink
-  base (no sink port needed) and the plumbing construction node was dropped (this fork has no
-  plumbing assembly). `Tools/convert_dmm_room.py` maps `/obj/machinery/shower` to `Shower`, so the
-  converted hotel rooms include working showers.
+  audio (`_HL/Ambience/Shower/*`). The unfinished prototype uses the `_HL` sink base and the graph
+  has its plumbing node; the rest of the `_HL` plumbing set (plumbing assembly, sinks, floor drain)
+  followed later — see §27. `Tools/convert_dmm_room.py` maps `/obj/machinery/shower` to `Shower`,
+  so the converted hotel rooms include working showers.
 
 ### 3.3 Sandstorm interaction panel (2026-10, `_PS`)
 
@@ -268,16 +268,19 @@ Palmtree splash logo, non-`_PS` lobby backgrounds/music disabled.
 - **Species ports** (from Coyote, same file layout as `.ai/guides/adding-species.md`):
   - **Chitinid** (`_DV`): species/body/parts/organs/player/names, `Chitinid` radiation-absorbing
     C# (`Content.Server/_DV/Abilities/Chitinid`), the `Chitzite` item + `ActionChitzite` (uses the
-    already-ported `ItemCougherSystem`). Adaptations: `Needs` → `Hunger`/`Thirst` (33% faster),
+    already-ported `ItemCougherSystem`). Adaptations: `Needs` → `Hunger`/`Thirst` (33% faster
+    hunger, matching the guidebook),
     `AphrodisiacDrinks` metabolizer group dropped (not ported), custom Sprite layer block dropped,
     `chitinid0/1` typing states merged into `_DV/Effects/speech.rsi`.
   - **Ovinia** (`_DEN`): species/body/parts/mob/player (Coyote keeps the player mob under `_DV`),
     sound collections + baa/moo audio, `OviniaEmotes` tag + emote whitelists, typing indicator,
-    damage set. `minHeight`/`maxHeight` removed, `Needs` dropped, custom Sprite dropped.
+    damage set. `minHeight`/`maxHeight` removed, `Needs` → `Hunger`/`Thirst` (25% slower, matching
+    the guidebook), custom Sprite dropped.
   - **Avali + Resomi** (`_Starlight`): species/bodies/organs/mobs/players/dummies, names, voice,
     sound collections, tags, inventories, metabolizer types (`Avali`/`Resomi`), Avali blood reagents
     (`AvaliBlood`/`ResomiBlood`) and `Amoxla`. Dropped: the Coyote `Stasis`/Nanite Shell actions and
-    the Mono `FoodMeatResomi` (uses `FoodMeatHuman`). `Needs` → `Hunger`/`Thirst` (Avali 2x).
+    the Mono `FoodMeatResomi` (uses `FoodMeatHuman`). `Needs` → `Hunger`/`Thirst` (Avali 2x
+    hunger per the guidebook; Resomi default).
   - **Avali core reagent conditions** (ported into the shared reagent files): Ammonia heals Avali
     asphyxiation and is otherwise harmless to them, Iron poisons them, Dexalin/Dexalin+ are lethal
     to them, Saline burns them, and the DeltaV Feroxi saline nerf was ported in the same pass.
@@ -770,6 +773,76 @@ this repo's newer client code.
   modes) — this repo already ships the newer Frontier pirate/shipyard RCDs. Only the four
   plastitanium modes required by `RCDExperimental` were taken.
 
+### 24a. 2026-10 RPD second pass: pipe colours, pipe layers, missing modes
+
+The first pass above only took the RPD's mode list. This pass brings the rest of Coyote's RPD
+(`b7a81c6e4a` "NEW SHINY RPD" plus the `palm3` follow-ups), which is what made that tool good:
+
+- **Pipe colours.** `RCDComponent.PipeColorPalette` (`Dictionary<string, Color>`, YAML
+  `pipeColorPalette:` on the `RPD`) + `PipeColorKey` (default `"default"` = no paint). The RPD's
+  own menu (`RPDMenu`) shows them as an always-visible strip along the bottom.
+  `RCDColorChangeMessage` carries only the palette **key**; the server resolves the colour from the
+  palette, so no tuple crosses the wire. Palmtree applies the colour *functionally*, not just
+  cosmetically: the shared system sets the `PipeColorVisuals.Color` appearance datum and raises
+  `RCDPipeColorAppliedEvent` on the spawned entity, which `AtmosPipeColorSystem` turns into
+  `AtmosPipeColorComponent.Color` — so atmos monitoring consoles and the spray painter agree.
+  Coyote only touched the appearance datum.
+- **Pipe layer placement.** `AlignRPDAtmosPipeLayers` (placement mode) picks the atmos pipe layer
+  from where the cursor sits inside the tile — the middle quarter (radius `0.25`) is `Primary`, and
+  the two halves either side are `Secondary`/`Tertiary` — previews it by swapping the placer's
+  `EntityType` to the layer prototype, and draws the three guide circles. `RCDSystem` repeats the
+  same computation in `OnAfterInteract` and substitutes the prototype in
+  `FinalizeRCDOperation` via `SharedAtmosPipeLayersSystem.TryGetAlternativePrototype`. The resolved
+  layer travels in `RCDDoAfterEvent.Layer`: the operation finishes a tick later, so keeping it in
+  system state let concurrent placements overwrite each other's layer (fixed after the merge).
+  `RCDPrototype.NoLayers` (YAML `noLayers: true`) opts a mode out: either its entity has no
+  `AtmosPipeLayersComponent` at all (`Alarm`, `Sensor`) or it has one offering no alternative
+  prototypes (`ManifoldGas`, whose `AtmosPipeLayers` is `pipeLayersLocked: true`).
+- **Six more modes**: `PipeHalf`, `ManifoldGas`, `PressureRegulator`, plus a new
+  `SensorsMonitors` category with `Alarm` (air alarm), `Sensor` (air sensor) and `SensorPipe` (gas
+  pipe sensor). Icons reuse the entity sprites, so no art was added.
+- **Own UI key.** `RpdUiKey` + `RPDMenuBoundUserInterface`/`RPDMenu`, so the RPD opens its own menu
+  (mode radial + colour strip) instead of the RCD's modern `SimpleRadialMenu`. The RPD has its own
+  `UserInterface` entry for `RpdUiKey` and re-points `ActivatableUI.key` off the RCD's `RcdUiKey` —
+  that key is what decides which menu opens (the inherited `RcdUiKey` mapping may still be present
+  in `interfaces` and is harmless).
+- **Deconstruct whitelist extended** to `AirAlarm` (cost 2), `AirSensor` and `GasPipeSensor`
+  (cost 1 each), so the RPD can also pull down what its new sensor modes build.
+- **Admin log**: the RPD logs its operations exactly like the RCD (construct tile/spawn, deconstruct
+  tile/object), with the message naming the tool (`var toolName = component.IsRpd ? "RPD" : "RCD";`
+  in `RCDSystem.FinalizeRCDOperation`). The PR had removed RPD logging; it was restored with the
+  merge because pipe removal needs an audit trail.
+
+Two bugs only surfaced on a live debug build, both recorded in `.ai/HAZARDS.md` §26: a
+`[Dependency]`-injected `HandsSystem` crashed the client when the placer was constructed, and a
+`var tileSize` (ushort integer division) snapped RPD placement to the tile corner instead of its
+centre — which also broke the pipe-layer deadzone.
+
+See `.ai/HAZARDS.md` §26 for the traps this pass introduced.
+
+### 24b. 2026-10 RCD pass: diagonal walls, mining walls, speed multiplier, atmos stacking
+
+Follow-up on the RCD/RPD after the second pass:
+
+- **Diagonal wall modes** (`_PS/RCD/rcd.yml`): `WallSolidDiagonal` and `WallShuttleDiagonal` join
+  the existing plastitanium/mining diagonals, using the standard diagonal collision bounds. The RCD
+  and the experimental RCD list them. `WallSolidDiagonal` gained an `RCDDeconstructable` (6/8) and
+  the shuttle diagonal was lowered to 3/2 like the straight shuttle wall (`#Palmtree`).
+- **Mining walls**: the RCD list now includes `WallMining`/`WallMiningDiagonal`; the `_NF` modes
+  moved from `PirateWallsAndFlooring` to `WallsAndFlooring` so they appear in the normal menu (the
+  pirate RCDs still include them).
+- **Speed multiplier**: `RCDComponent.SpeedMultiplier` (default 1, `ViewVariables` read-write)
+  divides every construction/deconstruction delay; the `RCD` prototype sets it to 2. Values at or
+  below zero are ignored, and `InstantConstruction` still forces a 0 delay.
+- **No atmos stacking**: `GasPipeSansLayers` now carries the `Unstackable` tag (plain pipes were
+  missing it), and `IsConstructionLocationValid` refuses a mode whose built prototype has that tag
+  when the tile already has an `Unstackable` entity on the *same* atmos layer. The layer comes from
+  the do-after event / placement mode, so secondary and tertiary pipes can still share a tile.
+  Pipes have no fixtures, which is why the old collision check let duplicates through (the overlap
+  popup came from `PipeRestrictOverlapSystem` after the spawn).
+- Test: `Content.IntegrationTests/Tests/_PS/RcdAtmosStackingTest.cs` (primary layer blocked, empty
+  tile allowed, another layer allowed).
+
 ## 25. 2026-10 Salto expedition ship (Coyote `_CS`)
 
 - Map: `Resources/Maps/_CS/Shuttles/Expedition/salto.yml` — the first `_CS` map this fork has
@@ -785,7 +858,200 @@ this repo's newer client code.
 - Validation: `ShipyardTest` loads every vessel map and checks price vs appraised value
   (`MinPriceMarkup` 1.05) — both tests cover the Salto.
 
-## 27. MODsuits + Proteans (feature checkpoint, 2026-10-20)
+## 26. 2026-10 SPLURT Funny emotes (BYOND)
+
+Source: `BYOND/S.P.L.U.R.T-Station-13/modular_splurt/code/modules/mob/living/emotes.dm`
+(the old SPLURT emote file, not the newer `/tg` checkout). Ported as a single Palmtree category
+rather than scattered species categories.
+
+- **Category**: `EmoteCategory.Funny`, set to `Vocal | (1 << 16)` so mutes and mumbling still
+  apply. The enum backing was widened from `ushort` to `int` (all 16 old bits were taken);
+  `General` became `int.MaxValue`. The category is registered in `EmotesUIController` and
+  `EmoteCategoryWindow`, with `emote-menu-category-funny = Funny`.
+- **Availability**: every prototype is `available: true` with no whitelist/blacklist, so any
+  species can use the chat triggers (including `*laugh2`/`*laugh3`). The radial menu only shows a
+  curated 33-entry headline set (`showInWheel: false` on the long tail) because one ring cannot
+  fit 116 buttons on screen; every emote still works through its trigger. The character editor's
+  emote category picker can hide the whole category.
+- **Content**: 116 emotes from the SPLURT file, including `Laugh2`-`Laugh6`, `Cackle`,
+  `Chuckle2`, `Cry2`, `Scream2`/`Scream3`, the bababooey/fafafooey set, `Bruh`, `Speen`,
+  `Waa`/`Weh2`-`Weh4`, the gachi and Ace Attorney sets, animal/meme noises, and visual
+  emotes (tilt/squint/ruffle/mlem/pant/squirm/facepaw etc.).
+  - Excluded because the fork already has them: `chirp`, `caw`, `mew`, `meow`, `bleat`, `yap`,
+    `yip`, `howl`, `moo`, `eyebrow2` (the existing `Eyebrow` is the same vine-boom emote).
+  - Excluded as sexual content (not Funny): `moan2`, `ambatukam`/`ambatukam2`, `ara`/`ara2`,
+    `rizz`. `twerk` and `fart` were removed on request.
+- **Files**: `_PS/Voice/speech_emotes_funny.yml` (prototypes),
+  `_PS/Voice/speech_emote_sounds_funny.yml` (`SupplementalFunnyEmotes`, an abstract parent of
+  `SupplementalCoyoteEmoteStuff`, so every vocal species gets the sounds; plus concrete
+  `SupplementalFunnyMale`/`SupplementalFunnyFemale` for the gendered Ace Attorney lines),
+  `_PS/SoundCollections/emotes_funny.yml` (random variants), `_PS/chat/emotes_funny.ftl`, and
+  `Resources/Audio/_PS/Voice/Emote/Funny/**` (160 copied OGGs with an attribution file).
+- **Chat text**: `*laugh2`/`*laugh3` are ordinary `chatTriggers`; all triggers were checked
+  for duplicates against every other emote prototype (none). ChatSystem lowercases and trims the
+  `*` prefix before the dictionary lookup, so the keys match. The chat-trigger path originally
+  echoed the raw trigger ("Mike Winterbells laugh2"); `SendEntityEmote` now detects the matched
+  Funny emote and sends its localized `ChatMessages` entry instead.
+- **Gender split**: `VocalComponent.SexSupplementalSounds` (Palmtree) is checked before the shared
+  supplemental set, so `Objection`, `HoldIt` and `TakeThat` play the SPLURT `_m`/`_f` collections
+  for male/female mobs. The files are explicitly named (`ace_objection_m1..m3` / `_f1..f2`, same
+  for holdit/takethat), so no manual review is needed.
+- **`emotelist`**: server console/player command (`Content.Server/Chat/Commands/EmoteListCommand.cs`)
+  dumps every chat-triggerable emote as `[*emote = "text"]`, three per line. The server console has
+  no entity, so it passes a plain-string entity context to Fluent to get neuter pronouns without
+  logging `MetaDataComponent` errors.
+- Validation: full solution build, rebuilt YAMLLinter (`No errors found`), `Content.Tests`,
+  `_PS|EntityTest|CharacterCreationTest` integration tests and the headless client IL check all
+  pass. Scratch integration coverage confirmed `*laugh2` produces "laughs like a king." in the
+  client chat history, the male/female supplemental prototypes resolve, and `emotelist` runs.
+
+## 27. 2026-10 HardLight plumbing construction: shower, sinks, drains + directional fan
+
+The first `_HL` shower port dropped its plumbing node because the plumbing assembly did not exist
+here. This ports the rest of Coyote's HardLight plumbing set:
+
+- **`PlumbingAssembly`** (`_HL/Entities/Objects/Misc/machine_parts.yml`): the pipe/connector part
+  consumed by the plumbing construction step, plus the `PlumbingAssembly` tag. Lathe recipe
+  `PlumbingAssemblyRecipe` (`_HL/Recipes/Lathes/parts.yml`, Steel 800 + Plastic 100) in the
+  `CSPlumbingStatic` pack (`_CS/Recipes/Lathes/Packs/plumbing.yml`), added to the Autolathe, the
+  service techfab and the engineering techfab. No research gate (Coyote disabled the Plumbing tech).
+- **Shower**: the `Shower` construction graph has the `plumbing` node again (`PlumbingAssembly` in,
+  prying returns it) and `ShowerUnfinished` parents the ported `BaseSinkUnfinished`.
+- **Sinks**: `SinkEmpty`, `SinkWide` and `SinkStemless` got their Coyote `Construction` components
+  (nodes `sink`/`sinkWide`/`sinkStemless`); ported the `Sink`/`SinkStemless`/`SinkWide` construction
+  graphs, the unfinished sink prototypes + `SinkWideEmpty`
+  (`_HL/Entities/Structures/Furniture/sink.yml`) and their construction recipes.
+- **Floor drain**: `Construction` component on `FloorDrain`, plus `FloorDrainUnfinished`, the
+  `FloorDrain` graph and recipe.
+- **Directional fan**: `AtmosDeviceFanDirectional` is now constructible from 25 steel via the
+  `GasUnary` graph's `tinygayfan` node (welding to remove), and got its Coyote
+  `Damageable`/`Destructible` (75 damage, 20-25 steel back).
+- **`EmptySolution`** (`Content.Server/_HL/Construction/Completions/EmptySolution.cs`): Coyote's
+  custom graph action (empties a named solution, optionally spilling it into a puddle), used by the
+  sink/drain graphs when deconstructing with contents. `spill: true` tries
+  `PuddleSystem.TrySpillAt` first, then clears the solution either way.
+- Locale: `construction-graph-tag-plumbing-assembly`
+  (`Resources/Locale/en-US/_HL/recipes/tags.ftl`).
+- Not ported: the commented-out Plumbing research node and the commented-out gaslock nodes (both
+  disabled in Coyote).
+- Validation: full build, YAMLLinter `No errors found`, `Content.Tests`, integration
+  (`Construction|EntityTest|_PS|TechnologyTree`) and the headless client IL check.
+
+## 28. 2026-10 PDA apps: NanoChat + RIX (Rouble PIX)
+
+Two PDA apps were requested: messaging and paying people remotely.
+
+### 28.1 NanoChat (messaging)
+
+- **Source**: Delta-V's current NanoChat (newer than Coyote's copy: chat editing and per-chat
+  mute) merged with Dumont/Funkystation's group chats and emoji picker. Coyote's `_DeltaV` copy
+  was the reference, but its old location/namespace was replaced by Delta-V's `_DV` layout.
+- **Code**:
+  - Shared: `Content.Shared/_DV/NanoChat/` (`NanoChatCardComponent`,
+    `SharedNanoChatSystem`), `Content.Shared/_DV/CartridgeLoader/Cartridges/NanoChat*`.
+  - Server: `Content.Server/_DV/NanoChat/NanoChatSystem.cs` (per-card number allocation,
+    PDA/card tracking, microwave wiping/scrambling) and
+    `Content.Server/_DV/CartridgeLoader/Cartridges/NanoChatCartridgeSystem.cs`.
+  - Client: `Content.Client/_DV/NanoChat/`, `Content.Client/_DV/CartridgeLoader/Cartridges/`
+    (entry, lookup, message bubble, UI fragment, new/edit chat popups) and
+    `Content.Client/_Funkystation/NanoChat/` (group/emoji popups + emoji markup tag).
+- **Content**: `NanoChatCartridge` in `_DV/Entities/Objects/Devices/cartridges.yml`,
+  `NanoChatCard` on `IDCardStandard`, the `NanoChat` name-identifier group
+  (`_DV/name_identifier_groups.yml`), `_DV` program/cartridge/bell/edit icons and the
+  `_Funkystation` emoji/group assets. Locale is in `_DV/cartridge-loader/cartridges.ftl`,
+  `_DV/nanochat/components/` and `_Funkystation/nanochat/`.
+- **Delivery**: Palmtree uses Coyote's "long distance plan" behavior - send/receive radio events
+  are still checked, but there is no station/telecomms range requirement, so ships and
+  expeditions can message the sector. The contact lookup lists every opted-in card rather than
+  only the PDA's owning station.
+- **Integration**: the cartridge is preinstalled on the base PDA and every PDA that overrides
+  `CartridgeLoader.preinstalled` (`Resources/Prototypes/Entities/Objects/Devices/pda.yml`,
+  `_NF/Entities/Objects/Devices/pda.yml`).
+- **Admin tools (Coyote)**: the `nanochatadmin` command opens an EUI message monitor
+  (`Content.Server/Administration/UI/NanoChatAdminEui.cs`,
+  `Content.Client/Administration/UI/NanoChatAdminEui.cs` + window, shared state in
+  `Content.Shared/Administration/NanoChatAdminEuiState.cs`). It lists every card by owner,
+  current player, original owner and number, then shows per-conversation message history with
+  sender usernames. Messages that claim to be from a card's owner but were sent by a different
+  account are marked `[STOLEN]`.
+- **Original-owner tracking**: `NanoChatMessage.SenderUsername` records the account that sent
+  each message, and `NanoChatCardComponent.OriginalOwnerUsername` is captured when the card is
+  inserted into a PDA or on the first message. The admin viewer compares the two for the stolen
+  marker.
+- **Not ported**: the LogProbe NanoChat scanner (it needs LogProbe UI changes that were not part
+  of this port). Normal admin chat logs still record every message.
+- **Tests**: `Content.IntegrationTests/Tests/_PS/PdaAppsTest.cs` checks that a passenger PDA has
+  both new cartridges, that ID cards get NanoChat/bank-number components and the account-number
+  derivation; `NanoChatDeliveryTest.cs` verifies a message is delivered without any station or
+  telecomms server and that the sender/original-owner usernames are recorded.
+
+### 28.2 RIX (Rouble PIX, remote payments)
+
+Coyote has no payment cartridge, so this is a Palmtree-original app built on Frontier's existing
+profile-backed bank (as agreed with the maintainer).
+
+- **Prototype**: `PSBankTransferCartridge` (`Resources/Prototypes/_PS/Entities/Objects/Devices/
+  cartridges.yml`), preinstalled alongside NanoChat on the same PDA lists. It is the companion app
+  to Frontier's read-only `LedgerCartridge` ("SpesoFlow Lite").
+- **Account numbers**: `BankAccountNumberComponent` (`Content.Shared/_PS/Bank`) is added to
+  `IDCardStandard`; `PSBankSystem` derives a stable 9-digit number from the player's `NetUserId`
+  and selected character slot. No DB migration or new profile field is needed. The number is
+  copied to `BankAccountComponent.AccountNumber` and to the carried ID card on spawn/reconnect.
+- **Transfer**: `PSBankSystem.TryTransfer` finds another online player by account number and uses
+  `BankSystem.TryBankWithdraw`/`TryBankDeposit`, refunding the sender if the deposit fails. Both
+  ends must be online because Frontier's balances live in loaded character profiles.
+- **UI**: `Content.Client/_PS/CartridgeLoader/Cartridges/PSBankTransferUi*` shows the local
+  account number, balance, target account and amount; results are localized in
+  `Resources/Locale/en-US/_PS/cartridge-loader/rix.ftl`. The server applies a one-second
+  cooldown and plays the cargo ping/deny sounds.
+- **Security/limits**: transfers require the sender's active session, reject self-transfers,
+  validate the amount server-side, and log successful transfers with `LogType.ATMUsage`. The
+  number is not a secret and grants no access without the owner's live session.
+- **Not included**: offline transfers, fees, PINs, and a separate bank/economy system. Those
+  belong to Dumont's `NanoBank` or Onyx's `BankCartridge`, which are built on their own economy
+  managers and were deliberately not ported.
+- Validation: full solution build, rebuilt `Content.YAMLLinter` (`No errors found`), `Content.Tests`,
+  `_PS|EntityTest|CharacterCreationTest` integration tests and the headless client IL check.
+
+## 29. 2026-11 Biodome ship family (Coyote `_CS`)
+
+Eleven copy-of-a-hull botany ships (`Biodome - Meadow`, `Ice Cave`, `Ice Cave (Sheleg)`, `Beach`,
+`Farm`, `Glass`, `Jungle`, `Sleepover`, `Desert`, `Winter`, `Winter (Sheleg)`). All vessel/map
+prototypes are under `Resources/Prototypes/_CS/Shipyard/biodome*.yml`, the format-7 maps under
+`Resources/Maps/_CS/Shuttles/`, and the models are unmodified from Coyote.
+
+- **Missing prototypes found and fixed**: every map uses `PlatingCornerNE/NW/SE/SW`, which Coyote
+  defines in `Resources/Prototypes/_Mono/Turf/plating.yml`; this fork had no `_Mono/Turf` content,
+  so the maps could not load. The whole tile file (plating corners plus `LatticeCorner*`) and its
+  eight `Resources/Textures/_Mono/Tiles/{plating,lattice}` PNGs were ported, with the missing
+  `tiles-platingcorner*`/`tiles-latticecorner*` names added in `Resources/Locale/en-US/_Mono/tiles.ftl`
+  (Coyote itself never localized them, so they showed raw key names).
+- **Job adaptation**: `CompanionInterview` is Coyote-only and was dropped (same as Salto);
+  `Contractor`/`Pilot`/`Mercenary` use the fork's `[ 0, 0 ]` convention instead of Coyote's
+  `[ 2, 2 ]`. The maps keep the shared `'Biodome {1}'` station name template.
+- `guidebookPage: Null`: Coyote ships have no guidebook pages, so there is nothing to port.
+- **Validation**: `Content.YAMLLinter` reports no errors; `MapChecker` finds no illegal prototypes;
+  `ShipyardTest.CheckAllShuttleGrids` loads all eleven grids. `NoShipyardShipArbitrage` still fails
+  only on the pre-existing `Bocadillo` and `Dragonfly` listings (unrelated to this port); every
+  Biodome price (105000, Sleepover 115000) is well above the 1.05× appraise minimum (appraise
+  ~43196–48110).
+
+## 30. 2026-11 Discipline whips (Coyote `Floof`)
+
+Four melee whips ported from Coyote's `Floof/Entities/Objects/Lewd/whips.yml`: `WhipPink`,
+`WhipTeal`, `WhipPinkCrotch` and `WhipTealCrotch`, all parented to the new abstract `BaseWhip`.
+The source file's two paddles (`SpankPinkPaddle`/`SpankTealPaddle`) were deliberately left out at
+the maintainer's request, so the set is admin-spawn only with no crate or vendor wiring.
+
+- **Prototypes**: `Resources/Prototypes/Floof/Entities/Objects/Lewd/whips.yml`.
+- **Assets**: `Resources/Textures/Floof/Objects/Fun/Lewd/Weapons/{whip_pink,whip_teal,crotch_pink,crotch_teal}.rsi`
+  and `Resources/Audio/Floof/Lewd/whip.ogg` (SPLURT, CC-BY-SA-3.0).
+- **Adaptations**: added the `Coyote Frontier` weapon suffix; dropped the EE combat fields already
+  commented out in the source (`heavyRateModifier`, `heavyDamageBaseModifier`, `heavyStaminaCost`,
+  `maxTargets`). Damage/stamina behavior is unchanged (Slash 2, 20 stamina on hit/collide).
+- **Validation**: `Content.YAMLLinter` reports no errors; `EntityTest` passes.
+
+## 31. MODsuits + Proteans (feature checkpoint, 2026-10-20)
 
 This is a new port, not part of the Coyote merge. The fail-safe plan, batch order, omissions and
 hazards live in [`ideas/modsuit-protean-port.md`](ideas/modsuit-protean-port.md) (see the MODsuit/Protean plan).
@@ -819,4 +1085,4 @@ hazards live in [`ideas/modsuit-protean-port.md`](ideas/modsuit-protean-port.md)
 - **Core patches added by Batch 1:** narrow `Access` entries on `ArmorComponent`,
   `ClothingComponent.EquippedState`, `PressureProtectionComponent`, `TemperatureProtectionComponent`
   and `ToggleClothingComponent`; all marked `// Palmtree: MODsuits`. The module-init ordering hazard
-  is documented in `.ai/HAZARDS.md` section 27.
+  is documented in `.ai/HAZARDS.md` section 29.

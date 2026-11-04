@@ -1,3 +1,4 @@
+fulton-storage-locked = The fulton keeps this sealed shut.
 rattle-on-trigger-dead-message-expedition = {$user}{$specie} has died on an expedition.
 rattle-on-trigger-critical-message-expedition = {$user}{$specie} life signs critical, immediate assistance required on an expedition.
 rattle-on-trigger-dead-message-repeat = {$user}{$specie} is STILL dead at {$grid}{$position}.

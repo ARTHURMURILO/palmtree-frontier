@@ -91,10 +91,13 @@ public sealed class MaterialReclaimerMagnetPickupSystem : EntitySystem
 
         while (query.MoveNext(out var uid, out var comp, out var storage, out var xform))
         {
-            if (comp.NextScan < currentTime)
+            // NextScan is an absolute round time (the bluespace dock clears it on load). Compare it
+            // the same way as MagnetPickupSystem: the old "<" check inverted the gate, and a zeroed
+            // timer then skipped every scan forever.
+            if (comp.NextScan > currentTime)
                 continue;
 
-            comp.NextScan += ScanDelay;
+            comp.NextScan = currentTime + ScanDelay;
 
             // Frontier - magnet disabled
             if (!comp.MagnetEnabled)

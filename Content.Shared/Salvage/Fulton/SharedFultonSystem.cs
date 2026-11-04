@@ -3,8 +3,12 @@ using Content.Shared.DoAfter;
 using Content.Shared.Examine;
 using Content.Shared.Foldable;
 using Content.Shared.Interaction;
+using Content.Shared.Mobs.Components; // Palmtree
+using Content.Shared.Mobs.Systems; // Palmtree
 using Content.Shared.Popups;
 using Content.Shared.Stacks;
+using Content.Shared.Standing; // Palmtree
+using Content.Shared.Storage.Components; // Palmtree
 using Content.Shared.Verbs;
 using Content.Shared.Whitelist;
 using Robust.Shared.Audio;
@@ -32,6 +36,7 @@ public abstract partial class SharedFultonSystem : EntitySystem
     [Dependency] private   readonly SharedStackSystem _stack = default!;
     [Dependency] protected readonly SharedTransformSystem TransformSystem = default!;
     [Dependency] private readonly EntityWhitelistSystem _whitelistSystem = default!;
+    [Dependency] private readonly MobStateSystem _mobState = default!; // Palmtree
 
     public static readonly EntProtoId EffectProto = "FultonEffect";
     protected static readonly Vector2 EffectOffset = Vector2.Zero;
@@ -45,6 +50,7 @@ public abstract partial class SharedFultonSystem : EntitySystem
         SubscribeLocalEvent<FultonedComponent, GetVerbsEvent<InteractionVerb>>(OnFultonedGetVerbs);
         SubscribeLocalEvent<FultonedComponent, ExaminedEvent>(OnFultonedExamine);
         SubscribeLocalEvent<FultonedComponent, EntGotInsertedIntoContainerMessage>(OnFultonContainerInserted);
+        SubscribeLocalEvent<FultonedComponent, StorageOpenAttemptEvent>(OnFultonedStorageOpenAttempt); // Palmtree
 
         SubscribeLocalEvent<FultonComponent, AfterInteractEvent>(OnFultonInteract);
 
@@ -54,6 +60,15 @@ public abstract partial class SharedFultonSystem : EntitySystem
     private void OnFultonContainerInserted(EntityUid uid, FultonedComponent component, EntGotInsertedIntoContainerMessage args)
     {
         RemCompDeferred<FultonedComponent>(uid);
+    }
+
+    // Palmtree: an active fulton keeps entity storage sealed so its contents travel with it.
+    private void OnFultonedStorageOpenAttempt(EntityUid uid, FultonedComponent component, ref StorageOpenAttemptEvent args)
+    {
+        args.Cancelled = true;
+
+        if (!args.Silent)
+            _popup.PopupPredicted(Loc.GetString("fulton-storage-locked"), uid, args.User);
     }
 
     private void OnFultonedExamine(EntityUid uid, FultonedComponent component, ExaminedEvent args)
@@ -177,10 +192,27 @@ public abstract partial class SharedFultonSystem : EntitySystem
         if (!CanFulton(targetUid))
             return false;
 
+        // Palmtree: downed mobs (resting, critical or dead) can be extracted even though they
+        // don't match the default item/structure whitelist.
+        if (IsDownedMob(targetUid))
+            return true;
+
         if (_whitelistSystem.IsWhitelistFailOrNull(component.Whitelist, targetUid))
             return false;
 
         return true;
+    }
+
+    // Palmtree
+    private bool IsDownedMob(EntityUid uid)
+    {
+        if (!TryComp<MobStateComponent>(uid, out var mobState))
+            return false;
+
+        if (_mobState.IsIncapacitated(uid, mobState))
+            return true;
+
+        return TryComp<StandingStateComponent>(uid, out var standing) && !standing.Standing;
     }
 
     protected bool CanFulton(EntityUid uid)

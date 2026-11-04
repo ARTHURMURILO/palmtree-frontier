@@ -5,10 +5,13 @@ using Content.Server.NPC.Components;
 using Content.Server.NPC.Systems;
 using Content.Shared._PS.Roomba;
 using Content.Shared.Chemistry.EntitySystems;
+using Content.Shared.Database;
 using Content.Shared.Decals;
+using Content.Shared.Examine;
 using Content.Shared.FixedPoint;
 using Content.Shared.Fluids;
 using Content.Shared.Fluids.Components;
+using Content.Shared.Hands.EntitySystems;
 using Content.Shared.Humanoid;
 using Content.Shared.Interaction;
 using Content.Shared.Inventory;
@@ -16,7 +19,13 @@ using Content.Shared.Maps;
 using Content.Shared.Mobs;
 using Content.Shared.Mobs.Components;
 using Content.Shared.NPC;
+using Content.Shared.Placeable;
+using Content.Shared.Popups;
+using Content.Shared.Storage;
+using Content.Shared.Storage.EntitySystems;
+using Content.Shared.Verbs;
 using Robust.Shared.Audio.Systems;
+using Robust.Shared.Containers;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
@@ -26,6 +35,7 @@ using Robust.Shared.Physics.Components;
 using Robust.Shared.Physics.Systems;
 using Robust.Shared.Random;
 using Robust.Shared.Timing;
+using Robust.Shared.Utility;
 
 namespace Content.Server._PS.Roomba;
 
@@ -50,12 +60,18 @@ public sealed class RoombaSystem : EntitySystem
     [Dependency] private readonly InventorySystem _inventory = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
     [Dependency] private readonly NPCSteeringSystem _steering = default!;
+    [Dependency] private readonly NPCSystem _npc = default!;
+    [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
+    [Dependency] private readonly SharedContainerSystem _container = default!;
+    [Dependency] private readonly SharedHandsSystem _hands = default!;
     [Dependency] private readonly SharedPhysicsSystem _physics = default!;
     [Dependency] private readonly SharedAbsorbentSystem _absorbent = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!;
     [Dependency] private readonly SharedInteractionSystem _interaction = default!;
     [Dependency] private readonly SharedMapSystem _map = default!;
+    [Dependency] private readonly SharedPopupSystem _popup = default!;
     [Dependency] private readonly SharedSolutionContainerSystem _solutions = default!;
+    [Dependency] private readonly SharedStorageSystem _storage = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
     [Dependency] private readonly TurfSystem _turf = default!;
 
@@ -97,13 +113,20 @@ public sealed class RoombaSystem : EntitySystem
     private readonly HashSet<Entity<PuddleComponent>> _puddles = new();
     private readonly HashSet<Entity<HumanoidAppearanceComponent>> _humanoids = new();
     private readonly HashSet<EntityUid> _obstacles = new();
+    private readonly HashSet<EntityUid> _surfaces = new();
     private readonly HashSet<EntityUid> _touching = new();
+    private readonly HashSet<EntityUid> _trash = new();
 
     public override void Initialize()
     {
         base.Initialize();
         SubscribeLocalEvent<RoombaComponent, MapInitEvent>(OnMapInit);
         SubscribeLocalEvent<RoombaComponent, ComponentShutdown>(OnShutdown);
+        SubscribeLocalEvent<RoombaComponent, InteractHandEvent>(OnInteractHand,
+            before: new[] { typeof(InteractionPopupSystem) });
+        SubscribeLocalEvent<RoombaComponent, ActivateInWorldEvent>(OnActivateInWorld);
+        SubscribeLocalEvent<RoombaComponent, GetVerbsEvent<Verb>>(OnGetVerbs);
+        SubscribeLocalEvent<RoombaComponent, ExaminedEvent>(OnExamined);
     }
 
     private void OnMapInit(EntityUid uid, RoombaComponent roomba, MapInitEvent args)
@@ -121,6 +144,12 @@ public sealed class RoombaSystem : EntitySystem
         roomba.NextNudeCheck = now + TimeSpan.FromSeconds(roomba.NudeCheckInterval);
         roomba.LastScrubPosition = xform.LocalPosition;
         roomba.LastSafeCoordinates = xform.Coordinates;
+
+        // Roombas are shipped switched off. Sleep the NPC right away when we can (the HTN may wake
+        // it again during its own MapInit, but Update also refuses to drive a disabled roomba).
+        _appearance.SetData(uid, RoombaVisuals.Enabled, roomba.Enabled);
+        if (!roomba.Enabled)
+            _npc.SleepNPC(uid);
     }
 
     private void OnShutdown(EntityUid uid, RoombaComponent roomba, ComponentShutdown args)
@@ -135,6 +164,11 @@ public sealed class RoombaSystem : EntitySystem
         var query = EntityQueryEnumerator<RoombaComponent, ActiveNPCComponent, TransformComponent>();
         while (query.MoveNext(out var uid, out var roomba, out _, out var xform))
         {
+            // A disabled roomba is normally asleep, but the HTN can wake it during its own MapInit
+            // or if something else pokes the NPC. Never drive, clean or talk while switched off.
+            if (!roomba.Enabled)
+                continue;
+
             UpdateRoomba(uid, roomba, xform, now);
         }
     }
@@ -245,7 +279,7 @@ public sealed class RoombaSystem : EntitySystem
             return;
 
         roomba.NextBumpSpeech = now + TimeSpan.FromSeconds(roomba.BumpSpeechCooldown);
-        Say(uid, _random.Pick(BumpLines));
+        Say(uid, roomba, _random.Pick(BumpLines));
     }
 
     /// <summary>
@@ -458,6 +492,8 @@ public sealed class RoombaSystem : EntitySystem
 
         roomba.LastScrubPosition = pos;
 
+        CollectTrash(uid, roomba, grid, pos);
+
         // Puddles first (same tank and use delay as the cleanbot).
         _puddles.Clear();
         var tile = _map.TileIndicesFor(grid, gridComp, new EntityCoordinates(grid, pos));
@@ -506,6 +542,273 @@ public sealed class RoombaSystem : EntitySystem
         _audio.PlayPvs(roomba.ScrubSound, uid);
     }
 
+    /// <summary>
+    /// Vacuums up loose trash around the roomba, using the same whitelist as a trash bag's area insert.
+    /// Items resting on a table (or another placeable surface) are deliberately left alone: they are
+    /// not on the floor, even though they share the tile's coordinates.
+    /// </summary>
+    private void CollectTrash(EntityUid uid, RoombaComponent roomba, EntityUid grid, Vector2 pos)
+    {
+        if (!roomba.CollectTrash || !TryGetTrashBagStorage(uid, out var bag))
+            return;
+
+        var half = new Vector2(roomba.TrashPickupRadius);
+        _trash.Clear();
+        _lookup.GetLocalEntitiesIntersecting(grid, new Box2(pos - half, pos + half), _trash,
+            LookupFlags.Uncontained);
+
+        var picked = 0;
+        foreach (var other in _trash)
+        {
+            if (other == uid || _container.IsEntityInContainer(other))
+                continue;
+
+            if (IsOnPlaceableSurface(other))
+                continue;
+
+            if (!_storage.CanInsert(bag.Owner, other, out _, bag.Comp))
+                continue;
+
+            if (!_storage.Insert(bag.Owner, other, out _, storageComp: bag.Comp, playSound: false))
+                continue;
+
+            picked++;
+            if (picked >= roomba.TrashPickupLimit)
+                break;
+        }
+
+        if (picked > 0)
+            _audio.PlayPvs(roomba.TrashPickupSound, uid);
+    }
+
+    /// <summary>
+    /// Returns true when the entity is sitting on something like a table, bed or crate instead of
+    /// the floor. SS14 has no z-levels, so "on a table" is represented by the item overlapping a
+    /// <see cref="PlaceableSurfaceComponent"/>.
+    /// </summary>
+    private bool IsOnPlaceableSurface(EntityUid item)
+    {
+        _surfaces.Clear();
+        _lookup.GetEntitiesIntersecting(item, _surfaces, LookupFlags.Static | LookupFlags.Dynamic);
+        _surfaces.Remove(item);
+
+        foreach (var other in _surfaces)
+        {
+            if (HasComp<PlaceableSurfaceComponent>(other))
+                return true;
+        }
+
+        return false;
+    }
+
+    private bool TryGetTrashBagStorage(EntityUid uid, out Entity<StorageComponent> bag)
+    {
+        bag = default;
+
+        if (!_container.TryGetContainer(uid, RoombaComponent.TrashBagContainerId, out var container))
+            return false;
+
+        foreach (var entity in container.ContainedEntities)
+        {
+            if (TryComp(entity, out StorageComponent? storage))
+            {
+                bag = (entity, storage);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Switches the roomba on or off. A powered-down roomba is put to sleep so the NPC system does
+    /// not keep planning for it; switching it back on wakes it and resets its timers.
+    /// </summary>
+    private void SetEnabled(EntityUid uid, RoombaComponent roomba, bool enabled, EntityUid? user = null,
+        bool playSound = true)
+    {
+        if (roomba.Enabled == enabled)
+            return;
+
+        roomba.Enabled = enabled;
+
+        if (enabled)
+        {
+            var now = _timing.CurTime;
+            roomba.NextLegRetry = now;
+            roomba.NextBumpSpeech = now;
+            roomba.NextNudeSpeech = now;
+            roomba.NextNudeCheck = now + TimeSpan.FromSeconds(roomba.NudeCheckInterval);
+            roomba.NextIdleSpeech = now + TimeSpan.FromSeconds(
+                _random.NextFloat(roomba.IdleSpeechMinSeconds, roomba.IdleSpeechMaxSeconds));
+            roomba.LastScrubPosition = Transform(uid).LocalPosition;
+            _npc.WakeNPC(uid);
+        }
+        else
+        {
+            StopDriving(uid, roomba);
+
+            if (TryComp(uid, out PhysicsComponent? body))
+                _physics.SetLinearVelocity(uid, Vector2.Zero, body: body);
+
+            _npc.SleepNPC(uid);
+        }
+
+        _appearance.SetData(uid, RoombaVisuals.Enabled, enabled);
+
+        if (user is { } player)
+            _popup.PopupEntity(Loc.GetString(enabled ? "roomba-power-on" : "roomba-power-off"), uid, player);
+
+        if (playSound)
+            _audio.PlayPvs(roomba.PowerSound, uid);
+    }
+
+    private void TogglePower(EntityUid uid, RoombaComponent roomba, EntityUid user)
+    {
+        SetEnabled(uid, roomba, !roomba.Enabled, user);
+    }
+
+    private void OnInteractHand(EntityUid uid, RoombaComponent roomba, InteractHandEvent args)
+    {
+        if (args.Handled)
+            return;
+
+        // Clicking a roomba switches it instead of petting it. Handling the event here also stops
+        // the inherited InteractionPopup component from playing the cleanbot petting lines.
+        args.Handled = true;
+        TogglePower(uid, roomba, args.User);
+    }
+
+    private void OnActivateInWorld(EntityUid uid, RoombaComponent roomba, ActivateInWorldEvent args)
+    {
+        if (args.Handled)
+            return;
+
+        args.Handled = true;
+        TogglePower(uid, roomba, args.User);
+    }
+
+    private void OnGetVerbs(EntityUid uid, RoombaComponent roomba, GetVerbsEvent<Verb> args)
+    {
+        if (!args.CanAccess || !args.CanInteract || args.User == uid)
+            return;
+
+        var user = args.User;
+
+        args.Verbs.Add(new Verb
+        {
+            Text = Loc.GetString(roomba.Enabled ? "roomba-verb-power-off" : "roomba-verb-power-on"),
+            Icon = new SpriteSpecifier.Texture(new("/Textures/Interface/VerbIcons/Spare/poweronoff.svg.192dpi.png")),
+            Priority = 10,
+            Impact = LogImpact.Low,
+            Act = () => SetEnabled(uid, roomba, !roomba.Enabled, user),
+        });
+
+        args.Verbs.Add(new Verb
+        {
+            Text = Loc.GetString(roomba.CollectTrash ? "roomba-verb-trash-off" : "roomba-verb-trash-on"),
+            Icon = new SpriteSpecifier.Texture(new("/Textures/Interface/VerbIcons/delete.svg.192dpi.png")),
+            Priority = 5,
+            Impact = LogImpact.Low,
+            Act = () =>
+            {
+                roomba.CollectTrash = !roomba.CollectTrash;
+                _popup.PopupEntity(Loc.GetString(roomba.CollectTrash
+                    ? "roomba-trash-collection-enabled"
+                    : "roomba-trash-collection-disabled"), uid, user);
+            },
+        });
+
+        args.Verbs.Add(new Verb
+        {
+            Text = Loc.GetString(roomba.MuteSpeech ? "roomba-verb-unmute" : "roomba-verb-mute"),
+            Icon = new SpriteSpecifier.Texture(new(roomba.MuteSpeech
+                ? "/Textures/_DV/Interface/VerbIcons/bell.svg.png"
+                : "/Textures/_DV/Interface/VerbIcons/bell_muted.png")),
+            Priority = 4,
+            Impact = LogImpact.Low,
+            Act = () =>
+            {
+                roomba.MuteSpeech = !roomba.MuteSpeech;
+                _popup.PopupEntity(Loc.GetString(roomba.MuteSpeech
+                    ? "roomba-speech-muted"
+                    : "roomba-speech-unmuted"), uid, user);
+            },
+        });
+
+        if (!TryGetTrashBagStorage(uid, out var bag) || bag.Comp.Container.ContainedEntities.Count == 0)
+            return;
+
+        var hasFreeHand = _hands.TryGetEmptyHand(user, out _);
+        args.Verbs.Add(new Verb
+        {
+            Text = Loc.GetString("roomba-verb-take-trash-bag"),
+            Icon = new SpriteSpecifier.Texture(new("/Textures/Interface/VerbIcons/drop.svg.192dpi.png")),
+            Priority = 3,
+            Impact = LogImpact.Low,
+            Disabled = !hasFreeHand,
+            Message = hasFreeHand ? null : Loc.GetString("roomba-trash-bag-needs-hand"),
+            Act = () => TakeTrashBag(uid, roomba, user),
+        });
+    }
+
+    private void OnExamined(EntityUid uid, RoombaComponent roomba, ExaminedEvent args)
+    {
+        if (!args.IsInDetailsRange)
+            return;
+
+        args.PushMarkup(Loc.GetString(roomba.Enabled ? "roomba-examine-on" : "roomba-examine-off"));
+
+        if (!roomba.Enabled)
+            return;
+
+        args.PushMarkup(Loc.GetString(roomba.CollectTrash
+            ? "roomba-examine-trash-on"
+            : "roomba-examine-trash-off"));
+
+        if (roomba.MuteSpeech)
+            args.PushMarkup(Loc.GetString("roomba-examine-muted"));
+    }
+
+    /// <summary>
+    /// Takes the full internal trash bag and puts a fresh empty one in its place. Only retrieval is
+    /// allowed: the bag is not a normal storage interaction, so players cannot insert items into it.
+    /// </summary>
+    private void TakeTrashBag(EntityUid uid, RoombaComponent roomba, EntityUid user)
+    {
+        if (!TryGetTrashBagStorage(uid, out var bag) || bag.Comp.Container.ContainedEntities.Count == 0)
+            return;
+
+        if (!_hands.TryGetEmptyHand(user, out _))
+        {
+            _popup.PopupEntity(Loc.GetString("roomba-trash-bag-needs-hand"), uid, user);
+            return;
+        }
+
+        if (!_container.TryGetContainer(uid, RoombaComponent.TrashBagContainerId, out var container))
+            return;
+
+        _container.Remove(bag.Owner, container, force: true);
+
+        var newBag = Spawn("TrashBag", Transform(uid).Coordinates);
+        if (!_container.Insert(newBag, container))
+        {
+            Log.Error($"Failed to insert a fresh trash bag into {ToPrettyString(uid)}.");
+            _transform.AttachToGridOrMap(newBag);
+        }
+
+        if (!_hands.TryPickupAnyHand(user, bag.Owner))
+        {
+            _popup.PopupEntity(Loc.GetString("roomba-trash-bag-dropped"), uid, user);
+        }
+        else
+        {
+            _popup.PopupEntity(Loc.GetString("roomba-trash-bag-taken"), uid, user);
+        }
+
+        _audio.PlayPvs(roomba.TrashPickupSound, uid);
+    }
+
     private void ConsumeWater(EntityUid uid, RoombaComponent roomba, int decals)
     {
         if (!_solutions.TryGetSolution(uid, "absorbed", out var solutionEnt, out var solution) ||
@@ -526,7 +829,7 @@ public sealed class RoombaSystem : EntitySystem
         {
             roomba.NextIdleSpeech = now + TimeSpan.FromSeconds(
                 _random.NextFloat(roomba.IdleSpeechMinSeconds, roomba.IdleSpeechMaxSeconds));
-            Say(uid, _random.Pick(IdleLines));
+            Say(uid, roomba, _random.Pick(IdleLines));
         }
 
         if (now < roomba.NextNudeCheck)
@@ -541,7 +844,7 @@ public sealed class RoombaSystem : EntitySystem
             return;
 
         roomba.NextNudeSpeech = now + TimeSpan.FromSeconds(roomba.NudeSpeechCooldown);
-        Say(uid, _random.Pick(NudeLines));
+        Say(uid, roomba, _random.Pick(NudeLines));
     }
 
     /// <summary>
@@ -580,9 +883,15 @@ public sealed class RoombaSystem : EntitySystem
         return found;
     }
 
-    private void Say(EntityUid uid, string line)
+    private void Say(EntityUid uid, RoombaComponent roomba, string line)
     {
-        _chat.TrySendInGameICMessage(uid, Loc.GetString(line), InGameICChatType.Speak, hideChat: false, hideLog: false);
+        if (roomba.MuteSpeech)
+            return;
+
+        // HideChat turns this into an overhead speech bubble only: like a vending machine, the
+        // roomba is heard nearby but never enters chat history (and NPCs are not admin-logged).
+        _chat.TrySendInGameICMessage(uid, Loc.GetString(line), InGameICChatType.Speak,
+            hideChat: true, hideLog: true, checkRadioPrefix: false);
     }
 
     private bool IsLineClear(EntityUid grid, MapGridComponent gridComp, Vector2 from, Vector2 to, float step,

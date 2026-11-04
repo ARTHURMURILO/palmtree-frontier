@@ -156,6 +156,7 @@
     - NFMedicalMobilityStatic # Frontier
     - NFServiceKitchenStatic # Frontier
     - NFEvaSuitCommon # Frontier
+    - CSPlumbingStatic # Palmtree: showers, sinks, drains
 
   - type: EmagLatheRecipes
     emagStaticPacks:

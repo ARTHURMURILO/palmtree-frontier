@@ -377,6 +377,7 @@ namespace Content.Server.Database
                 Genitals = GenitalOrganSettings.FromDbString(profile.Genitals), // Palmtree
                 Height = profile.Height, // Palmtree
                 Width = profile.Width, // Palmtree
+                SnoutAboveHair = profile.SnoutAboveHair, // Palmtree
             };
         }
 
@@ -399,6 +400,7 @@ namespace Content.Server.Database
             profile.Genitals = humanoid.Genitals.ToDbString(); // Palmtree
             profile.Height = humanoid.Height; // Palmtree
             profile.Width = humanoid.Width; // Palmtree
+            profile.SnoutAboveHair = humanoid.SnoutAboveHair; // Palmtree
             profile.LegStyle = appearance.LegStyle.ToString(); // Palmtree/Coyote
             profile.Age = humanoid.Age;
             profile.Sex = humanoid.Sex.ToString();
@@ -1202,6 +1204,18 @@ INSERT INTO player_round (players_id, rounds_id) VALUES ({players[player]}, {id}
         {
             await using var db = await GetDb();
             return await db.DbContext.AdminLog.CountAsync(log => log.RoundId == round);
+        }
+
+        public async Task<int> PurgeAdminLogsAsync(int days)
+        {
+            await using var db = await GetDb();
+
+            var cutoff = DateTime.UtcNow.Subtract(TimeSpan.FromDays(days));
+
+            // The admin_log_player rows are removed by the foreign key cascade.
+            return await db.DbContext.AdminLog
+                .Where(log => log.Date < cutoff)
+                .ExecuteDeleteAsync();
         }
 
         #endregion

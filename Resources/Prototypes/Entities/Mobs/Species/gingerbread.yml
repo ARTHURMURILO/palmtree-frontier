@@ -5,6 +5,8 @@
   id: BaseMobGingerbread
   abstract: true
   components:
+  - type: Hunger
+  - type: Thirst
   - type: HumanoidAppearance
     species: Gingerbread
   - type: Icon

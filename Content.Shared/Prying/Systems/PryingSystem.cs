@@ -140,13 +140,14 @@ public sealed class PryingSystem : EntitySystem
         var modEv = new GetPryTimeModifierEvent(user);
 
         RaiseLocalEvent(target, ref modEv);
-
         // Palmtree: a flat pry time (e.g. synths) ignores the target's pry-time modifiers and speed.
         // Tools keep their own component, so crowbars/jaws are unaffected by a user's flat time.
         var pryComp = tool != null ? CompOrNull<PryingComponent>(tool) : CompOrNull<PryingComponent>(user);
-        var delay = pryComp?.FlatPryTime ?? modEv.BaseTime * modEv.PryTimeModifier / toolModifier;
+        var delay = pryComp?.FlatPryTime is { } flatPryTime
+            ? TimeSpan.FromSeconds(flatPryTime)
+            : modEv.BaseTime * modEv.PryTimeModifier / toolModifier;
 
-        var doAfterArgs = new DoAfterArgs(EntityManager, user, TimeSpan.FromSeconds(delay), new DoorPryDoAfterEvent(), target, target, tool)
+        var doAfterArgs = new DoAfterArgs(EntityManager, user, delay, new DoorPryDoAfterEvent(), target, target, tool)
         {
             BreakOnDamage = true,
             BreakOnMove = true,

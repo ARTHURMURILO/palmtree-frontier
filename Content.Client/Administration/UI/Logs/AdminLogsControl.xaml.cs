@@ -515,6 +515,14 @@ public sealed partial class AdminLogsControl : Control
         );
     }
 
+    public void SetDeleteStatus(int deleted, int days, bool success)
+    {
+        DeleteStatus.Visible = true;
+        DeleteStatus.Text = success
+            ? Loc.GetString("admin-logs-delete-old-success", ("count", deleted), ("days", days))
+            : Loc.GetString("admin-logs-delete-old-failed");
+    }
+
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);

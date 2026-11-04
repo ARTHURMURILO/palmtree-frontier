@@ -14,8 +14,12 @@ using Content.Shared.Damage;
 using Content.Shared.Damage.Prototypes;
 using Content.Shared.Damage.Systems;
 using Content.Shared.DoAfter;
+using Content.Shared.Inventory;
+using Content.Shared.Item.ItemToggle.Components;
 using Content.Shared.Medical.Healing;
 using Content.Shared.Mobs.Systems;
+using Content.Shared.Movement.Components;
+using Content.Shared.Movement.Systems;
 using Content.Shared.Prying.Components;
 using Content.Shared.Prying.Systems;
 using Robust.Shared.GameObjects;
@@ -119,6 +123,84 @@ public sealed class SynthTest
             entMan.DeleteEntity(wreck);
             entMan.DeleteEntity(shockSynth);
             entMan.DeleteEntity(medic);
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    /// Palmtree: synths do not benefit from speed boosts (e.g. speed boots), while slowdowns
+    /// still apply to their chassis.
+    /// </summary>
+    [Test]
+    public async Task SynthIgnoresSpeedBoosts()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var map = await pair.CreateTestMap();
+
+        EntityUid synth = default;
+        EntityUid human = default;
+        EntityUid slowedSynth = default;
+        bool synthEquipped = false;
+        bool humanEquipped = false;
+        bool slowdownApplied = false;
+
+        await server.WaitPost(() =>
+        {
+            var inventory = entMan.System<InventorySystem>();
+            var movement = entMan.System<MovementSpeedModifierSystem>();
+            var movementStatus = entMan.System<MovementModStatusSystem>();
+
+            synth = entMan.SpawnEntity("MobSynth", map.GridCoords);
+            human = entMan.SpawnEntity("MobHuman", map.GridCoords);
+            slowedSynth = entMan.SpawnEntity("MobSynth", map.GridCoords);
+
+            var synthBoots = entMan.SpawnEntity("ClothingShoesBootsSpeed", map.GridCoords);
+            var humanBoots = entMan.SpawnEntity("ClothingShoesBootsSpeed", map.GridCoords);
+
+            // Skip the power-cell check; the speed modifier only reads the toggle state.
+            entMan.GetComponent<ItemToggleComponent>(synthBoots).Activated = true;
+            entMan.GetComponent<ItemToggleComponent>(humanBoots).Activated = true;
+
+            synthEquipped = inventory.TryEquip(synth, synthBoots, "shoes", true, true);
+            humanEquipped = inventory.TryEquip(human, humanBoots, "shoes", true, true);
+
+            movement.RefreshMovementSpeedModifiers(synth);
+            movement.RefreshMovementSpeedModifiers(human);
+
+            slowdownApplied = movementStatus.TryAddMovementSpeedModDuration(
+                slowedSynth,
+                MovementModStatusSystem.VomitingSlowdown,
+                TimeSpan.FromSeconds(10),
+                0.5f);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            var synthSpeed = entMan.GetComponent<MovementSpeedModifierComponent>(synth);
+            var humanSpeed = entMan.GetComponent<MovementSpeedModifierComponent>(human);
+            var slowedSpeed = entMan.GetComponent<MovementSpeedModifierComponent>(slowedSynth);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(synthEquipped, Is.True, "the synth should wear the speed boots");
+                Assert.That(humanEquipped, Is.True, "the human should wear the speed boots");
+                Assert.That(humanSpeed.WalkSpeedModifier, Is.GreaterThan(1f),
+                    "speed boots should still speed up a non-synth");
+                Assert.That(synthSpeed.WalkSpeedModifier, Is.EqualTo(1f).Within(0.001f),
+                    "speed boots should not speed up a synth");
+                Assert.That(synthSpeed.SprintSpeedModifier, Is.EqualTo(1f).Within(0.001f),
+                    "speed boots should not speed up a synth");
+                Assert.That(slowdownApplied, Is.True, "the synth slowdown effect should apply");
+                Assert.That(slowedSpeed.WalkSpeedModifier, Is.LessThan(1f),
+                    "synths should still be slowed by slowdown effects");
+            });
+
+            entMan.DeleteEntity(synth);
+            entMan.DeleteEntity(human);
+            entMan.DeleteEntity(slowedSynth);
         });
 
         await pair.CleanReturnAsync();

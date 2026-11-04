@@ -1,12 +1,15 @@
 using Content.Shared.Damage;
+using Robust.Shared.GameStates;
 
 namespace Content.Shared._PS.Synth;
 
 /// <summary>
 /// Marker component for Synth entities. Synths are synthetic and do not need to breathe;
 /// systems that do not apply to them (e.g. respiration) check for this component.
+/// Networked so client-side movement prediction agrees with the server that synths ignore
+/// speed boosts (<see cref="Content.Shared.Movement.Systems.MovementSpeedModifierSystem"/>).
 /// </summary>
-[RegisterComponent]
+[RegisterComponent, NetworkedComponent]
 public sealed partial class SynthComponent : Component
 {
     /// <summary>

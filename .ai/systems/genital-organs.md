@@ -78,10 +78,14 @@ queries).
    `Forced = true`, `Visible = true`, `CanToggleVisible/OtherCanToggleVisible = false` (so
    ModifyUndies adds no verbs) and colors built from the organ's primary/detail colors (skin color
    when null), following the marking's `colorLinks` so linked states share a color group.
-   Organs are added in a fixed render order — butt, vagina, balls, penis, belly, breasts — so the
-   penis draws over the balls, the belly draws over the groin, and the breasts are the only organ
-   drawn over the belly, regardless of the order the player enabled them in the editor.
+   Organs are added in reverse priority order (breasts, belly, penis, balls, vagina, butt) because
+   marking layers inserted at the same index render newest-first. The resulting bottom-to-top stack
+   is butt, vagina, balls, penis, belly, breasts, so the penis draws over the balls, the belly draws
+   over the groin, and the breasts are the only organ drawn over the belly, regardless of the order
+   the player enabled them in the editor.
    `NeverHidden` additionally sets `Marking.RenderOverClothing` to draw above outer clothing.
+   `VisibleUnderClothes` renders even when covered but leaves the normal layer clamp in place, so
+   clothing still draws over the organ.
    If the organ's `SkinTone` toggle is on and the selected size has a `skintoned` render marking,
    that skin-shaded variant is used instead of the tinted one (breasts).
 5. The interaction panel's genital tab lists organs, toggles `Aroused` per organ
@@ -90,14 +94,15 @@ queries).
    controls both exposure and whether/how the sprite draws.
 6. `GenitalSystem` (interactions) answers `HasGenital`/`GetExposure` with the per-organ
    **visibility rule** (SPLURT/Sandstorm port), and `GenitalOrganSystem` re-renders on
-   `DidEquipEvent`/`DidUnequipEvent` (jumpsuit) and `MarkingVisibilityChangedEvent` (undies
-   toggled), so the rule stays in sync with clothing:
+   `DidEquipEvent`/`DidUnequipEvent` (jumpsuit and outer clothing) and
+   `MarkingVisibilityChangedEvent` (undies toggled), so the rule stays in sync with clothing:
 
    | Rule | Exposed when | Sprite |
    |---|---|---|
    | Always hidden | never | not drawn |
    | Hidden by underwear (default) | no visible relevant undergarment marking and no jumpsuit | under clothing/undergarments |
    | Hidden by jumpsuit | no jumpsuit | under clothing |
+   | Visible under clothes | always | under clothing; no layer lift |
    | Never hidden | always | drawn above outer clothing (`Marking.RenderOverClothing`) |
 
    Undergarments are the fork's undergarment markings (`UndergarmentTop` for breasts,
@@ -106,12 +111,31 @@ queries).
    (just before `mask`), so tails, hands and clothing no longer draw over penises/bellies; clothing
    occlusion is handled by the visibility rule above, not by draw order.
 
+   Palmtree: layer order follows the direction the sprite is drawn in **on the local client**
+   (`world rotation + eye rotation`, see `Content.Client/_PS/Humanoid/DirectionalLayerOrderSystem`).
+   Facing south puts exposed genitals above hair and tail layers (unless a jumpsuit/outer garment
+   actually covers them); facing east/west tucks tail markings under the hair layer and puts snout
+   and snout-cover markings above it when the character's `SnoutAboveHair` option is enabled
+   (default off keeps them under hair). Sprite
+   direction changes raise no event, so the system rebuilds the humanoid sprite when the cardinal
+   direction changes. The lobby editor sets <c>HumanoidLayerDirectionComponent</c> on its preview
+   dummy so its rotation buttons use the same rules despite rendering through
+   <c>SpriteView.OverrideDirection</c>.
+
+   Under-clothing genital layers use stable anchors instead of `jumpsuit`/`outerClothing`
+   (whose indices shift when layers are inserted before them). Bottom organs anchor above `LLeg`
+   and therefore render below `UndergarmentBottom`; breast markings anchor above
+   `UndergarmentBottom` and render below `UndergarmentTop`. The anchor includes the marking's
+   per-sprite offset, so a breast's nipple sprite still renders above the breast sprite and a
+   butt's front/mid sprites stay ordered. A visible relevant undergarment forces this clamp in
+   every direction (south included); without one, south keeps the genitals-over-hair rule.
+
 ## Cum, drip and washing
 
 | Piece | Path | Notes |
 |---|---|---|
 | Reagent | `Resources/Prototypes/_PS/Reagents/semen.yml` | `Semen`, white, viscous; no longer used for puddles/overlays (kept for future fluid work) |
-| Drip | `Content.Shared/_PS/Organs/DrippingCumComponent.cs`, `Content.Server/_PS/Organs/DrippingCumSystem.cs` | stores units; 1 u/s into **droplet** decals (`SemenDrip1..5` only), pausing while a jumpsuit is worn |
+| Drip | `Content.Shared/_PS/Organs/DrippingCumComponent.cs`, `Content.Server/_PS/Organs/DrippingCumSystem.cs` | stores units; 10 u/s into **droplet** decals (`SemenDrip1..5` only), 10u per drip, pausing while a jumpsuit is worn |
 | Ejaculation decals | `DrippingCumSystem.SpawnCumDecals` | drops `SemenPuddle1..4` scaled by `SemenVolume`; each climax adds a new decal (never replaces) |
 | Decal sprites/prototypes | `Resources/Textures/_PS/Effects/decals/semen.rsi` (ported from SPLURT `effects.dmi`), `Resources/Prototypes/_PS/Decals/semen.yml` | cleanable with space cleaner; no reagent puddles |
 | Washing | — | decals are removed by space cleaner (`CleanDecalsReaction`) or by the Palmtree roomba's decal-scrubbing HTN operators (`Content.Server/_PS/Roomba`); the character overlay feature was removed |
@@ -121,13 +145,14 @@ queries).
   ever place the small droplet decals (`SemenDrip1..5`); the full cum decals are reserved for actual
   ejaculation. The receiver gets a private popup ("trickle" or "pool, held back by your clothes"
   while a jumpsuit is worn).
-- **Drip activity gate (Palmtree):** a filled mob does not drip on its own. The drip only runs after
-  the mob **moved** (its position changed since the last drip check) or **performed an interaction**
-  (`DrippingCumSystem.NotifyActivity`, called for both participants by `TryPerform`). A drip consumes
-  the flag, so an idle mob keeps every unit inside and walking keeps the drip going. `AddSemen`
-  records the mob's position, so spawning where they were filled does not count as movement.
+- **Drip activity gate (Palmtree):** a filled mob does not drip on its own. The drip **starts**
+  when the mob first **moves** (its position changed since the last check) or performs an interaction
+  (`DrippingCumSystem.NotifyActivity`, called for both participants by `TryPerform`). That starter is
+  a latch: it is never consumed by a drip, so the mob keeps dripping every second while standing
+  still until the reservoir is empty. Each drip drains 10u (`DripAmount`). `AddSemen` records the
+  mob's position, so spawning where they were filled does not count as movement.
 - **Tile limit (Palmtree):** dripping pauses while the mob's tile already has
-  `MaxDripsPerTile = 5` drip decals on it. The pause never consumes stored semen; it resumes when
+  `MaxDripsPerTile = 20` drip decals on it. The pause never consumes stored semen; it resumes when
   the mob moves to a clear tile or the floor is cleaned. Decals are counted by the tile their center
   falls in (the stored coordinate is the decal's bottom-left corner).
 - **Receive capacity (Palmtree):** the reservoir holds at most
@@ -168,7 +193,8 @@ queries).
 
 Dynamic `Genitals` tab (like Flavor Text, so upstream tab indices do not change). Per organ type:
 enable checkbox, Type dropdown (catalog prototypes), Size dropdown (catalog sizes), Visibility
-dropdown (Always hidden / Hidden by underwear / Hidden by jumpsuit / Never hidden), a **Skin tone**
+dropdown (Always hidden / Hidden by underwear / Hidden by jumpsuit / Never hidden / Visible under
+clothes), a **Skin tone**
 checkbox for organs whose catalog has skin-shaded variants (breasts), a collapsible **Colors**
 section with primary + detail `ColorSelectorSliders` (alpha enabled) and a "Use skin
 color" reset (null colors follow the skin), plus Glow/Detail glow sliders (0-100%) in the same

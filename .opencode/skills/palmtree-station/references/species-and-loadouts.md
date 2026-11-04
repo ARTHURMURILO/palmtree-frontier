@@ -41,6 +41,11 @@ damage/resistances, `ZombieImmune`, `CanHostGuardian`, robot typing, insulated t
 fixture density 462.5 (mass-based pull slowdown), sexes Male/Female/Unsexed, kinds
 `BasicHumanlike`/`BasicFurry`/`BasicRobot`/`VoxLike` so any marking/adaptor applies.
 
+Speed boosts are ignored: `MovementSpeedModifierSystem` flags the refresh event for
+`SynthComponent` entities, so every positive modifier (speed boots, stimulants, held/wieldable speed)
+is clamped out while slowdowns still stack. Keep `SynthComponent` networked - client movement
+prediction needs the same rule.
+
 Differences from old IPCs: no battery/power drain, no radio/encryption, no EMP/Silicon component,
 human-sized organ set (synthetic), no guidebook entry.
 

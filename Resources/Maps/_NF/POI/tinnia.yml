@@ -11964,7 +11964,7 @@ entities:
       parent: 1
     - type: DisableToolUse
       anchoring: True
-- proto: SellOnlyMothershipComputer
+- proto: ComputerBluespaceDock
   entities:
   - uid: 2250
     components:

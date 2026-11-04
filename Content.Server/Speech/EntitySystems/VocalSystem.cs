@@ -47,6 +47,7 @@ public sealed class VocalSystem : EntitySystem
         targetComp.Wilhelm = source.Comp.Wilhelm;
         targetComp.WilhelmProbability = source.Comp.WilhelmProbability;
         targetComp.SupplementalSounds = source.Comp.SupplementalSounds; // Palmtree/Coyote
+        targetComp.SexSupplementalSounds = source.Comp.SexSupplementalSounds; // Palmtree
         LoadSounds(target, targetComp);
 
         Dirty(target, targetComp);
@@ -90,7 +91,29 @@ public sealed class VocalSystem : EntitySystem
         if (component.EmoteSounds is { } soundsId && _proto.TryIndex(soundsId, out var soundsProto))
             sounds = soundsProto;
 
+        // Palmtree: gender-specific supplemental sounds take priority over the shared set.
+        // This lets the Ace Attorney emotes use their male/female voice lines for every species.
+        if (TryGetSexSupplemental(uid, component, out var sexSupplemental)
+            && _chat.TryPlayEmoteSound(uid, sounds, sexSupplemental, args.Emote))
+        {
+            args.Handled = true;
+            return;
+        }
+
         args.Handled = _chat.TryPlayEmoteSound(uid, sounds, component.SupplementalSounds, args.Emote);
+    }
+
+    private bool TryGetSexSupplemental(
+        EntityUid uid,
+        VocalComponent component,
+        out ProtoId<EmoteSoundsPrototype> supplemental)
+    {
+        supplemental = default;
+        if (component.SexSupplementalSounds == null)
+            return false;
+
+        var sex = CompOrNull<HumanoidAppearanceComponent>(uid)?.Sex ?? Sex.Unsexed;
+        return component.SexSupplementalSounds.TryGetValue(sex, out supplemental);
     }
 
     private void OnScreamAction(EntityUid uid, VocalComponent component, ScreamActionEvent args)

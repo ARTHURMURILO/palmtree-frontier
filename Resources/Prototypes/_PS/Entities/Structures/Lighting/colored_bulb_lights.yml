@@ -1,0 +1,83 @@
+# Palmtree: coloured bulb-light fixtures for the RCDs. The base game only provides
+# coloured tube fixtures; these reuse the existing crystal light bulbs.
+
+- type: entity
+  id: PoweredSmallLightCyan
+  parent: PoweredSmallLight
+  suffix: Cyan
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightBulbCrystalCyan
+  - type: PointLight
+    color: "#47f8ff"
+
+- type: entity
+  id: PoweredSmallLightBlue
+  parent: PoweredSmallLight
+  suffix: Blue
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightBulbCrystalBlue
+  - type: PointLight
+    color: "#39a1ff"
+
+- type: entity
+  id: PoweredSmallLightYellow
+  parent: PoweredSmallLight
+  suffix: Yellow
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightBulbCrystalYellow
+  - type: PointLight
+    color: "#ffde46"
+
+- type: entity
+  id: PoweredSmallLightPink
+  parent: PoweredSmallLight
+  suffix: Pink
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightBulbCrystalPink
+  - type: PointLight
+    color: "#ff66cc"
+
+- type: entity
+  id: PoweredSmallLightOrange
+  parent: PoweredSmallLight
+  suffix: Orange
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightBulbCrystalOrange
+  - type: PointLight
+    color: "#ff8227"
+
+- type: entity
+  id: PoweredSmallLightBlack
+  parent: PoweredSmallLight
+  suffix: Black
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightBulbCrystalBlack
+  - type: PointLight
+    color: "#363636"
+    energy: 1
+
+- type: entity
+  id: PoweredSmallLightRed
+  parent: PoweredSmallLight
+  suffix: Red
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightBulbCrystalRed
+  - type: PointLight
+    color: "#fb4747"
+
+- type: entity
+  id: PoweredSmallLightGreen
+  parent: PoweredSmallLight
+  suffix: Green
+  components:
+  - type: PoweredLight
+    hasLampOnSpawn: LightBulbCrystalGreen
+  - type: PointLight
+    color: "#52ff39"

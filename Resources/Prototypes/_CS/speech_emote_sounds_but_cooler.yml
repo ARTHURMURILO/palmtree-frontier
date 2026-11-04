@@ -1,5 +1,6 @@
 - type: emoteSounds
   id: SupplementalCoyoteEmoteStuff
+  parent: SupplementalFunnyEmotes # Palmtree: SPLURT funny emotes
   params:
     variation: 0.125
   sounds:

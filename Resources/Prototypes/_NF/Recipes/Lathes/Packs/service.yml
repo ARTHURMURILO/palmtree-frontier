@@ -95,6 +95,7 @@
   - PillCanister
   - ChemistryEmptyBottle01
   - NFClothingNeckCardReporter
+  - JukeboxFlatpack # Palmtree
 
 - type: latheRecipePack
   id: NFPaperAndPaperAccessories

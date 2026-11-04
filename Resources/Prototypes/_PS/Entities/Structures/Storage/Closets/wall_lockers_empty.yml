@@ -1,0 +1,473 @@
+# Palmtree: buildable wall lockers.
+# Only the player-facing `*Empty` variants are construction targets. The mapping bases
+# (`LockerWallColor*`) and the filled variants deliberately have no recipe.
+- type: entity
+  id: LockerWallColorAmeEmpty
+  parent: LockerWallColorAme
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorAmeEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallColorAtmosTechEmpty
+  parent: LockerWallColorAtmosTech
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorAtmosTechEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallColorBananiumEmpty
+  parent: LockerWallColorBananium
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorBananiumEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallColorCaptainEmpty
+  parent: LockerWallColorCaptain
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorCaptainEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallColorCargoEmpty
+  parent: LockerWallColorCargo
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorCargoEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallColorChemistryEmpty
+  parent: LockerWallColorChemistry
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorChemistryEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallColorEngineerEmpty
+  parent: LockerWallColorEngineer
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorEngineerEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallColorFuelPlasmaEmpty
+  parent: LockerWallColorFuelPlasma
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorFuelPlasmaEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallColorGenericEmpty
+  parent: LockerWallColorGeneric
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorGenericEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallColorGenericBlackEmpty
+  parent: LockerWallColorGenericBlack
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorGenericBlackEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallColorGenericBlueEmpty
+  parent: LockerWallColorGenericBlue
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorGenericBlueEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallColorGenericGreenEmpty
+  parent: LockerWallColorGenericGreen
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorGenericGreenEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallColorL1FireEmpty
+  parent: LockerWallColorL1Fire
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorL1FireEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallColorL2RadiationEmpty
+  parent: LockerWallColorL2Radiation
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorL2RadiationEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallColorL3BiohazardEmpty
+  parent: LockerWallColorL3Biohazard
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorL3BiohazardEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallColorL4BombEmpty
+  parent: LockerWallColorL4Bomb
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorL4BombEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallColorMaterialsEmpty
+  parent: LockerWallColorMaterials
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorMaterialsEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallColorParamedicEmpty
+  parent: LockerWallColorParamedic
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorParamedicEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallColorPilotEmpty
+  parent: LockerWallColorPilot
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorPilotEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallColorSalvageEmpty
+  parent: LockerWallColorSalvage
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorSalvageEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallColorServiceWorkerEmpty
+  parent: LockerWallColorServiceWorker
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorServiceWorkerEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallColorStcEmpty
+  parent: LockerWallColorStc
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorStcEmpty
+    containers:
+    - entity_storage
+- type: entity
+  id: LockerWallColorUraniumEmpty
+  parent: LockerWallColorUranium
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorUraniumEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallColorWeldingEmpty
+  parent: LockerWallColorWelding
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorWeldingEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallEVAColorAtmosTechEmpty
+  parent: LockerWallEVAColorAtmosTech
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorAtmosTechEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallEVAColorCaptainEmpty
+  parent: LockerWallEVAColorCaptain
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorCaptainEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallEVAColorCargoEmpty
+  parent: LockerWallEVAColorCargo
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorCargoEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallEVAColorChaplainEmpty
+  parent: LockerWallEVAColorChaplain
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorChaplainEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallEVAColorContractorEmpty
+  parent: LockerWallEVAColorContractor
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorContractorEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallEVAColorEmergencyEmpty
+  parent: LockerWallEVAColorEmergency
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorEmergencyEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallEVAColorEngineerEmpty
+  parent: LockerWallEVAColorEngineer
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorEngineerEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallEVAColorGenericEmpty
+  parent: LockerWallEVAColorGeneric
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorGenericEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallEVAColorHydroponicsEmpty
+  parent: LockerWallEVAColorHydroponics
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorHydroponicsEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallEVAColorJanitorEmpty
+  parent: LockerWallEVAColorJanitor
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorJanitorEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallEVAColorLvhiEmpty
+  parent: LockerWallEVAColorLvhi
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorLvhiEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallEVAColorMailEmpty
+  parent: LockerWallEVAColorMail
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorMailEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallEVAColorMedicalEmpty
+  parent: LockerWallEVAColorMedical
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorMedicalEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallEVAColorMercenaryEmpty
+  parent: LockerWallEVAColorMercenary
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorMercenaryEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallEVAColorNfsdEmpty
+  parent: LockerWallEVAColorNfsd
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorNfsdEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallEVAColorParamedicEmpty
+  parent: LockerWallEVAColorParamedic
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorParamedicEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallEVAColorPilotEmpty
+  parent: LockerWallEVAColorPilot
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorPilotEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallEVAColorPrivateSecEmpty
+  parent: LockerWallEVAColorPrivateSec
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorPrivateSecEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallEVAColorSalvageEmpty
+  parent: LockerWallEVAColorSalvage
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorSalvageEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallEVAColorScientistEmpty
+  parent: LockerWallEVAColorScientist
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorScientistEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallEVAColorServiceWorkerEmpty
+  parent: LockerWallEVAColorServiceWorker
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorServiceWorkerEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallEVAColorSrEmpty
+  parent: LockerWallEVAColorSr
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorSrEmpty
+    containers:
+    - storagebase
+- type: entity
+  id: LockerWallEVAColorStcEmpty
+  parent: LockerWallEVAColorStc
+  suffix: Empty, Frontier
+  components:
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorStcEmpty
+    containers:
+    - entity_storage

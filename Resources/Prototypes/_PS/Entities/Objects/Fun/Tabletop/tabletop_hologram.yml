@@ -1,0 +1,17 @@
+# Palmtree: sanitized placeholder used for items placed on a tabletop board.
+# The server never copies the source item's components; it only records the source
+# prototype's id in appearance data, and the client mirrors that prototype's sprite.
+- type: entity
+  id: PalmtreeTabletopHologram
+  name: tabletop piece
+  description: A piece placed on a tabletop game.
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    noRot: true
+    sprite: Objects/Fun/Tabletop/generic_pieces.rsi
+    state: white
+  - type: Appearance
+  - type: TabletopDraggable
+  - type: Clickable
+  - type: InteractionOutline

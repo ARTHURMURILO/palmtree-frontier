@@ -1,0 +1,20 @@
+- type: entity
+  parent: BaseItem
+  id: PSBankTransferCartridge
+  name: RIX cartridge
+  description: A Rouble PIX program for sending space roubles to another bank account.
+  components:
+  - type: Sprite
+    sprite: _NF/Objects/Devices/cartridge.rsi
+    state: cart-ledger
+  - type: Icon
+    sprite: _NF/Objects/Devices/cartridge.rsi
+    state: cart-ledger
+  - type: UIFragment
+    ui: !type:PSBankTransferUi
+  - type: PSBankTransferCartridge
+  - type: Cartridge
+    programName: rix-program-name
+    icon:
+      sprite: _NF/Interface/icons.rsi
+      state: ledger

@@ -1224,3 +1224,556 @@ Entries:
   time: '2026-10-18T17:48:33.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/672bef83df1805825a8ab3e5e051708c20c8c530
+- author: TheLife
+  changes:
+    - type: Fix
+      message: >-
+        Retrieved ships no longer come back with their buttons, switches,
+        toolbelts and guns stuck on a cooldown from the previous round.
+  id: 90076
+  time: '2026-10-20T01:49:34.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/23c30784a245f3628937bbef2f40138ac31dcdcd
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: >-
+        Ported 116 SPLURT funny emotes under the new Funny emote category,
+        usable by every species via *triggers.
+    - type: Add
+      message: >-
+        Added the emotelist console command to list every emote trigger and its
+        text, three per line.
+    - type: Tweak
+      message: >-
+        Objection, HOLD IT and TAKE THAT now use separate male and female voice
+        lines.
+    - type: Fix
+      message: >-
+        Chat-triggered funny emotes now show their proper third-person text
+        instead of the raw trigger.
+  id: 90077
+  time: '2026-10-22T18:54:55.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/6d55dfd08059ba51b58c33c6d935db1fcbca178d
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: >-
+        Added flickering and rave variants for wall, small and post lights and
+        their bulbs, including always-powered versions.
+    - type: Add
+      message: >-
+        Rave lights pulse continuously, and a screwdriver cycles their period
+        between 0.5, 1 and 2 seconds.
+  id: 90078
+  time: '2026-10-22T19:53:02.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/aec1b95a1899d0b580d4c0aec1717fb51dd0397e
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: Using a smart fridge no longer prevents a ship from being stored.
+    - type: Fix
+      message: >-
+        A ship with an item that cannot be saved is stored anyway; the item
+        comes back as a fresh copy on retrieval instead of the whole store
+        failing.
+    - type: Fix
+      message: >-
+        A failed ship store leaves the ship's power, machinery and deed working
+        instead of leaving it half-stripped.
+  id: 90079
+  time: '2026-10-22T20:58:32.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/aacbf4d772142dcdb7c862976bf3c1c22e47dc39
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        Items that cannot be saved with a ship now come back inside the
+        container they were in (fridges, toolbelts, machines) instead of
+        disappearing.
+    - type: Tweak
+      message: >-
+        Bluespace dock store failures are shown in red in your chat, and skipped
+        items are called out when a ship is stored.
+  id: 90080
+  time: '2026-10-22T21:41:11.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/0a98b1fe4b95d5ffc720a41268e06f19084841fb
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        PDAs and ID cards stored with a ship keep their contents, names, jobs
+        and access, and the PDA still recognizes its ID card on retrieval.
+    - type: Fix
+      message: Saving a ship with a PDA no longer fails.
+    - type: Tweak
+      message: >-
+        forcedock moves everyone off the ship instead of refusing to store it,
+        and says how many were moved.
+  id: 90081
+  time: '2026-10-22T22:33:41.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/58fc64748e8a502872329594258d63a2eea940cc
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        Retrieved ships' AME engines start working immediately instead of
+        waiting out the previous round's update timer.
+    - type: Fix
+      message: >-
+        Retrieved thrusters, hydroponics trays and power transmission units no
+        longer keep timers from the round the ship was stored in.
+  id: 90082
+  time: '2026-10-22T23:44:26.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/4bc1cc6361a46f59ab194bc248cde4005f97d5a8
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: Ore veins now spawn on salvage expeditions again.
+  id: 90083
+  time: '2026-10-23T00:33:28.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/0d02b9d4f52fdba275fbbbc095f767fc1d1f083f
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: All playable species now get hungry and thirsty; Synth remains exempt.
+    - type: Tweak
+      message: Hunger and thirst now decay twice as slowly as before.
+  id: 90084
+  time: '2026-10-23T03:22:45.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/ed5d8cefc0b5c13b1ce7de39bbccc5bd994e3152
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: Fixed severe lag when using the admin camera to observe another entity.
+  id: 90085
+  time: '2026-10-23T03:49:28.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/636318847f55dc6d2bd195a0dfed8f5e09068585
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: >-
+        Added the September-October upstream content update from Frontier,
+        including Station AI changes, new species/clothing visuals, weapons,
+        admin shuttles and many fixes.
+  id: 90086
+  time: '2026-10-23T04:32:44.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/1352fe0805ba599c05fb3b607cd2cd139a66c3b9
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        Painted doors, airlocks and other painted objects keep their paint when
+        a ship is stored and retrieved.
+  id: 90087
+  time: '2026-10-23T22:59:13.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/6b01a5ec38bf6927904cce6c175354bb6bf79e4e
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: >-
+        Showers, sinks and floor drains can now be built with plumbing, and
+        directional fans can now be built from steel.
+    - type: Add
+      message: >-
+        Added the plumbing assembly part, printable from the autolathe and the
+        service and engineering techfabs.
+  id: 90088
+  time: '2026-10-24T02:08:48.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/df0e20df39fb224a672ae470ad8a17bca053cc87
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: >-
+        Added a Delete Old Logs button to the admin logs panel for hosts, which
+        removes logs older than 30 days.
+  id: 90089
+  time: '2026-10-24T02:52:02.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/bd274b4bf6c1e8a2c32228ff674e88d0a0b7ae34
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Jukeboxes can now play locally-hosted Palmtree music tracks.
+  id: 90090
+  time: '2026-10-24T02:56:41.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/5f09801e7931d4ed35a0e7ad2f565a8ae124202c
+- author: xTheLifex
+  changes:
+    - type: Tweak
+      message: >-
+        The mothership sell-only shipyard consoles on Tinnia, Barriergate,
+        Courthouse and Bahama are now bluespace dock consoles.
+  id: 90091
+  time: '2026-10-24T03:20:36.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/da0f4caf720cdd767862f8cadffb49a825c937af
+- author: xTheLifex
+  changes:
+    - type: Tweak
+      message: Tricordrazine now heals radiation damage as well.
+  id: 90092
+  time: '2026-10-24T03:24:44.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/fc9ba97534ab22789acfbaae7947ce8904b46619
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: The RCD can now build diagonal walls and mining walls.
+    - type: Tweak
+      message: >-
+        RCDs are twice as fast, and each tool has a speed multiplier that can be
+        adjusted for future variants.
+    - type: Fix
+      message: >-
+        The RPD no longer places a pipe or vent on top of an existing one on the
+        same atmos layer.
+  id: 90093
+  time: '2026-10-24T04:08:21.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/9eb23e8b3cdfdeac8e5911ba08b75d40913034f3
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        Storing a ship that has an un-serializable entity no longer deletes
+        valid container/storage references (the Charon LV-025 loose-contents and
+        broken-door bug).
+    - type: Fix
+      message: >-
+        Retrieved coffee machines can use their beaker slot and vending machines
+        can use their cash slot again.
+    - type: Fix
+      message: >-
+        Retrieved ore bags and material magnets no longer stay disabled with the
+        previous round's scan timestamp.
+    - type: Tweak
+      message: The restoreorphanship window lists the newest ship files first.
+  id: 90094
+  time: '2026-10-24T06:03:31.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/c8b6cda7bd8bc1221a34a3f7f78bb45f6be794e6
+- author: xTheLifex
+  changes:
+    - type: Tweak
+      message: Synths no longer benefit from speed boots or any other speed boosts.
+  id: 90095
+  time: '2026-10-25T20:04:25.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/c194405a25f350ae3775c85bc48fc790f11fd4e4
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Fultons and fulton beacons can now be researched under Mining Equipment.
+  id: 90096
+  time: '2026-10-25T22:03:49.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/cbf3a4bb43b4b74dbb279070421c3dbd6f4498e1
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: >-
+        Roombas now vacuum loose trash into a replaceable internal trash bag;
+        click one with an empty hand to take the full bag and leave a fresh
+        empty one.
+  id: 90097
+  time: '2026-10-26T01:26:33.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/f9a23eb1a96a8cfe5888740f87bc9f807324a92a
+- author: xTheLifex
+  changes:
+    - type: Tweak
+      message: >-
+        The Starjunk 95 record is now found in salvage wrecks instead of
+        spawning in every jukebox.
+  id: 90098
+  time: '2026-10-27T02:19:00.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/e191522e8ff4c3f3b7e436514121be84ce0373a0
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: >-
+        NanoChat is now preinstalled on PDAs, with contacts, group chats, emoji,
+        chat editing and per-chat mute.
+    - type: Add
+      message: >-
+        NanoChat admin viewer (`nanochatadmin`) and stolen-PDA original-owner
+        detection.
+    - type: Add
+      message: >-
+        RIX (Rouble PIX) lets you send space roubles to another player's bank
+        account from your PDA.
+  id: 90099
+  time: '2026-10-27T02:20:20.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/0e0ba4e7a11f870f62a24a92d744f3f369020514
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        Subtle and subtle LOOC chat no longer reach admin ghosts or ghosts with
+        ghost hearing disabled.
+    - type: Fix
+      message: >-
+        Fixed a server startup crash caused by the Starjunk 95 jukebox record
+        injection.
+  id: 90100
+  time: '2026-10-27T22:32:12.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/e5aa4b5f09c1bc389cbf0e6bd5e995a4e27690ca
+- author: xTheLifex
+  changes:
+    - type: Tweak
+      message: Renamed the SpesoFlow Pay PDA app to RIX (Rouble PIX).
+  id: 90101
+  time: '2026-10-27T22:44:10.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/b9d8a51f22220d13430c0519fcde7d758fb48b78
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Fultons can now be attached to crates and downed mobs.
+    - type: Tweak
+      message: >-
+        Fultoned crates close automatically and cannot be opened until
+        extraction.
+    - type: Fix
+      message: Fultoned crates now carry their contents with them.
+  id: 90102
+  time: '2026-10-27T23:25:57.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/9872fd650ea8b23b3b3b82515358c6318fd4b39b
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        Figurines and other items can once again be placed on battlemaps and
+        board games.
+  id: 90103
+  time: '2026-10-27T23:46:06.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/d8a5889263d1484f40670c0dbaed06356f0dde1b
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        Material reclaimers, shredders, lathes, silos and flatpackers pick up
+        items with their magnets again after a bluespace dock retrieval.
+    - type: Fix
+      message: >-
+        Orphan-restored shipyard ships recover their job slots, so captains can
+        manage jobs on the records computer again.
+  id: 90104
+  time: '2026-10-28T00:58:39.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/073d57e3e256dc6865876ccdd2355a52e084945e
+- author: TheLife
+  changes:
+    - type: Tweak
+      message: >-
+        Roombas now arrive switched off. Click one to switch it on or off, and
+        use the right-click menu to toggle trash collection, mute its voice, or
+        take a full trash bag.
+    - type: Fix
+      message: >-
+        Roombas no longer vacuum up items resting on tables or other furniture.
+        Their chatter is now an overhead speech bubble only and no longer
+        appears in chat.
+  id: 90105
+  time: '2026-10-28T23:27:49.0000000+00:00'
+- author: xTheLifex
+  changes:
+    - type: Tweak
+      message: >-
+        Flickering and rave light effects now come from the fixture itself; the
+        normal bulb only changes the light's color.
+    - type: Remove
+      message: Removed the redundant flickering and rave bulb variants.
+  id: 90106
+  time: '2026-11-02T14:36:06.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/2a0c63d94e23a7bd9fdc86a2b63e076f7d18c10b
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: Fixed balls rendering on top of the penis.
+    - type: Fix
+      message: Fixed genital organs rendering under hair and tails when facing south.
+    - type: Fix
+      message: Fixed tails rendering over hair when facing east or west.
+    - type: Add
+      message: Added a Visible under clothes genital visibility option.
+  id: 90107
+  time: '2026-11-02T15:56:36.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/35e2bfd22749affa61be3b928ed1f528e7df6df3
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Empty Frontier wall locker variants are now constructible.
+    - type: Add
+      message: >-
+        Mirrors, water coolers, wallmount televisions, airtight plastic flaps,
+        suit storage units, and empty wall cabinets are now constructible.
+    - type: Add
+      message: Jukebox flatpacks can be crafted and used to build wallmount jukeboxes.
+  id: 90108
+  time: '2026-11-02T17:00:26.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/2bc17a774abbd9597b70c17e896b55f0ab267a1c
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: RCDs can now build LED and coloured lamp/bulb lights.
+    - type: Add
+      message: >-
+        The experimental RCD can build lockers, hardsuit storage, APCs, SMES,
+        substations, blast doors, shutters, buttons, switches, thrusters,
+        gyroscopes, and other ship fixtures.
+    - type: Add
+      message: >-
+        The experimental RCD can build reinforced and plastitanium walls and
+        windows.
+    - type: Tweak
+      message: >-
+        RCD menus group lights under Lamps/Bulbs, power under Machinery/Wiring,
+        and airlocks under Doors.
+    - type: Tweak
+      message: >-
+        Normal RCDs gain matter from deconstruction; excess matter spills out as
+        compressed matter.
+    - type: Tweak
+      message: Airlocks and firelocks can now share a single tile.
+    - type: Tweak
+      message: >-
+        The experimental RCD deconstructs any wall, fixture, or tile for free,
+        except fans.
+    - type: Fix
+      message: >-
+        SSD characters no longer start breathing again after their player logs
+        off or switches characters.
+    - type: Fix
+      message: Defibrillators now heal asphyxiation on critical patients.
+  id: 90109
+  time: '2026-11-02T17:51:09.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/3a6f84b007eb3b3716c11ed7d7002d2650367e5b
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        forcedock can store ships of any category, including ships with no
+        recognised vessel identity.
+    - type: Fix
+      message: >-
+        The Ship Registrar can register ships to SSD/offline owners by inserting
+        their ID card, instead of only targeting players in the round.
+    - type: Tweak
+      message: >-
+        The Ship Registrar user-selector dropdown is replaced by an owner ID
+        card slot.
+  id: 90110
+  time: '2026-11-03T03:45:13.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/672cc37b8df9856860b0aa52631c8d16d4d36fc9
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: Fixed snout markings rendering under hair when facing east or west.
+  id: 90111
+  time: '2026-11-03T03:56:48.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/444f6c4bea35664618da2ad3692ab1298b7b386a
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: Fixed balls rendering above the penis when facing east or west.
+  id: 90112
+  time: '2026-11-03T14:59:51.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/2579b7c40d4923b28b552ac08b063d4046ecaf53
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: Fixed nipples rendering under breasts when facing east or west.
+    - type: Add
+      message: Added a per-character Snout above hair option in the Markings tab.
+  id: 90113
+  time: '2026-11-03T17:36:04.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/e6b227273092dacf9f955d79b283f06b122cf6a0
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Eleven Biodome botany ships are now available at the shipyard.
+  id: 90114
+  time: '2026-11-03T21:25:47.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/a5d75adb8407137a7cce7e758539c2d2869ab781
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        Fixed bottom undergarments rendering under the butt and other bottom
+        organs, including when facing south.
+  id: 90115
+  time: '2026-11-04T00:24:25.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/a14b6be07c45453f906e9fbdf6d0bdd9ac195b6d
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Four discipline whips are now available from the admin spawn menu.
+  id: 90116
+  time: '2026-11-04T01:10:42.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/8031c9ad39c88939e23238dc15c27ed404721284
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Added a Jukebox volume slider to the audio options.
+  id: 90117
+  time: '2026-11-04T01:11:23.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/4cc5d06dc0031e521034bc05adb1af4b2dfbe31f
+- author: xTheLifex
+  changes:
+    - type: Tweak
+      message: >-
+        The Frontier is now presented as a SolGov-administered sector, and
+        players are free contractors or civilians rather than NanoTrasen
+        employees.
+    - type: Add
+      message: >-
+        Added guidebook lore entries for the Trans-Solar Federation, the USSP,
+        and Nanotrasen.
+    - type: Tweak
+      message: >-
+        The NFSD is now described as the Trans-Solar Federation's frontier
+        law-enforcement agency.
+    - type: Tweak
+      message: >-
+        The bank is now the Frontier Galactic Bank, and the currency is space
+        roubles.
+    - type: Tweak
+      message: >-
+        Frontier Staff, NFSD, Central Command, Medical Dispatch, and public
+        transit vessels now use the SG registry prefix.
+  id: 90118
+  time: '2026-11-04T04:28:54.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/e0d33cc92e6f6e4870c0334eea4650d343fd5d17

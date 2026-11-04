@@ -3,6 +3,7 @@ using System.Linq;
 using System.Numerics;
 using Content.Client.Administration.UI.CustomControls; // Palmtree: HSeparator
 using Content.Client._PS.Consent; // Palmtree: NSFW age gate
+using Content.Client._PS.Humanoid; // Palmtree: direction-aware layer ordering
 using Content.Client._PS.UserInterface; // Palmtree: color clipboard
 using Content.Client.Humanoid;
 using Content.Client.Lobby.UI.Loadouts;
@@ -40,6 +41,8 @@ using Robust.Shared.Audio.Systems;
 using Robust.Shared.Configuration;
 using Robust.Shared.ContentPack;
 using Robust.Shared.Enums;
+using Robust.Shared.GameObjects;
+using Robust.Shared.Graphics.RSI;
 using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Random;
@@ -119,6 +122,7 @@ namespace Content.Client.Lobby.UI
         private bool _showUndergarments = true;
         private bool _showAroused;
         private bool _updatingGenitals;
+        private bool _updatingSnoutAboveHair; // Palmtree
         private readonly Dictionary<GenitalType, GenitalControls> _genitalControls = new();
 
         private sealed class GenitalControls
@@ -272,6 +276,8 @@ namespace Content.Client.Lobby.UI
 
             CHeightSlider.OnValueChanged += _ => OnHeightChanged();
             CWidthSlider.OnValueChanged += _ => OnWidthChanged();
+            Markings.ShowSnoutAboveHair = true; // Palmtree
+            Markings.OnSnoutAboveHairChanged += OnSnoutAboveHairChanged; // Palmtree
 
             CHeightReset.OnPressed += _ =>
             {
@@ -803,6 +809,7 @@ namespace Content.Client.Lobby.UI
                 visibilityButton.AddItem(Loc.GetString("genital-visibility-hidden-by-underwear"), (int) GenitalVisibility.HiddenByUnderwear);
                 visibilityButton.AddItem(Loc.GetString("genital-visibility-hidden-by-jumpsuit"), (int) GenitalVisibility.HiddenByJumpsuit);
                 visibilityButton.AddItem(Loc.GetString("genital-visibility-never-hidden"), (int) GenitalVisibility.NeverHidden);
+                visibilityButton.AddItem(Loc.GetString("genital-visibility-visible-under-clothes"), (int) GenitalVisibility.VisibleUnderClothes);
 
                 // Modern SPLURT: breasts (and any other organ with a skin-toned variant) can use
                 // baked-in skin shading instead of a tinted sprite.
@@ -1809,6 +1816,7 @@ namespace Content.Client.Lobby.UI
 
             PreviewDummy = _controller.LoadProfileEntity(Profile, JobOverride, ShowClothes.Pressed);
             SpriteView.SetEntity(PreviewDummy);
+            ApplyPreviewLayerDirection(SpriteView.OverrideDirection ?? Direction.South);
             _entManager.System<MetaDataSystem>().SetEntityName(PreviewDummy, Profile.Name);
             ApplyPreviewUndergarmentVisibility();
             ApplyPreviewArousal();
@@ -1853,6 +1861,7 @@ namespace Content.Client.Lobby.UI
             UpdateEyePickers();
             UpdateSaveButton();
             UpdateMarkings();
+            UpdateSnoutAboveHair(); // Palmtree
             UpdateHairPickers();
             UpdateCMarkingsHair();
             UpdateCMarkingsFacialHair();
@@ -2522,6 +2531,24 @@ namespace Content.Client.Lobby.UI
             ReloadProfilePreview();
         }
 
+        // Palmtree: whether snout markings render above hair in east/west views.
+        private void UpdateSnoutAboveHair()
+        {
+            _updatingSnoutAboveHair = true;
+            Markings.SnoutAboveHair = Profile?.SnoutAboveHair ?? false;
+            _updatingSnoutAboveHair = false;
+        }
+
+        private void OnSnoutAboveHairChanged(bool pressed)
+        {
+            if (_updatingSnoutAboveHair || Profile == null || Profile.SnoutAboveHair == pressed)
+                return;
+
+            Profile = Profile.WithSnoutAboveHair(pressed);
+            SetDirty();
+            ReloadProfilePreview();
+        }
+
         /// <summary>
         /// Updates selected job priorities to the profile's.
         /// </summary>
@@ -2833,7 +2860,26 @@ namespace Content.Client.Lobby.UI
 
         private void SetPreviewRotation(Direction direction)
         {
-            SpriteView.OverrideDirection = (Direction) ((int) direction % 4 * 2);
+            var spriteDirection = (Direction) ((int) direction % 4 * 2);
+            SpriteView.OverrideDirection = spriteDirection;
+            ApplyPreviewLayerDirection(spriteDirection);
+        }
+
+        /// <summary>
+        /// Palmtree: tell the humanoid layer-order system which direction the preview is actually
+        /// drawn in. SpriteView overrides the direction without rotating the dummy entity.
+        /// </summary>
+        private void ApplyPreviewLayerDirection(Direction direction)
+        {
+            if (PreviewDummy == EntityUid.Invalid ||
+                !_entManager.HasComponent<HumanoidAppearanceComponent>(PreviewDummy))
+            {
+                return;
+            }
+
+            var layerDirection = _entManager.EnsureComponent<HumanoidLayerDirectionComponent>(PreviewDummy);
+            layerDirection.Direction = direction.Convert(RsiDirectionType.Dir4);
+            _entManager.System<HumanoidAppearanceSystem>().RefreshSprite(PreviewDummy);
         }
 
         private void RandomizeEverything()
@@ -2871,7 +2917,7 @@ namespace Content.Client.Lobby.UI
                 return;
 
             StartExport();
-            await using var file = await _dialogManager.OpenFile(new FileDialogFilters(new FileDialogFilters.Group("yml")));
+            await using var file = await _dialogManager.OpenFile(new FileDialogFilters(new FileDialogFilters.Group("yml")), FileAccess.Read);
 
             if (file == null)
             {

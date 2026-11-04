@@ -1,0 +1,93 @@
+- type: entity
+  parent: BaseMachine
+  id: BluespacePowerSink
+  name: Bluespace Power Relay
+  description: Draws power from the ship's grid to run its shields, weapons and bluespace thrusters. It never feeds power back into the grid.
+  suffix: Palmtree
+  components:
+  - type: Sprite
+    sprite: Structures/Power/smes.rsi # Placeholder until the relay gets its own art.
+    snapCardinals: true
+    layers:
+    - state: smes
+    - state: smes-oc0 # Input indicator, like the SMES.
+      shader: unshaded
+  - type: PointLight
+    radius: 1.5
+    energy: 2.5
+    color: "#8f6fd8"
+    castShadows: false
+  - type: NodeContainer
+    examinable: true
+    nodes:
+      input:
+        !type:CableDeviceNode
+        nodeGroupID: HVPower
+  # Palmtree: the relay is a pure consumer. ShipPowerSystem sets DrawRate to the combined demand of
+  # the ship's active power pools every tick.
+  - type: PowerConsumer
+    node: input
+    drawRate: 0
+  - type: BluespacePowerSink
+    ratedThroughput: 100000
+  - type: StaticPrice
+    price: 1500
+
+- type: entity
+  parent: BaseThruster
+  id: BluespaceThruster
+  name: bluespace thruster
+  description: A thruster fed by the ship's Bluespace Power Relay instead of cables. More power means more speed.
+  suffix: Palmtree
+  components:
+  - type: Sprite
+    sprite: _NF/Structures/Shuttles/thruster.rsi # Placeholder until the bluespace thruster gets its own art.
+    layers:
+    - state: base
+      map: ["enum.ThrusterVisualLayers.Base"]
+    - state: thrust
+      map: ["enum.ThrusterVisualLayers.ThrustOn"]
+      shader: unshaded
+      visible: false
+    - state: thrust_burn_unshaded
+      map: ["enum.ThrusterVisualLayers.ThrustingUnshaded"]
+      shader: unshaded
+      visible: false
+      offset: 0, 1
+  - type: ApcPowerReceiver
+    needsPower: false
+    powerDisabled: true
+    powerLoad: 0
+  - type: BluespacePowered
+    pool: Thrusters
+    ratedPower: 5000
+  - type: BluespaceThruster
+
+- type: entity
+  parent: BaseMachine
+  id: ShieldGenerator
+  name: shield generator
+  description: Projects the ship's directional shields, fed by the Bluespace Power Relay.
+  suffix: Palmtree
+  components:
+  - type: Sprite
+    sprite: Structures/Machines/gravity_generator_mini.rsi # Placeholder until the shield generator gets its own art.
+    state: on
+    snapCardinals: true
+  - type: PointLight
+    radius: 1.5
+    energy: 3
+    color: "#4db8ff"
+    castShadows: false
+  - type: ShieldGenerator
+    maxPerFacing: 300
+    regenPerPulse: 30
+  - type: ApcPowerReceiver
+    needsPower: false
+    powerDisabled: true
+    powerLoad: 0
+  - type: BluespacePowered
+    pool: Shields
+    ratedPower: 0 # Shield maintenance and regeneration are charged by ShipPowerSystem.
+  - type: StaticPrice
+    price: 2500

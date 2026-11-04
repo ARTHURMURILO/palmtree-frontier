@@ -217,9 +217,10 @@ public partial class ChatSystem
     /// <param name="uid"></param>
     /// <param name="textInput"></param>
     /// <returns>True if the chat message should be displayed (because the emote was explicitly cancelled), false if it should not be.</returns>
-    private bool TryEmoteChatInput(EntityUid uid, string textInput, out bool eventInvoked) // Frontier: add eventInvoked
+    private bool TryEmoteChatInput(EntityUid uid, string textInput, out bool eventInvoked, out EmotePrototype? matchedEmote) // Frontier: add eventInvoked, Palmtree: matched emote
     {
         eventInvoked = false; // Frontier: track whether event was invoked
+        matchedEmote = null; // Palmtree: used to pick the prototype's chat message
         var actionTrimmedLower = TrimPunctuation(textInput.ToLower());
         if (!_wordEmoteDict.TryGetValue(actionTrimmedLower, out var emotes)) // DeltaV, renames to emotes
             return true;
@@ -233,6 +234,7 @@ public partial class ChatSystem
             if (TryInvokeEmoteEvent(uid, emote))
             {
                 eventInvoked = true; // Frontier: track whether event was invoked
+                matchedEmote = emote; // Palmtree: used to pick the prototype's chat message
                 validEmote = true; // DeltaV
                 break; // Frontier: break on first emote (avoid playing multiple sounds at once)
             }

@@ -1,8 +1,10 @@
 using System.Numerics;
+using Content.Client._PS.Overlays; // Palmtree: tile overlay guard
 using Content.Shared.Light.Components;
 using Content.Shared.Light.EntitySystems;
 using Content.Shared.Maps;
 using Robust.Client.Graphics;
+using Robust.Shared.Configuration;
 using Robust.Shared.Enums;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
@@ -16,6 +18,7 @@ public sealed class RoofOverlay : Overlay
     private readonly IEntityManager _entManager;
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IOverlayManager _overlay = default!;
+    [Dependency] private readonly IConfigurationManager _cfg = default!; // Palmtree: tile overlay guard
 
     private readonly EntityLookupSystem _lookup;
     private readonly SharedMapSystem _mapSystem;
@@ -51,8 +54,14 @@ public sealed class RoofOverlay : Overlay
 
         var worldHandle = args.WorldHandle;
         var lightoverlay = _overlay.GetOverlay<BeforeLightTargetOverlay>();
+        var lightRes = lightoverlay.GetCachedForViewport(args.Viewport);
         var bounds = lightoverlay.EnlargedBounds;
-        var target = lightoverlay.EnlargedLightTarget;
+
+        // Palmtree: the tile enumerator recurses per skipped tile; skip very large views instead of
+        // overflowing the stack (see TileEnumerationGuard).
+        if (TileEnumerationGuard.TooLarge(_cfg, bounds.CalcBoundingBox()))
+            return;
+        var target = lightRes.EnlargedLightTarget;
 
         _grids.Clear();
         _mapManager.FindGridsIntersecting(args.MapId, bounds, ref _grids, approx: true, includeMap: true);

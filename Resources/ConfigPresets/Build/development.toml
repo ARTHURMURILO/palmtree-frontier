@@ -6,6 +6,7 @@ map = "NFDev"
 role_timers = false
 # Palmtree: no job whitelists.
 role_whitelist = false
+role_loadout_timers = false
 
 [events]
 enabled = false

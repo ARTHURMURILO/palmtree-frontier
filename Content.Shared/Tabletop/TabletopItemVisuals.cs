@@ -6,6 +6,7 @@ namespace Content.Shared.Tabletop
     public enum TabletopItemVisuals : byte
     {
         Scale,
-        DrawDepth
+        DrawDepth,
+        Prototype // Palmtree: prototype id whose sprite a tabletop hologram mimics.
     }
 }

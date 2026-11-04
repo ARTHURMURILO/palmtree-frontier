@@ -43,6 +43,8 @@ interaction-require-user-hands = You need hands.
 interaction-require-target-hands = They need hands.
 interaction-require-user-exposed = You need to be exposed.
 interaction-require-target-exposed = They need to be exposed.
+interaction-require-user-cum = You have no cum left to clean up.
+interaction-require-target-cum = They have no cum left to clean up.
 
 interaction-require-user-no-penis = You don't have a penis.
 interaction-require-target-no-penis = They don't have a penis.
