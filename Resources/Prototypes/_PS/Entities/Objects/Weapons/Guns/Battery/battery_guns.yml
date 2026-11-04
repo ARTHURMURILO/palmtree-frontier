@@ -81,7 +81,7 @@
     soundGunshot:
       collection: Phaser
       params:
-        pitch: 0.85
+        pitch: 1.15
   - type: HitscanBatteryAmmoProvider
     proto: PhaserLethalLily
 
