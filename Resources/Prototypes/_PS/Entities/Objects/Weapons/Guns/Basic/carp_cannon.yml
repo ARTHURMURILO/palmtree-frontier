@@ -1,0 +1,39 @@
+# Palmtree: admin-only meme weapon. Fires carp-shaped projectiles. No code, no ammo types,
+# no lathe recipe and no loot table - it only exists for admins to spawn.
+- type: entity
+  name: carp cannon
+  parent: BaseWeaponLauncher
+  id: PSWeaponCarpCannon
+  suffix: Admeme
+  description: A cannon that fires space carps. The carps are not consulted about this.
+  components:
+  - type: Sprite
+    sprite: Objects/Weapons/Guns/Launchers/pirate_cannon.rsi
+    layers:
+    - state: icon
+      map: ["enum.GunVisualLayers.Base"]
+  - type: Clothing
+    sprite: Objects/Weapons/Guns/Launchers/pirate_cannon.rsi
+    quickEquip: false
+    slots:
+    - Back
+  - type: Gun
+    fireRate: 0.5
+    useKey: true
+    selectedMode: SemiAuto
+    availableModes:
+    - SemiAuto
+    soundGunshot: /Audio/Weapons/Guns/Gunshots/grenade_launcher.ogg
+    projectileSpeed: 12
+  - type: BasicEntityAmmoProvider
+    proto: PSBulletCarp
+    capacity: 1
+    count: 1
+  - type: RechargeBasicEntityAmmo
+    rechargeCooldown: 2
+    rechargeSound:
+      path: /Audio/Weapons/Guns/MagIn/kinetic_reload.ogg
+  - type: AmmoCounter
+  # Palmtree: admin-spawn only, so it is worth nothing.
+  - type: StaticPrice
+    price: 0
