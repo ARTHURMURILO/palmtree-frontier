@@ -300,6 +300,7 @@
   - type: RCD
     speedMultiplier: 2 # Palmtree: twice as fast; var-edit higher for faster RCDs
     availablePrototypes:
+    # Walls and flooring
     - WallSolid
     - WallSolidDiagonal # Palmtree
     - WallShuttle # Palmtree
@@ -307,19 +308,54 @@
     - WallMining # Palmtree
     - WallMiningDiagonal # Palmtree
     - FloorSteel
+    - FloorDark # Palmtree: dark steel tile
+    - FloorWood # Palmtree: wooden floor
     - Plating
     - Catwalk
     - CatwalkHazard # Frontier
+    # Windows and grilles
     - Grille
+    - GrilleDiagonal # Palmtree
     - Window
     - WindowDirectional
+    - WindowDiagonal # Palmtree
+    - WindowFrostedDirectional # Palmtree
+    - TintedWindow # Palmtree
     - WindowReinforcedDirectional
     - ReinforcedWindow
+    - ReinforcedWindowDiagonal # Palmtree
+    - ShuttleWindow # Palmtree
+    - ShuttleWindowDiagonal # Palmtree
+    # Airlocks
     - Airlock
     - AirlockGlass
     - Firelock
+    # Lighting (lamps)
     - TubeLight
+    - TubeLightLED # Palmtree
+    - TubeLightCyan # Palmtree
+    - TubeLightBlue # Palmtree
+    - TubeLightYellow # Palmtree
+    - TubeLightPink # Palmtree
+    - TubeLightOrange # Palmtree
+    - TubeLightBlack # Palmtree
+    - TubeLightRed # Palmtree
+    - TubeLightGreen # Palmtree
+    - TubeLightUltraviolet # Palmtree
+    # Lighting (bulbs)
     - BulbLight
+    - BulbLightLED # Palmtree
+    - BulbLightWarm # Palmtree
+    - BulbLightDim # Palmtree
+    - BulbLightCyan # Palmtree
+    - BulbLightBlue # Palmtree
+    - BulbLightYellow # Palmtree
+    - BulbLightPink # Palmtree
+    - BulbLightOrange # Palmtree
+    - BulbLightBlack # Palmtree
+    - BulbLightRed # Palmtree
+    - BulbLightGreen # Palmtree
+    # Electrical
     - LVCable
     - MVCable
     - HVCable
@@ -465,35 +501,108 @@
   # Palmtree: instant construction + expanded mode list, ported from the old Coyote code
   - type: RCD
     instantConstruction: true
+    unrestricted: true # Palmtree: free construction and unrestricted deconstruction
     availablePrototypes:
+    # Walls and flooring (everything the normal RCD has, plus reinforced/plastitanium)
     - WallSolid
     - WallSolidDiagonal # Palmtree
     - WallShuttle
     - WallShuttleDiagonal # Palmtree
     - WallMining
     - WallMiningDiagonal
+    - WallReinforced # Palmtree: admin RCD only
+    - WallReinforcedDiagonal # Palmtree: admin RCD only
     - WallPlastitanium
     - WallPlastitaniumDiagonal
-    - PlastitaniumWindow
-    - PlastitaniumWindowDiagonal
     - FloorSteel
+    - FloorDark # Palmtree
     - FloorWood
     - Plating
     - Catwalk
+    - CatwalkHazard
+    # Windows and grilles
     - Grille
+    - GrilleDiagonal
     - Window
     - WindowDirectional
+    - WindowDiagonal
+    - WindowFrostedDirectional
+    - TintedWindow
     - WindowReinforcedDirectional
     - ReinforcedWindow
+    - ReinforcedWindowDiagonal
+    - ShuttleWindow
+    - ShuttleWindowDiagonal
+    - PlastitaniumWindow
+    - PlastitaniumWindowDiagonal
+    # Airlocks and doors
     - Airlock
     - AirlockGlass
     - Firelock
+    - AirlockShuttle # Palmtree: ship construction suite
+    - AirlockGlassShuttle # Palmtree
+    - BlastDoor # Palmtree
+    - Shutters # Palmtree
+    - ShuttersWindow # Palmtree
+    - ShuttersRadiation # Palmtree
+    # Lighting (lamps)
     - TubeLight
+    - TubeLightLED
+    - TubeLightCyan
+    - TubeLightBlue
+    - TubeLightYellow
+    - TubeLightPink
+    - TubeLightOrange
+    - TubeLightBlack
+    - TubeLightRed
+    - TubeLightGreen
+    - TubeLightUltraviolet
+    # Lighting (bulbs)
     - BulbLight
+    - BulbLightLED
+    - BulbLightWarm
+    - BulbLightDim
+    - BulbLightCyan
+    - BulbLightBlue
+    - BulbLightYellow
+    - BulbLightPink
+    - BulbLightOrange
+    - BulbLightBlack
+    - BulbLightRed
+    - BulbLightGreen
+    # Electrical and power
     - LVCable
     - MVCable
     - HVCable
     - CableTerminal
+    - SignalButtonDirectional # Palmtree
+    - SignalSwitchDirectional # Palmtree
+    - APC # Palmtree
+    - SMES # Palmtree
+    - SMESAdvanced # Palmtree
+    - Substation # Palmtree
+    - SubstationWall # Palmtree
+    # Storage
+    - LockerSteel # Palmtree
+    - SuitStorage # Palmtree
+    - SuitStorageWallmount # Palmtree
+    # Shuttle fixtures
+    - Thruster # Palmtree
+    - SmallThruster # Palmtree
+    - ThrusterSecurity # Palmtree
+    - ThrusterNfsd # Palmtree
+    - SlowWeakThruster # Palmtree
+    - SlowStrongThruster # Palmtree
+    - FastWeakThruster # Palmtree
+    - FastStrongThruster # Palmtree
+    - FasterWeakThruster # Palmtree
+    - FasterStrongThruster # Palmtree
+    - Gyroscope # Palmtree
+    - SmallGyroscope # Palmtree
+    - GyroscopeSecurity # Palmtree
+    - GyroscopeNfsd # Palmtree
+    - SmallGyroscopeSecurity # Palmtree
+    - SmallGyroscopeNfsd # Palmtree
     - Deconstruct
   # Palmtree end
   - type: AutoRecharge

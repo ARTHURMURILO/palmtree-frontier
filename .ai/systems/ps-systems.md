@@ -482,6 +482,23 @@ The jukebox menu gained a **Skip** button next to Play/Stop; it advances to the 
   `JukeboxMenu.xaml.cs`, wired to the message in `JukeboxBoundUserInterface.cs` (all `// Palmtree`).
 - Locale: `jukebox-menu-buttonskip` in `Resources/Locale/en-US/_PS/jukebox.ftl`.
 
+## Jukebox volume (2026-11)
+
+The audio options tab has a **Jukebox volume** slider (`ui-options-jukebox-volume`). It is a
+client-side preference that scales every jukebox stream, separate from master volume.
+
+- CVar: `PSCVars.JukeboxVolume` (`ps.audio.jukebox_volume`, client-only/archived, default `1`).
+  The slider maps 0-100% onto 0-1, so 100% is the server-provided volume.
+- System: `Content.Client/_PS/Audio/JukeboxVolumeSystem.cs`. A `_PS` system can read
+  `JukeboxComponent.AudioStream` (the class-level `[Access]` still allows other-type reads) and
+  applies the offset through `SharedAudioSystem.SetVolume`.
+- Important: the client audio system copies `AudioComponent.Params.Volume` into
+  `AudioComponent.Volume` every audio frame, so setting the live volume does not stick. The system
+  stores each stream's server-provided base volume (copy the `AudioParams` struct out before reading
+  `.Volume`, or the access analyzer flags it as an execute access) and reapplies base + offset.
+- UI: `SliderVolumeJukebox` in `Content.Client/Options/UI/Tabs/AudioTab.xaml(.cs)`; locale in
+  `Resources/Locale/en-US/_PS/audio.ftl`.
+
 ## Theobromine intolerance trait (2026-10)
 
 Theobromine (chocolate/coffee/tea) used to poison any species whose organs carry the `Animal`
@@ -832,10 +849,12 @@ a crash can leave files behind). The tool:
   state), previews one with the live ship camera and deletes one (`TryDeleteShip`, which clears every
   deed pointing at the grid).
 - `forcedock <ship name | grid uid> [owner]` (`ForceDockCommand`) stores a ship in the dock without
-  requiring it to be docked. Every other store check still runs (`FindStoreBlocker`, so "living things
-  aboard" and the civilian-vessel rule still apply) and failures are printed to the console. The owner
+  requiring it to be docked **and without caring about its ship category** (or whether it has a
+  vessel identity at all). Living things are moved off instead of blocking the store; every other
+  check still runs (`FindStoreBlocker`) and failures are printed to the console. The owner
   defaults to the deed owner; when the given name matches a player in the round their ckey is recorded
-  too, otherwise the entry is keyed by character name alone. No tax is charged. The store mechanics
+  too, otherwise the entry is keyed by character name alone. Owner completion unions connected
+  sessions with deed owners, so offline/SSD owners are targetable too. No tax is charged. The store mechanics
   live in `BluespaceDockSystem.TryStoreShip`, shared with the dock console's own store button, and
   both go through `EvacuateGrid` first (ghosts, pets and corpses are moved off, never deleted with
   the grid).
@@ -847,11 +866,12 @@ a crash can leave files behind). The tool:
   `Resources/Prototypes/_PS/Entities/Structures/Machines/Computers/ship_registrar.yml` (sprite copy
   `Resources/Textures/_PS/Structures/Machines/ship_registrar.rsi`, the SR shipyard states).
 - Privileged slot = Station Representative's ID (the console's `AccessReader` requires
-  `HeadOfPersonnel`, which the SR has through `AllAccess`; admins bypass). The **owner is picked from
-  a dropdown of players** (`GetOwnerOptions`, keyed on their profile name like the dock) - there is
-  no second ID slot, and the owner has to be in the round holding their ID card, which takes the
-  deed. Registration also writes them a `GeneralStationRecord` with the `Captain` job on the ship's
-  station and adds `NewAccessLevels` (Captain) to their ID, exactly like a shipyard purchase.
+  `HeadOfPersonnel`, which the SR has through `AllAccess`; admins bypass). The **owner is always an
+  ID card inserted in the second slot** - there is no player dropdown, so an SSD/offline character's
+  card is enough to target them. If the card belongs to an online character their ckey/profile are
+  recovered and the usual Captain record is written; otherwise the card itself takes the deed.
+  Registration also adds `NewAccessLevels` (Captain) to the owner card, exactly like a shipyard
+  purchase.
 - Lists every grid docked to the console's station that has no deed and no
   `RegisteredVesselComponent` (`GetDockableGrids`), with name/size/value and a live `[PREVIEW]`.
 - Registration (`TryRegisterVessel`, all checks re-run server side) creates the
@@ -909,21 +929,20 @@ opening a preview replaces any existing one for that session (no camera accumula
 
 ## Dungeon lighting variants (flickering / rave)
 
-- Prototypes: `Resources/Prototypes/_PS/Entities/Structures/Lighting/lighting_effects.yml` and
-  `.../Objects/Power/lighting_effects.yml`. Every standard wall/small/post light and bulb has
-  `*Flickering` and `*Rave` variants. `AlwaysPowered...` variants set
-  `ApcPowerReceiver.needsPower: false`, so they light without an APC but still accept bulbs.
-- Flicker: `FlickeringLightComponent` marks the bulb. `Content.Server/_PS/Light/FlickeringLightSystem`
-  polls `PoweredLightComponent`s (the event bus only allows one subscription per component/event,
-  and the base system owns the container events) and drives the existing `IsBlinking` appearance
-  animation. It only turns blinking back off for lights it enabled itself, so the variation pass's
-  aged-tube flicker is preserved. Rave takes priority over flicker.
+- Prototypes: `Resources/Prototypes/_PS/Entities/Structures/Lighting/lighting_effects.yml`.
+  Every standard wall/small/post light fixture has `*Flickering` and `*Rave` variants.
+  The variants inherit the parent's normal bulb spawn; the bulb only sets the light's color.
+  `AlwaysPowered...` variants set `ApcPowerReceiver.needsPower: false`, so they light without an
+  APC but still accept bulbs.
+- Flicker: `FlickeringLightComponent` marks the fixture. `Content.Server/_PS/Light/FlickeringLightSystem`
+  enables the existing `IsBlinking` appearance animation on map init (and on component startup).
+  It only touches fixtures carrying the component, so the variation pass's aged-tube flicker is
+  untouched. Rave takes priority over flicker.
 - Rave: `RaveLightComponent` carries `Period` (0.5/1/2 s), optional `MaxEnergy` (peak point-light
   energy) and `Phase`. The pulse is client-only (`Content.Client/_PS/Light/RaveLightSystem`) so the
   server does not network `PointLight.Energy` every tick; it animates the point light and glow sprite
   layer on a triangle wave (100% -> 0% -> 100%). Screwdriver cycles the period through
-  `SharedRaveLightSystem`; rave fixtures carry the component directly and their spawned rave bulbs
-  carry their own copy.
+  `SharedRaveLightSystem`. The fixture owns the effect, so swapping bulbs only changes the color.
 - Tests: `Content.IntegrationTests/Tests/_PS/LightEffectsTest.cs` (flicker sync, always-power,
   screwdriver cycle, client pulse).
 

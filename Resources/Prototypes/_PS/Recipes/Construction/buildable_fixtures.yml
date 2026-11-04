@@ -1,0 +1,166 @@
+# Palmtree: construction recipes for player-built fixtures. Targets are `*Empty` prototypes only.
+
+#region Furniture
+- type: construction
+  id: MirrorEmpty
+  name: construction-recipe-mirror
+  graph: Mirror
+  startNode: start
+  targetNode: mirror
+  category: construction-category-furniture
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canRotate: true
+  canBuildInImpassable: true
+  conditions:
+  - !type:WallmountCondition
+
+- type: construction
+  id: MirrorModernEmpty
+  name: construction-recipe-mirror-modern
+  graph: Mirror
+  startNode: start
+  targetNode: mirrorModern
+  category: construction-category-furniture
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canRotate: true
+  canBuildInImpassable: true
+  conditions:
+  - !type:WallmountCondition
+
+- type: construction
+  id: WaterCoolerEmpty
+  graph: WaterCooler
+  startNode: start
+  targetNode: waterCooler
+  category: construction-category-furniture
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canRotate: true
+  canBuildInImpassable: false
+  conditions:
+  - !type:TileNotBlocked
+
+- type: construction
+  id: JukeboxWallmountEmpty
+  name: construction-recipe-jukebox-wallmount
+  graph: JukeboxWallmount
+  startNode: start
+  targetNode: wallmount
+  category: construction-category-furniture
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canRotate: true
+  canBuildInImpassable: true
+  conditions:
+  - !type:WallmountCondition
+#endregion
+
+#region Utilities
+- type: construction
+  id: WallmountTelevisionEmpty
+  graph: WallmountTelevision
+  startNode: start
+  targetNode: TelevisionEmpty
+  category: construction-category-utilities
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canRotate: true
+  canBuildInImpassable: true
+  conditions:
+  - !type:WallmountCondition
+#endregion
+
+#region Structures / storage
+- type: construction
+  id: PlasticFlapsAirtightClearEmpty
+  name: construction-recipe-plastic-flaps-airtight-clear
+  graph: PlasticFlapsAirtight
+  startNode: start
+  targetNode: airtightClear
+  category: construction-category-structures
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canBuildInImpassable: false
+  conditions:
+  - !type:TileNotBlocked
+
+- type: construction
+  id: PlasticFlapsAirtightOpaqueEmpty
+  name: construction-recipe-plastic-flaps-airtight-opaque
+  graph: PlasticFlapsAirtight
+  startNode: start
+  targetNode: airtightOpaque
+  category: construction-category-structures
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canBuildInImpassable: false
+  conditions:
+  - !type:TileNotBlocked
+
+- type: construction
+  id: SuitStorageEmpty
+  graph: SuitStorage
+  startNode: start
+  targetNode: floor
+  category: construction-category-storage
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canRotate: true
+  canBuildInImpassable: false
+  conditions:
+  - !type:TileNotBlocked
+
+- type: construction
+  id: SuitStorageWallmountEmpty
+  graph: SuitStorage
+  startNode: start
+  targetNode: wallmount
+  category: construction-category-storage
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canRotate: true
+  canBuildInImpassable: true
+  conditions:
+  - !type:WallmountCondition
+
+- type: construction
+  id: ExtinguisherCabinetEmpty
+  graph: WallCabinets
+  startNode: start
+  targetNode: extinguisher
+  category: construction-category-storage
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canRotate: true
+  canBuildInImpassable: true
+  conditions:
+  - !type:WallmountCondition
+
+- type: construction
+  id: DefibrillatorCabinetEmpty
+  graph: WallCabinets
+  startNode: start
+  targetNode: defibrillator
+  category: construction-category-storage
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canRotate: true
+  canBuildInImpassable: true
+  conditions:
+  - !type:WallmountCondition
+
+- type: construction
+  id: FireAxeCabinetEmpty
+  graph: WallCabinets
+  startNode: start
+  targetNode: fireAxe
+  category: construction-category-storage
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canRotate: true
+  canBuildInImpassable: true
+  conditions:
+  - !type:WallmountCondition
+#endregion

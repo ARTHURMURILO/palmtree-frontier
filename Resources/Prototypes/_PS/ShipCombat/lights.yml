@@ -1,0 +1,119 @@
+# Palmtree: ship condition devices (battle stations).
+
+# Condition sirens: strong rotating strobe lights with a looping alarm. Each variant is tied to one
+# condition: the YELLOW one sounds at YELLOW, the RED ones at RED (so a ship can switch alarm styles
+# when it escalates).
+- type: entity
+  abstract: true
+  parent: AlwaysPoweredWallLight
+  id: ShipConditionSirenBase
+  name: condition siren
+  description: A rotating battle-stations alarm. Its light and klaxon come on while the ship's condition is RED.
+  suffix: Palmtree
+  components:
+  - type: Sprite
+    sprite: Structures/Wallmounts/Lighting/emergency_light.rsi
+    drawdepth: WallMountedItems
+    layers:
+    - state: base
+      map: [ "enum.ShipConditionSirenLayers.Base" ]
+    - state: emergency_light_off
+      map: [ "enum.ShipConditionSirenLayers.Off" ]
+      color: "#ff2020"
+    - state: emergency_light_on
+      map: [ "enum.ShipConditionSirenLayers.On" ]
+      color: "#ff2020"
+      shader: unshaded
+      visible: false
+  - type: Appearance
+  # Emergency equipment: no wiring or APC needed, so it keeps wailing when the ship loses power.
+  # Much stronger and wider than an emergency light, so the whole room reads RED.
+  - type: PointLight
+    enabled: false
+    radius: 12
+    energy: 4
+    softness: 0.2
+    color: "#ff1a1a"
+    offset: "0, 0.4"
+    mask: /Textures/Effects/LightMasks/double_cone.png
+  - type: RotatingLight
+    speed: 120
+  - type: ShipConditionSiren
+
+- type: entity
+  parent: ShipConditionSirenBase
+  id: ShipConditionSirenYellow
+  name: ship siren
+  suffix: "YELLOW"
+  components:
+  - type: ShipConditionSiren
+    activeCondition: Yellow
+  - type: AmbientSound
+    enabled: false
+    range: 30
+    volume: -5
+    sound:
+      path: /Audio/_PS/ShipCombat/alert09.ogg
+
+- type: entity
+  parent: ShipConditionSirenBase
+  id: ShipConditionSirenRedTos
+  name: ship siren
+  suffix: "RED, ELECTRO"
+  components:
+  - type: AmbientSound
+    enabled: false
+    range: 30
+    volume: -5
+    sound:
+      path: /Audio/_PS/ShipCombat/alert10.ogg
+
+- type: entity
+  parent: ShipConditionSirenBase
+  id: ShipConditionSirenRedVoyager
+  name: ship siren
+  suffix: "RED, VOYAGER"
+  components:
+  - type: AmbientSound
+    enabled: false
+    range: 30
+    volume: -5
+    sound:
+      path: /Audio/_PS/ShipCombat/voy_redalert.ogg
+
+- type: entity
+  parent: ShipConditionSirenBase
+  id: ShipConditionSirenRedTng
+  name: ship siren
+  suffix: "RED, TNG"
+  components:
+  - type: AmbientSound
+    enabled: false
+    range: 30
+    volume: -5
+    sound:
+      path: /Audio/_PS/ShipCombat/tng_red_alert1.ogg
+
+- type: entity
+  parent: ShipConditionSirenBase
+  id: ShipConditionSirenRedDeep
+  name: ship siren
+  suffix: "RED, DEEP"
+  components:
+  - type: AmbientSound
+    enabled: false
+    range: 30
+    volume: -5
+    sound:
+      path: /Audio/_PS/ShipCombat/alertklaxon_clean2.ogg
+
+# Battle light: a normal powered light that goes dark at battle stations (RED) and comes back at
+# YELLOW or GREEN, so ships can be blacked out for combat.
+- type: entity
+  parent: Poweredlight
+  id: PoweredlightShipCombat
+  name: battle light
+  description: A ship light that cuts out when the ship goes to battle stations (RED) and comes back when the condition drops.
+  suffix: Palmtree
+  components:
+  - type: ShipConditionLight

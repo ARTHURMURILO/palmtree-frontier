@@ -78,10 +78,14 @@ queries).
    `Forced = true`, `Visible = true`, `CanToggleVisible/OtherCanToggleVisible = false` (so
    ModifyUndies adds no verbs) and colors built from the organ's primary/detail colors (skin color
    when null), following the marking's `colorLinks` so linked states share a color group.
-   Organs are added in a fixed render order — butt, vagina, balls, penis, belly, breasts — so the
-   penis draws over the balls, the belly draws over the groin, and the breasts are the only organ
-   drawn over the belly, regardless of the order the player enabled them in the editor.
+   Organs are added in reverse priority order (breasts, belly, penis, balls, vagina, butt) because
+   marking layers inserted at the same index render newest-first. The resulting bottom-to-top stack
+   is butt, vagina, balls, penis, belly, breasts, so the penis draws over the balls, the belly draws
+   over the groin, and the breasts are the only organ drawn over the belly, regardless of the order
+   the player enabled them in the editor.
    `NeverHidden` additionally sets `Marking.RenderOverClothing` to draw above outer clothing.
+   `VisibleUnderClothes` renders even when covered but leaves the normal layer clamp in place, so
+   clothing still draws over the organ.
    If the organ's `SkinTone` toggle is on and the selected size has a `skintoned` render marking,
    that skin-shaded variant is used instead of the tinted one (breasts).
 5. The interaction panel's genital tab lists organs, toggles `Aroused` per organ
@@ -90,14 +94,15 @@ queries).
    controls both exposure and whether/how the sprite draws.
 6. `GenitalSystem` (interactions) answers `HasGenital`/`GetExposure` with the per-organ
    **visibility rule** (SPLURT/Sandstorm port), and `GenitalOrganSystem` re-renders on
-   `DidEquipEvent`/`DidUnequipEvent` (jumpsuit) and `MarkingVisibilityChangedEvent` (undies
-   toggled), so the rule stays in sync with clothing:
+   `DidEquipEvent`/`DidUnequipEvent` (jumpsuit and outer clothing) and
+   `MarkingVisibilityChangedEvent` (undies toggled), so the rule stays in sync with clothing:
 
    | Rule | Exposed when | Sprite |
    |---|---|---|
    | Always hidden | never | not drawn |
    | Hidden by underwear (default) | no visible relevant undergarment marking and no jumpsuit | under clothing/undergarments |
    | Hidden by jumpsuit | no jumpsuit | under clothing |
+   | Visible under clothes | always | under clothing; no layer lift |
    | Never hidden | always | drawn above outer clothing (`Marking.RenderOverClothing`) |
 
    Undergarments are the fork's undergarment markings (`UndergarmentTop` for breasts,
@@ -105,6 +110,25 @@ queries).
    exposed when bottomless. The `Genital` sprite layer sits **after `Tail`** in every species map
    (just before `mask`), so tails, hands and clothing no longer draw over penises/bellies; clothing
    occlusion is handled by the visibility rule above, not by draw order.
+
+   Palmtree: layer order follows the direction the sprite is drawn in **on the local client**
+   (`world rotation + eye rotation`, see `Content.Client/_PS/Humanoid/DirectionalLayerOrderSystem`).
+   Facing south puts exposed genitals above hair and tail layers (unless a jumpsuit/outer garment
+   actually covers them); facing east/west tucks tail markings under the hair layer and puts snout
+   and snout-cover markings above it when the character's `SnoutAboveHair` option is enabled
+   (default off keeps them under hair). Sprite
+   direction changes raise no event, so the system rebuilds the humanoid sprite when the cardinal
+   direction changes. The lobby editor sets <c>HumanoidLayerDirectionComponent</c> on its preview
+   dummy so its rotation buttons use the same rules despite rendering through
+   <c>SpriteView.OverrideDirection</c>.
+
+   Under-clothing genital layers use stable anchors instead of `jumpsuit`/`outerClothing`
+   (whose indices shift when layers are inserted before them). Bottom organs anchor above `LLeg`
+   and therefore render below `UndergarmentBottom`; breast markings anchor above
+   `UndergarmentBottom` and render below `UndergarmentTop`. The anchor includes the marking's
+   per-sprite offset, so a breast's nipple sprite still renders above the breast sprite and a
+   butt's front/mid sprites stay ordered. A visible relevant undergarment forces this clamp in
+   every direction (south included); without one, south keeps the genitals-over-hair rule.
 
 ## Cum, drip and washing
 
@@ -169,7 +193,8 @@ queries).
 
 Dynamic `Genitals` tab (like Flavor Text, so upstream tab indices do not change). Per organ type:
 enable checkbox, Type dropdown (catalog prototypes), Size dropdown (catalog sizes), Visibility
-dropdown (Always hidden / Hidden by underwear / Hidden by jumpsuit / Never hidden), a **Skin tone**
+dropdown (Always hidden / Hidden by underwear / Hidden by jumpsuit / Never hidden / Visible under
+clothes), a **Skin tone**
 checkbox for organs whose catalog has skin-shaded variants (breasts), a collapsible **Colors**
 section with primary + detail `ColorSelectorSliders` (alpha enabled) and a "Use skin
 color" reset (null colors follow the skin), plus Glow/Detail glow sliders (0-100%) in the same

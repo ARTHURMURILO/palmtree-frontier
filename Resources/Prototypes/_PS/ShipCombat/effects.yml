@@ -1,0 +1,19 @@
+- type: entity
+  id: ShieldImpactEffect
+  name: shield impact
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Transform
+  - type: Sprite
+    sprite: Effects/gravityPulse.rsi
+    color: "#4db8ff" # Placeholder until the shields get a proper wavy overlay.
+    layers:
+    - state: gravityPulse
+      shader: unshaded
+  - type: PointLight
+    color: "#4db8ff"
+    radius: 2
+    energy: 4
+    castShadows: false
+  - type: TimedDespawn
+    lifetime: 0.5

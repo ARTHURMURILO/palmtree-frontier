@@ -17,14 +17,14 @@ namespace Content.Client._PS.ShipRegistry;
 public sealed partial class ShipRegistrarConsoleMenu : FancyWindow
 {
     public event Action? OnPrivilegedId;
-    public event Action<NetEntity, string, string, string>? OnRegister;
+    public event Action? OnOwnerId;
+    public event Action<NetEntity, string, string>? OnRegister;
     public event Action<NetEntity>? OnPreview;
 
     private ShipRegistrarUiState? _state;
     private NetEntity? _selected;
     private string _search = string.Empty;
     private bool _locked = true;
-    private string _selectedUserId = string.Empty;
     private readonly List<(NetEntity Grid, BoxContainer Row)> _rows = new();
 
     public ShipRegistrarConsoleMenu()
@@ -50,24 +50,11 @@ public sealed partial class ShipRegistrarConsoleMenu : FancyWindow
         };
 
         PrivilegedIdButton.OnPressed += _ => OnPrivilegedId?.Invoke();
-        OwnerSelect.OnItemSelected += args =>
-        {
-            if (_state == null || args.Id < 0 || args.Id >= _state.Owners.Count)
-                return;
-
-            // OptionButton does not move its own selection when an item is picked; do it so the
-            // label and the checkmark match the selected owner.
-            OwnerSelect.SelectId(args.Id);
-
-            var owner = _state.Owners[args.Id];
-            _selectedUserId = owner.UserId;
-            UpdateOwnerHint(owner.CharacterName);
-            UpdateSelection();
-        };
+        OwnerIdButton.OnPressed += _ => OnOwnerId?.Invoke();
         RegisterButton.OnPressed += _ =>
         {
-            if (_selected is { } grid && _selectedUserId.Length > 0)
-                OnRegister?.Invoke(grid, _selectedUserId, NameField.Text, SuffixField.Text);
+            if (_selected is { } grid && _state?.HasTargetId == true)
+                OnRegister?.Invoke(grid, NameField.Text, SuffixField.Text);
         };
     }
 
@@ -85,35 +72,12 @@ public sealed partial class ShipRegistrarConsoleMenu : FancyWindow
         SearchBar.Editable = !_locked;
         NameField.Editable = !_locked;
         SuffixField.Editable = !_locked;
-        OwnerSelect.Disabled = _locked;
 
         PrivilegedIdButton.Text = Loc.GetString("ship-registrar-privileged-id",
             ("name", state.PrivilegedIdName ?? Loc.GetString("ship-registrar-id-missing")));
-        OwnerSelect.Clear();
-        var selectedOwner = -1;
-        for (var i = 0; i < state.Owners.Count; i++)
-        {
-            var owner = state.Owners[i];
-            var name = string.IsNullOrWhiteSpace(owner.CharacterName)
-                ? Loc.GetString("ship-registrar-id-missing")
-                : owner.CharacterName;
-            OwnerSelect.AddItem(name);
-
-            if (owner.UserId == _selectedUserId)
-                selectedOwner = i;
-        }
-
-        // The selection can go away (a player disconnecting), and starts empty.
-        if (selectedOwner < 0)
-        {
-            _selectedUserId = string.Empty;
-            UpdateOwnerHint(null);
-        }
-        else
-        {
-            OwnerSelect.Select(selectedOwner);
-            UpdateOwnerHint(state.Owners[selectedOwner].CharacterName);
-        }
+        OwnerIdButton.Text = Loc.GetString("ship-registrar-target-id",
+            ("name", state.TargetIdName ?? Loc.GetString("ship-registrar-id-missing")));
+        UpdateOwnerHint(state.TargetIdName);
 
         BalanceLabel.Text = Loc.GetString("ship-registrar-balance", ("balance", BankSystemExtensions.ToIndependentString(state.Balance)));
         FeeLabel.Text = Loc.GetString("ship-registrar-fee", ("fee", BankSystemExtensions.ToIndependentString(state.Fee)));
@@ -241,7 +205,7 @@ public sealed partial class ShipRegistrarConsoleMenu : FancyWindow
         foreach (var (grid, row) in _rows)
             row.Modulate = grid == _selected ? Color.FromHex("#5b9bd5") : Color.White;
 
-        var canRegister = _selected != null && _selectedUserId.Length > 0;
+        var canRegister = _selected != null && _state?.HasTargetId == true;
         RegisterButton.Disabled = _locked || !canRegister;
 
         if (_state == null)

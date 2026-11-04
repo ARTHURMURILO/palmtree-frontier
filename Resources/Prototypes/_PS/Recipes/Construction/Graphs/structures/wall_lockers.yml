@@ -1,0 +1,344 @@
+# Palmtree: buildable wall lockers.
+# Only the player-facing `*Empty` variants are construction targets. The mapping bases
+# (`LockerWallColor*`) and the filled variants deliberately have no recipe.
+- type: constructionGraph
+  id: WallLocker
+  start: start
+  graph:
+  - node: start
+    edges:
+    - to: LockerWallColorAmeEmpty
+      steps: &wallLockerBuildSteps
+      - material: Steel
+        amount: 4
+      - material: Cable
+        amount: 2
+        doAfter: 5
+    - to: LockerWallColorAtmosTechEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallColorBananiumEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallColorCaptainEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallColorCargoEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallColorChemistryEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallColorEngineerEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallColorFuelPlasmaEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallColorGenericEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallColorGenericBlackEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallColorGenericBlueEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallColorGenericGreenEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallColorHydroponicsEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallColorL1FireEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallColorL2RadiationEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallColorL3BiohazardEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallColorL4BombEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallColorMaterialsEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallColorMedicalEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallColorParamedicEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallColorPilotEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallColorSalvageEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallColorServiceWorkerEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallColorStcEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallColorUraniumEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallColorWeldingEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorAtmosTechEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorCaptainEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorCargoEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorChaplainEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorContractorEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorEmergencyEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorEngineerEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorFsaEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorFsbEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorFscEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorGenericEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorHydroponicsEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorJanitorEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorLvhiEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorMailEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorMedicalEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorMercenaryEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorNfsdEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorParamedicEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorPilotEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorPrivateSecEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorSalvageEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorScientistEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorServiceWorkerEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorSrEmpty
+      steps: *wallLockerBuildSteps
+    - to: LockerWallEVAColorStcEmpty
+      steps: *wallLockerBuildSteps
+  - node: LockerWallColorAmeEmpty
+    entity: LockerWallColorAmeEmpty
+    edges:
+    - &wallLockerDeconstruct
+      to: start
+      steps:
+      - tool: Screwing
+        doAfter: 5
+      conditions:
+      - !type:StorageWelded
+        welded: false
+      - !type:Locked
+        locked: false
+      completed:
+      - !type:SpawnPrototype
+        prototype: SheetSteel1
+        amount: 4
+      - !type:SpawnPrototype
+        prototype: CableApcStack1
+        amount: 2
+      - !type:EmptyAllContainers
+      - !type:DeleteEntity
+  - node: LockerWallColorAtmosTechEmpty
+    entity: LockerWallColorAtmosTechEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallColorBananiumEmpty
+    entity: LockerWallColorBananiumEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallColorCaptainEmpty
+    entity: LockerWallColorCaptainEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallColorCargoEmpty
+    entity: LockerWallColorCargoEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallColorChemistryEmpty
+    entity: LockerWallColorChemistryEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallColorEngineerEmpty
+    entity: LockerWallColorEngineerEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallColorFuelPlasmaEmpty
+    entity: LockerWallColorFuelPlasmaEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallColorGenericEmpty
+    entity: LockerWallColorGenericEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallColorGenericBlackEmpty
+    entity: LockerWallColorGenericBlackEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallColorGenericBlueEmpty
+    entity: LockerWallColorGenericBlueEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallColorGenericGreenEmpty
+    entity: LockerWallColorGenericGreenEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallColorHydroponicsEmpty
+    entity: LockerWallColorHydroponicsEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallColorL1FireEmpty
+    entity: LockerWallColorL1FireEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallColorL2RadiationEmpty
+    entity: LockerWallColorL2RadiationEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallColorL3BiohazardEmpty
+    entity: LockerWallColorL3BiohazardEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallColorL4BombEmpty
+    entity: LockerWallColorL4BombEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallColorMaterialsEmpty
+    entity: LockerWallColorMaterialsEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallColorMedicalEmpty
+    entity: LockerWallColorMedicalEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallColorParamedicEmpty
+    entity: LockerWallColorParamedicEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallColorPilotEmpty
+    entity: LockerWallColorPilotEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallColorSalvageEmpty
+    entity: LockerWallColorSalvageEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallColorServiceWorkerEmpty
+    entity: LockerWallColorServiceWorkerEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallColorStcEmpty
+    entity: LockerWallColorStcEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallColorUraniumEmpty
+    entity: LockerWallColorUraniumEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallColorWeldingEmpty
+    entity: LockerWallColorWeldingEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorAtmosTechEmpty
+    entity: LockerWallEVAColorAtmosTechEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorCaptainEmpty
+    entity: LockerWallEVAColorCaptainEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorCargoEmpty
+    entity: LockerWallEVAColorCargoEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorChaplainEmpty
+    entity: LockerWallEVAColorChaplainEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorContractorEmpty
+    entity: LockerWallEVAColorContractorEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorEmergencyEmpty
+    entity: LockerWallEVAColorEmergencyEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorEngineerEmpty
+    entity: LockerWallEVAColorEngineerEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorFsaEmpty
+    entity: LockerWallEVAColorFsaEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorFsbEmpty
+    entity: LockerWallEVAColorFsbEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorFscEmpty
+    entity: LockerWallEVAColorFscEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorGenericEmpty
+    entity: LockerWallEVAColorGenericEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorHydroponicsEmpty
+    entity: LockerWallEVAColorHydroponicsEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorJanitorEmpty
+    entity: LockerWallEVAColorJanitorEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorLvhiEmpty
+    entity: LockerWallEVAColorLvhiEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorMailEmpty
+    entity: LockerWallEVAColorMailEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorMedicalEmpty
+    entity: LockerWallEVAColorMedicalEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorMercenaryEmpty
+    entity: LockerWallEVAColorMercenaryEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorNfsdEmpty
+    entity: LockerWallEVAColorNfsdEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorParamedicEmpty
+    entity: LockerWallEVAColorParamedicEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorPilotEmpty
+    entity: LockerWallEVAColorPilotEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorPrivateSecEmpty
+    entity: LockerWallEVAColorPrivateSecEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorSalvageEmpty
+    entity: LockerWallEVAColorSalvageEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorScientistEmpty
+    entity: LockerWallEVAColorScientistEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorServiceWorkerEmpty
+    entity: LockerWallEVAColorServiceWorkerEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorSrEmpty
+    entity: LockerWallEVAColorSrEmpty
+    edges:
+    - *wallLockerDeconstruct
+  - node: LockerWallEVAColorStcEmpty
+    entity: LockerWallEVAColorStcEmpty
+    edges:
+    - *wallLockerDeconstruct

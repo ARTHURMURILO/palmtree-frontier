@@ -30,6 +30,7 @@ public sealed partial class MarkingPicker : Control
     public Action<MarkingSet>? OnMarkingColorChange;
     public Action<MarkingSet>? OnMarkingRankChange;
     public Action<HumanoidLegStyle>? OnLegStyleChanged; // Palmtree/Coyote
+    public Action<bool>? OnSnoutAboveHairChanged; // Palmtree
 
     private List<Color> _currentMarkingColors = new();
     private List<float> _currentMarkingGlow = new(); // Palmtree/Coyote: glow
@@ -174,6 +175,19 @@ public sealed partial class MarkingPicker : Control
 
         CMarkingLegStyle.OnItemSelected += OnChangedLegStyle; // Palmtree/Coyote
         SetupLegStyleButtons(); // Palmtree/Coyote
+        CSnoutAboveHair.OnToggled += args => OnSnoutAboveHairChanged?.Invoke(args.Pressed); // Palmtree
+    }
+
+    // Palmtree: only the character editor exposes the snout layering option (not the admin modifier).
+    public bool ShowSnoutAboveHair
+    {
+        set => CSnoutAboveHair.Visible = value;
+    }
+
+    public bool SnoutAboveHair
+    {
+        get => CSnoutAboveHair.Pressed;
+        set => CSnoutAboveHair.Pressed = value;
     }
 
     // Palmtree/Coyote: leg style selector

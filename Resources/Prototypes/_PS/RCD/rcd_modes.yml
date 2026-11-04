@@ -1,0 +1,833 @@
+# Palmtree: extended RCD modes.
+#
+# This file holds the extra walls/windows, light variants and ship-construction suite added to the
+# normal and experimental RCDs. Existing upstream modes stay in their original files; only their
+# categories are adjusted there.
+
+# Windows and grilles -------------------------------------------------------
+
+- type: rcd
+  id: GrilleDiagonal
+  category: WindowsAndGrilles
+  sprite: { sprite: Structures/Walls/grille.rsi, state: grille_diagonal }
+  mode: ConstructObject
+  prototype: GrilleDiagonal
+  cost: 4
+  delay: 2
+  collisionMask: Impassable
+  rotation: User
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: WindowDiagonal
+  category: WindowsAndGrilles
+  sprite: { sprite: Structures/Windows/window_diagonal.rsi, state: state0 }
+  mode: ConstructObject
+  prototype: WindowDiagonal
+  cost: 3
+  delay: 2
+  collisionMask: Impassable
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rules:
+  - IsWindow
+  rotation: User
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: ReinforcedWindowDiagonal
+  category: WindowsAndGrilles
+  sprite: { sprite: Structures/Windows/reinforced_window_diagonal.rsi, state: state0 }
+  mode: ConstructObject
+  prototype: ReinforcedWindowDiagonal
+  cost: 4
+  delay: 3
+  collisionMask: Impassable
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rules:
+  - IsWindow
+  rotation: User
+  fx: EffectRCDConstruct3
+
+- type: rcd
+  id: TintedWindow
+  category: WindowsAndGrilles
+  sprite: { sprite: _NF/Structures/Windows/tinted_window.rsi, state: full }
+  mode: ConstructObject
+  prototype: TintedWindow
+  cost: 3
+  delay: 2
+  collisionMask: Impassable
+  rules:
+  - IsWindow
+  rotation: Fixed
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: WindowFrostedDirectional
+  category: WindowsAndGrilles
+  sprite: { sprite: Structures/Windows/directional.rsi, state: frosted_window }
+  mode: ConstructObject
+  prototype: WindowFrostedDirectional
+  cost: 2
+  delay: 1
+  collisionMask: Impassable
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rules:
+  - IsWindow
+  rotation: User
+  fx: EffectRCDConstruct1
+
+- type: rcd
+  id: ShuttleWindow
+  category: WindowsAndGrilles
+  sprite: { sprite: Structures/Windows/shuttle_window.rsi, state: full }
+  mode: ConstructObject
+  prototype: ShuttleWindow
+  cost: 4
+  delay: 3
+  collisionMask: Impassable
+  rules:
+  - IsWindow
+  rotation: Fixed
+  fx: EffectRCDConstruct3
+
+- type: rcd
+  id: ShuttleWindowDiagonal
+  category: WindowsAndGrilles
+  sprite: { sprite: Structures/Windows/shuttle_window_diagonal.rsi, state: state0 }
+  mode: ConstructObject
+  prototype: ShuttleWindowDiagonal
+  cost: 4
+  delay: 3
+  collisionMask: Impassable
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rules:
+  - IsWindow
+  rotation: User
+  fx: EffectRCDConstruct3
+
+# Reefrced/plastitanium walls (admin RCD) -----------------------------------
+# Eyebrow: keep the ids descriptive; the menu groups them with the other walls.
+
+- type: rcd
+  id: WallReinforced
+  category: WallsAndFlooring
+  sprite: { sprite: _NF/Structures/Walls/solid.rsi, state: full }
+  mode: ConstructObject
+  prototype: WallReinforced
+  cost: 6
+  delay: 2
+  collisionMask: FullTileMask
+  rotation: Fixed
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: WallReinforcedDiagonal
+  category: WallsAndFlooring
+  sprite: { sprite: _NF/Structures/Walls/reinforced_diagonal.rsi, state: state0 }
+  mode: ConstructObject
+  prototype: WallReinforcedDiagonal
+  cost: 6
+  delay: 2
+  collisionMask: FullTileMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct2
+
+# Lighting ------------------------------------------------------------------
+
+- type: rcd
+  id: TubeLightLED
+  name: rcd-component-light-tube-led
+  category: LightingLamps
+  sprite: { sprite: Structures/Wallmounts/Lighting/light_tube.rsi, state: base }
+  mode: ConstructObject
+  prototype: PoweredlightLED
+  cost: 2
+  delay: 1
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct1
+
+- type: rcd
+  id: TubeLightCyan
+  name: rcd-component-light-tube-cyan
+  category: LightingLamps
+  sprite: { sprite: Structures/Wallmounts/Lighting/light_tube.rsi, state: base }
+  mode: ConstructObject
+  prototype: PoweredlightCyan
+  cost: 2
+  delay: 1
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct1
+
+- type: rcd
+  id: TubeLightBlue
+  name: rcd-component-light-tube-blue
+  category: LightingLamps
+  sprite: { sprite: Structures/Wallmounts/Lighting/light_tube.rsi, state: base }
+  mode: ConstructObject
+  prototype: PoweredlightBlue
+  cost: 2
+  delay: 1
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct1
+
+- type: rcd
+  id: TubeLightYellow
+  name: rcd-component-light-tube-yellow
+  category: LightingLamps
+  sprite: { sprite: Structures/Wallmounts/Lighting/light_tube.rsi, state: base }
+  mode: ConstructObject
+  prototype: PoweredlightYellow
+  cost: 2
+  delay: 1
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct1
+
+- type: rcd
+  id: TubeLightPink
+  name: rcd-component-light-tube-pink
+  category: LightingLamps
+  sprite: { sprite: Structures/Wallmounts/Lighting/light_tube.rsi, state: base }
+  mode: ConstructObject
+  prototype: PoweredlightPink
+  cost: 2
+  delay: 1
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct1
+
+- type: rcd
+  id: TubeLightOrange
+  name: rcd-component-light-tube-orange
+  category: LightingLamps
+  sprite: { sprite: Structures/Wallmounts/Lighting/light_tube.rsi, state: base }
+  mode: ConstructObject
+  prototype: PoweredlightOrange
+  cost: 2
+  delay: 1
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct1
+
+- type: rcd
+  id: TubeLightBlack
+  name: rcd-component-light-tube-black
+  category: LightingLamps
+  sprite: { sprite: Structures/Wallmounts/Lighting/light_tube.rsi, state: base }
+  mode: ConstructObject
+  prototype: PoweredlightBlack
+  cost: 2
+  delay: 1
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct1
+
+- type: rcd
+  id: TubeLightRed
+  name: rcd-component-light-tube-red
+  category: LightingLamps
+  sprite: { sprite: Structures/Wallmounts/Lighting/light_tube.rsi, state: base }
+  mode: ConstructObject
+  prototype: PoweredlightRed
+  cost: 2
+  delay: 1
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct1
+
+- type: rcd
+  id: TubeLightGreen
+  name: rcd-component-light-tube-green
+  category: LightingLamps
+  sprite: { sprite: Structures/Wallmounts/Lighting/light_tube.rsi, state: base }
+  mode: ConstructObject
+  prototype: PoweredlightGreen
+  cost: 2
+  delay: 1
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct1
+
+- type: rcd
+  id: TubeLightUltraviolet
+  name: rcd-component-light-tube-ultraviolet
+  category: LightingLamps
+  sprite: { sprite: Structures/Wallmounts/Lighting/light_tube.rsi, state: base }
+  mode: ConstructObject
+  prototype: PoweredlightUltraviolet
+  cost: 2
+  delay: 1
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct1
+
+- type: rcd
+  id: BulbLightLED
+  name: rcd-component-light-bulb-led
+  category: LightingBulbs
+  sprite: { sprite: Structures/Wallmounts/Lighting/light_small.rsi, state: base }
+  mode: ConstructObject
+  prototype: PoweredLEDSmallLight
+  cost: 2
+  delay: 1
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct1
+
+- type: rcd
+  id: BulbLightWarm
+  name: rcd-component-light-bulb-warm
+  category: LightingBulbs
+  sprite: { sprite: Structures/Wallmounts/Lighting/light_small.rsi, state: base }
+  mode: ConstructObject
+  prototype: PoweredWarmSmallLight
+  cost: 2
+  delay: 1
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct1
+
+- type: rcd
+  id: BulbLightDim
+  name: rcd-component-light-bulb-dim
+  category: LightingBulbs
+  sprite: { sprite: Structures/Wallmounts/Lighting/light_small.rsi, state: base }
+  mode: ConstructObject
+  prototype: PoweredDimSmallLight
+  cost: 2
+  delay: 1
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct1
+
+- type: rcd
+  id: BulbLightCyan
+  name: rcd-component-light-bulb-cyan
+  category: LightingBulbs
+  sprite: { sprite: Structures/Wallmounts/Lighting/light_small.rsi, state: base }
+  mode: ConstructObject
+  prototype: PoweredSmallLightCyan
+  cost: 2
+  delay: 1
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct1
+
+- type: rcd
+  id: BulbLightBlue
+  name: rcd-component-light-bulb-blue
+  category: LightingBulbs
+  sprite: { sprite: Structures/Wallmounts/Lighting/light_small.rsi, state: base }
+  mode: ConstructObject
+  prototype: PoweredSmallLightBlue
+  cost: 2
+  delay: 1
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct1
+
+- type: rcd
+  id: BulbLightYellow
+  name: rcd-component-light-bulb-yellow
+  category: LightingBulbs
+  sprite: { sprite: Structures/Wallmounts/Lighting/light_small.rsi, state: base }
+  mode: ConstructObject
+  prototype: PoweredSmallLightYellow
+  cost: 2
+  delay: 1
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct1
+
+- type: rcd
+  id: BulbLightPink
+  name: rcd-component-light-bulb-pink
+  category: LightingBulbs
+  sprite: { sprite: Structures/Wallmounts/Lighting/light_small.rsi, state: base }
+  mode: ConstructObject
+  prototype: PoweredSmallLightPink
+  cost: 2
+  delay: 1
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct1
+
+- type: rcd
+  id: BulbLightOrange
+  name: rcd-component-light-bulb-orange
+  category: LightingBulbs
+  sprite: { sprite: Structures/Wallmounts/Lighting/light_small.rsi, state: base }
+  mode: ConstructObject
+  prototype: PoweredSmallLightOrange
+  cost: 2
+  delay: 1
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct1
+
+- type: rcd
+  id: BulbLightBlack
+  name: rcd-component-light-bulb-black
+  category: LightingBulbs
+  sprite: { sprite: Structures/Wallmounts/Lighting/light_small.rsi, state: base }
+  mode: ConstructObject
+  prototype: PoweredSmallLightBlack
+  cost: 2
+  delay: 1
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct1
+
+- type: rcd
+  id: BulbLightRed
+  name: rcd-component-light-bulb-red
+  category: LightingBulbs
+  sprite: { sprite: Structures/Wallmounts/Lighting/light_small.rsi, state: base }
+  mode: ConstructObject
+  prototype: PoweredSmallLightRed
+  cost: 2
+  delay: 1
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct1
+
+- type: rcd
+  id: BulbLightGreen
+  name: rcd-component-light-bulb-green
+  category: LightingBulbs
+  sprite: { sprite: Structures/Wallmounts/Lighting/light_small.rsi, state: base }
+  mode: ConstructObject
+  prototype: PoweredSmallLightGreen
+  cost: 2
+  delay: 1
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct1
+
+# Storage and ship furniture (admin RCD) ------------------------------------
+
+- type: rcd
+  id: LockerSteel
+  category: Storage
+  sprite: { sprite: Structures/Storage/closet.rsi, state: generic }
+  mode: ConstructObject
+  prototype: LockerSteel
+  cost: 4
+  delay: 2
+  collisionMask: CrateMask
+  rotation: Fixed
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: SuitStorage
+  category: Storage
+  sprite: { sprite: Structures/Storage/suit_storage.rsi, state: base }
+  mode: ConstructObject
+  prototype: SuitStorageEmpty
+  cost: 4
+  delay: 2
+  collisionMask: CrateMask
+  rotation: Fixed
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: SuitStorageWallmount
+  category: Storage
+  sprite: { sprite: Structures/Storage/suit_storage.rsi, state: base }
+  mode: ConstructObject
+  prototype: SuitStorageWallmountEmpty
+  cost: 4
+  delay: 2
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct2
+
+# Doors and shutters (admin RCD) --------------------------------------------
+
+- type: rcd
+  id: BlastDoor
+  category: Doors
+  sprite: { sprite: Structures/Doors/Shutters/blastdoor.rsi, state: closed }
+  mode: ConstructObject
+  prototype: BlastDoorOpen
+  cost: 4
+  delay: 4
+  collisionMask: FullTileMask
+  rotation: Camera
+  fx: EffectRCDConstruct4
+
+- type: rcd
+  id: Shutters
+  category: Doors
+  sprite: { sprite: Structures/Doors/Shutters/shutters.rsi, state: closed }
+  mode: ConstructObject
+  prototype: ShuttersNormalOpen
+  cost: 3
+  delay: 2
+  collisionMask: FullTileMask
+  rotation: Camera
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: ShuttersWindow
+  category: Doors
+  sprite: { sprite: Structures/Doors/Shutters/shutters.rsi, state: closed }
+  mode: ConstructObject
+  prototype: ShuttersWindowOpen
+  cost: 3
+  delay: 2
+  collisionMask: FullTileMask
+  rotation: Camera
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: ShuttersRadiation
+  category: Doors
+  sprite: { sprite: Structures/Doors/Shutters/shutters.rsi, state: closed }
+  mode: ConstructObject
+  prototype: ShuttersRadiationOpen
+  cost: 3
+  delay: 2
+  collisionMask: FullTileMask
+  rotation: Camera
+  fx: EffectRCDConstruct2
+
+# Buttons and switches (admin RCD) ------------------------------------------
+
+- type: rcd
+  id: SignalButtonDirectional
+  category: PowerWiring
+  sprite: { sprite: Structures/Wallmounts/switch.rsi, state: dead }
+  mode: ConstructObject
+  prototype: SignalButtonDirectional
+  cost: 1
+  delay: 0
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct0
+
+- type: rcd
+  id: SignalSwitchDirectional
+  category: PowerWiring
+  sprite: { sprite: Structures/Wallmounts/switch.rsi, state: on }
+  mode: ConstructObject
+  prototype: SignalSwitchDirectional
+  cost: 1
+  delay: 0
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct0
+
+# Power (admin RCD) ---------------------------------------------------------
+
+- type: rcd
+  id: APC
+  category: PowerMachinery
+  sprite: { sprite: Structures/Power/apc.rsi, state: base }
+  mode: ConstructObject
+  prototype: APCBasic
+  cost: 2
+  delay: 2
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: SMES
+  category: PowerMachinery
+  sprite: { sprite: Structures/Power/smes.rsi, state: smes }
+  mode: ConstructObject
+  prototype: SMESBasicEmpty
+  cost: 6
+  delay: 4
+  collisionMask: MachineMask
+  rotation: Fixed
+  fx: EffectRCDConstruct4
+
+- type: rcd
+  id: SMESAdvanced
+  category: PowerMachinery
+  sprite: { sprite: Structures/Power/smes.rsi, state: advancedsmes }
+  mode: ConstructObject
+  prototype: SMESAdvancedEmpty
+  cost: 8
+  delay: 4
+  collisionMask: MachineMask
+  rotation: Fixed
+  fx: EffectRCDConstruct4
+
+- type: rcd
+  id: Substation
+  category: PowerMachinery
+  sprite: { sprite: Structures/Power/substation.rsi, state: substation }
+  mode: ConstructObject
+  prototype: SubstationBasicEmpty
+  cost: 6
+  delay: 4
+  collisionMask: MachineMask
+  rotation: Fixed
+  fx: EffectRCDConstruct4
+
+- type: rcd
+  id: SubstationWall
+  category: PowerMachinery
+  sprite: { sprite: Structures/Power/substation.rsi, state: substation_wall }
+  mode: ConstructObject
+  prototype: SubstationWallBasic
+  cost: 6
+  delay: 4
+  collisionMask: TabletopMachineMask
+  collisionBounds: "-0.23,-0.49,0.23,-0.36"
+  rotation: User
+  fx: EffectRCDConstruct4
+
+# Ship airlocks (admin RCD) -------------------------------------------------
+
+- type: rcd
+  id: AirlockShuttle
+  category: Airlocks
+  sprite: { sprite: Structures/Doors/Airlocks/Standard/shuttle.rsi, state: closed }
+  mode: ConstructObject
+  prototype: AirlockShuttle
+  cost: 4
+  delay: 4
+  collisionMask: FullTileMask
+  rotation: User
+  fx: EffectRCDConstruct4
+
+- type: rcd
+  id: AirlockGlassShuttle
+  category: Airlocks
+  sprite: { sprite: Structures/Doors/Airlocks/Glass/shuttle.rsi, state: closed }
+  mode: ConstructObject
+  prototype: AirlockGlassShuttle
+  cost: 4
+  delay: 4
+  collisionMask: FullTileMask
+  rotation: User
+  fx: EffectRCDConstruct4
+
+# Thrusters and gyroscopes (admin RCD) --------------------------------------
+
+- type: rcd
+  id: Thruster
+  category: Thrusters
+  sprite: { sprite: _NF/Structures/Shuttles/thruster.rsi, state: base }
+  mode: ConstructObject
+  prototype: Thruster
+  cost: 4
+  delay: 2
+  collisionMask: MachineMask
+  rotation: User
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: SmallThruster
+  category: Thrusters
+  sprite: { sprite: _NF/Structures/Shuttles/thruster.rsi, state: base_small }
+  mode: ConstructObject
+  prototype: SmallThruster
+  cost: 3
+  delay: 2
+  collisionMask: MachineMask
+  rotation: User
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: ThrusterSecurity
+  category: Thrusters
+  sprite: { sprite: _NF/Structures/Shuttles/thruster.rsi, state: base_sec }
+  mode: ConstructObject
+  prototype: ThrusterSecurity
+  cost: 4
+  delay: 2
+  collisionMask: MachineMask
+  rotation: User
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: ThrusterNfsd
+  category: Thrusters
+  sprite: { sprite: _NF/Structures/Shuttles/thruster.rsi, state: base_nfsd }
+  mode: ConstructObject
+  prototype: ThrusterNfsd
+  cost: 4
+  delay: 2
+  collisionMask: MachineMask
+  rotation: User
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: SlowWeakThruster
+  category: Thrusters
+  sprite: { sprite: _NF/Structures/Shuttles/thruster.rsi, state: base_small }
+  mode: ConstructObject
+  prototype: SlowWeakThruster
+  cost: 3
+  delay: 2
+  collisionMask: MachineMask
+  rotation: User
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: SlowStrongThruster
+  category: Thrusters
+  sprite: { sprite: _NF/Structures/Shuttles/thruster.rsi, state: base }
+  mode: ConstructObject
+  prototype: SlowStrongThruster
+  cost: 4
+  delay: 2
+  collisionMask: MachineMask
+  rotation: User
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: FastWeakThruster
+  category: Thrusters
+  sprite: { sprite: _NF/Structures/Shuttles/thruster.rsi, state: base_small }
+  mode: ConstructObject
+  prototype: FastWeakThruster
+  cost: 3
+  delay: 2
+  collisionMask: MachineMask
+  rotation: User
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: FastStrongThruster
+  category: Thrusters
+  sprite: { sprite: _NF/Structures/Shuttles/thruster.rsi, state: base }
+  mode: ConstructObject
+  prototype: FastStrongThruster
+  cost: 4
+  delay: 2
+  collisionMask: MachineMask
+  rotation: User
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: FasterWeakThruster
+  category: Thrusters
+  sprite: { sprite: _NF/Structures/Shuttles/thruster.rsi, state: base_small }
+  mode: ConstructObject
+  prototype: FasterWeakThruster
+  cost: 3
+  delay: 2
+  collisionMask: MachineMask
+  rotation: User
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: FasterStrongThruster
+  category: Thrusters
+  sprite: { sprite: _NF/Structures/Shuttles/thruster.rsi, state: base }
+  mode: ConstructObject
+  prototype: FasterStrongThruster
+  cost: 4
+  delay: 2
+  collisionMask: MachineMask
+  rotation: User
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: Gyroscope
+  category: Gyroscopes
+  sprite: { sprite: _NF/Structures/Shuttles/gyroscope.rsi, state: base }
+  mode: ConstructObject
+  prototype: Gyroscope
+  cost: 4
+  delay: 2
+  collisionMask: MachineMask
+  rotation: User
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: SmallGyroscope
+  category: Gyroscopes
+  sprite: { sprite: _NF/Structures/Shuttles/gyroscope.rsi, state: base_small }
+  mode: ConstructObject
+  prototype: SmallGyroscope
+  cost: 3
+  delay: 2
+  collisionMask: MachineMask
+  rotation: User
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: GyroscopeSecurity
+  category: Gyroscopes
+  sprite: { sprite: _NF/Structures/Shuttles/gyroscope.rsi, state: base_sec }
+  mode: ConstructObject
+  prototype: GyroscopeSecurity
+  cost: 4
+  delay: 2
+  collisionMask: MachineMask
+  rotation: User
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: GyroscopeNfsd
+  category: Gyroscopes
+  sprite: { sprite: _NF/Structures/Shuttles/gyroscope.rsi, state: base_nfsd }
+  mode: ConstructObject
+  prototype: GyroscopeNfsd
+  cost: 4
+  delay: 2
+  collisionMask: MachineMask
+  rotation: User
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: SmallGyroscopeSecurity
+  category: Gyroscopes
+  sprite: { sprite: _NF/Structures/Shuttles/gyroscope.rsi, state: base_small_sec }
+  mode: ConstructObject
+  prototype: SmallGyroscopeSecurity
+  cost: 3
+  delay: 2
+  collisionMask: MachineMask
+  rotation: User
+  fx: EffectRCDConstruct2
+
+- type: rcd
+  id: SmallGyroscopeNfsd
+  category: Gyroscopes
+  sprite: { sprite: _NF/Structures/Shuttles/gyroscope.rsi, state: base_small_nfsd }
+  mode: ConstructObject
+  prototype: SmallGyroscopeNfsd
+  cost: 3
+  delay: 2
+  collisionMask: MachineMask
+  rotation: User
+  fx: EffectRCDConstruct2
