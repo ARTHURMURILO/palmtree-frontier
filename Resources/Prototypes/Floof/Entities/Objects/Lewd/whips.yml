@@ -1,0 +1,75 @@
+# Palmtree: whips ported from Coyote.
+# Original: Resources/Prototypes/Floof/Entities/Objects/Lewd/whips.yml (Coyote)
+# Only the whip set is ported; the matching paddles in the source file were left out.
+
+- type: entity
+  parent: BaseItem
+  id: BaseWhip
+  abstract: true
+  components:
+  - type: MeleeWeapon
+    wideAnimationRotation: -135
+    damage:
+      types:
+        Slash: 2
+    # Flooftier - removed as frontier doesn't have the EE combat system.
+    # heavyRateModifier: 0.5
+    # heavyDamageBaseModifier: 1.75
+    # heavyStaminaCost: 10
+    # maxTargets: 1
+    angle: 120
+    animation: WeaponArcSlash
+    soundHit:
+      path: /Audio/Floof/Lewd/whip.ogg
+  - type: StaminaDamageOnHit
+    damage: 20
+  - type: StaminaDamageOnCollide
+    damage: 20
+  - type: StaticPrice
+    price: 60
+  - type: Item
+    size: Normal
+
+- type: entity
+  parent: BaseWhip
+  id: WhipPink
+  suffix: Coyote Frontier
+  name: pink whip
+  description: A pink whip for discipline!
+  components:
+  - type: Sprite
+    sprite: Floof/Objects/Fun/Lewd/Weapons/whip_pink.rsi
+    state: icon
+
+- type: entity
+  parent: BaseWhip
+  id: WhipTeal
+  suffix: Coyote Frontier
+  name: teal whip
+  description: A teal whip for discipline!
+  components:
+  - type: Sprite
+    sprite: Floof/Objects/Fun/Lewd/Weapons/whip_teal.rsi
+    state: icon
+
+- type: entity
+  parent: BaseWhip
+  id: WhipPinkCrotch
+  suffix: Coyote Frontier
+  name: pink crotch whip
+  description: A pink crotch whip for discipline!
+  components:
+  - type: Sprite
+    sprite: Floof/Objects/Fun/Lewd/Weapons/crotch_pink.rsi
+    state: icon
+
+- type: entity
+  parent: BaseWhip
+  id: WhipTealCrotch
+  suffix: Coyote Frontier
+  name: teal crotch whip
+  description: A teal crotch whip for discipline!
+  components:
+  - type: Sprite
+    sprite: Floof/Objects/Fun/Lewd/Weapons/crotch_teal.rsi
+    state: icon

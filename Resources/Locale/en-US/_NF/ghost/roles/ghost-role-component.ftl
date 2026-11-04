@@ -12,7 +12,7 @@ ghost-role-information-clugg-name = Clugg
 ghost-role-information-clugg-description = Ugg! Clugg love eat meat. Find new home off space rock, make big hunt.
 
 ghost-role-information-clarpy-name = Clarpy
-ghost-role-information-clarpy-description = Avast ye mail! wanted by Nanotrasen for crimes against mice.
+ghost-role-information-clarpy-description = Avast ye mail! wanted by the NFSD for crimes against mice.
 ghost-role-information-clarpy-rules = You are an old [color={role-type-pirate-color}][bold]{role-type-pirate-name}[/bold][/color] cat, help out the other pirates, and remember to take your meds.
 
 ghost-role-information-cult-cat-name = Blood Cult Cat
@@ -70,7 +70,7 @@ ghost-role-information-mercenary-captain-dungeon-name = Mercenary Captain
 ghost-role-information-mercenary-captain-dungeon-description = You have a job to do. Don't let anyone stand in your way. Defend the installation and your employer's property with other soldiers of fortune!
 
 ghost-role-information-punk-boss-dungeon-name = Punk Gang Leader
-ghost-role-information-punk-boss-dungeon-description = Defend the expedition dungeon and your loot with other punks from NT squares!
+ghost-role-information-punk-boss-dungeon-description = Defend the expedition dungeon and your loot with other punks from Frontier squares!
 
 ghost-role-information-t-rex-dungeon-name = Tyrannosaurus Rex
 ghost-role-information-t-rex-dungeon-description = Feel the rush of the hunt and let your instincts guide you to slaughter your prey!
