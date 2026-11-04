@@ -1742,3 +1742,11 @@ Entries:
   time: '2026-11-04T01:10:42.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/8031c9ad39c88939e23238dc15c27ed404721284
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Added a Jukebox volume slider to the audio options.
+  id: 90117
+  time: '2026-11-04T01:11:23.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/4cc5d06dc0031e521034bc05adb1af4b2dfbe31f
