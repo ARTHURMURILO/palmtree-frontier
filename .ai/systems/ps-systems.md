@@ -482,6 +482,23 @@ The jukebox menu gained a **Skip** button next to Play/Stop; it advances to the 
   `JukeboxMenu.xaml.cs`, wired to the message in `JukeboxBoundUserInterface.cs` (all `// Palmtree`).
 - Locale: `jukebox-menu-buttonskip` in `Resources/Locale/en-US/_PS/jukebox.ftl`.
 
+## Jukebox volume (2026-11)
+
+The audio options tab has a **Jukebox volume** slider (`ui-options-jukebox-volume`). It is a
+client-side preference that scales every jukebox stream, separate from master volume.
+
+- CVar: `PSCVars.JukeboxVolume` (`ps.audio.jukebox_volume`, client-only/archived, default `1`).
+  The slider maps 0-100% onto 0-1, so 100% is the server-provided volume.
+- System: `Content.Client/_PS/Audio/JukeboxVolumeSystem.cs`. A `_PS` system can read
+  `JukeboxComponent.AudioStream` (the class-level `[Access]` still allows other-type reads) and
+  applies the offset through `SharedAudioSystem.SetVolume`.
+- Important: the client audio system copies `AudioComponent.Params.Volume` into
+  `AudioComponent.Volume` every audio frame, so setting the live volume does not stick. The system
+  stores each stream's server-provided base volume (copy the `AudioParams` struct out before reading
+  `.Volume`, or the access analyzer flags it as an execute access) and reapplies base + offset.
+- UI: `SliderVolumeJukebox` in `Content.Client/Options/UI/Tabs/AudioTab.xaml(.cs)`; locale in
+  `Resources/Locale/en-US/_PS/audio.ftl`.
+
 ## Theobromine intolerance trait (2026-10)
 
 Theobromine (chocolate/coffee/tea) used to poison any species whose organs carry the `Animal`

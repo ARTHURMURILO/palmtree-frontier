@@ -96,4 +96,11 @@ public sealed partial class PSCVars
     /// </summary>
     public static readonly CVarDef<float> TileOverlayAreaLimit =
         CVarDef.Create("ps.client.tile_overlay_area_limit", 4096f, CVar.CLIENTONLY | CVar.ARCHIVE);
+
+    /// <summary>
+    /// Palmtree: gain applied to jukebox audio streams. 1 is the server-provided volume; the
+    /// options slider maps 0-100% onto 0-1.
+    /// </summary>
+    public static readonly CVarDef<float> JukeboxVolume =
+        CVarDef.Create("ps.audio.jukebox_volume", 1f, CVar.CLIENTONLY | CVar.ARCHIVE);
 }
