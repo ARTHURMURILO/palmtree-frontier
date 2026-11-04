@@ -1,0 +1,4 @@
+- files: ["phaser1.ogg", "phaser2.ogg"]
+  license: "Custom"
+  copyright: "Star Trek sound effects (Paramount / CBS), sourced from TrekCore. Provided by the maintainer for Palmtree Station."
+  source: "https://www.trekcore.com/audio/"

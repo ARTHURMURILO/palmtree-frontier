@@ -53,6 +53,14 @@ public sealed partial class RCDComponent : Component
     public bool InstantConstruction { get; set; }
 
     /// <summary>
+    /// Palmtree: admin/experimental RCD mode. Construction and deconstruction ignore charges
+    /// entirely (no cost, no gain and no loss), and deconstruction accepts any anchored fixture or
+    /// tile instead of only entities carrying <see cref="RCDDeconstructableComponent"/>.
+    /// </summary>
+    [DataField, AutoNetworkedField]
+    public bool Unrestricted { get; set; }
+
+    /// <summary>
     /// Palmtree: multiplier applied to RCD/RPD operation delays. 2 is twice as fast (half the
     /// delay); var-edit it or set it per prototype for faster tools. Values at or below zero are
     /// ignored.

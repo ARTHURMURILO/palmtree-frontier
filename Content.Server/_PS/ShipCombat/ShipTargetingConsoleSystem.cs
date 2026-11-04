@@ -1,0 +1,481 @@
+using System.Numerics;
+using Content.Server.Shuttles.Components;
+using Content.Server.Shuttles.Systems;
+using Content.Shared._PS.ShipCombat;
+using Content.Shared._PS.ShipCombat.Components;
+using Content.Shared.Power;
+using Content.Shared.Shuttles.Components;
+using Robust.Server.GameObjects;
+using Robust.Shared.Audio.Systems;
+using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
+using Robust.Shared.Physics.Components;
+using Robust.Shared.Timing;
+
+namespace Content.Server._PS.ShipCombat;
+
+/// <summary>
+/// Palmtree: the ship targeting ("tactical") console device. It renders the shuttle radar view with
+/// tactical overlays, edits the grid's <see cref="ShipCombatComponent"/> and plays the contact
+/// alerts. Locking and firing live in the grid-level targeting/weapon systems so a future AI brain
+/// can drive them without a console.
+/// </summary>
+public sealed class ShipTargetingConsoleSystem : EntitySystem
+{
+    [Dependency] private readonly ShipCombatSystem _combat = default!;
+    [Dependency] private readonly ShipTargetingSystem _targeting = default!;
+    [Dependency] private readonly ShipWeaponSystem _weapons = default!;
+    [Dependency] private readonly ShipTorpedoSystem _torpedoes = default!;
+    [Dependency] private readonly ShuttleConsoleSystem _shuttleConsole = default!;
+    [Dependency] private readonly SharedAudioSystem _audio = default!;
+    [Dependency] private readonly SharedTransformSystem _transform = default!;
+    [Dependency] private readonly UserInterfaceSystem _ui = default!;
+    [Dependency] private readonly IGameTiming _timing = default!;
+
+    /// <summary>How often consoles rescan the grids in their range.</summary>
+    private const float ContactScanInterval = 1f;
+
+    /// <summary>How often open windows refresh (torpedo blips move, so this is much faster).</summary>
+    private const float OpenWindowRefreshInterval = 0.25f;
+
+    private TimeSpan _nextWindowRefresh;
+
+    /// <summary>Longest target name shown in the window's TARGET line.</summary>
+    private const int MaxTargetNameLength = 24;
+
+    /// <summary>Grids each console could see on the previous scan (runtime only).</summary>
+    private readonly Dictionary<EntityUid, HashSet<EntityUid>> _contacts = new();
+
+    /// <summary>Next time each console may play a contact sound.</summary>
+    private readonly Dictionary<EntityUid, TimeSpan> _nextContactSound = new();
+
+    private TimeSpan _nextContactScan;
+
+    public override void Initialize()
+    {
+        base.Initialize();
+
+        SubscribeLocalEvent<ShipTargetingConsoleComponent, MapInitEvent>(OnMapInit);
+        SubscribeLocalEvent<ShipTargetingConsoleComponent, PowerChangedEvent>(OnPowerChanged);
+        SubscribeLocalEvent<ShipTargetingConsoleComponent, ComponentShutdown>(OnShutdown);
+        SubscribeLocalEvent<ShipTargetingConsoleComponent, BoundUIOpenedEvent>(OnUiOpened);
+        SubscribeLocalEvent<ShipTargetingConsoleComponent, ShipConsoleSetConditionMessage>(OnSetCondition);
+        SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleSetAutomaticConditionMessage>(OnSetAutomaticCondition);
+        SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleSetAutomaticFireMessage>(OnSetAutomaticFire);
+        SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleSetAutomaticRetaliationMessage>(OnSetAutomaticRetaliation);
+        SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleSetWeaponModeMessage>(OnSetWeaponMode);
+        SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleSetTargetModeMessage>(OnSetTargetMode);
+        SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleSetSilentMessage>(OnSetSilent);
+        SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleLockRequestMessage>(OnLockRequest);
+        SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleClearLockMessage>(OnClearLock);
+        SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleManualFireMessage>(OnManualFire);
+        SubscribeLocalEvent<ShipTargetingConsoleComponent, TacticalConsoleFireTorpedoesMessage>(OnFireTorpedoes);
+        SubscribeLocalEvent<ShipCombatConditionChangedEvent>(OnConditionChanged);
+        SubscribeLocalEvent<ShipCombatStateChangedEvent>(OnStateChanged);
+    }
+
+    public override void Update(float frameTime)
+    {
+        base.Update(frameTime);
+
+        // Open windows refresh four times a second so torpedo blips move smoothly.
+        if (_timing.CurTime >= _nextWindowRefresh)
+        {
+            _nextWindowRefresh = _timing.CurTime + TimeSpan.FromSeconds(OpenWindowRefreshInterval);
+            var open = EntityQueryEnumerator<ShipTargetingConsoleComponent>();
+            while (open.MoveNext(out var uid, out var console))
+            {
+                if (_ui.IsUiOpen(uid, TacticalConsoleUiKey.Key))
+                    UpdateState(uid, console);
+            }
+        }
+
+        if (_timing.CurTime < _nextContactScan)
+            return;
+
+        _nextContactScan = _timing.CurTime + TimeSpan.FromSeconds(ContactScanInterval);
+
+        // Grid positions are shared between every console, so collect them once per scan.
+        var grids = new List<(EntityUid Grid, MapId Map, Vector2 Position)>();
+        var gridQuery = EntityQueryEnumerator<MapGridComponent, PhysicsComponent, TransformComponent>();
+        while (gridQuery.MoveNext(out var gridUid, out var grid, out var gridPhysics, out var gridXform))
+        {
+            var position = _transform.ToMapCoordinates(new EntityCoordinates(gridUid, gridPhysics.LocalCenter)).Position;
+            grids.Add((gridUid, gridXform.MapID, position));
+        }
+
+        // Only grids with a shuttle console count as ships for contact alerts. Asteroids, wrecks
+        // and other non-ship grids do not beep (they are still lockable).
+        var shipGrids = new HashSet<EntityUid>();
+        var shuttleConsoles = EntityQueryEnumerator<ShuttleConsoleComponent, TransformComponent>();
+        while (shuttleConsoles.MoveNext(out _, out _, out var shuttleXform))
+        {
+            if (shuttleXform.GridUid is { } shuttleGrid)
+                shipGrids.Add(shuttleGrid);
+        }
+
+        var consoles = EntityQueryEnumerator<ShipTargetingConsoleComponent, RadarConsoleComponent, TransformComponent>();
+        while (consoles.MoveNext(out var uid, out var console, out var radar, out var xform))
+        {
+            ScanContacts(uid, console, radar, xform, grids, shipGrids);
+        }
+    }
+
+    private void OnMapInit(EntityUid uid, ShipTargetingConsoleComponent component, MapInitEvent args)
+    {
+        // A console on a grid turns the grid into a ship with combat state.
+        _combat.TryEnsureShipCombat(uid, out _);
+        UpdateState(uid, component);
+    }
+
+    private void OnPowerChanged(EntityUid uid, ShipTargetingConsoleComponent component, ref PowerChangedEvent args)
+    {
+        component.Unpowered = !args.Powered;
+    }
+
+    private void OnShutdown(EntityUid uid, ShipTargetingConsoleComponent component, ComponentShutdown args)
+    {
+        _contacts.Remove(uid);
+        _nextContactSound.Remove(uid);
+    }
+
+    private void OnUiOpened(EntityUid uid, ShipTargetingConsoleComponent component, ref BoundUIOpenedEvent args)
+    {
+        if (args.UiKey is not TacticalConsoleUiKey.Key)
+            return;
+
+        UpdateState(uid, component);
+    }
+
+    private void OnSetCondition(EntityUid uid, ShipTargetingConsoleComponent component, ShipConsoleSetConditionMessage args)
+    {
+        // The condition-changed event refreshes every console on the grid.
+        _combat.TrySetCondition(uid, args.Condition);
+    }
+
+    private void OnSetAutomaticCondition(EntityUid uid, ShipTargetingConsoleComponent component, TacticalConsoleSetAutomaticConditionMessage args)
+    {
+        if (!_combat.TryGetShipCombat(uid, out var combat) || combat.Comp.AutomaticCondition == args.Enabled)
+            return;
+
+        combat.Comp.AutomaticCondition = args.Enabled;
+        UpdateState(uid, component);
+    }
+
+    private void OnSetAutomaticFire(EntityUid uid, ShipTargetingConsoleComponent component, TacticalConsoleSetAutomaticFireMessage args)
+    {
+        if (!_combat.TryGetShipCombat(uid, out var combat) || combat.Comp.AutomaticFire == args.Enabled)
+            return;
+
+        combat.Comp.AutomaticFire = args.Enabled;
+        UpdateState(uid, component);
+    }
+
+    private void OnSetAutomaticRetaliation(EntityUid uid, ShipTargetingConsoleComponent component, TacticalConsoleSetAutomaticRetaliationMessage args)
+    {
+        if (!_combat.TryGetShipCombat(uid, out var combat) || combat.Comp.AutomaticRetaliation == args.Enabled)
+            return;
+
+        combat.Comp.AutomaticRetaliation = args.Enabled;
+        UpdateState(uid, component);
+    }
+
+    private void OnSetWeaponMode(EntityUid uid, ShipTargetingConsoleComponent component, TacticalConsoleSetWeaponModeMessage args)
+    {
+        if (!Enum.IsDefined(args.Mode))
+            return;
+
+        if (!_combat.TryGetShipCombat(uid, out var combat) || combat.Comp.WeaponMode == args.Mode)
+            return;
+
+        combat.Comp.WeaponMode = args.Mode;
+        UpdateState(uid, component);
+    }
+
+    private void OnSetSilent(EntityUid uid, ShipTargetingConsoleComponent component, TacticalConsoleSetSilentMessage args)
+    {
+        if (component.Silent == args.Silent)
+            return;
+
+        component.Silent = args.Silent;
+        UpdateState(uid, component);
+    }
+
+    private void OnSetTargetMode(EntityUid uid, ShipTargetingConsoleComponent component, TacticalConsoleSetTargetModeMessage args)
+    {
+        if (!Enum.IsDefined(args.Mode))
+            return;
+
+        if (!_combat.TryGetShipCombat(uid, out var combat) || combat.Comp.TargetMode == args.Mode)
+            return;
+
+        combat.Comp.TargetMode = args.Mode;
+
+        // Re-pick the aim point immediately so the next shot follows the new selection.
+        combat.Comp.NextAimSelection = TimeSpan.Zero;
+        UpdateState(uid, component);
+    }
+
+    private void OnConditionChanged(ShipCombatConditionChangedEvent args)
+    {
+        UpdateConsolesOnGrid(args.Grid);
+        UpdateConsolesSeeing(args.Grid);
+    }
+
+    private void OnStateChanged(ShipCombatStateChangedEvent args)
+    {
+        UpdateConsolesOnGrid(args.Grid);
+        UpdateConsolesSeeing(args.Grid);
+    }
+
+    /// <summary>
+    /// Refreshes the consoles of ships that can see <paramref name="grid"/> (its threat state may
+    /// have changed: weapon mode, condition, lock).
+    /// </summary>
+    private void UpdateConsolesSeeing(EntityUid grid)
+    {
+        foreach (var (consoleUid, contacts) in _contacts)
+        {
+            if (!contacts.Contains(grid))
+                continue;
+
+            if (TryComp<ShipTargetingConsoleComponent>(consoleUid, out var console))
+                UpdateState(consoleUid, console);
+        }
+    }
+
+    private void OnLockRequest(EntityUid uid, ShipTargetingConsoleComponent component, TacticalConsoleLockRequestMessage args)
+    {
+        if (!EntityManager.TryGetEntity(args.Target, out var target) || target is not { } targetGrid)
+            return;
+
+        if (!TryComp<RadarConsoleComponent>(uid, out var radar))
+            return;
+
+        _targeting.TryStartLock(uid, targetGrid, radar.MaxRange);
+    }
+
+    private void OnClearLock(EntityUid uid, ShipTargetingConsoleComponent component, TacticalConsoleClearLockMessage args)
+    {
+        _targeting.TryClearLock(uid);
+    }
+
+    private void OnManualFire(EntityUid uid, ShipTargetingConsoleComponent component, TacticalConsoleManualFireMessage args)
+    {
+        _weapons.TryManualFire(uid);
+    }
+
+    private void OnFireTorpedoes(EntityUid uid, ShipTargetingConsoleComponent component, TacticalConsoleFireTorpedoesMessage args)
+    {
+        _torpedoes.TryLaunch(uid);
+    }
+
+    /// <summary>
+    /// Refreshes the window of every tactical console on a grid.
+    /// </summary>
+    private void UpdateConsolesOnGrid(EntityUid grid)
+    {
+        var consoles = EntityQueryEnumerator<ShipTargetingConsoleComponent, TransformComponent>();
+        while (consoles.MoveNext(out var uid, out var console, out var xform))
+        {
+            if (xform.GridUid != grid)
+                continue;
+
+            UpdateState(uid, console);
+        }
+    }
+
+    /// <summary>
+    /// Sends the current console state to the window.
+    /// </summary>
+    public void UpdateState(EntityUid uid, ShipTargetingConsoleComponent? component = null)
+    {
+        if (!Resolve(uid, ref component))
+            return;
+
+        if (!_ui.HasUi(uid, TacticalConsoleUiKey.Key))
+            return;
+
+        if (!_combat.TryGetShipCombat(uid, out var combat))
+            return;
+
+        _ui.SetUiState(uid, TacticalConsoleUiKey.Key, BuildState(uid, combat.Comp));
+    }
+
+    /// <summary>
+    /// Builds the window state for a console.
+    /// </summary>
+    public TacticalConsoleBoundUserInterfaceState BuildState(EntityUid uid, ShipCombatComponent combat)
+    {
+        var docks = _shuttleConsole.GetAllDocks();
+        var nav = _shuttleConsole.GetNavState(uid, docks);
+
+        var hasLock = combat.LockTarget != null && !combat.LockInProgress;
+        var silent = TryComp<ShipTargetingConsoleComponent>(uid, out var console) && console.Silent;
+
+        return new TacticalConsoleBoundUserInterfaceState(
+            nav,
+            combat.Condition,
+            combat.WeaponMode,
+            combat.TargetMode,
+            combat.AutomaticCondition,
+            combat.AutomaticFire,
+            combat.AutomaticRetaliation,
+            silent: silent,
+            beingLocked: combat.IncomingLocks.Count > 0,
+            incomingMissile: combat.IncomingMissile,
+            hasLock: hasLock,
+            weaponsBlocked: combat.WeaponsBlocked,
+            lockTarget: hasLock ? GetNetEntity(combat.LockTarget) : null,
+            targetName: hasLock ? GetTargetDisplayName(combat.LockTarget!.Value) : null,
+            contacts: BuildContacts(uid, combat),
+            torpedoes: BuildTorpedoes(combat));
+    }
+
+    /// <summary>
+    /// The ships this console can see, with their threat state (armed contacts render red and get a
+    /// flashing lock cursor when they are locking this ship).
+    /// </summary>
+    private List<TacticalContactState> BuildContacts(EntityUid console, ShipCombatComponent combat)
+    {
+        var contacts = new List<TacticalContactState>();
+        if (!_contacts.TryGetValue(console, out var grids))
+            return contacts;
+
+        foreach (var grid in grids)
+        {
+            var armed = TryComp<ShipCombatComponent>(grid, out var other) && IsArmed(other);
+            contacts.Add(new TacticalContactState(GetNetEntity(grid), armed, combat.IncomingLocks.Contains(grid)));
+        }
+
+        return contacts;
+    }
+
+    /// <summary>
+    /// Torpedoes on the console's map, as map-space blips (green for this ship's own, red for
+    /// everyone else's) so long-range torpedoes render even outside PVS.
+    /// </summary>
+    private List<TacticalTorpedoState> BuildTorpedoes(ShipCombatComponent combat)
+    {
+        var torpedoes = new List<TacticalTorpedoState>();
+
+        if (!TryComp<TransformComponent>(combat.Owner, out var shipXform))
+            return torpedoes;
+
+        var query = EntityQueryEnumerator<ShipTorpedoComponent, TransformComponent>();
+        while (query.MoveNext(out _, out var torpedo, out var xform))
+        {
+            if (xform.MapID != shipXform.MapID)
+                continue;
+
+            torpedoes.Add(new TacticalTorpedoState(_transform.GetWorldPosition(xform), torpedo.Source == combat.Owner));
+        }
+
+        return torpedoes;
+    }
+
+    /// <summary>
+    /// A contact is a threat when it is off MASTER SAFE and at YELLOW condition or above.
+    /// </summary>
+    private static bool IsArmed(ShipCombatComponent combat)
+    {
+        return combat.WeaponMode != ShipWeaponMode.MasterSafe && combat.Condition != ShipCondition.Green;
+    }
+
+    /// <summary>
+    /// The name shown in the window's TARGET line: the target's name (at most
+    /// <see cref="MaxTargetNameLength"/> characters), or "?" when it is unknown or its IFF is hidden.
+    /// </summary>
+    private string GetTargetDisplayName(EntityUid target)
+    {
+        if (!TryComp<IFFComponent>(target, out var iff)
+            || (iff.Flags & (IFFFlags.Hide | IFFFlags.HideLabel)) != 0x0)
+            return "?";
+
+        var name = Name(target);
+        return name.Length > MaxTargetNameLength ? name[..MaxTargetNameLength] : name;
+    }
+
+    /// <summary>
+    /// The grids a console could see on its last scan, or null when it has not scanned yet.
+    /// </summary>
+    public HashSet<EntityUid>? GetContacts(EntityUid uid)
+    {
+        return _contacts.GetValueOrDefault(uid);
+    }
+
+    private void ScanContacts(
+        EntityUid uid,
+        ShipTargetingConsoleComponent console,
+        RadarConsoleComponent radar,
+        TransformComponent xform,
+        List<(EntityUid Grid, MapId Map, Vector2 Position)> grids,
+        HashSet<EntityUid> shipGrids)
+    {
+        if (xform.GridUid is not { } ownGrid)
+            return;
+
+        var consolePosition = _transform.GetMapCoordinates(xform).Position;
+        var range = radar.MaxRange;
+
+        var found = new HashSet<EntityUid>();
+        foreach (var (grid, map, position) in grids)
+        {
+            if (grid == ownGrid || map != xform.MapID)
+                continue;
+
+            if (!shipGrids.Contains(grid))
+                continue;
+
+            if ((position - consolePosition).Length() > range)
+                continue;
+
+            found.Add(grid);
+        }
+
+        if (!_contacts.TryGetValue(uid, out var previous))
+        {
+            _contacts[uid] = found;
+            return;
+        }
+
+        var entered = false;
+        foreach (var grid in found)
+        {
+            if (previous.Contains(grid))
+                continue;
+
+            entered = true;
+            break;
+        }
+
+        var left = false;
+        foreach (var grid in previous)
+        {
+            if (found.Contains(grid))
+                continue;
+
+            left = true;
+            break;
+        }
+
+        _contacts[uid] = found;
+
+        if (!entered && !left)
+            return;
+
+        // The window's contact list (armed state, lock cursors) changed.
+        UpdateState(uid, console);
+
+        if (console.Muted)
+            return;
+
+        if (_nextContactSound.TryGetValue(uid, out var next) && _timing.CurTime < next)
+            return;
+
+        // The alert is played at the console, audible by anyone nearby - it does not need the
+        // window to be open.
+        _audio.PlayPvs(entered ? console.ContactEnterSound : console.ContactLeaveSound, uid);
+        _nextContactSound[uid] = _timing.CurTime + console.ContactSoundCooldown;
+    }
+}

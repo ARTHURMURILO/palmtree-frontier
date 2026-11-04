@@ -65,6 +65,8 @@ namespace Content.Shared.Humanoid.Markings
             _markingColors = new(other.MarkingColors);
             Visible = other.Visible;
             Forced = other.Forced;
+            RenderOverClothing = other.RenderOverClothing;
+            RenderUnderTopUndergarment = other.RenderUnderTopUndergarment;
             // Palmtree/Coyote Start
             _markingScale = other._markingScale;
             _markingOffsetX = other._markingOffsetX;
@@ -166,6 +168,13 @@ namespace Content.Shared.Humanoid.Markings
         [DataField("renderOverClothing")]
         public bool RenderOverClothing;
 
+        /// <summary>
+        ///     Palmtree: for genital render markings, anchor between UndergarmentBottom and
+        ///     UndergarmentTop (breasts) instead of below both (bottom organs).
+        /// </summary>
+        [DataField("renderUnderTopUndergarment")]
+        public bool RenderUnderTopUndergarment;
+
         public void SetColor(int colorIndex, Color color) =>
             _markingColors[colorIndex] = color;
 
@@ -235,6 +244,8 @@ namespace Content.Shared.Humanoid.Markings
                 && _markingGlow.SequenceEqual(other._markingGlow)
                 && Visible.Equals(other.Visible)
                 && Forced.Equals(other.Forced)
+                && RenderOverClothing == other.RenderOverClothing
+                && RenderUnderTopUndergarment == other.RenderUnderTopUndergarment
                 // Palmtree/Coyote Start
                 && _markingScale == other._markingScale
                 && _markingOffsetX == other._markingOffsetX

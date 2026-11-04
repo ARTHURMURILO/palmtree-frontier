@@ -33,6 +33,13 @@ public sealed partial class HitscanPrototype : IPrototype, IShootable
     public int CollisionMask = (int) CollisionGroup.Opaque;
 
     /// <summary>
+    /// Tint applied to the muzzle, travel and impact flashes. Defaults to white, which leaves the
+    /// sprites unchanged; use white beam sprites to fire any colour.
+    /// </summary>
+    [DataField]
+    public Color Color = Color.White;
+
+    /// <summary>
     /// What we count as for reflection.
     /// </summary>
     [DataField("reflective")] public ReflectType Reflective = ReflectType.Energy;

@@ -10,14 +10,16 @@ namespace Content.Shared._PS.ShipRegistry;
 /// <summary>
 /// Palmtree: Ship Registrar console. Turns a docked, unregistered grid (a hand-built ship) into a
 /// proper civilian vessel: station, deed, shuttle record, IFF name and a
-/// <see cref="RegisteredVesselComponent"/> marker. Requires the Station Representative's ID and the
-/// ship owner's ID, like the ID card console.
+/// <see cref="RegisteredVesselComponent"/> marker. Requires the Station Representative's ID; the
+/// owner is picked from the online-player dropdown or supplied as an owner ID card (which also
+/// works for SSD/offline characters).
 /// </summary>
 [RegisterComponent, NetworkedComponent, AutoGenerateComponentPause]
 [Access(typeof(SharedShipRegistrarSystem), Other = AccessPermissions.ReadWriteExecute)]
 public sealed partial class ShipRegistrarConsoleComponent : Component
 {
     public static string PrivilegedIdCardSlotId = "ShipRegistrar-privilegedId";
+    public static string TargetIdCardSlotId = "ShipRegistrar-targetId";
 
     /// <summary>Maximum length of a registered ship's name.</summary>
     public const int MaxNameLength = 32;
@@ -27,6 +29,13 @@ public sealed partial class ShipRegistrarConsoleComponent : Component
 
     [DataField]
     public ItemSlot PrivilegedIdSlot = new();
+
+    /// <summary>
+    /// Optional owner ID card. When present it takes priority over the player dropdown, so a ship
+    /// can be registered to an SSD/offline character whose card is available.
+    /// </summary>
+    [DataField]
+    public ItemSlot TargetIdSlot = new();
 
     /// <summary>
     /// Access levels added to the owner's ID when their ship is registered, exactly like a shipyard

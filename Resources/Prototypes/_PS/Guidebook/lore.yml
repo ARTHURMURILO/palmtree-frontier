@@ -1,0 +1,27 @@
+- type: guideEntry
+  id: Lore
+  name: guide-entry-lore
+  text: "/ServerInfo/_PS/Guidebook/Lore/LoreMaster.xml"
+  priority: 0
+  children:
+  - TSF
+  - USSP
+  - Nanotrasen
+
+- type: guideEntry
+  id: TSF
+  name: guide-entry-tsf
+  text: "/ServerInfo/_PS/Guidebook/Lore/TSF.xml"
+  priority: 0
+
+- type: guideEntry
+  id: USSP
+  name: guide-entry-ussp
+  text: "/ServerInfo/_PS/Guidebook/Lore/USSP.xml"
+  priority: 0
+
+- type: guideEntry
+  id: Nanotrasen
+  name: guide-entry-nanotrasen
+  text: "/ServerInfo/_PS/Guidebook/Lore/Nanotrasen.xml"
+  priority: 0

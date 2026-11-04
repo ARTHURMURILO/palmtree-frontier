@@ -18,18 +18,19 @@
 
 - type: hitscan
   id: PhaserLethal
+  color: "#ff9a1a"
   damage:
     types:
       Heat: 80
   muzzleFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
-    state: muzzle_xray
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/beam.rsi
+    state: muzzle_beam_heavy
   travelFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
-    state: xray
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/beam.rsi
+    state: beam_heavy
   impactFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
-    state: impact_xray
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/beam.rsi
+    state: impact_beam_heavy
   maxLength: 30
 
 - type: hitscan

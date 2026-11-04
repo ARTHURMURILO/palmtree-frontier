@@ -37,6 +37,7 @@
           mapNameTemplate: 'Caladrius {1}'
           nameGenerator:
             !type:NanotrasenNameGenerator
+            prefix: SG
             prefixCreator: '14'
         - type: StationJobs
           availableJobs:

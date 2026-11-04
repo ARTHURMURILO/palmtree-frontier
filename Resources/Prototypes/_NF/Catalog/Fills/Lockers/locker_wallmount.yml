@@ -225,6 +225,13 @@
   parent: [ LockerWallEVAColorFsa ]
   id: LockerWallEVAColorFsaEmpty
   suffix: Frontier, Empty
+  components:
+  # Palmtree: player-buildable variant (mapping base stays non-constructible).
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorFsaEmpty
+    containers:
+    - storagebase
 
 - type: entity
   parent: [ LockerWallEVAColorFsb, StorageFillEVASuitFsb ]
@@ -235,6 +242,13 @@
   parent: [ LockerWallEVAColorFsb ]
   id: LockerWallEVAColorFsbEmpty
   suffix: Frontier, Empty
+  components:
+  # Palmtree: player-buildable variant (mapping base stays non-constructible).
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorFsbEmpty
+    containers:
+    - storagebase
 
 - type: entity
   parent: [ LockerWallEVAColorFsc, StorageFillEVASuitFsc ]
@@ -245,6 +259,13 @@
   parent: [ LockerWallEVAColorFsc ]
   id: LockerWallEVAColorFscEmpty
   suffix: Frontier, Empty
+  components:
+  # Palmtree: player-buildable variant (mapping base stays non-constructible).
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallEVAColorFscEmpty
+    containers:
+    - storagebase
 
 # endregion
 
@@ -349,6 +370,13 @@
   parent: LockerWallColorMedical
   name: medicine wall locker
   suffix: Empty, Frontier
+  components:
+  # Palmtree: player-buildable variant (mapping base stays non-constructible).
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorMedicalEmpty
+    containers:
+    - storagebase
 # endregion
 
 # region Chemistry
@@ -375,6 +403,12 @@
     stateBaseClosed: base
     stateDoorOpen: open
     stateDoorClosed: door
+  # Palmtree: player-buildable variant (mapping base stays non-constructible).
+  - type: Construction
+    graph: WallLocker
+    node: LockerWallColorHydroponicsEmpty
+    containers:
+    - storagebase
 
 - type: entity
   id: LockerWallColorHydroponicsFilled

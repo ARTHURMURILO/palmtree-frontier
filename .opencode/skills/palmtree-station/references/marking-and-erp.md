@@ -65,7 +65,12 @@ sanitized to `_`). Old strings remain valid and default to self-toggleable. Chan
   - `layering` routes sprites to arbitrary layers; `colorLinks` copies colors (and glow).
   - scale/offset applied per layer; glow creates `<id>-<state>-glow` with `unshaded` shader and
     alpha split; hidden/removed markings clean up glow layers.
-  - genital layers clamp below `jumpsuit`/`outerClothing`.
+  - genital layers clamp below `jumpsuit`/`outerClothing`; bottom organs render below
+    `UndergarmentBottom` and breasts below `UndergarmentTop` (even facing south when the relevant
+    undergarment is visible), while on the client the order is direction-aware (south-facing
+    uncovered genitals over hair/tails, east/west tails under hair, east/west snouts over hair
+    when `SnoutAboveHair` is enabled) and `DirectionalLayerOrderSystem` rebuilds on cardinal
+    changes.
   - `Base*` categories add to `HiddenBaseLayers`; `UpdateLayersAgain` hides them.
 - `RemoveMarking` removes both base and `-glow` layers.
 
@@ -96,8 +101,9 @@ sanitized to `_`). Old strings remain valid and default to self-toggleable. Chan
   space** opens the self panel for masturbation actions; the manual **Climax** works on self or
   others at any time.
 - Per-organ visibility rules (Always hidden / Hidden by underwear / Hidden by jumpsuit / Never
-  hidden) are changeable in the panel and editor and persist in the profile; exposure and rendering
-  both follow them (`Never hidden` draws over clothing, covered organs are not drawn at all).
+  hidden / Visible under clothes) are changeable in the panel and editor and persist in the profile;
+  exposure and rendering both follow them (`Never hidden` draws over clothing, `Visible under
+  clothes` keeps the normal under-clothing layer, covered organs are not drawn at all).
 - Organ colors (primary + detail, alpha enabled) and transforms (offset + scale + glow) are picked
   per organ in the editor (sliders mirror the marking picker); they persist in the DB string and
   apply via `Marking.SetOffset`/`SetScale`/`SetGlow`. The editor also has a **Preview aroused

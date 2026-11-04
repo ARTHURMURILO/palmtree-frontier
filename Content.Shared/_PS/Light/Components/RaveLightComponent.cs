@@ -3,9 +3,9 @@ using Robust.Shared.GameStates;
 namespace Content.Shared._PS.Light.Components;
 
 /// <summary>
-/// Palmtree: makes a light continuously pulse between its normal brightness and fully off.
+/// Palmtree: makes a light fixture continuously pulse between its normal brightness and fully off.
 /// The pulse is a triangle wave: 100%, 90%, ... 0%, then immediately 90%, 100%, 90%, ...
-/// Can be put on a bulb (so any fixture it is inserted into pulses) or directly on a fixture.
+/// The fixture owns the effect; its bulb only determines the light's color.
 /// </summary>
 [RegisterComponent, NetworkedComponent, AutoGenerateComponentState]
 public sealed partial class RaveLightComponent : Component
@@ -22,7 +22,8 @@ public sealed partial class RaveLightComponent : Component
     public float Period = 1f;
 
     /// <summary>
-    /// Peak point-light energy. If zero, the light's energy is captured when it first pulses.
+    /// Peak point-light energy. Kept on the fixture so the bulb cannot change the pulse.
+    /// If zero, the light's current energy is captured when it first pulses.
     /// </summary>
     [DataField, AutoNetworkedField]
     public float MaxEnergy;

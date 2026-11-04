@@ -22,10 +22,21 @@ public sealed class RCDMenuBoundUserInterface : BoundUserInterface
             ["WallsAndFlooring"] = ("rcd-component-walls-and-flooring", new SpriteSpecifier.Texture(new ResPath("/Textures/Interface/Radial/RCD/walls_and_flooring.png"))),
             ["WindowsAndGrilles"] = ("rcd-component-windows-and-grilles", new SpriteSpecifier.Texture(new ResPath("/Textures/Interface/Radial/RCD/windows_and_grilles.png"))),
             ["Airlocks"] = ("rcd-component-airlocks", new SpriteSpecifier.Texture(new ResPath("/Textures/Interface/Radial/RCD/airlocks.png"))),
-            ["Electrical"] = ("rcd-component-electrical", new SpriteSpecifier.Texture(new ResPath("/Textures/Interface/Radial/RCD/multicoil.png"))),
+            ["Doors"] = ("rcd-component-doors", new SpriteSpecifier.Rsi(new ResPath("Structures/Doors/Shutters/blastdoor.rsi"), "closed")),
             ["Lighting"] = ("rcd-component-lighting", new SpriteSpecifier.Texture(new ResPath("/Textures/Interface/Radial/RCD/lighting.png"))),
+            // Palmtree: nested lamp/bulb light categories
+            ["LightingLamps"] = ("rcd-component-lighting-lamps", new SpriteSpecifier.Texture(new ResPath("/Textures/Interface/Radial/RCD/tube_light.png"))),
+            ["LightingBulbs"] = ("rcd-component-lighting-bulbs", new SpriteSpecifier.Texture(new ResPath("/Textures/Interface/Radial/RCD/bulb_light.png"))),
+            // Palmtree: ship construction suite
+            ["Storage"] = ("rcd-component-storage", new SpriteSpecifier.Rsi(new ResPath("Structures/Storage/closet.rsi"), "generic")),
+            ["Power"] = ("rcd-component-power", new SpriteSpecifier.Rsi(new ResPath("Structures/Power/substation.rsi"), "substation")),
+            ["PowerMachinery"] = ("rcd-component-power-machinery", new SpriteSpecifier.Rsi(new ResPath("Structures/Power/substation.rsi"), "substation")),
+            ["PowerWiring"] = ("rcd-component-power-wiring", new SpriteSpecifier.Texture(new ResPath("/Textures/Interface/Radial/RCD/multicoil.png"))),
+            ["Thrusters"] = ("rcd-component-thrusters", new SpriteSpecifier.Rsi(new ResPath("_NF/Structures/Shuttles/thruster.rsi"), "base")),
+            ["Gyroscopes"] = ("rcd-component-gyroscopes", new SpriteSpecifier.Rsi(new ResPath("_NF/Structures/Shuttles/gyroscope.rsi"), "base")),
             // Frontier - Pirate RCD
-            ["PirateWallsAndFlooring"] = ("rcd-component-pirate-walls-and-flooring", new SpriteSpecifier.Texture(new ResPath("/Textures/_NF/Interface/Radial/RCD/walls_and_flooring.png"))),
+            // Palmtree: PirateWallsAndFlooring was merged into WallsAndFlooring; its modes now use
+            // the standard category so the menu no longer shows a second "Walls and flooring".
             ["PirateWindowsAndGrilles"] = ("rcd-component-pirate-windows-and-grilles", new SpriteSpecifier.Texture(new ResPath("/Textures/_NF/Interface/Radial/RCD/windows_and_grilles.png"))),
             ["PirateAirlocks"] = ("rcd-component-pirate-airlocks", new SpriteSpecifier.Texture(new ResPath("/Textures/_NF/Interface/Radial/RCD/airlocks.png"))),
             // End Frontier
@@ -80,7 +91,7 @@ public sealed class RCDMenuBoundUserInterface : BoundUserInterface
                 continue;
             }
 
-            if (!PrototypesGroupingInfo.TryGetValue(prototype.Category, out var groupInfo))
+            if (!PrototypesGroupingInfo.TryGetValue(prototype.Category, out _))
                 continue;
 
             if (!buttonsByCategory.TryGetValue(prototype.Category, out var list))
@@ -97,23 +108,69 @@ public sealed class RCDMenuBoundUserInterface : BoundUserInterface
             list.Add(actionOption);
         }
 
-        var models = new RadialMenuOptionBase[buttonsByCategory.Count + topLevelActions.Count];
-        var i = 0;
+        // Palmtree: categories that contain nested sub-categories. Direct modes of the parent are
+        // listed alongside the sub-category buttons (Doors has blast doors/shutters plus Airlocks).
+        var nestedCategories = new Dictionary<string, string[]>
+        {
+            ["Lighting"] = new[] { "LightingLamps", "LightingBulbs" },
+            ["Power"] = new[] { "PowerMachinery", "PowerWiring" },
+            ["Doors"] = new[] { "Airlocks" },
+        };
+
+        var models = new List<RadialMenuOptionBase>();
+        var handled = new HashSet<string>();
+
+        foreach (var (parent, subCategories) in nestedCategories)
+        {
+            var nested = new List<RadialMenuOptionBase>();
+
+            if (buttonsByCategory.TryGetValue(parent, out var directList))
+                nested.AddRange(directList);
+
+            foreach (var category in subCategories)
+            {
+                if (!buttonsByCategory.TryGetValue(category, out var subList) || subList.Count == 0)
+                    continue;
+
+                var subInfo = PrototypesGroupingInfo[category];
+                nested.Add(new RadialMenuNestedLayerOption(subList)
+                {
+                    IconSpecifier = RadialMenuIconSpecifier.With(subInfo.Sprite),
+                    ToolTip = Loc.GetString(subInfo.Tooltip)
+                });
+
+                handled.Add(category);
+            }
+
+            if (nested.Count == 0)
+                continue;
+
+            var parentInfo = PrototypesGroupingInfo[parent];
+            models.Add(new RadialMenuNestedLayerOption(nested)
+            {
+                IconSpecifier = RadialMenuIconSpecifier.With(parentInfo.Sprite),
+                ToolTip = Loc.GetString(parentInfo.Tooltip)
+            });
+
+            handled.Add(parent);
+        }
+
         foreach (var (key, list) in buttonsByCategory)
         {
+            if (handled.Contains(key))
+                continue;
+
             var groupInfo = PrototypesGroupingInfo[key];
-            models[i] = new RadialMenuNestedLayerOption(list)
+            models.Add(new RadialMenuNestedLayerOption(list)
             {
                 IconSpecifier = RadialMenuIconSpecifier.With(groupInfo.Sprite),
                 ToolTip = Loc.GetString(groupInfo.Tooltip)
-            };
-            i++;
+            });
         }
 
         foreach (var action in topLevelActions)
         {
-            models[i] = action;
-            i++;
+            models.Add(action);
         }
 
         return models;
@@ -129,41 +186,37 @@ public sealed class RCDMenuBoundUserInterface : BoundUserInterface
         if (_playerManager.LocalSession?.AttachedEntity == null)
             return;
 
-        var msg = Loc.GetString("rcd-component-change-mode", ("mode", Loc.GetString(proto.SetName)));
+        var selectedName = GetModeName(proto);
+        var msg = Loc.GetString("rcd-component-change-mode", ("mode", selectedName));
 
         if (proto.Mode is RcdMode.ConstructTile or RcdMode.ConstructObject)
-        {
-            var name = Loc.GetString(proto.SetName);
-
-            if (proto.Prototype != null &&
-                _prototypeManager.TryIndex(proto.Prototype, out var entProto)) // don't use Resolve because this can be a tile
-            {
-                name = entProto.Name;
-            }
-
-            msg = Loc.GetString("rcd-component-change-build-mode", ("name", name));
-        }
+            msg = Loc.GetString("rcd-component-change-build-mode", ("name", selectedName));
 
         // Popup message
         var popup = EntMan.System<PopupSystem>();
         popup.PopupClient(msg, Owner, _playerManager.LocalSession.AttachedEntity);
     }
 
-    private string GetTooltip(RCDPrototype proto)
+    private string GetModeName(RCDPrototype proto)
     {
-        string tooltip;
+        // Palmtree: an explicit mode name wins over the entity name, so light variants can say
+        // "cyan tube light" instead of every button being just "light".
+        if (proto.SetName != "Unknown")
+            return Loc.GetString(proto.SetName);
 
         if (proto.Mode is RcdMode.ConstructTile or RcdMode.ConstructObject
             && proto.Prototype != null
-            && _prototypeManager.Resolve(proto.Prototype, out var entProto))
+            && _prototypeManager.Resolve(proto.Prototype, out var entProto)) // don't use Resolve because this can be a tile
         {
-            tooltip = Loc.GetString(entProto.Name);
-        }
-        else
-        {
-            tooltip = Loc.GetString(proto.SetName);
+            return Loc.GetString(entProto.Name);
         }
 
+        return Loc.GetString(proto.SetName);
+    }
+
+    private string GetTooltip(RCDPrototype proto)
+    {
+        var tooltip = GetModeName(proto);
         tooltip = OopsConcat(char.ToUpper(tooltip[0]).ToString(), tooltip.Remove(0, 1));
 
         return tooltip;

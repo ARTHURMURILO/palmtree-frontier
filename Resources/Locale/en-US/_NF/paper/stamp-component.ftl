@@ -3,7 +3,7 @@
 stamp-component-signee-name = {$user}
 
 stamp-component-stamped-name-bailiff = Bailiff
-stamp-component-stamped-name-confidential = NT Confidential
+stamp-component-stamped-name-confidential = Frontier Confidential
 stamp-component-stamped-name-doc = Director of Care
 stamp-component-stamped-name-doctor = Doctor
 stamp-component-stamped-name-engineer = Engineer

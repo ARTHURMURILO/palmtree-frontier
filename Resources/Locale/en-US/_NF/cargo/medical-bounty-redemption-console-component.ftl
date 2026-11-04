@@ -12,7 +12,7 @@ medical-bounty-redemption-body-label-no-items = No body detected.
 medical-bounty-redemption-body-label-body-present = Body present.
 medical-bounty-redemption-body-label-valid-bounty = Redeemable bounty found.
 
-medical-bounty-redemption-redeem-label-init = Loading NT BIOS v72.1...
+medical-bounty-redemption-redeem-label-init = Loading Frontier BIOS v72.1...
 medical-bounty-redemption-redeem-label-no-items = Insert redeemable body into container.
 medical-bounty-redemption-redeem-label-no-bounty = No bounty detected.
 medical-bounty-redemption-redeem-label-too-much-damage = Body too damaged to redeem bounty.
