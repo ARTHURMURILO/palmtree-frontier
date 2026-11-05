@@ -239,12 +239,12 @@
       [bold]Payout per FUC:[/bold] [color=#ff0000]$2,000[/color]
       [bold]Payout Total:[/bold] $[form]
 
-      [bold]C2 Contraband:[/bold]
+      [bold]Tier 1-4 Contraband:[/bold]
           [bullet/] [form]
           [bullet/] [form]
           [bullet/] [form]
 
-      [bold]C3 Contraband:[/bold]
+      [bold]Tier 5 Contraband (strictly military, no permit):[/bold]
           [bullet/] [form]
           [bullet/] [form]
           [bullet/] [form]
@@ -277,7 +277,9 @@
 
       This document is a contract between the above Contraband Holder and Frontier Command.
 
-      Any crimes of [bold]contraband possession[/bold] for the Contraband Holder [bold]will be waived so long as all[/bold] class 3 contraband items, and any class 2 contraband items not subject to a Class 2 Contraband Permit [bold]are turned in within reasonable time[/bold] (subject to the clause below), and [bold]not used for malicious purposes[/bold]. Noncompliance with this document results in voiding any standing Class 2 Contraband Permits.
+      Any crimes of [bold]contraband possession[/bold] for the Contraband Holder [bold]will be waived for contraband of tiers 1 through 4[/bold], provided it is declared and either covered by a valid [bold]Contraband Possession Permit[/bold] or turned in within reasonable time, and [bold]not used for malicious purposes[/bold]. Noncompliance with this document results in voiding any standing Contraband Possession Permits.
+
+      [bold][color=#ff0000]Tier 5 contraband is strictly military hardware and completely illegal. It cannot be permitted or amnestied and must be surrendered to the NFSD or Station Representative within reasonable time. Possession of tier 5 contraband is always a criminal offense.[/color][/bold]
 
       If the Contraband Holder is not paid in full at the above rate for any contraband turned in, they may remain in possession of the contraband without penalty at their discretion.
 
@@ -287,7 +289,7 @@
 
 - type: entity # Based on form made by Blumbee (Aki Suboshi)
   id: PaperWrittenNfsdContrabandPermit
-  name: class 2 contraband permit
+  name: tier 1-4 contraband permit
   categories: [ HideSpawnMenu ]
   parent: Paper
   components:
@@ -295,7 +297,7 @@
     content: |2 # If updating this, update PaperWrittenFrontierContrabandPermit
       [color=#4f6e40]◥[bold]N[/bold]◣ [bold]New Frontier Sheriff's Department[/bold][/color]
       [color=#4f6e40]‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾[/color]
-      [head=2]Class 2 Contraband Permit[/head]
+      [head=2]Tier 1-4 Contraband Permit[/head]
 
       [bold]Permit Holder:[/bold] [form]
       [bold]Holder Crew:[/bold]
@@ -305,9 +307,12 @@
 
       [bold]Shift Time:[/bold] [form]
 
-      This Permit allows the Holder and crew, as listed above, to [bold]possess and use class 2 contraband[/bold].
+      This Permit allows the Holder and crew, as listed above, to [bold]possess and use contraband of tiers 1 through 4[/bold], subject to the terms of a Contraband Amnesty agreement.
+
+      [bold][color=#ff0000]Tier 5 contraband is strictly military hardware and completely illegal. It cannot be permitted, and possession of tier 5 contraband is always a criminal offense.[/color][/bold]
+
       Non-compliance with a Contraband Amnesty agreement voids this Permit.
-      Refer to §6.1.4 of Space Law for a full definition of class 2 contraband.
+      Refer to §6.1.4 of Space Law for the definition of contraband tiers.
 
 
 
@@ -378,13 +383,15 @@
 
       This document is a contract between the above Contraband Holder and Frontier Command.
 
-      Any crimes of contraband possession for the Contraband Holder will be waived so long as all class 3 contraband items, and any class 2 contraband items not subject to a Class 2 Contraband Permit are turned in within reasonable time (subject to the clause below), and not used for malicious purposes. Noncompliance with this document results in voiding any standing Class 2 Contraband Permits.
+      Any crimes of contraband possession for the Contraband Holder will be waived for contraband of tiers 1 through 4, provided it is declared and either covered by a valid Contraband Possession Permit or turned in within reasonable time, and not used for malicious purposes. Noncompliance with this document results in voiding any standing Contraband Possession Permits.
+
+      Tier 5 contraband is strictly military hardware and completely illegal. It cannot be permitted or amnestied and must be surrendered to the NFSD or Station Representative within reasonable time. Possession of tier 5 contraband is always a criminal offense.
 
       If the Contraband Holder is not paid in full at the above rate for any contraband turned in, they may remain in possession of the contraband without penalty at their discretion.
 
-      This Permit allows the Holder and crew, as listed above, to possess and use class 2 contraband.
+      This Permit allows the Holder and crew, as listed above, to possess and use contraband of tiers 1 through 4.
       Non-compliance with a Contraband Amnesty agreement voids this Permit.
-      Refer to §6.1.4 of Space Law for a full definition of class 2 contraband.
+      Refer to §6.1.4 of Space Law for the definition of contraband tiers.
 
       This document authorizes the above vessel and its captain to assist and cooperate with the NFSD and Frontier authorities in neutralizing hostile bluespace threats to Frontier. These include, but are not limited to:
          [bullet] Cultist vessels

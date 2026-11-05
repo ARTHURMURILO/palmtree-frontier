@@ -1777,3 +1777,80 @@ Entries:
   time: '2026-11-04T04:28:54.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/e0d33cc92e6f6e4870c0334eea4650d343fd5d17
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: >-
+        Phaser Lily, a hand-modified phaser with a purple-pink beam, double
+        damage, and a lower-pitched shot.
+  id: 90119
+  time: '2026-11-04T13:18:29.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/1abe34c63bc7044584f6f5e3bc8a5214fdd42310
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: >-
+        Added a batch of admin-only meme mobs: laser carp, medicarp, doomba,
+        bear arms, Honkglock, securitarp, carpenter bee, phantom carp, pyro carp
+        and party carp.
+    - type: Add
+      message: Added the admin-only carp cannon, which fires carp projectiles.
+  id: 90120
+  time: '2026-11-04T13:46:07.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/92fa5806b1192120abd4f249c8b8a33e8c069c51
+- author: xTheLifex
+  changes:
+    - type: Tweak
+      message: Phaser Lily now has a slightly higher-pitched firing sound.
+  id: 90121
+  time: '2026-11-04T13:46:50.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/35354a55e953115e834e8ce42b58532f2c5833d3
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Rings can be attached to gloves.
+  id: 90122
+  time: '2026-11-05T18:48:10.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/fda10e81b5dfa83e0d52d3fa7c0a793a7d541a26
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: The biogenerator now passively generates biomass while powered.
+  id: 90123
+  time: '2026-11-05T18:48:10.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/256cedf89cf6f7481237c9cf7bd6b965de6bcc3b
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Red laser rifle, Umagon sniper rifle and GS railgun.
+    - type: Add
+      message: Nod laser turret (friendly and hostile) and Nod ship laser turret.
+    - type: Tweak
+      message: Palmtree hitscans now use an all-grayscale projectile sprite set.
+  id: 90124
+  time: '2026-11-05T20:59:26.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/b0f0766fd88255b3ef95c00e4b4833935b51aa3c
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Added tier 5 military contraband.
+    - type: Tweak
+      message: >-
+        NFSD and SR contraband amnesty, permit and turnover forms now cover
+        tiers 1-4 and explicitly exclude tier 5.
+    - type: Tweak
+      message: Handheld phasers and the Phaser Lily are now tier 2 contraband.
+    - type: Tweak
+      message: >-
+        Nod laser weapons and turrets, the Umagon, GS railgun, ship phaser
+        turret and photon torpedo launcher are now tier 5 contraband.
+  id: 90125
+  time: '2026-11-05T21:23:15.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/6938a69d81af74fafc200f52ed4ba2d6b5517d39

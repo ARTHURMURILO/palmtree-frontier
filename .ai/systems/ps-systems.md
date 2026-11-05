@@ -37,6 +37,20 @@ How it works:
    items; the server pops up text and spawns `BlueFlashEffect`.
 4. Removing the implant removes the category and action.
 
+## Rings on gloves
+
+| Piece | Path |
+|---|---|
+| Shared component | `Content.Shared/_PS/Clothing/Components/RingHolderComponent.cs` |
+| Server logic | `Content.Server/_PS/Clothing/ServerRingHolderSystem.cs` |
+| Prototype wiring | `Resources/Prototypes/Entities/Clothing/Hands/base_clothinghands.yml` |
+| Locale | `Resources/Locale/en-US/_PS/clothing/rings.ftl` |
+
+`ClothingHandsBase` carries `RingHolder`, which creates `Ring`-whitelisted `ItemSlots` from the
+`ringSlot` template. `MaxRings` defaults to 1; raise it to allow more rings later (the slot IDs are
+`ring0`, `ring1`, ...). Attached rings are ejected when the gloves break or are destroyed, and the
+gloves' examine text mentions the attached ring.
+
 ## Lobby presentation
 
 - Backgrounds + music: `Resources/Prototypes/_PS/lobby.yml` (21 `lobbyBackground` prototypes plus the
@@ -63,13 +77,28 @@ How it works:
 ## Weapons / grenades / hitscan
 
 - `Resources/Prototypes/_PS/Entities/Objects/Weapons/Guns/Battery/battery_guns.yml` — Svalinn 770
-  (prototype id stays `NFWeaponEnergyPistolLaserSvalinnCaspian`), pulse N1984, phaser, medical gun.
-  All four are admin-spawn only and are declared with `StaticPrice: 0` so spawning them cannot
+  (prototype id stays `NFWeaponEnergyPistolLaserSvalinnCaspian`), pulse N1984, phaser, the hand-modified
+  Phaser Lily (purple-pink beam, double damage, higher-pitched shot), medical gun.
+  All five are admin-spawn only and are declared with `StaticPrice: 0` so spawning them cannot
   inject money into the economy.
+- `.../Guns/Battery/nod_laser_weapons.yml` — Command & Conquer inspired set (2026-11): Red Laser
+  Rifle (80 heat, 1 shot/s), Umagon Sniper Rifle (200 piercing, 3 shots/s, silenced) and GS Railgun
+  (50 cellular + 500 structural + 150 heat + 100 piercing, 1 shot/2 s). All are hitscan,
+  Class 5 contraband, admin-spawn only and
+  `StaticPrice: 0`; the GS Railgun uses `bigggun1.ogg`.
+- `.../Guns/Turrets/nod_laser_turret.yml` — `Nod laser turret` in Friendly (NanoTrasen) and Hostile
+  (`HostileUniversally`) variants: 20 heat, 1 shot/s, red `_PS` beam, reusing the NF laser turret
+  sprite and `lastur1.ogg`. Class 5 contraband. No packed/deployable or construction version yet.
+- `_PS/ShipCombat/weapons.yml` — `ShipTurretLaserNod` (`Nod ship laser turret`): red `_PS` beam,
+  30 heat + 10 structural, 1 shot/s. Class 5 contraband. Weaker per hit than `ShipTurretPhaser` but much faster.
 - `.../Guns/Launchers/launchers.yml` — China Lake flashbang variants.
 - `.../Guns/Projectiles/projectiles.yml`, `.../Guns/Ammunition/explosives.yml`,
   `.../Guns/Ammunition/Projectiles/hitscan.yml` (defines `PSXrayLaserCaspian`, `PhaserLethal`,
-  `HealBeam`), `.../Throwable/grenades.yml`.
+  `HealBeam` and the Nod hitscans), `.../Throwable/grenades.yml`.
+- `Resources/Textures/_PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi` — complete all-grayscale
+  port of the upstream `projectiles.rsi`, tinted per hitscan with the `color` field. Nod lasers use
+  `u_laser`; the GS railgun uses `xray` in blue-cyan; the Umagon uses a near-transparent `xray`
+  tracer. `beam.rsi` was retired in favour of this complete set.
 - `SoundCollections/weapons.yml` + `Resources/Audio/_PS/Weapons/*`, `Resources/Audio/_PS/Effects/Grenades/*`.
 
 Adaptations made when porting (old 2023 prototypes):
@@ -542,6 +571,22 @@ carries `suffix: Admeme` so it is easy to find in the spawn menu:
 - `MobDimitry` - `Resources/Prototypes/_PS/Entities/Mobs/NPCs/dimitry.yml`: vulpkanin body with a
   Russian accent, the generator hum as ambience and pressure/step-trigger/flash immunity plus
   insulation.
+- `MobCarpLaser` - `Resources/Prototypes/_PS/Entities/Mobs/NPCs/laser_carp.yml`: space carp with a
+  recharging hitscan laser (`NFRedLightLaser`) and `SimpleRangedHostileCompound`; it stops on line
+  of sight and shoots, and its melee damage is blanked. No `HideSpawnMenu` category, so it is
+  listed in the admin-only spawn menu (spawn ID `MobCarpLaser`). Not in any spawner or loot table.
+- Admin meme mob batch (2026-11) - `Resources/Prototypes/_PS/Entities/Mobs/NPCs/admin_meme_mobs.yml`:
+  all `suffix: Admeme`, no `HideSpawnMenu`, and referenced by no spawner/loot table. `MobCarpMedic`
+  (healing `HealBeam` hitscan), `MobRoombaDoomba` (proximity `Explosive` roomba), `MobBearArms`
+  (space bear with buckshot), `MobHonkglock` (slippery honkbot with a rifle; description is
+  "The honkbot had enough"), `MobCarpSecuritarp` (`BulletDisablerSmg`), `MobCarpenterBee`
+  (`PSBulletBee`), `MobCarpPhantom` (`Stealth`/`StealthOnMove`), `MobCarpPyro`
+  (`ProjectileDragonsBreath`) and `MobCarpParty` (rainbow carp, `thunderdome.ogg` ambience and the
+  harmless `PSPartyLaserSpread`).
+- `PSWeaponCarpCannon` - `Resources/Prototypes/_PS/Entities/Objects/Weapons/Guns/Basic/carp_cannon.yml`:
+  admin-only launcher firing `PSBulletCarp`. The meme projectiles (`PSBulletBee`, `PSBulletCarp`,
+  `PSPartyLaser`, `PSPartyLaserSpread`) live in
+  `.../Guns/Projectiles/meme_projectiles.yml`; all are `HideSpawnMenu`.
 - `DrinkBottleVodkaInfinite` - `.../Objects/Consumable/Drinks/vodka_infinite.yml`: bottomless vodka
   through `SolutionRegeneration`.
 - `FoodKebabSkewerDeath` and `FoodPotatoInfinite` - `.../Objects/Consumable/Food/meme_food.yml`:
@@ -551,8 +596,8 @@ carries `suffix: Admeme` so it is easy to find in the spawn menu:
 - Audio: `Resources/Audio/_PS/Machines/blyatman/blyatman{1,2,3}.ogg` with an `attributions.yml`
   (custom, provided by the maintainer) and the `BlyatmanGeneratorHum` collection in
   `Resources/Prototypes/_PS/SoundCollections/blyatman.yml`.
-- Test: `Content.IntegrationTests/Tests/_PS/AdmemePrototypesTest.cs` spawns every item and checks
-  that the collection's sound files exist.
+- Test: `Content.IntegrationTests/Tests/_PS/AdmemePrototypesTest.cs` spawns the original upload's
+  item set and checks that the collection's sound files exist.
 
 ## Bluespace Dock + Ship Registrar (2026-10)
 

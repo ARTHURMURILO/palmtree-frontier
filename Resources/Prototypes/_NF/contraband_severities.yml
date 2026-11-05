@@ -38,6 +38,11 @@
   id: Class3Expedition
   examineText: contraband-examine-text-Class3Expedition
 
+# Class 5 - strictly military hardware, completely illegal for civilians.
+- type: contrabandSeverity
+  id: Class5
+  examineText: contraband-examine-text-Class5
+
 # Class 3 contraband - mobs
 - type: contrabandSeverity
   id: Class3MobHuman
