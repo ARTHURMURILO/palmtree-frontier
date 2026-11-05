@@ -71,6 +71,21 @@
     price: 0
 
 - type: entity
+  name: phaser
+  parent: NFWeaponEnergyPistolLaserPhaser
+  id: PSWeaponEnergyPistolLaserPhaserLily
+  suffix: Lily
+  description: A PHASed Energy Rectification that has been hand-modified, most likely by a scientist with far too much time on their hands. The beam is a distinctive purple-pink instead of the usual orange, and judging by the color it must be a really cute pink fox girl with some great assets to spare.
+  components:
+  - type: Gun
+    soundGunshot:
+      collection: Phaser
+      params:
+        pitch: 1.15
+  - type: HitscanBatteryAmmoProvider
+    proto: PhaserLethalLily
+
+- type: entity
   id: PSWeaponEnergyHealgun
   parent: [NFBaseWeaponEnergyRifleHitScan, NFBaseWeaponFrameEnergyRifleNanotrasen, BaseC3Contraband]
   name: medical gun
