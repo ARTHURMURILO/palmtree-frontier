@@ -1,0 +1,101 @@
+# Palmtree: Command & Conquer inspired Nod/Forgotten weapon set. Admin-spawn only for now:
+# no lathe recipe, no loot table and StaticPrice 0 so spawning one cannot inject money.
+
+- type: entity
+  name: red laser rifle
+  parent: [ BaseC5Contraband, NFBaseWeaponEnergyRifleHitScan, NFBaseWeaponFrameEnergyRifleNanotrasen ]
+  id: PSWeaponEnergyRifleRedLaser
+  suffix: Nod
+  description: A Nod laser rifle with a distinctive red emitter. It trades the pulse rifle's rate of fire for one heavy, searing beam.
+  components:
+  - type: Sprite
+    sprite: Objects/Weapons/Guns/Battery/pulse_rifle.rsi
+  - type: Clothing
+    sprite: Objects/Weapons/Guns/Battery/pulse_rifle.rsi
+  - type: Gun
+    fireRate: 1
+    minAngle: 0
+    maxAngle: 0
+    angleIncrease: 0
+    angleDecay: 0
+    selectedMode: SemiAuto
+    availableModes:
+    - SemiAuto
+    soundGunshot:
+      path: /Audio/_PS/Weapons/Guns/Gunshots/lastur1.ogg
+  - type: HitscanBatteryAmmoProvider
+    proto: PSHitscanRedLaserRifle
+    fireCost: 100
+  - type: Battery
+    maxCharge: 3000
+    startingCharge: 3000
+  # Palmtree: admin-spawn only, so it is worth nothing.
+  - type: StaticPrice
+    price: 0
+
+- type: entity
+  name: Umagon sniper rifle
+  parent: [ BaseC5Contraband, NFBaseWeaponEnergyRifleSniperHitScan, NFBaseWeaponFrameEnergyRifleSniperNanotrasen ]
+  id: PSWeaponSniperUmagon
+  suffix: Forgotten
+  description: A silenced anti-materiel rifle named for the Forgotten's sharpshooter. It can put three rounds downrange in the time most rifles manage one.
+  components:
+  - type: Sprite
+    sprite: Objects/Weapons/Guns/Snipers/heavy_sniper.rsi
+    layers:
+    - state: base
+      map: ["enum.GunVisualLayers.Base"]
+  - type: Clothing
+    sprite: Objects/Weapons/Guns/Snipers/heavy_sniper.rsi
+  - type: Gun
+    fireRate: 3
+    minAngle: 0
+    maxAngle: 0
+    angleIncrease: 0
+    angleDecay: 0
+    selectedMode: SemiAuto
+    availableModes:
+    - SemiAuto
+    soundGunshot:
+      path: /Audio/_PS/Weapons/Guns/Gunshots/silencer.ogg
+  - type: HitscanBatteryAmmoProvider
+    proto: PSHitscanUmagonSniper
+    fireCost: 100
+  - type: Battery
+    maxCharge: 2400
+    startingCharge: 2400
+  # Palmtree: admin-spawn only, so it is worth nothing.
+  - type: StaticPrice
+    price: 0
+
+- type: entity
+  name: GS railgun
+  parent: [ BaseC5Contraband, NFBaseWeaponEnergyRifleHitScan, NFBaseWeaponFrameEnergyRifleNanotrasen ]
+  id: PSWeaponRailgunGS
+  suffix: Forgotten
+  description: Ghost Stalker's railgun. The Forgotten commando's compact accelerator launches a superheated slug hard enough to punch through a light vehicle. There could be trouble.
+  components:
+  - type: Sprite
+    sprite: Objects/Weapons/Guns/Battery/pulse_rifle.rsi
+  - type: Clothing
+    sprite: Objects/Weapons/Guns/Battery/pulse_rifle.rsi
+  - type: Gun
+    fireRate: 0.5
+    minAngle: 0
+    maxAngle: 0
+    angleIncrease: 0
+    angleDecay: 0
+    selectedMode: SemiAuto
+    availableModes:
+    - SemiAuto
+    soundGunshot:
+      path: /Audio/_PS/Weapons/Guns/Gunshots/bigggun1.ogg
+  - type: HitscanBatteryAmmoProvider
+    proto: PSHitscanGSRailgun
+    fireCost: 100
+  - type: Battery
+    maxCharge: 3000
+    startingCharge: 3000
+  # Palmtree: admin-spawn only, so it is worth nothing.
+  - type: StaticPrice
+    price: 0
