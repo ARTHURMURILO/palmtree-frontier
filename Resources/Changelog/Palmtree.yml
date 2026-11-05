@@ -1808,3 +1808,19 @@ Entries:
   time: '2026-11-04T13:46:50.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/35354a55e953115e834e8ce42b58532f2c5833d3
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Rings can be attached to gloves.
+  id: 90122
+  time: '2026-11-05T18:48:10.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/fda10e81b5dfa83e0d52d3fa7c0a793a7d541a26
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: The biogenerator now passively generates biomass while powered.
+  id: 90123
+  time: '2026-11-05T18:48:10.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/256cedf89cf6f7481237c9cf7bd6b965de6bcc3b
