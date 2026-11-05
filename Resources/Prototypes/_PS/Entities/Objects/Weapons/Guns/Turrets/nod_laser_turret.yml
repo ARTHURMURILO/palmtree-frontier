@@ -1,0 +1,42 @@
+# Palmtree: Command & Conquer inspired Nod laser turrets. Friendly is NanoTrasen-aligned,
+# hostile is universally hostile. Admin-spawn only for now (no packed/deployable version).
+- type: entity
+  parent: [ BaseTurretSearchBeam, BaseWeaponTurretEnergyNF ]
+  id: PSWeaponTurretLaserNodBase
+  abstract: true
+  name: Nod laser turret
+  description: A laser turret built from Brotherhood of Nod schematics. Its emitter cycles once per second.
+  components:
+  - type: Sprite
+    sprite: _NF/Objects/Weapons/Guns/Turrets/laser.rsi
+  - type: Gun
+    fireRate: 1
+    soundGunshot:
+      path: /Audio/_PS/Weapons/Guns/Gunshots/lastur1.ogg
+  - type: HitscanBatteryAmmoProvider
+    proto: PSHitscanNodLaserTurret
+    fireCost: 10
+  - type: BatterySelfRecharger
+    autoRecharge: true
+    autoRechargeRate: 10
+  # Palmtree: admin-spawn only, so it is worth nothing.
+  - type: StaticPrice
+    price: 0
+
+- type: entity
+  parent: [ BaseC2ContrabandUnredeemable, PSWeaponTurretLaserNodBase ]
+  id: PSWeaponTurretLaserNodFriendly
+  suffix: Friendly
+  components:
+  - type: NpcFactionMember
+    factions:
+    - NanoTrasen
+
+- type: entity
+  parent: [ BaseC3Contraband, PSWeaponTurretLaserNodBase ]
+  id: PSWeaponTurretLaserNodHostile
+  suffix: Hostile
+  components:
+  - type: NpcFactionMember
+    factions:
+    - HostileUniversally
