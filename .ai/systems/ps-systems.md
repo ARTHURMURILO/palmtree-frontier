@@ -63,8 +63,9 @@ How it works:
 ## Weapons / grenades / hitscan
 
 - `Resources/Prototypes/_PS/Entities/Objects/Weapons/Guns/Battery/battery_guns.yml` — Svalinn 770
-  (prototype id stays `NFWeaponEnergyPistolLaserSvalinnCaspian`), pulse N1984, phaser, medical gun.
-  All four are admin-spawn only and are declared with `StaticPrice: 0` so spawning them cannot
+  (prototype id stays `NFWeaponEnergyPistolLaserSvalinnCaspian`), pulse N1984, phaser, the hand-modified
+  Phaser Lily (purple-pink beam, double damage, higher-pitched shot), medical gun.
+  All five are admin-spawn only and are declared with `StaticPrice: 0` so spawning them cannot
   inject money into the economy.
 - `.../Guns/Launchers/launchers.yml` — China Lake flashbang variants.
 - `.../Guns/Projectiles/projectiles.yml`, `.../Guns/Ammunition/explosives.yml`,
@@ -542,6 +543,22 @@ carries `suffix: Admeme` so it is easy to find in the spawn menu:
 - `MobDimitry` - `Resources/Prototypes/_PS/Entities/Mobs/NPCs/dimitry.yml`: vulpkanin body with a
   Russian accent, the generator hum as ambience and pressure/step-trigger/flash immunity plus
   insulation.
+- `MobCarpLaser` - `Resources/Prototypes/_PS/Entities/Mobs/NPCs/laser_carp.yml`: space carp with a
+  recharging hitscan laser (`NFRedLightLaser`) and `SimpleRangedHostileCompound`; it stops on line
+  of sight and shoots, and its melee damage is blanked. No `HideSpawnMenu` category, so it is
+  listed in the admin-only spawn menu (spawn ID `MobCarpLaser`). Not in any spawner or loot table.
+- Admin meme mob batch (2026-11) - `Resources/Prototypes/_PS/Entities/Mobs/NPCs/admin_meme_mobs.yml`:
+  all `suffix: Admeme`, no `HideSpawnMenu`, and referenced by no spawner/loot table. `MobCarpMedic`
+  (healing `HealBeam` hitscan), `MobRoombaDoomba` (proximity `Explosive` roomba), `MobBearArms`
+  (space bear with buckshot), `MobHonkglock` (slippery honkbot with a rifle; description is
+  "The honkbot had enough"), `MobCarpSecuritarp` (`BulletDisablerSmg`), `MobCarpenterBee`
+  (`PSBulletBee`), `MobCarpPhantom` (`Stealth`/`StealthOnMove`), `MobCarpPyro`
+  (`ProjectileDragonsBreath`) and `MobCarpParty` (rainbow carp, `thunderdome.ogg` ambience and the
+  harmless `PSPartyLaserSpread`).
+- `PSWeaponCarpCannon` - `Resources/Prototypes/_PS/Entities/Objects/Weapons/Guns/Basic/carp_cannon.yml`:
+  admin-only launcher firing `PSBulletCarp`. The meme projectiles (`PSBulletBee`, `PSBulletCarp`,
+  `PSPartyLaser`, `PSPartyLaserSpread`) live in
+  `.../Guns/Projectiles/meme_projectiles.yml`; all are `HideSpawnMenu`.
 - `DrinkBottleVodkaInfinite` - `.../Objects/Consumable/Drinks/vodka_infinite.yml`: bottomless vodka
   through `SolutionRegeneration`.
 - `FoodKebabSkewerDeath` and `FoodPotatoInfinite` - `.../Objects/Consumable/Food/meme_food.yml`:
@@ -551,8 +568,8 @@ carries `suffix: Admeme` so it is easy to find in the spawn menu:
 - Audio: `Resources/Audio/_PS/Machines/blyatman/blyatman{1,2,3}.ogg` with an `attributions.yml`
   (custom, provided by the maintainer) and the `BlyatmanGeneratorHum` collection in
   `Resources/Prototypes/_PS/SoundCollections/blyatman.yml`.
-- Test: `Content.IntegrationTests/Tests/_PS/AdmemePrototypesTest.cs` spawns every item and checks
-  that the collection's sound files exist.
+- Test: `Content.IntegrationTests/Tests/_PS/AdmemePrototypesTest.cs` spawns the original upload's
+  item set and checks that the collection's sound files exist.
 
 ## Bluespace Dock + Ship Registrar (2026-10)
 
