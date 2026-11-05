@@ -1824,3 +1824,15 @@ Entries:
   time: '2026-11-05T18:48:10.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/256cedf89cf6f7481237c9cf7bd6b965de6bcc3b
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Red laser rifle, Umagon sniper rifle and GS railgun.
+    - type: Add
+      message: Nod laser turret (friendly and hostile) and Nod ship laser turret.
+    - type: Tweak
+      message: Palmtree hitscans now use an all-grayscale projectile sprite set.
+  id: 90124
+  time: '2026-11-05T20:59:26.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/b0f0766fd88255b3ef95c00e4b4833935b51aa3c
