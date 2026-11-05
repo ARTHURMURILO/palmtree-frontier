@@ -3,7 +3,7 @@
 
 - type: entity
   name: red laser rifle
-  parent: [ BaseC3Contraband, NFBaseWeaponEnergyRifleHitScan, NFBaseWeaponFrameEnergyRifleNanotrasen ]
+  parent: [ BaseC5Contraband, NFBaseWeaponEnergyRifleHitScan, NFBaseWeaponFrameEnergyRifleNanotrasen ]
   id: PSWeaponEnergyRifleRedLaser
   suffix: Nod
   description: A Nod laser rifle with a distinctive red emitter. It trades the pulse rifle's rate of fire for one heavy, searing beam.
@@ -35,7 +35,7 @@
 
 - type: entity
   name: Umagon sniper rifle
-  parent: [ BaseC3Contraband, NFBaseWeaponEnergyRifleSniperHitScan, NFBaseWeaponFrameEnergyRifleSniperNanotrasen ]
+  parent: [ BaseC5Contraband, NFBaseWeaponEnergyRifleSniperHitScan, NFBaseWeaponFrameEnergyRifleSniperNanotrasen ]
   id: PSWeaponSniperUmagon
   suffix: Forgotten
   description: A silenced anti-materiel rifle named for the Forgotten's sharpshooter. It can put three rounds downrange in the time most rifles manage one.
@@ -70,7 +70,7 @@
 
 - type: entity
   name: GS railgun
-  parent: [ BaseC3Contraband, NFBaseWeaponEnergyRifleHitScan, NFBaseWeaponFrameEnergyRifleNanotrasen ]
+  parent: [ BaseC5Contraband, NFBaseWeaponEnergyRifleHitScan, NFBaseWeaponFrameEnergyRifleNanotrasen ]
   id: PSWeaponRailgunGS
   suffix: Forgotten
   description: Ghost Stalker's railgun. The Forgotten commando's compact accelerator launches a superheated slug hard enough to punch through a light vehicle. There could be trouble.

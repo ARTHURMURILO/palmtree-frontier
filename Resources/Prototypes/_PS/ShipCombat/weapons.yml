@@ -279,7 +279,7 @@
 
 # Phaser beam turret: TNG phaser sounds, heavier beam.
 - type: entity
-  parent: ShipTurretBeam
+  parent: [ ShipTurretBeam, BaseC5Contraband ]
   id: ShipTurretPhaser
   name: ship turret (phaser)
   description: A console-driven turret firing an instant phaser beam. 45-degree arc, powered by the Bluespace Power Relay.
@@ -345,7 +345,7 @@
 
 # Nod ship laser turret: faster than the phaser, but far lighter per hit.
 - type: entity
-  parent: ShipTurretBeam
+  parent: [ ShipTurretBeam, BaseC5Contraband ]
   id: ShipTurretLaserNod
   name: Nod ship laser turret
   description: A ship-mounted Nod laser turret. It cycles once per second, trading the phaser's punch for a steady stream of red beams.

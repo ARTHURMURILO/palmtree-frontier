@@ -24,7 +24,7 @@
     price: 0
 
 - type: entity
-  parent: [ BaseC2ContrabandUnredeemable, PSWeaponTurretLaserNodBase ]
+  parent: [ BaseC5Contraband, PSWeaponTurretLaserNodBase ]
   id: PSWeaponTurretLaserNodFriendly
   suffix: Friendly
   components:
@@ -33,7 +33,7 @@
     - NanoTrasen
 
 - type: entity
-  parent: [ BaseC3Contraband, PSWeaponTurretLaserNodBase ]
+  parent: [ BaseC5Contraband, PSWeaponTurretLaserNodBase ]
   id: PSWeaponTurretLaserNodHostile
   suffix: Hostile
   components:

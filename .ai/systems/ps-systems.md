@@ -84,13 +84,13 @@ gloves' examine text mentions the attached ring.
 - `.../Guns/Battery/nod_laser_weapons.yml` — Command & Conquer inspired set (2026-11): Red Laser
   Rifle (80 heat, 1 shot/s), Umagon Sniper Rifle (200 piercing, 3 shots/s, silenced) and GS Railgun
   (50 cellular + 500 structural + 150 heat + 100 piercing, 1 shot/2 s). All are hitscan,
-  admin-spawn only and
+  Class 5 contraband, admin-spawn only and
   `StaticPrice: 0`; the GS Railgun uses `bigggun1.ogg`.
 - `.../Guns/Turrets/nod_laser_turret.yml` — `Nod laser turret` in Friendly (NanoTrasen) and Hostile
   (`HostileUniversally`) variants: 20 heat, 1 shot/s, red `_PS` beam, reusing the NF laser turret
-  sprite and `lastur1.ogg`. No packed/deployable or construction version yet.
+  sprite and `lastur1.ogg`. Class 5 contraband. No packed/deployable or construction version yet.
 - `_PS/ShipCombat/weapons.yml` — `ShipTurretLaserNod` (`Nod ship laser turret`): red `_PS` beam,
-  30 heat + 10 structural, 1 shot/s. Weaker per hit than `ShipTurretPhaser` but much faster.
+  30 heat + 10 structural, 1 shot/s. Class 5 contraband. Weaker per hit than `ShipTurretPhaser` but much faster.
 - `.../Guns/Launchers/launchers.yml` — China Lake flashbang variants.
 - `.../Guns/Projectiles/projectiles.yml`, `.../Guns/Ammunition/explosives.yml`,
   `.../Guns/Ammunition/Projectiles/hitscan.yml` (defines `PSXrayLaserCaspian`, `PhaserLethal`,

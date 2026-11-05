@@ -52,7 +52,7 @@
 
 - type: entity
   name: phaser
-  parent: [NFWeaponEnergyPistolLaserSvalinn, BaseC3Contraband]
+  parent: [NFWeaponEnergyPistolLaserSvalinn, BaseC2ContrabandUnredeemable]
   id: NFWeaponEnergyPistolLaserPhaser
   description: A PHASed Energy Rectification is Starfleet's primary directed-energy weapon, utilizing rapid nadion particles to stun, kill, or vaporize targets, or to cut through materials.
   components:
