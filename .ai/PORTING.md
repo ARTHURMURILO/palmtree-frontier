@@ -1073,3 +1073,29 @@ Rings can now be attached to gloves, mirroring the old Sandstorm/S.P.L.U.R.T-Sta
   rejects non-ring items, and checks the examine line.
 - **Validation**: full solution build; rebuilt `Content.YAMLLinter` (`No errors found`);
   `RingHolderTest` passes.
+
+## 32. 2026-11 Biogenerator biomass buffer (Coyote `_CS`, tuned downstream)
+
+The `Biogenerator` passively accumulates biomass while powered, so botany no longer depends on
+feeding produce into it for every recipe.
+
+- **Origin**: Coyote (`ARF-SS13/coyote-frontier`), commit `f7988a20ce` ("Biomass Buffer System
+  initial commit") by DevArchwave, refactored in `6637b9b5a8` ("Cleaning up, in theory") to the
+  event-based `LatheSystem` partial used here. The same feature was later copied to
+  Wayfarer/Fractal (`df00fa67d459`) and nerfed there (`e75ceee906a9`). Palmtree uses its own
+  tuning: **200 biomass cap, +2 every second** (Coyote's original was 100 cap/+5 every 10 s;
+  Wayfarer/Fractal use 50 cap/+5 every 30 s).
+- **Code**: `Content.Server/_CS/Lathe/Components/BiogeneratorBufferComponent.cs`,
+  `Content.Server/_CS/Lathe/Systems/BiogeneratorBufferSystem.cs` and the partial
+  `Content.Server/_CS/Lathe/LatheSystem.cs` (events `OnGetMaterialAmount`, `OnDeductMaterial`,
+  `OnGetBufferAmount`). `Content.Server/Lathe/LatheSystem.cs` is now `partial`; its
+  `TryAddToQueue` uses the buffer-aware availability/deduction helpers, and
+  `UpdateUserInterfaceState` forwards the buffer amount in `LatheUpdateState`.
+- **Client**: `LatheUpdateState.BufferAmount` (shared), the "Biomass Buffer" row in
+  `LatheMenu.xaml`, and `Content.Client/_CS/Lathe/UI/LatheMenu.xaml.cs` (buffer-aware recipe
+  availability, tooltips and the buffer label). The row stays hidden on lathes without the
+  component.
+- **Prototype**: `- type: BiogeneratorBuffer` on `Biogenerator` in
+  `Resources/Prototypes/Entities/Structures/Machines/lathe.yml`; all limits live in the
+  component defaults.
+- **Validation**: full solution build; rebuilt `Content.YAMLLinter` (`No errors found`).
