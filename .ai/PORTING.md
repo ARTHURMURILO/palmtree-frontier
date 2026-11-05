@@ -1050,3 +1050,26 @@ the maintainer's request, so the set is admin-spawn only with no crate or vendor
   commented out in the source (`heavyRateModifier`, `heavyDamageBaseModifier`, `heavyStaminaCost`,
   `maxTargets`). Damage/stamina behavior is unchanged (Slash 2, 20 stamina on hit/collide).
 - **Validation**: `Content.YAMLLinter` reports no errors; `EntityTest` passes.
+
+## 31. 2026-11 Rings on gloves (Sandstorm / old SPLURT)
+
+Rings can now be attached to gloves, mirroring the old Sandstorm/S.P.L.U.R.T-Station-13
+`modular_sand` glove-accessory behavior.
+
+- **Reference**: `modular_sand/code/modules/clothing/gloves/_gloves.dm` and
+  `modular_sand/code/modules/clothing/gloves/accessories.dm`. The non-modular
+  `code/modules/clothing/gloves/ring.dm` in those checkouts is commented out; the live ring type
+  is the `modular_sand` accessory. Modern SPLURT-tg has rings as plain gloves-slot items again and
+  no attachment code, so the old Sandstorm implementation is the source.
+- **Behavior**: one ring per pair of gloves by default, configurable through
+  `RingHolderComponent.MaxRings`; only items with the `Ring` tag fit; rings eject when the gloves
+  are broken or destroyed; examining the gloves mentions the attached ring.
+- **Code**: `Content.Shared/_PS/Clothing/Components/RingHolderComponent.cs`,
+  `Content.Server/_PS/Clothing/ServerRingHolderSystem.cs`. Slots are created from the
+  `RingHolder.RingSlot` template, so raising `MaxRings` is enough to allow more later.
+- **Content**: `RingHolder` is added to `ClothingHandsBase`.
+- **Locale**: `Resources/Locale/en-US/_PS/clothing/rings.ftl`.
+- **Tests**: `Content.IntegrationTests/Tests/_PS/RingHolderTest.cs` covers the `Ring` whitelist,
+  rejects non-ring items, and checks the examine line.
+- **Validation**: full solution build; rebuilt `Content.YAMLLinter` (`No errors found`);
+  `RingHolderTest` passes.
