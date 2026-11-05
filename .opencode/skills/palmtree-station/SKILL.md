@@ -33,6 +33,10 @@ targeted port of Coyote/Floof ERP + marking systems. The old base lives in a sep
    waiting for the changelog bot, etc.) — the changelog append and CI are asynchronous and are the
    maintainer's to watch. Checking the workflow status is not part of any task unless the maintainer
    explicitly asks for it.
+8. **Never generate image assets on your own.** If a task seems to need new art, ask first. Even
+   when the user asks for image generation, double-confirm before generating. Modifying or porting
+   existing images is fine; if the request is ambiguous, ask whether it means generating new art or
+   reusing/porting existing art.
 
 ## Start here
 
