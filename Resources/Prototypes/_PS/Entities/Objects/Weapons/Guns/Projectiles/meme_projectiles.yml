@@ -1,0 +1,80 @@
+# Palmtree: admin-only meme projectiles shared by the meme mobs and the carp cannon.
+# These are all HideSpawnMenu utility prototypes; the items that spawn them are in the
+# admin meme files.
+
+- type: entity
+  name: bee
+  parent: BaseBullet
+  id: PSBulletBee
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: Mobs/Animals/bee.rsi
+    layers:
+    - state: "0"
+  - type: Projectile
+    damage:
+      types:
+        Piercing: 2
+        Poison: 2
+    soundHit:
+      path: /Audio/Effects/bite.ogg
+  - type: FlyBySound
+    sound:
+      path: /Audio/Ambience/Objects/buzzing.ogg
+  - type: TimedDespawn
+    lifetime: 2
+  - type: Ammo
+
+- type: entity
+  name: space carp
+  parent: BaseBullet
+  id: PSBulletCarp
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: Mobs/Aliens/Carps/space.rsi
+    layers:
+    - state: alive
+  - type: Projectile
+    damage:
+      types:
+        Blunt: 10
+    soundHit:
+      path: /Audio/Effects/bite.ogg
+  - type: FlyBySound
+    sound:
+      path: /Audio/Effects/bite.ogg
+  - type: TimedDespawn
+    lifetime: 3
+  - type: Ammo
+
+- type: entity
+  name: party laser
+  parent: BulletLaser
+  id: PSPartyLaser
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: Objects/Weapons/Guns/Projectiles/projectiles_tg.rsi
+    layers:
+    - state: heavylaser
+      shader: unshaded
+      color: "#ff66cc"
+  - type: Projectile
+    damage:
+      types:
+        Heat: 0
+  - type: TimedDespawn
+    lifetime: 2
+
+- type: entity
+  name: party laser spread
+  parent: PSPartyLaser
+  id: PSPartyLaserSpread
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: ProjectileSpread
+    proto: PSPartyLaser
+    count: 5
+    spread: 30
