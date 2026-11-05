@@ -37,6 +37,20 @@ How it works:
    items; the server pops up text and spawns `BlueFlashEffect`.
 4. Removing the implant removes the category and action.
 
+## Rings on gloves
+
+| Piece | Path |
+|---|---|
+| Shared component | `Content.Shared/_PS/Clothing/Components/RingHolderComponent.cs` |
+| Server logic | `Content.Server/_PS/Clothing/ServerRingHolderSystem.cs` |
+| Prototype wiring | `Resources/Prototypes/Entities/Clothing/Hands/base_clothinghands.yml` |
+| Locale | `Resources/Locale/en-US/_PS/clothing/rings.ftl` |
+
+`ClothingHandsBase` carries `RingHolder`, which creates `Ring`-whitelisted `ItemSlots` from the
+`ringSlot` template. `MaxRings` defaults to 1; raise it to allow more rings later (the slot IDs are
+`ring0`, `ring1`, ...). Attached rings are ejected when the gloves break or are destroyed, and the
+gloves' examine text mentions the attached ring.
+
 ## Lobby presentation
 
 - Backgrounds + music: `Resources/Prototypes/_PS/lobby.yml` (21 `lobbyBackground` prototypes plus the

@@ -29,6 +29,15 @@
         Heat: 5 # the average lightbulb only does around four damage!
   - type: PirateBountyItem # Frontier
     id: ClothingHandsGloves # Frontier
+  - type: RingHolder # Palmtree: rings can be attached to gloves
+    ringSlot:
+      whitelist:
+        tags:
+        - Ring
+      insertSound: null
+      ejectSound: null
+      swap: false
+      ejectOnBreak: true
 
 - type: entity
   abstract: true

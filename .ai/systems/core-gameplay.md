@@ -23,6 +23,10 @@
 - Chemistry: reagent prototypes + reactions; metabolism in `MetabolismSystem`.
 - Construction: construction graphs + `ConstructionSystem`; `_NF/Construction` adds Frontier
   recipes. Lathe recipes under `Resources/Prototypes/Recipes`.
+- Bot lathes: `Biogenerator` (`Resources/Prototypes/Entities/Structures/Machines/lathe.yml`) has
+  the Coyote `BiogeneratorBuffer` (`_CS`), which passively generates biomass while powered and
+  feeds it to the lathe through events registered in `Content.Server/_CS/Lathe`. Tuning lives in
+  `BiogeneratorBufferComponent` (200 cap, +2/s).
 
 ## Shuttles
 
