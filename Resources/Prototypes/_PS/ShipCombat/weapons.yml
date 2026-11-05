@@ -71,13 +71,13 @@
       Heat: 60
   color: "#ffffff"
   muzzleFlash:
-    sprite: _PS/Objects/Weapons/Guns/Projectiles/beam.rsi
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
     state: muzzle_beam_heavy
   travelFlash:
-    sprite: _PS/Objects/Weapons/Guns/Projectiles/beam.rsi
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
     state: beam_heavy
   impactFlash:
-    sprite: _PS/Objects/Weapons/Guns/Projectiles/beam.rsi
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
     state: impact_beam_heavy
   # Plays at the hit entity, so the ship being shot hears the beam land (even through its shields).
   sound:
@@ -279,7 +279,7 @@
 
 # Phaser beam turret: TNG phaser sounds, heavier beam.
 - type: entity
-  parent: ShipTurretBeam
+  parent: [ ShipTurretBeam, BaseC5Contraband ]
   id: ShipTurretPhaser
   name: ship turret (phaser)
   description: A console-driven turret firing an instant phaser beam. 45-degree arc, powered by the Bluespace Power Relay.
@@ -330,15 +330,29 @@
       Heat: 90
   color: "#ff9a1a"
   muzzleFlash:
-    sprite: _PS/Objects/Weapons/Guns/Projectiles/beam.rsi
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
     state: muzzle_beam_heavy
   travelFlash:
-    sprite: _PS/Objects/Weapons/Guns/Projectiles/beam.rsi
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
     state: beam_heavy
   impactFlash:
-    sprite: _PS/Objects/Weapons/Guns/Projectiles/beam.rsi
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
     state: impact_beam_heavy
   sound:
     path: /Audio/Weapons/Guns/Hits/energy_metal1.ogg
   forceSound: true
   maxLength: 512
+
+# Nod ship laser turret: faster than the phaser, but far lighter per hit.
+- type: entity
+  parent: [ ShipTurretBeam, BaseC5Contraband ]
+  id: ShipTurretLaserNod
+  name: Nod ship laser turret
+  description: A ship-mounted Nod laser turret. It cycles once per second, trading the phaser's punch for a steady stream of red beams.
+  components:
+  - type: Gun
+    fireRate: 1
+    soundGunshot:
+      path: /Audio/_PS/Weapons/Guns/Gunshots/lastur1.ogg
+  - type: HitscanBatteryAmmoProvider
+    proto: PSHitscanNodShipLaserTurret
