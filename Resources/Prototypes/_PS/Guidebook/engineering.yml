@@ -1,0 +1,5 @@
+# Palmtree: fork-authored guidebook entries.
+- type: guideEntry
+  id: TemperatureDevices
+  name: guide-entry-temperaturedevices
+  text: "/ServerInfo/_PS/Guidebook/Engineering/TemperatureDevices.xml"

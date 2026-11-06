@@ -24,6 +24,13 @@ public sealed class GasTemperaturePumpBoundUserInterface(EntityUid owner, Enum u
         _window.ToggleStatusButtonPressed += OnTogglePressed;
         _window.HeatTransferRateChanged += OnRateChanged;
 
+        // Filled in once, not on every state update - see the gate interface.
+        if (EntMan.TryGetComponent(Owner, out GasTemperaturePumpComponent? pump))
+        {
+            _window.MaxRate = pump.MaxHeatTransferRate;
+            _window.SetHeatTransferRate(pump.HeatTransferRate);
+        }
+
         Update();
     }
 
@@ -39,7 +46,6 @@ public sealed class GasTemperaturePumpBoundUserInterface(EntityUid owner, Enum u
 
         _window.MaxRate = pump.MaxHeatTransferRate;
         _window.UpdateStatusButton(pump.Enabled);
-        _window.SetHeatTransferRate(pump.HeatTransferRate);
         _window.UpdateInfo(pump.InletTemperature, pump.OutletTemperature, pump.TransferredHeat);
     }
 

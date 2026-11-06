@@ -23,7 +23,8 @@ public enum TemperatureGateState : byte
     Off,
 
     /// <summary>
-    /// The gate is enabled and its condition is met, but there is nothing to transfer.
+    /// The gate is enabled and powered. This is also what /tg/station shows while the temperature
+    /// condition is not met, so the sprite does not flicker between open and closed.
     /// </summary>
     On,
 
@@ -37,12 +38,12 @@ public enum TemperatureGateState : byte
 public enum GasMeterVisuals : byte
 {
     /// <summary>
-    /// Which pressure state the dial shows. See <see cref="GasMeterPressure"/>.
+    /// Which pressure state the dial shows. See <see cref="GasMeterPressureLevel"/>.
     /// </summary>
     Pressure,
 
     /// <summary>
-    /// Which colour the dial is tinted with. See <see cref="GasMeterTemperature"/>.
+    /// Which colour the dial is tinted with. See <see cref="GasMeterTemperatureLevel"/>.
     /// </summary>
     Temperature,
 }
@@ -72,4 +73,17 @@ public enum GasMeterTemperatureLevel : byte
     Warm,
     Hot,
     Burning,
+}
+
+/// <summary>
+/// Sprite layers of the atmos meter that have to stay visible above a floor tile. Kept in the _PS
+/// namespace so the shared <c>SubFloorHide</c> layer enum does not need a fork-only value.
+/// </summary>
+[Serializable, NetSerializable]
+public enum GasMeterVisualLayers : byte
+{
+    /// <summary>
+    /// The gauge bar with the pressure reading, tinted by the gas temperature.
+    /// </summary>
+    Dial,
 }

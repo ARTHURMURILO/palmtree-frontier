@@ -107,7 +107,7 @@ Ported from the current `/tg/station` checkout (`tgstation-master`), not from Co
   prototypes, construction, guide) but was never added to the RPD radial, so it was only reachable
   through the construction menu.
 - Sprites are the TG originals repacked for SS14 (same source as the vanilla atmos pumps); regenerate
-  them with `gen_atmos_tg_sprites.py` in the workspace root. Design decisions and known gaps:
+  them with `Tools/gen_atmos_tg_sprites.py --tg ../tgstation-master`. Design decisions and known gaps:
   `.ai/systems/atmos-temperature-devices.md`. Test:
   `Content.IntegrationTests/Tests/_PS/Atmos/TemperatureDevicesTest.cs`.
 
