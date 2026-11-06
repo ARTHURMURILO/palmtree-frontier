@@ -1836,3 +1836,21 @@ Entries:
   time: '2026-11-05T20:59:26.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/b0f0766fd88255b3ef95c00e4b4833935b51aa3c
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Added tier 5 military contraband.
+    - type: Tweak
+      message: >-
+        NFSD and SR contraband amnesty, permit and turnover forms now cover
+        tiers 1-4 and explicitly exclude tier 5.
+    - type: Tweak
+      message: Handheld phasers and the Phaser Lily are now tier 2 contraband.
+    - type: Tweak
+      message: >-
+        Nod laser weapons and turrets, the Umagon, GS railgun, ship phaser
+        turret and photon torpedo launcher are now tier 5 contraband.
+  id: 90125
+  time: '2026-11-05T21:23:15.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/6938a69d81af74fafc200f52ed4ba2d6b5517d39
