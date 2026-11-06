@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2026 Palmtree Frontier contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+# Palmtree: the hyperflux anomaly is the supermatter's delamination payload. It is based on
+# the electricity anomaly (the closest SS14 analog to SS13's hyper-energetic flux anomaly),
+# but tuned to be a short-lived, high-danger discharge rather than a research anomaly.
+- type: entity
+  parent: AnomalyElectricity
+  id: AnomalyHyperflux
+  name: hyperflux anomaly
+  suffix: Hyperflux
+  components:
+  - type: Anomaly
+    minPulseLength: 60
+    maxPulseLength: 120
+  - type: ElectricityAnomaly
+    minBoltCount: 3
+    maxBoltCount: 8
+    maxElectrocuteRange: 10
+    maxElectrocuteDamage: 30
+    maxElectrocuteDuration: 10
+    passiveElectrocutionChance: 0.1
+    empEnergyConsumption: 250000
+    empDisabledDuration: 90
+  - type: PointLight
+    color: "#7fd8ff"
+    energy: 8
+    radius: 3
