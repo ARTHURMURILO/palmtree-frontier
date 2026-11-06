@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Construction recipes for the Goob decor port, batch 2.
+# Graphs: Resources/Prototypes/_Goobstation/Recipes/Construction/Graphs/furniture/fun.yml
+
+- type: construction
+  id: WallTorch
+  graph: WallTorchGraph
+  startNode: start
+  targetNode: wallTorch
+  category: construction-category-furniture
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canBuildInImpassable: false
+  conditions:
+    - !type:TileNotBlocked
+
+- type: construction
+  id: CdRack
+  graph: CdRackGraph
+  startNode: start
+  targetNode: CdRackNode
+  category: construction-category-furniture
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canBuildInImpassable: true
+  conditions:
+    - !type:TileNotBlocked
+
+- type: construction
+  id: RMCCampfire
+  graph: RMCCampfire
+  startNode: start
+  targetNode: campfire
+  category: construction-category-structures
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canRotate: false
+  canBuildInImpassable: false
+  conditions:
+    - !type:TileNotBlocked
+
+- type: construction
+  id: FieryStake
+  graph: FieryStakeGraph
+  startNode: start
+  targetNode: BonfireNode
+  category: construction-category-furniture
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canBuildInImpassable: false
+  conditions:
+    - !type:TileNotBlocked
+
+- type: construction
+  id: BonfireStake
+  graph: BonfireStake
+  startNode: start
+  targetNode: bonfireStake
+  category: construction-category-structures
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canBuildInImpassable: false
+  conditions:
+    - !type:TileNotBlocked
