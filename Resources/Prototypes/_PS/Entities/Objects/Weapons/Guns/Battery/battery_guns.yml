@@ -52,7 +52,7 @@
 
 - type: entity
   name: phaser
-  parent: [NFWeaponEnergyPistolLaserSvalinn, BaseC3Contraband]
+  parent: [NFWeaponEnergyPistolLaserSvalinn, BaseC2ContrabandUnredeemable]
   id: NFWeaponEnergyPistolLaserPhaser
   description: A PHASed Energy Rectification is Starfleet's primary directed-energy weapon, utilizing rapid nadion particles to stun, kill, or vaporize targets, or to cut through materials.
   components:
@@ -69,6 +69,21 @@
   # Palmtree: admin-spawn only, so it is worth nothing and cannot inject money into the economy.
   - type: StaticPrice
     price: 0
+
+- type: entity
+  name: phaser
+  parent: NFWeaponEnergyPistolLaserPhaser
+  id: PSWeaponEnergyPistolLaserPhaserLily
+  suffix: Lily
+  description: A PHASed Energy Rectification that has been hand-modified, most likely by a scientist with far too much time on their hands. The beam is a distinctive purple-pink instead of the usual orange, and judging by the color it must be a really cute pink fox girl with some great assets to spare.
+  components:
+  - type: Gun
+    soundGunshot:
+      collection: Phaser
+      params:
+        pitch: 1.15
+  - type: HitscanBatteryAmmoProvider
+    proto: PhaserLethalLily
 
 - type: entity
   id: PSWeaponEnergyHealgun

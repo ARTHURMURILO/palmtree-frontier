@@ -122,11 +122,13 @@ queries).
    dummy so its rotation buttons use the same rules despite rendering through
    <c>SpriteView.OverrideDirection</c>.
 
-   Under-clothing genital layers are anchored to the undergarment layer rather than
-   `jumpsuit`/`outerClothing`. Inserting before those layers shifts their indices, which used to
-   place each successive organ above the previous one (balls over the penis) in clamped views. The
-   anchor includes the marking's per-sprite offset, so a breast's nipple sprite still renders above
-   the breast sprite.
+   Under-clothing genital layers use stable anchors instead of `jumpsuit`/`outerClothing`
+   (whose indices shift when layers are inserted before them). Bottom organs anchor above `LLeg`
+   and therefore render below `UndergarmentBottom`; breast markings anchor above
+   `UndergarmentBottom` and render below `UndergarmentTop`. The anchor includes the marking's
+   per-sprite offset, so a breast's nipple sprite still renders above the breast sprite and a
+   butt's front/mid sprites stay ordered. A visible relevant undergarment forces this clamp in
+   every direction (south included); without one, south keeps the genitals-over-hair rule.
 
 ## Cum, drip and washing
 

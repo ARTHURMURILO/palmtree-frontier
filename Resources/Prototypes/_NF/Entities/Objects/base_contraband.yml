@@ -186,6 +186,19 @@
     turnInValues: *oneFUC
 # endregion
 
+# region Class 5
+# Strictly military hardware. NFSD/Security may carry it as issued equipment;
+# civilians can never be permitted to possess it.
+- type: entity
+  parent: BaseC3Contraband
+  id: BaseC5Contraband
+  abstract: true
+  components:
+  - type: Contraband
+    severity: Class5
+    allowedDepartments: [ Security ]
+# endregion
+
 # region Class 3 Mobs
 - type: entity
   parent: BaseC3Contraband

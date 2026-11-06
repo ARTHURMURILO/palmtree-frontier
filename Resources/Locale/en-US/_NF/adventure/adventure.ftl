@@ -1,9 +1,9 @@
 ## UI
-adventure-list-start = [color=gold]NT Galactic Bank[/color]
+adventure-list-start = [color=gold]Frontier Galactic Bank[/color]
 adventure-list-profit = made a total profit of [color=#d19e5e]{$amount}[/color].
 adventure-list-loss = lost a total of [color=#659cc9]{$amount}[/color].
 
-adventure-webhook-list-start = NT Galactic Bank
+adventure-webhook-list-start = Frontier Galactic Bank
 adventure-webhook-list-high = This Shift's Top Earners:
 adventure-webhook-list-low = This Shift's Biggest Spenders:
 adventure-webhook-top-profit = made a total profit of {$amount}.
@@ -28,13 +28,13 @@ nf-test-description = A preset intended for testing. No POIs, no bluespace event
 currency = Space roubles
 
 shipyard-rules-default1 =
-    Thank you for your interest in Nanotrasen Security Forces.
+    Thank you for your interest in the New Frontier Sheriff's Department.
     By purchasing a Security vessel, you agree to enforce Space Law
     as found at https://frontierstation.wiki.gg/wiki/Space_Law
 shipyard-rules-default2 =
     Any actions performed by you or you crew that violate Space Law
     can and will result in administrative action.
-    Thank you for choosing Nanotrasen Security Forces.
+    Thank you for choosing the New Frontier Sheriff's Department.
 
 shuttle-ftl-proximity = Nearby objects too massive for FTL!
 shuttle-ftl-invalid = Invalid ship for FTL!
@@ -47,4 +47,4 @@ multiauth-already-connected = Already connected to Frontier Official servers.
 public-transit-shuttle-name = Bus {$number}{$suffix}
 public-transit-shuttle-screen-text = {" "}BUS  {$number}{$suffix}
 public-transit-departure = Now departing for {$destination}. Estimated travel time: {$flytime} seconds.
-public-transit-arrival = Thank you for choosing NT Public Transit. Next stop: {$destination}. Bus departs in {$waittime} seconds.
+public-transit-arrival = Thank you for choosing Frontier Public Transit. Next stop: {$destination}. Bus departs in {$waittime} seconds.

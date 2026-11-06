@@ -2,7 +2,7 @@
   id: NewPlayer
   name: guide-entry-newplayer
   priority: -3 # Frontier: 0<-3
-  text: "/ServerInfo/Guidebook/NewPlayer/NewPlayer.xml"
+  text: "/ServerInfo/_PS/Guidebook/NewPlayer/NewPlayer.xml"
   children:
   - Controls
   - CharacterCreation

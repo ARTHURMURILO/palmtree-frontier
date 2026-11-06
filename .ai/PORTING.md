@@ -1055,3 +1055,67 @@ prototypes are under `Resources/Prototypes/_CS/Shipyard/biodome*.yml`, the forma
   only on the pre-existing `Bocadillo` and `Dragonfly` listings (unrelated to this port); every
   Biodome price (105000, Sleepover 115000) is well above the 1.05× appraise minimum (appraise
   ~43196–48110).
+
+## 30. 2026-11 Discipline whips (Coyote `Floof`)
+
+Four melee whips ported from Coyote's `Floof/Entities/Objects/Lewd/whips.yml`: `WhipPink`,
+`WhipTeal`, `WhipPinkCrotch` and `WhipTealCrotch`, all parented to the new abstract `BaseWhip`.
+The source file's two paddles (`SpankPinkPaddle`/`SpankTealPaddle`) were deliberately left out at
+the maintainer's request, so the set is admin-spawn only with no crate or vendor wiring.
+
+- **Prototypes**: `Resources/Prototypes/Floof/Entities/Objects/Lewd/whips.yml`.
+- **Assets**: `Resources/Textures/Floof/Objects/Fun/Lewd/Weapons/{whip_pink,whip_teal,crotch_pink,crotch_teal}.rsi`
+  and `Resources/Audio/Floof/Lewd/whip.ogg` (SPLURT, CC-BY-SA-3.0).
+- **Adaptations**: added the `Coyote Frontier` weapon suffix; dropped the EE combat fields already
+  commented out in the source (`heavyRateModifier`, `heavyDamageBaseModifier`, `heavyStaminaCost`,
+  `maxTargets`). Damage/stamina behavior is unchanged (Slash 2, 20 stamina on hit/collide).
+- **Validation**: `Content.YAMLLinter` reports no errors; `EntityTest` passes.
+
+## 31. 2026-11 Rings on gloves (Sandstorm / old SPLURT)
+
+Rings can now be attached to gloves, mirroring the old Sandstorm/S.P.L.U.R.T-Station-13
+`modular_sand` glove-accessory behavior.
+
+- **Reference**: `modular_sand/code/modules/clothing/gloves/_gloves.dm` and
+  `modular_sand/code/modules/clothing/gloves/accessories.dm`. The non-modular
+  `code/modules/clothing/gloves/ring.dm` in those checkouts is commented out; the live ring type
+  is the `modular_sand` accessory. Modern SPLURT-tg has rings as plain gloves-slot items again and
+  no attachment code, so the old Sandstorm implementation is the source.
+- **Behavior**: one ring per pair of gloves by default, configurable through
+  `RingHolderComponent.MaxRings`; only items with the `Ring` tag fit; rings eject when the gloves
+  are broken or destroyed; examining the gloves mentions the attached ring.
+- **Code**: `Content.Shared/_PS/Clothing/Components/RingHolderComponent.cs`,
+  `Content.Server/_PS/Clothing/ServerRingHolderSystem.cs`. Slots are created from the
+  `RingHolder.RingSlot` template, so raising `MaxRings` is enough to allow more later.
+- **Content**: `RingHolder` is added to `ClothingHandsBase`.
+- **Locale**: `Resources/Locale/en-US/_PS/clothing/rings.ftl`.
+- **Tests**: `Content.IntegrationTests/Tests/_PS/RingHolderTest.cs` covers the `Ring` whitelist,
+  rejects non-ring items, and checks the examine line.
+- **Validation**: full solution build; rebuilt `Content.YAMLLinter` (`No errors found`);
+  `RingHolderTest` passes.
+
+## 32. 2026-11 Biogenerator biomass buffer (Coyote `_CS`, tuned downstream)
+
+The `Biogenerator` passively accumulates biomass while powered, so botany no longer depends on
+feeding produce into it for every recipe.
+
+- **Origin**: Coyote (`ARF-SS13/coyote-frontier`), commit `f7988a20ce` ("Biomass Buffer System
+  initial commit") by DevArchwave, refactored in `6637b9b5a8` ("Cleaning up, in theory") to the
+  event-based `LatheSystem` partial used here. The same feature was later copied to
+  Wayfarer/Fractal (`df00fa67d459`) and nerfed there (`e75ceee906a9`). Palmtree uses its own
+  tuning: **200 biomass cap, +2 every second** (Coyote's original was 100 cap/+5 every 10 s;
+  Wayfarer/Fractal use 50 cap/+5 every 30 s).
+- **Code**: `Content.Server/_CS/Lathe/Components/BiogeneratorBufferComponent.cs`,
+  `Content.Server/_CS/Lathe/Systems/BiogeneratorBufferSystem.cs` and the partial
+  `Content.Server/_CS/Lathe/LatheSystem.cs` (events `OnGetMaterialAmount`, `OnDeductMaterial`,
+  `OnGetBufferAmount`). `Content.Server/Lathe/LatheSystem.cs` is now `partial`; its
+  `TryAddToQueue` uses the buffer-aware availability/deduction helpers, and
+  `UpdateUserInterfaceState` forwards the buffer amount in `LatheUpdateState`.
+- **Client**: `LatheUpdateState.BufferAmount` (shared), the "Biomass Buffer" row in
+  `LatheMenu.xaml`, and `Content.Client/_CS/Lathe/UI/LatheMenu.xaml.cs` (buffer-aware recipe
+  availability, tooltips and the buffer label). The row stays hidden on lathes without the
+  component.
+- **Prototype**: `- type: BiogeneratorBuffer` on `Biogenerator` in
+  `Resources/Prototypes/Entities/Structures/Machines/lathe.yml`; all limits live in the
+  component defaults.
+- **Validation**: full solution build; rebuilt `Content.YAMLLinter` (`No errors found`).
