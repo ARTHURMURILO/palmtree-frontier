@@ -847,6 +847,21 @@ Follow-up on the RCD/RPD after the second pass:
 - Test: `Content.IntegrationTests/Tests/_PS/RcdAtmosStackingTest.cs` (pipe-on-pipe same layer
   blocked, empty tile allowed, another layer allowed, valid vent-on-pipe allowed, conflicting
   vent node blocked, non-conflicting pipe orientation allowed, second device blocked).
+- **Client ghost parity (2026-11)**: the placement ghost used to stay green for a node conflict
+  because `NodeContainerComponent.Nodes` is `serverOnly`. The server now maintains a networked
+  `AtmosPipeNodeDirectionsComponent` (one `PipeDirection` mask per atmos layer) on entities with
+  pipe nodes, refreshed by the broadcast `NodeContainerStartedEvent`, by `MapInitEvent` (summaries
+  are only created once the map is initialized) and by `AtmosPipeLayerChangedEvent`. The client
+  caches each ghost prototype's node directions through
+  `AtmosPipeNodeInfoRequestEvent` / `AtmosPipeNodeInfoResponseEvent` (the prototype's `Nodes` are
+  server-only too), then runs the same layer/direction comparison in
+  `AtmosPipeNodeOverlapClientSystem`. Test: `RcdAtmosGhostTest`.
+- **RPD compressed matter (2026-11)**: `RCDAmmoSystem` gives the RPD two tool charges per
+  compressed-matter charge, so one standard 30-charge cartridge fills its 60-charge tank instead of
+  half-filling it. The RCD stays 1:1. Only as much of the cartridge as the missing charges need is
+  consumed (a half-full RPD uses 15 of the 30, leaving 15). Test: `RcdBehaviorTest`
+  (`OneCompressedMatterCartridgeFillsTheTool`, `RpdUsesOnlyAsMuchMatterAsTheMissingCharges`).
+
 
 ## 25. 2026-10 Salto expedition ship (Coyote `_CS`)
 
@@ -1017,3 +1032,26 @@ profile-backed bank (as agreed with the maintainer).
   managers and were deliberately not ported.
 - Validation: full solution build, rebuilt `Content.YAMLLinter` (`No errors found`), `Content.Tests`,
   `_PS|EntityTest|CharacterCreationTest` integration tests and the headless client IL check.
+
+## 29. 2026-11 Biodome ship family (Coyote `_CS`)
+
+Eleven copy-of-a-hull botany ships (`Biodome - Meadow`, `Ice Cave`, `Ice Cave (Sheleg)`, `Beach`,
+`Farm`, `Glass`, `Jungle`, `Sleepover`, `Desert`, `Winter`, `Winter (Sheleg)`). All vessel/map
+prototypes are under `Resources/Prototypes/_CS/Shipyard/biodome*.yml`, the format-7 maps under
+`Resources/Maps/_CS/Shuttles/`, and the models are unmodified from Coyote.
+
+- **Missing prototypes found and fixed**: every map uses `PlatingCornerNE/NW/SE/SW`, which Coyote
+  defines in `Resources/Prototypes/_Mono/Turf/plating.yml`; this fork had no `_Mono/Turf` content,
+  so the maps could not load. The whole tile file (plating corners plus `LatticeCorner*`) and its
+  eight `Resources/Textures/_Mono/Tiles/{plating,lattice}` PNGs were ported, with the missing
+  `tiles-platingcorner*`/`tiles-latticecorner*` names added in `Resources/Locale/en-US/_Mono/tiles.ftl`
+  (Coyote itself never localized them, so they showed raw key names).
+- **Job adaptation**: `CompanionInterview` is Coyote-only and was dropped (same as Salto);
+  `Contractor`/`Pilot`/`Mercenary` use the fork's `[ 0, 0 ]` convention instead of Coyote's
+  `[ 2, 2 ]`. The maps keep the shared `'Biodome {1}'` station name template.
+- `guidebookPage: Null`: Coyote ships have no guidebook pages, so there is nothing to port.
+- **Validation**: `Content.YAMLLinter` reports no errors; `MapChecker` finds no illegal prototypes;
+  `ShipyardTest.CheckAllShuttleGrids` loads all eleven grids. `NoShipyardShipArbitrage` still fails
+  only on the pre-existing `Bocadillo` and `Dragonfly` listings (unrelated to this port); every
+  Biodome price (105000, Sleepover 115000) is well above the 1.05× appraise minimum (appraise
+  ~43196–48110).

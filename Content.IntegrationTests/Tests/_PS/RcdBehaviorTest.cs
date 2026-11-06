@@ -3,6 +3,7 @@ using System.Numerics;
 using System.Reflection;
 using Content.Server.Charges;
 using Content.Shared.Charges.Components;
+using Content.Shared.Interaction;
 using Content.Shared.RCD;
 using Content.Shared.RCD.Components;
 using Content.Shared.RCD.Systems;
@@ -207,6 +208,93 @@ public sealed class RcdBehaviorTest
             {
                 Assert.That(chargesSystem.GetCurrentCharges((rcd, limited)), Is.EqualTo(limited.MaxCharges));
                 Assert.That(ammo, Does.Contain(3), "Only the matter that does not fit should spill out.");
+            });
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    [TestCase("RCD", 30)]
+    [TestCase("RPD", 60)]
+    public async Task OneCompressedMatterCartridgeFillsTheTool(string prototype, int maxCharges)
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var entManager = server.ResolveDependency<IEntityManager>();
+        var chargesSystem = entManager.System<ChargesSystem>();
+        var testMap = await pair.CreateTestMap();
+
+        EntityUid ammo = default;
+
+        await server.WaitAssertion(() =>
+        {
+            var coords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
+            var user = entManager.SpawnEntity("MobHuman", coords);
+            var tool = entManager.SpawnEntity(prototype, coords);
+            var limited = entManager.GetComponent<LimitedChargesComponent>(tool);
+
+            Assert.That(limited.MaxCharges, Is.EqualTo(maxCharges));
+
+            chargesSystem.SetCharges((tool, limited), 0);
+            ammo = entManager.SpawnEntity("RCDAmmo", coords);
+
+            entManager.EventBus.RaiseLocalEvent(
+                ammo,
+                new AfterInteractEvent(user, ammo, tool, coords, true));
+
+            Assert.That(
+                chargesSystem.GetCurrentCharges((tool, limited)),
+                Is.EqualTo(maxCharges),
+                "One standard compressed-matter cartridge should fill the tool.");
+        });
+
+        await pair.RunTicksSync(1);
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(entManager.EntityExists(ammo), Is.False, "A fully consumed cartridge should be deleted.");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task RpdUsesOnlyAsMuchMatterAsTheMissingCharges()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var entManager = server.ResolveDependency<IEntityManager>();
+        var chargesSystem = entManager.System<ChargesSystem>();
+        var testMap = await pair.CreateTestMap();
+
+        EntityUid ammo = default;
+
+        await server.WaitAssertion(() =>
+        {
+            var coords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
+            var user = entManager.SpawnEntity("MobHuman", coords);
+            var rpd = entManager.SpawnEntity("RPD", coords);
+            var limited = entManager.GetComponent<LimitedChargesComponent>(rpd);
+
+            chargesSystem.SetCharges((rpd, limited), 30);
+
+            ammo = entManager.SpawnEntity("RCDAmmo", coords);
+            entManager.EventBus.RaiseLocalEvent(
+                ammo,
+                new AfterInteractEvent(user, ammo, rpd, coords, true));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(
+                    chargesSystem.GetCurrentCharges((rpd, limited)),
+                    Is.EqualTo(60),
+                    "The RPD should still fill its last 30 charges.");
+
+                Assert.That(
+                    entManager.GetComponent<RCDAmmoComponent>(ammo).Charges,
+                    Is.EqualTo(15),
+                    "Only the 15 matter needed for the last 30 charges should be consumed.");
             });
         });
 

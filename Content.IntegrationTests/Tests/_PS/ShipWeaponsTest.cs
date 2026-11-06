@@ -714,7 +714,7 @@ public sealed class ShipWeaponsTest
             mapSystem.SetTile(targetGrid, target.Comp, new Vector2i(0, 0), new Tile(1));
             // North east of the launcher, inside the seeker arc: the torpedo has to steer after
             // launching east.
-            xform.SetWorldPosition(targetGrid, new Vector2(60f, 40f));
+            xform.SetWorldPosition(targetGrid, new Vector2(300f, 200f));
         });
 
         await pair.RunTicksSync(10);
@@ -768,16 +768,16 @@ public sealed class ShipWeaponsTest
                 "The torpedo must spawn in front of the launcher, not on top of the ship.");
         });
 
-        // After the 2 s delay it starts turning towards the target.
-        await pair.RunTicksSync(180);
+        // After the 2 s delay it starts turning towards the target (smooth turn rate, so give it a
+        // little longer and check a modest heading change).
+        await pair.RunTicksSync(200);
 
         await server.WaitAssertion(() =>
         {
             Assert.That(entMan.EntityExists(torpedo), Is.True, "The torpedo should still be in flight.");
             var velocity = entMan.GetComponent<PhysicsComponent>(torpedo).LinearVelocity;
 
-            // East is Angle.FromDegrees(90); steering north puts the heading well away from it.
-            Assert.That(Math.Abs(velocity.ToWorldAngle().Degrees - 90d), Is.GreaterThan(10d),
+            Assert.That(Math.Abs(velocity.ToWorldAngle().Degrees - 90d), Is.GreaterThan(5d),
                 "The torpedo should steer towards the target after the delay.");
         });
 

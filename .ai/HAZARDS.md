@@ -658,11 +658,33 @@ so these fail only in CI:
   and additionally raises `RCDAtmosOverlapAttemptEvent` for any prototype with a `NodeContainer`.
   `PipeRestrictOverlapSystem` handles it on the server: it resolves the mirror/RPD-layer prototype,
   then compares `PipeNode.OriginalPipeDirection` rotated by the placement angle against the
-  anchored nodes' directions and layers. The client has no node data (Nodes is `serverOnly`), so
-  its event is a no-op and the server repeats the check in the do-after attempt. Pipes have no
-  fixtures, which is why the collision check cannot catch them — the node check is what prevents
-  the RCD from spawning an overlapping pipe that `PipeRestrictOverlapSystem` would immediately
-  unanchor.
+  anchored nodes' directions and layers. The client has no node data (`Nodes` is `serverOnly`, on
+  entities *and* prototypes), so it uses the networked
+  `AtmosPipeNodeDirectionsComponent` for anchored entities and caches the prototype's nodes through
+  `AtmosPipeNodeInfoRequestEvent` / `AtmosPipeNodeInfoResponseEvent`; both sides then share the same
+  comparison. Pipes have no fixtures, which is why the collision check cannot catch them — the node
+  check is what prevents the RCD from spawning an overlapping pipe that
+  `PipeRestrictOverlapSystem` would immediately unanchor.
+- **Component-specific `ComponentStartup` subscriptions are single-handler.** The directed event bus
+  stores one subscription per (component, event) pair, so a second
+  `SubscribeLocalEvent<NodeContainerComponent, ComponentStartup>` throws
+  `Duplicate Subscriptions` during system initialization. `NodeContainerSystem` owns that pair; add
+  a broadcast hook instead (`NodeContainerStartedEvent` was added for the pipe-node summary).
+- **The pipe-node summary must not be created on uninitialized maps.**
+  `PrototypeSaveTest.UninitializedSaveTest` spawns every map-savable prototype on an uninitialized
+  map and fails if spawning adds components, so `AtmosPipeNodeInfoSystem` skips `Refresh` unless
+  `SharedMapSystem.IsInitialized(transform.MapID)` and fills the summary from a
+  `NodeContainerComponent/MapInitEvent` hook when the map is initialized. Do **not** move the hook
+  to `MapInitEvent` alone: live ship saves skip `MapInitEvent` for `mapInit: true` entities, and
+  their map is initialized before the entities start, so the `NodeContainerStartedEvent` path is
+  what supplies the summary there.
+- **RPD compressed matter is not 1:1.** `RCDAmmoSystem` treats one cartridge charge as two tool
+  charges when `RCDComponent.IsRpd` is set. It consumes only the cartridge charges needed for the
+  missing tool charges, and rounds the consumption up when the multiplier does not divide evenly,
+  so a partially filled tool can leave a partial cartridge behind. The RCD stays 1:1; don't apply
+  the multiplier in the deconstruction refund path without deciding whether recovered matter
+  should also be worth double.
+
 - **`RCDComponent.SpeedMultiplier` divides delays, so >1 is faster.** It is applied in
   `OnAfterInteract` to prototype and per-entity deconstruct delays; a non-positive value is ignored
   (var-edit safety) and `InstantConstruction` still forces 0.
@@ -777,27 +799,3 @@ so these fail only in CI:
   `StripStationReferences`/`UndockShuttle` must go through `RestoreStoreFailure` (station refs, deed,
   docking to the *grid it was docked to*). A stripped ship has no station member/bound components, so
   its station-bound machinery and power look "soft-broken" until it is restored.
-
-## 29. Reactor hooks: soft-fixture footprints and ship save rules (2026-11)
-
-The two ported reactors add shared machinery that is easy to break later.
-
-- **`ConstructionBlockerComponent` reserves a machine's footprint against construction without
-  making it solid.** `TileNotBlocked` is the only caller that passes
-  `includeConstructionBlockers: true` to `TurfSystem.IsTileBlocked`; every other caller keeps the
-  default `false` and is byte-for-byte unchanged. The flag adds `LookupFlags.Sensors`, which is what
-  makes a *soft* fixture visible to the lookup, and it counts a blocker's fixtures regardless of
-  `Hard` and of the collision mask. The point is the 3x3 RBMK and 3x1 stormdrive art: their centre
-  tile is solid, their end tiles are walk-over, and without the marker a girder or wall could be
-  built through the ends. Do not teach the generic physics predicate about construction; if the
-  check ever leaves `TurfSystem`, put it in `TileNotBlocked`.
-- **Adding a gas is append-only.** `Gas.Nucleium = 11`, `TotalNumberOfGases = 12`, and the gas
-  prototype's `id` must equal the enum value (`ConstantsTest` enforces the three counts). The air
-  sensor prototype must list the new gas in `gasThresholdPrototypes` or the client's `SensorInfo`
-  throws `KeyNotFoundException` on every sensor; use `ignore` for an inert gas.
-- **A reactor is only savable cold and stopped.** Ship saves skip `MapInitEvent` and restore
-  containers as data with no insert events, so a reactor must rebuild its rod list in
-  `ComponentStartup`, and must not persist a warning flag or a fuse without its deadline. `Slagged`
-  and `VesselIntegrity` are `[DataField]`s; the player's setpoint is kept. The gate belongs in
-  `BluespaceDockSystem.FindStoreBlocker`, not in the reactor; see
-  `.ai/ideas/reactor-ship-persistence.md`.

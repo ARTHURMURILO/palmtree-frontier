@@ -195,6 +195,9 @@ public abstract partial class SharedAtmosPipeLayersSystem : EntitySystem
         ent.Comp.CurrentPipeLayer = (AtmosPipeLayer)Math.Clamp((int)layer, 0, ent.Comp.NumberOfPipeLayers - 1);
         Dirty(ent);
 
+        // Palmtree: keep any client-visible pipe node summary pointed at the new layer.
+        RaiseLocalEvent(ent, new AtmosPipeLayerChangedEvent(ent.Comp.CurrentPipeLayer));
+
         if (TryComp<AppearanceComponent>(ent, out var appearance))
         {
             if (ent.Comp.SpriteRsiPaths.TryGetValue(ent.Comp.CurrentPipeLayer, out var path))

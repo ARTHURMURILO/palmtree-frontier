@@ -62,6 +62,7 @@
   - type: ShipTorpedo
     speed: 40
     turnRate: 45
+    trackingArc: 170
     shieldDamage: 280
     steeringDelay: 2
     steeringRamp: 3.5

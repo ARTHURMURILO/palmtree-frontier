@@ -1716,3 +1716,11 @@ Entries:
   time: '2026-11-03T17:36:04.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/e6b227273092dacf9f955d79b283f06b122cf6a0
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Eleven Biodome botany ships are now available at the shipyard.
+  id: 90114
+  time: '2026-11-03T21:25:47.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/a5d75adb8407137a7cce7e758539c2d2869ab781
