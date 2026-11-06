@@ -8,23 +8,27 @@
     },
     "states": [
         {
-            "name": "meter0",
+            "name": "meter",
             "directions": 4
         },
         {
-            "name": "meter1",
+            "name": "pressure0",
             "directions": 4
         },
         {
-            "name": "meter2",
+            "name": "pressure1",
             "directions": 4
         },
         {
-            "name": "meter3",
+            "name": "pressure2",
             "directions": 4
         },
         {
-            "name": "meter4",
+            "name": "pressure3",
+            "directions": 4
+        },
+        {
+            "name": "pressure4",
             "directions": 4
         }
     ]
