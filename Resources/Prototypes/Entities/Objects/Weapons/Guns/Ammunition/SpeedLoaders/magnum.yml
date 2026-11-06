@@ -82,6 +82,9 @@
   parent: SpeedLoaderMagnum
   description: Designed to quickly refill an empty revolver, it fits up to six rounds. Intended to hold self-igniting incendiary ammunition.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: CartridgeMagnumIncendiary
 
@@ -126,6 +129,9 @@
   parent: BaseSpeedLoaderMagnum
   description: Designed to quickly refill an empty revolver, it fits up to six rounds. Intended to hold rare armor-piercing ammunition.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: CartridgeMagnumAP
   - type: Sprite
@@ -160,6 +166,9 @@
   parent: BaseSpeedLoaderMagnum
   description: Designed to quickly refill an empty revolver, it fits up to six rounds. Intended to hold exotic uranium-core ammunition.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: CartridgeMagnumUranium
   - type: Sprite

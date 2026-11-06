@@ -56,7 +56,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     # proto: BulletLightRifleIncendiary # Frontier
   - type: Sprite
@@ -76,7 +76,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     # proto: BulletLightRifleUranium # Frontier
   - type: Sprite

@@ -41,7 +41,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     layers:
       - sprite: _NF/Objects/Weapons/Guns/Ammunition/Casings/shotgun_shell.rsi
@@ -59,7 +59,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     layers:
       - state: incendiary
@@ -90,7 +90,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     layers:
       - state: depleted-uranium

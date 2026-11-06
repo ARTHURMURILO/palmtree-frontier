@@ -136,6 +136,9 @@
   name: ammo drum (.50 shells, incendiary)
   parent: NFBaseMagazineShotgunDrum
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFShellShotgunIncendiary
   - type: Sprite

@@ -63,6 +63,9 @@
   name: "speed loader (.45 pistol, overpressure)"
   parent: NFBaseSpeedLoaderPistol45
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgePistol45Overpressure
   - type: Sprite
@@ -91,6 +94,9 @@
   name: "speed loader (.45 pistol, incendiary)"
   parent: NFBaseSpeedLoaderPistol45
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgePistol45Incendiary
   - type: Sprite
@@ -119,6 +125,9 @@
   name: "speed loader (.45 pistol, uranium)"
   parent: NFBaseSpeedLoaderPistol45
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgePistol45Uranium
   - type: Sprite

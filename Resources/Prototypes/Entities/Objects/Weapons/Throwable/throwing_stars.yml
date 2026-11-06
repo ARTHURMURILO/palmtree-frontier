@@ -4,6 +4,9 @@
   name: throwing star
   description: An ancient weapon still used to this day, due to its ease of lodging itself into its victim's body parts.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: []
   - type: Sprite
     sprite: Objects/Weapons/Throwable/throwing_star.rsi
     layers:

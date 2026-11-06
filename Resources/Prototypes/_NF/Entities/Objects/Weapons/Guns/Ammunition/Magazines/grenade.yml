@@ -14,6 +14,9 @@
   parent: MagazineGrenadeEMP
   id: NFMagazineGrenadeEMP
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFGrenadeEMP
 

@@ -87,6 +87,9 @@
   name: magazine (.30 rifle, overpressure)
   parent: NFBaseMagazineRifle30
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgeRifle30Overpressure
   - type: Sprite
@@ -113,6 +116,9 @@
   name: magazine (.30 rifle, incendiary)
   parent: NFBaseMagazineRifle30
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgeRifle30Incendiary
   - type: Sprite
@@ -139,6 +145,9 @@
   name: magazine (.30 rifle, uranium)
   parent: NFBaseMagazineRifle30
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgeRifle30Uranium
   - type: Sprite
@@ -235,6 +244,9 @@
   name: low cap magazine (.30 rifle, overpressure)
   parent: NFBaseMagazineLowCapacityRifle30
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgeRifle30Overpressure
   - type: Sprite
@@ -261,6 +273,9 @@
   name: low cap magazine (.30 rifle, incendiary)
   parent: NFBaseMagazineLowCapacityRifle30
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgeRifle30Incendiary
   - type: Sprite
@@ -287,6 +302,9 @@
   name: low cap magazine (.30 rifle, uranium)
   parent: NFBaseMagazineLowCapacityRifle30
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgeRifle30Uranium
   - type: Sprite

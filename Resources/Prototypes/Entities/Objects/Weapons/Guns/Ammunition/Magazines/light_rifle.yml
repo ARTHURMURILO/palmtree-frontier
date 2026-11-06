@@ -136,6 +136,9 @@
   parent: BaseMagazineLightRifle
   description: Curved 30-round double stack magazine for combat rifles. Intended to hold exotic uranium-core ammunition.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     # proto: CartridgeLightRifleUranium # Frontier
   - type: Sprite
@@ -164,6 +167,9 @@
   parent: MagazineLightRifle
   description: Curved 30-round double stack magazine for combat rifles. Intended to hold self-igniting incendiary ammunition.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     # proto: CartridgeLightRifleIncendiary # Frontier
   - type: Sprite

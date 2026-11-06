@@ -194,6 +194,9 @@
   parent: MagazinePistol
   description: 10-round single-stack magazine for pistols. Intended to hold self-igniting incendiary ammunition.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     # proto: CartridgePistolIncendiary # Frontier
   - type: Sprite
@@ -250,6 +253,9 @@
   parent: BaseMagazinePistol
   description: 10-round single-stack magazine for pistols. Intended to hold exotic uranium-core ammunition.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     # proto: CartridgePistolUranium # Frontier
   - type: Sprite
@@ -426,6 +432,9 @@
   parent: BaseMagazinePistolSubMachineGun
   description: 30-round double-stack magazine for submachine guns. Intended to hold exotic uranium-core ammunition.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     # proto: CartridgePistolUranium # Frontier
   - type: Sprite
@@ -454,6 +463,9 @@
   name: SMG magazine (.35 auto incendiary)
   description: 30-round double-stack magazine for submachine guns. Intended to hold self-igniting incendiary ammunition.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     # proto: CartridgePistolIncendiary # Frontier
   - type: Sprite

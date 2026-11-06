@@ -44,7 +44,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: NFBulletRocketEmp
   - type: Sprite

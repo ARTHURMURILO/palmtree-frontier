@@ -144,6 +144,9 @@
   name: pistol magazine (.35 pistol, overpressure)
   parent: NFBaseMagazinePistol35
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgePistol35Overpressure
   - type: Sprite
@@ -170,6 +173,9 @@
   name: pistol magazine (.35 pistol, incendiary)
   parent: NFBaseMagazinePistol35
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgePistol35Incendiary
   - type: Sprite
@@ -196,6 +202,9 @@
   name: pistol magazine (.35 pistol, uranium)
   parent: NFBaseMagazinePistol35
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgePistol35Uranium
   - type: Sprite
@@ -249,6 +258,9 @@
   name: pistol magazine (.35 pistol, EMP)
   parent: NFBaseMagazinePistol35
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgePistol35Emp
   - type: Sprite
@@ -319,6 +331,9 @@
   name: high capacity pistol magazine (.35 pistol, overpressure)
   parent: NFBaseMagazineHighCapacityPistol35
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgePistol35Overpressure
   - type: Sprite
@@ -345,6 +360,9 @@
   name: high capacity pistol magazine (.35 pistol, incendiary)
   parent: NFBaseMagazineHighCapacityPistol35
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgePistol35Incendiary
   - type: Sprite
@@ -371,6 +389,9 @@
   name: high capacity pistol magazine (.35 pistol, uranium)
   parent: NFBaseMagazineHighCapacityPistol35
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgePistol35Uranium
   - type: Sprite
@@ -421,6 +442,9 @@
   name: high capacity pistol magazine (.35 pistol, EMP)
   parent: NFBaseMagazineHighCapacityPistol35
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgePistol35Emp
   - type: Sprite
@@ -491,6 +515,9 @@
   name: smg magazine (.35 pistol, overpressure)
   parent: NFBaseMagazinePistolSubMachineGun35
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgePistol35Overpressure
   - type: Sprite
@@ -517,6 +544,9 @@
   name: smg magazine (.35 pistol, incendiary)
   parent: NFBaseMagazinePistolSubMachineGun35
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgePistol35Incendiary
   - type: Sprite
@@ -543,6 +573,9 @@
   name: smg magazine (.35 pistol, uranium)
   parent: NFBaseMagazinePistolSubMachineGun35
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgePistol35Uranium
   - type: Sprite
@@ -622,6 +655,9 @@
   name: top mounted smg magazine (.35 pistol, overpressure)
   parent: NFBaseMagazineSubMachineGunTopMounted35
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgePistol35Overpressure
   - type: Sprite
@@ -649,6 +685,9 @@
   name: top mounted smg magazine (.35 pistol, incendiary)
   parent: NFBaseMagazineSubMachineGunTopMounted35
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgePistol35Incendiary
   - type: Sprite
@@ -676,6 +715,9 @@
   name: top mounted smg magazine (.35 pistol, uranium)
   parent: NFBaseMagazineSubMachineGunTopMounted35
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgePistol35Uranium
   - type: Sprite
@@ -780,6 +822,9 @@
   name: top mounted smg magazine (.35 pistol, EMP)
   parent: NFBaseMagazineSubMachineGunTopMounted35
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgePistol35Emp
   - type: Sprite

@@ -34,6 +34,9 @@
   description: |-
     A medium end military grade assault rifle. On the receiver is a label that says 'for authorized use only.'
   components: &lecterComponents
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Clothing
     sprite: _NF/Objects/Weapons/Guns/Rifles/lecter.rsi
   - type: Sprite

@@ -4,6 +4,9 @@
   parent: [ ClothingUniformSkirtBase, BaseC3ContrabandNoValue, ContrabandClothing ]
   description: A jumpskirt produced by Arcadia Industries. Designed to reduce chaffing between the legs for the comfort of skin, slime, scales, fluff, and wood.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: []
   - type: Sprite
     sprite: _NF/Clothing/Uniforms/Jumpskirt/arcadia.rsi
   - type: Clothing

@@ -41,6 +41,9 @@
   name: Drozd
   description: A fully automatic SMG.
   components: &drozdComponents
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Gun
     soundGunshot:
       path: /Audio/Weapons/Guns/Gunshots/atreides.ogg

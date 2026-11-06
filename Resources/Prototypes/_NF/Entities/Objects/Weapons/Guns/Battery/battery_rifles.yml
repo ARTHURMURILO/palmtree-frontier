@@ -86,6 +86,9 @@
   id: NFWeaponParticleDecelerator
   description: A portable particle decelerator capable of decomposing a tesla or singularity.
   components:
+    - type: Contraband
+      severity: Class3General
+      allowedDepartments: [ Engineering, Command ]
     - type: Item
       size: Ginormous # No launcher encumbrance, this thing's an oddball.
     - type: MultiHandedItem

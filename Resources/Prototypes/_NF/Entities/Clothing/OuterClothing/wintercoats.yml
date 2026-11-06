@@ -4,6 +4,9 @@
   parent: [ ClothingOuterWinterCoatToggleable, BaseC3ContrabandNoValue, ContrabandClothing ]
   description: A coat produced by Arcadia Industries, seems soft.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: []
   - type: Sprite
     sprite: _NF/Clothing/OuterClothing/WinterCoats/arcadia.rsi
     layers:

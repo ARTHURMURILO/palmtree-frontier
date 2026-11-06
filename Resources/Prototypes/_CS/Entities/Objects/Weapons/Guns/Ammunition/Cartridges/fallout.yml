@@ -38,7 +38,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet9mmOverpressure
   - type: Sprite
@@ -57,7 +57,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet9mmIncendiary
   - type: Sprite
@@ -76,7 +76,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet9mmUranium
   - type: Sprite
@@ -111,7 +111,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet9mmEmp
   - type: Sprite
@@ -176,7 +176,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet10mmOverpressure
   - type: Sprite
@@ -195,7 +195,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet10mmIncendiary
   - type: Sprite
@@ -214,7 +214,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet10mmUranium
   - type: Sprite
@@ -249,7 +249,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet10mmEmp
   - type: Sprite
@@ -314,7 +314,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet22Overpressure
   - type: Sprite
@@ -333,7 +333,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet22Incendiary
   - type: Sprite
@@ -352,7 +352,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet22Uranium
   - type: Sprite
@@ -387,7 +387,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet22Emp
   - type: Sprite
@@ -452,7 +452,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet44Overpressure
   - type: Sprite
@@ -471,7 +471,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet44Incendiary
   - type: Sprite
@@ -490,7 +490,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet44Uranium
   - type: Sprite
@@ -525,7 +525,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet44Emp
   - type: Sprite
@@ -590,7 +590,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet357Overpressure
   - type: Sprite
@@ -609,7 +609,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet357Incendiary
   - type: Sprite
@@ -628,7 +628,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet357Uranium
   - type: Sprite
@@ -663,7 +663,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet357Emp
   - type: Sprite
@@ -728,7 +728,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet50AEOverpressure
   - type: Sprite
@@ -747,7 +747,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet50AEIncendiary
   - type: Sprite
@@ -766,7 +766,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet50AEUranium
   - type: Sprite
@@ -801,7 +801,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet50AEEmp
   - type: Sprite
@@ -866,7 +866,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet45LCOverpressure
   - type: Sprite
@@ -885,7 +885,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet45LCIncendiary
   - type: Sprite
@@ -904,7 +904,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet45LCUranium
   - type: Sprite
@@ -939,7 +939,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet45LCEmp
   - type: Sprite
@@ -1004,7 +1004,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet5mmOverpressure
   - type: Sprite
@@ -1023,7 +1023,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet5mmIncendiary
   - type: Sprite
@@ -1042,7 +1042,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet5mmUranium
   - type: Sprite
@@ -1077,7 +1077,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet5mmEmp
   - type: Sprite
@@ -1142,7 +1142,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet308Overpressure
   - type: Sprite
@@ -1161,7 +1161,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet308Incendiary
   - type: Sprite
@@ -1180,7 +1180,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet308Uranium
   - type: Sprite
@@ -1215,7 +1215,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet308Emp
   - type: Sprite
@@ -1280,7 +1280,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet3006Overpressure
   - type: Sprite
@@ -1299,7 +1299,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet3006Incendiary
   - type: Sprite
@@ -1318,7 +1318,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet3006Uranium
   - type: Sprite
@@ -1353,7 +1353,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet3006Emp
   - type: Sprite
@@ -1418,7 +1418,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet54ROverpressure
   - type: Sprite
@@ -1437,7 +1437,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet54RIncendiary
   - type: Sprite
@@ -1456,7 +1456,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet54RUranium
   - type: Sprite
@@ -1491,7 +1491,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: CSBullet54REmp
   - type: Sprite

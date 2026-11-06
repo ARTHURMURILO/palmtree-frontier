@@ -124,7 +124,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: NFBulletRifle20Overpressure
   - type: Sprite
@@ -142,7 +142,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: NFBulletRifle20Incendiary
   - type: Sprite
@@ -160,7 +160,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: NFBulletRifle20Uranium
   - type: Sprite
@@ -315,7 +315,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: NFBulletRifle30Overpressure
   - type: Sprite
@@ -333,7 +333,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: NFBulletRifle30Incendiary
   - type: Sprite
@@ -351,7 +351,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: NFBulletRifle20Uranium
   - type: Sprite

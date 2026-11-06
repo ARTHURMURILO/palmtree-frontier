@@ -99,6 +99,9 @@
   description: |-
     This experimental weapon is capable of recovering patients. Effective, albeit slowly.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Medical, Command ]
   - type: Sprite
     sprite: Objects/Weapons/Guns/Battery/pulse_rifle.rsi
   - type: Clothing

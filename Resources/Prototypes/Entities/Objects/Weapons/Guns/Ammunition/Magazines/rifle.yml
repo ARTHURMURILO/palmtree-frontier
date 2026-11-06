@@ -80,6 +80,9 @@
   name: "magazine (.20 rifle incendiary)"
   parent: MagazineRifle
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     # proto: CartridgeRifleIncendiary # Frontier
   - type: Sprite
@@ -134,6 +137,9 @@
   name: "magazine (.20 rifle uranium)"
   parent: BaseMagazineRifle
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     # proto: CartridgeRifleUranium # Frontier
   - type: Sprite

@@ -4,6 +4,9 @@
   parent: [ ClothingMaskGasExplorer, BaseC3ContrabandNoValue, ContrabandClothing ]
   description: A close-fitting high tech mask designed by Arcadia Industries for spacefaring operators.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: []
   - type: Sprite
     sprite: _NF/Clothing/Mask/arcadia.rsi
   - type: Clothing

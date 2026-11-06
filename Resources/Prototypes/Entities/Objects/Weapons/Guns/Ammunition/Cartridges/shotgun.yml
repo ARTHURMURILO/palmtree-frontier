@@ -98,7 +98,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     layers:
       - state: incendiary
@@ -184,7 +184,7 @@
   components:
     - type: Contraband
       severity: Class3General
-      allowedDepartments: []
+      allowedDepartments: [ Security, Command ]
     - type: Sprite
       layers:
         - state: depleted-uranium

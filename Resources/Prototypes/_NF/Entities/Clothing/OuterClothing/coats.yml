@@ -143,6 +143,9 @@
   name: arcadia flak trenchcoat
   description: A flak trenchcoat produced by Arcadia Industries, enhanced with a bulletproof alloy for some extra protection.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: []
   - type: Sprite
     sprite: _NF/Clothing/OuterClothing/Coats/arcadia_trench.rsi
   - type: Clothing
@@ -163,6 +166,9 @@
   id: ClothingOuterCoatArcadiaTrenchOpened
   name: arcadia flak trenchcoat
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: []
   - type: Armor # Open = less armor
     modifiers:
       coefficients:
