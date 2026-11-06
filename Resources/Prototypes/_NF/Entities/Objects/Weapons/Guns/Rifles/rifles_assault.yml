@@ -100,7 +100,7 @@
   components: &vulcanComponents
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _DV/Objects/Weapons/Guns/Rifles/vulcan.rsi
   - type: Clothing
@@ -117,6 +117,9 @@
   description: |-
     The beginning of the end is heralded by the song of a Jackdaw.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _DV/Objects/Weapons/Guns/Rifles/jackdaw.rsi
   - type: Clothing
@@ -168,7 +171,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _NF/Objects/Weapons/Guns/Rifles/gestio.rsi
   - type: Clothing
@@ -194,7 +197,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _NF/Objects/Weapons/Guns/Rifles/novalitec1.rsi
   - type: Clothing

@@ -62,7 +62,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _DV/Objects/Weapons/Guns/Rifles/ceremonial_grand.rsi
   - type: Clothing
@@ -77,7 +77,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _NF/Objects/Weapons/Guns/Rifles/repeater.rsi
   - type: Clothing
@@ -93,7 +93,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _NF/Objects/Weapons/Guns/Rifles/svs42.rsi
   - type: Clothing

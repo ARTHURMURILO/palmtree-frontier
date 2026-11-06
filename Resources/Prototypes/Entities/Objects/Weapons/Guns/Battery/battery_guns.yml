@@ -192,7 +192,7 @@
   components:
   - type: Contraband
     severity: Class4
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Item
     size: Large
     shape:
@@ -814,7 +814,7 @@
   components:
   - type: Contraband
     severity: Class4
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: Objects/Weapons/Guns/Battery/behonker_eye.rsi
     layers:

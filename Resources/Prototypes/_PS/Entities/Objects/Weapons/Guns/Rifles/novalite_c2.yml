@@ -12,7 +12,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _NF/Objects/Weapons/Guns/Rifles/novalitec1.rsi
   - type: Clothing

@@ -68,7 +68,7 @@
   components:
   - type: Contraband
     severity: Class4
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Gun
     soundGunshot:
       path: /Audio/_DV/Weapons/Guns/Gunshots/laser.ogg

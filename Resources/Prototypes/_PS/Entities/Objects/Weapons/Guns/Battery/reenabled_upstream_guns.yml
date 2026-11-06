@@ -75,7 +75,7 @@
   components:
   - type: Contraband
     severity: Class4
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Item
     size: Large
     shape:

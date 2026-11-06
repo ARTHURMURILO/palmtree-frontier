@@ -11,7 +11,7 @@
   components:
   - type: Contraband
     severity: Class4
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: Objects/Weapons/Guns/HMGs/minigun.rsi
     layers:

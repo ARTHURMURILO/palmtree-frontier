@@ -10,7 +10,7 @@
   components:
   - type: Contraband
     severity: Class4
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/BAR.rsi
   - type: Clothing
@@ -40,7 +40,7 @@
   components:
   - type: Contraband
     severity: Class4
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/M1919.rsi
   - type: Clothing
@@ -88,7 +88,7 @@
   components:
   - type: Contraband
     severity: Class4
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/RPD.rsi
   - type: Clothing
@@ -136,7 +136,7 @@
   components:
   - type: Contraband
     severity: Class4
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/DP27.rsi
   - type: Clothing

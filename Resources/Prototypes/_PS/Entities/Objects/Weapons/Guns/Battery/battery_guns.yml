@@ -4,6 +4,9 @@
   id: NFWeaponEnergyPistolLaserSvalinnCaspian
   description: Although it's usual model is a cheap and mass produced pistol, this one appears to be a unique special edition that fixes many of the issues of the original, while also increasing the efficiency of the weapon.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Gun
     fireRate: 4
     selectedMode: SemiAuto
@@ -79,7 +82,7 @@
   components:
   - type: Contraband
     severity: Class4
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Gun
     soundGunshot:
       collection: Phaser

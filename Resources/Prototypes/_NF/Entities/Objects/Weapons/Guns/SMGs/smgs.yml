@@ -64,6 +64,9 @@
   description: |-
     An excellent SMG. On the receiver is a label that says 'for authorized use only.'
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _NF/Objects/Weapons/Guns/SMGs/wt550.rsi
     layers:
@@ -96,7 +99,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Gun
     soundGunshot:
       path: /Audio/_DV/Weapons/Guns/Gunshots/typewriter.ogg

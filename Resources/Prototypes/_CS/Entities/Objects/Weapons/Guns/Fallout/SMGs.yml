@@ -10,7 +10,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/Uzi.rsi
   - type: Clothing
@@ -40,7 +40,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/American180.rsi
   - type: Clothing
@@ -70,7 +70,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/P90.rsi
   - type: Clothing
@@ -131,7 +131,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/MP5.rsi
   - type: Clothing
@@ -161,7 +161,7 @@
   components:
   - type: Contraband
     severity: Class3General
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/PPSh.rsi
   - type: Clothing

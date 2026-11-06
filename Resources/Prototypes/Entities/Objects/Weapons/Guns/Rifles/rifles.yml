@@ -155,6 +155,9 @@
   id: WeaponRifleLecter
   description: A high end military grade assault rifle. Uses .20 rifle ammo. On the receiver is a label that says 'for authorized use only.'
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: Objects/Weapons/Guns/Rifles/lecter.rsi
     layers:

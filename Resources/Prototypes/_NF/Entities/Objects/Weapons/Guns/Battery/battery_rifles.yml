@@ -50,6 +50,9 @@
   description: |-
     Releases electromagnetic pulses that disrupt or damage many electronic devices or drain power cells, has a slow self charging nuclear powered battery.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _NF/Objects/Weapons/Guns/Battery/emp.rsi
     layers:
