@@ -33,8 +33,10 @@ touched, each with a single line or block:
 ## Devices
 
 All four are 1x1, anchored, rotatable `SubFloorHide` entities placed with `AlignAtmosPipeLayers`, the
-same footprint and placement rules as the vanilla pumps and valves. The two binary devices are
-directional: rotate them so the inlet faces the pipeline the gas should come from.
+same footprint and placement rules as the vanilla pumps and valves. The three binary devices (gate,
+pump, heat exchanger) are directional - `GasBinaryBase` puts the inlet on the north side and the
+outlet on the south - so rotate them so the inlet faces the pipeline the gas should come from. The
+meter is unary and reads the pipe it sits on.
 
 ### `GasTemperatureGate` (temperature gate)
 
@@ -49,6 +51,11 @@ while the inlet gas is colder than `TargetTemperature` (or hotter when `Inverted
   The target field is filled in when the window opens, never from `Update()` - the server dirties the
   sensor readouts once a second and rewriting the spin box would eat what the player is typing.
 - Sprites: `tgate` / `tgateOn` / `tgateFlow`.
+- Nothing happens while both ports sit on the same pipeline, or while either side resolves to the
+  immutable space mixture: `AtmosphereSystem.Merge` silently drops anything fed into an immutable
+  mixture, so a transfer into one would lose the gas. Anchored devices always end up in a node group
+  with a real mixture, so the second guard is defensive - the pump, heat exchanger and meter carry
+  the same one.
 
 ### `GasTemperaturePump` (temperature pump)
 
@@ -65,7 +72,9 @@ T_x += (equilibrium - T_x) * fraction
 ```
 
 Moving both sides by the same fraction of their own distance to equilibrium conserves energy
-exactly and is independent of the atmos tick rate.
+exactly. The trajectory is a first-order Euler step, so it is only approximately tick-rate
+independent: a long tick transfers slightly less than several short ticks would. The fraction is
+clamped to 1, so the pump converges instead of overshooting.
 
 ### `GasHeatExchanger` (heat exchanger)
 
@@ -77,7 +86,8 @@ temperature, which is exactly what TG's `combined_energy / combined_heat_capacit
 
 - Unpowered, no UI, no gas transfer.
 - Skips when both nodes resolve to the same pipeline, when either side is the immutable space
-  mixture (an unconnected node), or when the combined heat capacity is negligible.
+  mixture (an unconnected node), when the two sides are already within `MinimumTemperatureDelta`
+  (0.1 K by default) of each other, or when the combined heat capacity is negligible.
 
 ### `GasMeter` (atmos meter)
 
