@@ -187,6 +187,9 @@
   - BaseC3Contraband
   - NFWeaponTurretLaserSyndicate
   components:
+  - type: Contraband
+    severity: Class4
+    allowedDepartments: []
   - type: NpcFactionMember
     factions:
     - HostileUniversally
@@ -200,7 +203,7 @@
    An Autonomous Sentry Machine Gun Turret (ASMGT) is a magazine-fed turret with barrels compatible with .20, .25, .30 and .35 cartridges. Use screwdriver to disassemble.
   suffix: NT
   parent:
-  - BaseC2ContrabandUnredeemable
+  - BaseC3Contraband
   - BaseWeaponTurretMagazineFed
   components:
   - type: Gun
@@ -248,7 +251,7 @@
    A disassembled and packed Autonomous Sentry Machine Gun Turret (ASMGT).
   suffix: NT, Packed
   parent:
-  - BaseC2ContrabandUnredeemable
+  - BaseC3Contraband
   - BaseItem
   components:
   - type: WeaponCaseInsertable

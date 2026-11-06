@@ -20,7 +20,7 @@
 
 - type: entity
   id: NFWeaponEnergyPistolN1984Pulse
-  parent: [NFBaseWeaponEnergyPistolHitScanPulse, BaseWeaponPowerCellSmall, BaseC2ContrabandUnredeemable]
+  parent: [NFBaseWeaponEnergyPistolHitScanPulse, BaseWeaponPowerCellSmall, BaseC5ContrabandUnredeemable]
   name: Pulse N1984
   description: |-
     A pulse variant of the N1984 usually employed by officers.
@@ -77,6 +77,9 @@
   suffix: Lily
   description: A PHASed Energy Rectification that has been hand-modified, most likely by a scientist with far too much time on their hands. The beam is a distinctive purple-pink instead of the usual orange, and judging by the color it must be a really cute pink fox girl with some great assets to spare.
   components:
+  - type: Contraband
+    severity: Class4
+    allowedDepartments: []
   - type: Gun
     soundGunshot:
       collection: Phaser

@@ -1,9 +1,9 @@
-# Firearms etc., legally owned, confiscatable in case of a crime.
+# Tier 1 - minor restricted items; a permit is required, but enforcement is low priority.
 - type: contrabandSeverity
   id: Class1
   examineText: contraband-examine-text-Class1
 
-# Explosives, unregistered firearms, security stuff
+# Tier 2 - civilian lethal items and restricted gear; a permit is required.
 - type: contrabandSeverity
   id: Class2
   examineText: contraband-examine-text-Class2
@@ -13,7 +13,7 @@
   id: Class2Expedition
   examineText: contraband-examine-text-Class2Expedition
 
-# Class 3 contraband - highly destructive things, things associated with non-NT factions
+# Tier 3 - serious military-style, restricted, or hazardous items.
 - type: contrabandSeverity
   id: Class3General
   examineText: contraband-examine-text-Class3General
@@ -38,23 +38,22 @@
   id: Class3Expedition
   examineText: contraband-examine-text-Class3Expedition
 
-# Class 5 - strictly military hardware, completely illegal for civilians.
+# Class 4 - 100+ damage heavy hardware; permit required, arrestable without permit.
+- type: contrabandSeverity
+  id: Class4
+  examineText: contraband-examine-text-Class4
+
+# Class 5 - strictly military and law-enforcement hardware, completely illegal for civilians.
 - type: contrabandSeverity
   id: Class5
   examineText: contraband-examine-text-Class5
 
-# Class 3 contraband - mobs
+# Notice of Frontier law for dangerous captives. This is not a contraband tier.
 - type: contrabandSeverity
-  id: Class3MobHuman
-  examineText: contraband-examine-text-Class3MobHuman
+  id: FrontierLawNotice
+  examineText: contraband-examine-text-FrontierLawNotice
 
-- type: contrabandSeverity
-  id: Class3MobCreature
-  examineText: contraband-examine-text-Class3MobCreature
-
-- type: contrabandSeverity
-  id: Class3MobConstruct
-  examineText: contraband-examine-text-Class3MobConstruct
+# Class 3 contraband - mobs are handled by the Frontier Sector Code notice, not a contraband tier.
 
 # Not necessarily contraband, but items of interest to pirates.
 - type: contrabandSeverity

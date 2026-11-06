@@ -151,7 +151,7 @@
 - type: entity
   categories: [ HideSpawnMenu ] # Frontier
   name: Lecter
-  parent: [BaseWeaponRifle, BaseC2ContrabandUnredeemable] # Frontier: BaseSecurityContraband<BaseC2ContrabandUnredeemable
+  parent: [BaseWeaponRifle, BaseC3Contraband] # Frontier: BaseSecurityContraband<BaseC3Contraband
   id: WeaponRifleLecter
   description: A high end military grade assault rifle. Uses .20 rifle ammo. On the receiver is a label that says 'for authorized use only.'
   components:

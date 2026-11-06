@@ -2,7 +2,7 @@
 - type: entity
   id: NFBaseShellShotgun
   name: shell (.50)
-  parent: [ BaseC1Contraband, BaseShellShotgun ]
+  parent: [ BaseC2Contraband, BaseShellShotgun ]
   abstract: true
   components:
   - type: Tag
@@ -39,6 +39,9 @@
   name: shell (.50 overpressure)
   parent: NFBaseShellShotgun
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: Sprite
     layers:
       - sprite: _NF/Objects/Weapons/Guns/Ammunition/Casings/shotgun_shell.rsi
@@ -54,6 +57,9 @@
   name: shell (.50 incendiary)
   parent: NFBaseShellShotgun
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: Sprite
     layers:
       - state: incendiary
@@ -82,6 +88,9 @@
   name: shell (.50 uranium)
   parent: NFBaseShellShotgun
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: Sprite
     layers:
       - state: depleted-uranium

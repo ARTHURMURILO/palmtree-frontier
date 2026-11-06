@@ -10,6 +10,9 @@
   description: |-
     An upgraded Novalite with a reworked magazine well. Takes en-bloc clips as well as standard .20 rifle magazines.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: Sprite
     sprite: _NF/Objects/Weapons/Guns/Rifles/novalitec1.rsi
   - type: Clothing

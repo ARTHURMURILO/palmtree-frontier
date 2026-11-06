@@ -36,6 +36,9 @@
   name: cartridge (9mm, overpressure)
   parent: CSBaseCartridge9mm
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet9mmOverpressure
   - type: Sprite
@@ -52,6 +55,9 @@
   name: cartridge (9mm, incendiary)
   parent: CSBaseCartridge9mm
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet9mmIncendiary
   - type: Sprite
@@ -68,6 +74,9 @@
   name: cartridge (9mm, uranium)
   parent: CSBaseCartridge9mm
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet9mmUranium
   - type: Sprite
@@ -100,6 +109,9 @@
   name: cartridge (9mm, EMP)
   parent: CSBaseCartridge9mm
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet9mmEmp
   - type: Sprite
@@ -162,6 +174,9 @@
   name: cartridge (10mm, overpressure)
   parent: CSBaseCartridge10mm
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet10mmOverpressure
   - type: Sprite
@@ -178,6 +193,9 @@
   name: cartridge (10mm, incendiary)
   parent: CSBaseCartridge10mm
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet10mmIncendiary
   - type: Sprite
@@ -194,6 +212,9 @@
   name: cartridge (10mm, uranium)
   parent: CSBaseCartridge10mm
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet10mmUranium
   - type: Sprite
@@ -226,6 +247,9 @@
   name: cartridge (10mm, EMP)
   parent: CSBaseCartridge10mm
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet10mmEmp
   - type: Sprite
@@ -288,6 +312,9 @@
   name: cartridge (.22 LR, overpressure)
   parent: CSBaseCartridge22
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet22Overpressure
   - type: Sprite
@@ -304,6 +331,9 @@
   name: cartridge (.22 LR, incendiary)
   parent: CSBaseCartridge22
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet22Incendiary
   - type: Sprite
@@ -320,6 +350,9 @@
   name: cartridge (.22 LR, uranium)
   parent: CSBaseCartridge22
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet22Uranium
   - type: Sprite
@@ -352,6 +385,9 @@
   name: cartridge (.22 LR, EMP)
   parent: CSBaseCartridge22
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet22Emp
   - type: Sprite
@@ -414,6 +450,9 @@
   name: cartridge (.44 Magnum, overpressure)
   parent: CSBaseCartridge44
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet44Overpressure
   - type: Sprite
@@ -430,6 +469,9 @@
   name: cartridge (.44 Magnum, incendiary)
   parent: CSBaseCartridge44
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet44Incendiary
   - type: Sprite
@@ -446,6 +488,9 @@
   name: cartridge (.44 Magnum, uranium)
   parent: CSBaseCartridge44
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet44Uranium
   - type: Sprite
@@ -478,6 +523,9 @@
   name: cartridge (.44 Magnum, EMP)
   parent: CSBaseCartridge44
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet44Emp
   - type: Sprite
@@ -540,6 +588,9 @@
   name: cartridge (.357 Magnum, overpressure)
   parent: CSBaseCartridge357
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet357Overpressure
   - type: Sprite
@@ -556,6 +607,9 @@
   name: cartridge (.357 Magnum, incendiary)
   parent: CSBaseCartridge357
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet357Incendiary
   - type: Sprite
@@ -572,6 +626,9 @@
   name: cartridge (.357 Magnum, uranium)
   parent: CSBaseCartridge357
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet357Uranium
   - type: Sprite
@@ -604,6 +661,9 @@
   name: cartridge (.357 Magnum, EMP)
   parent: CSBaseCartridge357
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet357Emp
   - type: Sprite
@@ -666,6 +726,9 @@
   name: cartridge (.50 AE, overpressure)
   parent: CSBaseCartridge50AE
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet50AEOverpressure
   - type: Sprite
@@ -682,6 +745,9 @@
   name: cartridge (.50 AE, incendiary)
   parent: CSBaseCartridge50AE
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet50AEIncendiary
   - type: Sprite
@@ -698,6 +764,9 @@
   name: cartridge (.50 AE, uranium)
   parent: CSBaseCartridge50AE
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet50AEUranium
   - type: Sprite
@@ -730,6 +799,9 @@
   name: cartridge (.50 AE, EMP)
   parent: CSBaseCartridge50AE
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet50AEEmp
   - type: Sprite
@@ -792,6 +864,9 @@
   name: cartridge (.45 Long Colt, overpressure)
   parent: CSBaseCartridge45LC
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet45LCOverpressure
   - type: Sprite
@@ -808,6 +883,9 @@
   name: cartridge (.45 Long Colt, incendiary)
   parent: CSBaseCartridge45LC
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet45LCIncendiary
   - type: Sprite
@@ -824,6 +902,9 @@
   name: cartridge (.45 Long Colt, uranium)
   parent: CSBaseCartridge45LC
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet45LCUranium
   - type: Sprite
@@ -856,6 +937,9 @@
   name: cartridge (.45 Long Colt, EMP)
   parent: CSBaseCartridge45LC
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet45LCEmp
   - type: Sprite
@@ -918,6 +1002,9 @@
   name: cartridge (5mm, overpressure)
   parent: CSBaseCartridge5mm
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet5mmOverpressure
   - type: Sprite
@@ -934,6 +1021,9 @@
   name: cartridge (5mm, incendiary)
   parent: CSBaseCartridge5mm
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet5mmIncendiary
   - type: Sprite
@@ -950,6 +1040,9 @@
   name: cartridge (5mm, uranium)
   parent: CSBaseCartridge5mm
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet5mmUranium
   - type: Sprite
@@ -982,6 +1075,9 @@
   name: cartridge (5mm, EMP)
   parent: CSBaseCartridge5mm
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet5mmEmp
   - type: Sprite
@@ -1044,6 +1140,9 @@
   name: cartridge (.308, overpressure)
   parent: CSBaseCartridge308
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet308Overpressure
   - type: Sprite
@@ -1060,6 +1159,9 @@
   name: cartridge (.308, incendiary)
   parent: CSBaseCartridge308
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet308Incendiary
   - type: Sprite
@@ -1076,6 +1178,9 @@
   name: cartridge (.308, uranium)
   parent: CSBaseCartridge308
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet308Uranium
   - type: Sprite
@@ -1108,6 +1213,9 @@
   name: cartridge (.308, EMP)
   parent: CSBaseCartridge308
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet308Emp
   - type: Sprite
@@ -1170,6 +1278,9 @@
   name: cartridge (.30-06, overpressure)
   parent: CSBaseCartridge3006
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet3006Overpressure
   - type: Sprite
@@ -1186,6 +1297,9 @@
   name: cartridge (.30-06, incendiary)
   parent: CSBaseCartridge3006
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet3006Incendiary
   - type: Sprite
@@ -1202,6 +1316,9 @@
   name: cartridge (.30-06, uranium)
   parent: CSBaseCartridge3006
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet3006Uranium
   - type: Sprite
@@ -1234,6 +1351,9 @@
   name: cartridge (.30-06, EMP)
   parent: CSBaseCartridge3006
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet3006Emp
   - type: Sprite
@@ -1296,6 +1416,9 @@
   name: cartridge (7.62x54R, overpressure)
   parent: CSBaseCartridge54R
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet54ROverpressure
   - type: Sprite
@@ -1312,6 +1435,9 @@
   name: cartridge (7.62x54R, incendiary)
   parent: CSBaseCartridge54R
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet54RIncendiary
   - type: Sprite
@@ -1328,6 +1454,9 @@
   name: cartridge (7.62x54R, uranium)
   parent: CSBaseCartridge54R
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet54RUranium
   - type: Sprite
@@ -1360,6 +1489,9 @@
   name: cartridge (7.62x54R, EMP)
   parent: CSBaseCartridge54R
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     proto: CSBullet54REmp
   - type: Sprite

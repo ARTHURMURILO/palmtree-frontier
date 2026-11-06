@@ -56,7 +56,7 @@
     clothingPrototype: ClothingHeadHatHoodCardinalHood
 
 - type: entity
-  parent: [ ClothingOuterStorageBase, BaseC2ContrabandUnredeemable ]
+  parent: [ ClothingOuterStorageBase, BaseC5ContrabandUnredeemable ]
   id: ClothingOuterCoatNfsdBomber
   name: NFSD bomber
   description: Lookin' slick Tom.
@@ -67,7 +67,7 @@
     sprite: _NF/Clothing/OuterClothing/Misc/nfsd_bomber.rsi
 
 - type: entity
-  parent: [ ClothingOuterStorageBase, BaseC2ContrabandUnredeemable ]
+  parent: [ ClothingOuterStorageBase, BaseC5ContrabandUnredeemable ]
   id: ClothingOuterCoatNfsdBomberBrigmed
   name: NFSD brigmedic bomber
   description: Blood may stain.
@@ -78,7 +78,7 @@
     sprite: _NF/Clothing/OuterClothing/Misc/nfsd_brigmed_bomber.rsi
 
 - type: entity
-  parent: [ ClothingOuterStorageBase, BaseC2ContrabandUnredeemable ]
+  parent: [ ClothingOuterStorageBase, BaseC5ContrabandUnredeemable ]
   id: ClothingOuterCoatNfsdFormal
   name: NFSD formal coat
   description: Snazzy.
@@ -89,7 +89,7 @@
     sprite: _NF/Clothing/OuterClothing/Misc/nfsd_formal.rsi
 
 - type: entity
-  parent: [ ClothingOuterStorageBase, BaseC2ContrabandUnredeemable ]
+  parent: [ ClothingOuterStorageBase, BaseC5ContrabandUnredeemable ]
   id: ClothingOuterCoatNfsdFormalSheriff
   name: NFSD sheriff's formal coat
   description: Very snazzy.
@@ -100,7 +100,7 @@
     sprite: _NF/Clothing/OuterClothing/Misc/nfsd_sheriff_formal.rsi
 
 - type: entity
-  parent: [ ClothingOuterStorageBase, BaseC2ContrabandUnredeemable ]
+  parent: [ ClothingOuterStorageBase, BaseC5ContrabandUnredeemable ]
   id: ClothingOuterCoatNfsdLongCoat
   name: NFSD long coat
   description: Big iron on his hip...

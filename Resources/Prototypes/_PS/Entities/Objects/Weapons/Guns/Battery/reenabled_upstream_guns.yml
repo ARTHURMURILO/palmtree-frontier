@@ -73,6 +73,9 @@
   suffix: Palmtree
   description: The power of the primordial element of lightning in your hands. An experimental and illegal weapon.
   components:
+  - type: Contraband
+    severity: Class4
+    allowedDepartments: []
   - type: Item
     size: Large
     shape:

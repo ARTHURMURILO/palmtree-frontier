@@ -8,6 +8,9 @@
   name: BAR
   description: An ancient machine gun that looks outdated even by Pre-Fall standards. It is alarmingly heavy for a rifle.
   components:
+  - type: Contraband
+    severity: Class4
+    allowedDepartments: []
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/BAR.rsi
   - type: Clothing
@@ -35,6 +38,9 @@
   name: M1919
   description: This ancient machine gun has been dug up and put into working order by the Dallas Militia. It's loud, heavy and terrifying.
   components:
+  - type: Contraband
+    severity: Class4
+    allowedDepartments: []
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/M1919.rsi
   - type: Clothing
@@ -80,6 +86,9 @@
   name: RPD
   description: A soviet made Russian LMG. Known as the RPK, this LMG was chambered in 7.62 Soviet, now rechambered to .308 with a 100 round drum mag.
   components:
+  - type: Contraband
+    severity: Class4
+    allowedDepartments: []
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/RPD.rsi
   - type: Clothing
@@ -125,6 +134,9 @@
   name: DP27
   description: An old Soviet light machinegun with a high capacity pan magazine.
   components:
+  - type: Contraband
+    severity: Class4
+    allowedDepartments: []
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/DP27.rsi
   - type: Clothing

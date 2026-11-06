@@ -1,7 +1,7 @@
 - type: entity
   id: BaseCartridgeRifle
   name: cartridge (.20 rifle)
-  parent: [ BaseCartridge, BaseC1Contraband ] # Frontier: BaseSecurityContraband<BaseC1Contraband
+  parent: [ BaseCartridge, BaseC2Contraband ] # Frontier: BaseSecurityContraband<BaseC2Contraband
   abstract: true
   components:
   - type: Tag
@@ -51,6 +51,9 @@
   name: cartridge (.20 rifle incendiary)
   parent: BaseCartridgeRifle
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     # proto: BulletRifleIncendiary # Frontier
   - type: Sprite
@@ -67,6 +70,9 @@
   name: cartridge (.20 rifle uranium)
   parent: BaseCartridgeRifle
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: []
   - type: CartridgeAmmo
     # proto: BulletRifleUranium # Frontier
   - type: Sprite

@@ -72,7 +72,7 @@
 
 - type: entity
   suffix: EMP
-  parent: [ BaseC2ContrabandUnredeemable, NFWeaponLauncherRocket ]
+  parent: [ BaseC3ContrabandUnredeemable, NFWeaponLauncherRocket ]
   id: NFWeaponLauncherRocketEmp
   components:
   - type: BallisticAmmoProvider
@@ -103,7 +103,7 @@
     manufacturer: weapon-details-manufacturer-nanotrasen-munitions
 
 - type: entity
-  parent: [ BaseC2ContrabandUnredeemable, NFBaseWeaponLauncherChamber40mmGrenadesNfsdSingleShot, NFBaseWeaponFrameLauncherNanotrasen ]
+  parent: [ BaseC5ContrabandUnredeemable, NFBaseWeaponLauncherChamber40mmGrenadesNfsdSingleShot, NFBaseWeaponFrameLauncherNanotrasen ]
   id: NFWeaponLauncherGrenadeNfsd
   name: NGP-40 projector
   description: Single shot grenade launcher able to lob both grenades and darts!

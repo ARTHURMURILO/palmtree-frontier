@@ -49,7 +49,7 @@
       - HamsterWearable
 
 - type: entity
-  parent: [ BaseC2ContrabandUnredeemable, ClothingMaskGasSecurity ]
+  parent: [ BaseC5ContrabandUnredeemable, ClothingMaskGasSecurity ]
   id: ClothingMaskGasNfsd
   name: NFSD gas mask
   description: A standard issue NFSD gas mask.
@@ -61,7 +61,7 @@
   - type: CatWearable
 
 - type: entity
-  parent: [ BaseC2ContrabandUnredeemable, ClothingMaskGasSwat ]
+  parent: [ BaseC5ContrabandUnredeemable, ClothingMaskGasSwat ]
   id: ClothingMaskGasSheriff
   name: NFSD sheriff gas mask
   description: A gas mask worthy of a sheriff.

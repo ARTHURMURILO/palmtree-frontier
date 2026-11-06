@@ -8,6 +8,9 @@
   name: Automag
   description: A long-barreled .44 Magnum semi-automatic handgun.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: []
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/Automag.rsi
   - type: Clothing
@@ -30,6 +33,9 @@
   name: M93R
   description: An uncommon model of the M9 pistol that's capable of burst fire. It has a built in foregrip allowing for incredibly accurate shots.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: []
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/M93R.rsi
   - type: Clothing
@@ -55,6 +61,9 @@
   name: M9FS
   description: One of the more common 9mm pistols, the Beretta is popular due to its reliability, 15 round magazine and good looks.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: []
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/M9FS.rsi
   - type: Clothing
@@ -77,6 +86,9 @@
   name: HiPower
   description: A mass produced Pre-Fall Browning Hi-power 9mm pistol.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: []
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/HiPower.rsi
   - type: Clothing
@@ -99,6 +111,9 @@
   name: M1911
   description: A classic .45 handgun with a small magazine capacity.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: []
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/M1911.rsi
   - type: Clothing
@@ -121,6 +136,9 @@
   name: Makarov
   description: An easy to conceal Makarov pistol chambered in 9mm. Compact, easy to use, and stylish.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: []
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/Makarov.rsi
   - type: Clothing
@@ -143,6 +161,9 @@
   name: Skorpion
   description: A Czech machine pistol developed in the 60s.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: []
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/Skorpion.rsi
   - type: Clothing

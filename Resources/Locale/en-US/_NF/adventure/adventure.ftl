@@ -29,10 +29,9 @@ currency = Space roubles
 
 shipyard-rules-default1 =
     Thank you for your interest in the New Frontier Sheriff's Department.
-    By purchasing a Security vessel, you agree to enforce Space Law
-    as found at https://frontierstation.wiki.gg/wiki/Space_Law
+    By purchasing a Security vessel, you agree to enforce the Frontier Sector Code.
 shipyard-rules-default2 =
-    Any actions performed by you or you crew that violate Space Law
+    Any actions performed by you or you crew that violate the Frontier Sector Code
     can and will result in administrative action.
     Thank you for choosing the New Frontier Sheriff's Department.
 

@@ -10,6 +10,9 @@
   description: |-
     A heavy, high-caliber semi-automatic pistol. Takes .50 AE, .44 Magnum or .357 Magnum magazines.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: []
   - type: Sprite
     sprite: _PS/Objects/Weapons/Guns/Pistols/desert_eagle.rsi
   - type: Clothing
