@@ -1,0 +1,325 @@
+using System.Numerics;
+using Content.Server.Atmos.Piping.Components;
+using Content.Server.NodeContainer.Nodes;
+using Content.Server.Power.Components;
+using Content.Shared._PS.Atmos;
+using Content.Shared._PS.Atmos.Components;
+using Content.Shared.Atmos;
+using Content.Shared.NodeContainer;
+using Robust.Shared.GameObjects;
+using Robust.Shared.Map;
+using Robust.Shared.Prototypes;
+
+namespace Content.IntegrationTests.Tests._PS.Atmos;
+
+/// <summary>
+/// Palmtree: behaviour tests for the temperature devices ported from /tg/station.
+/// </summary>
+/// <remarks>
+/// The tests build a tiny two-pipeline setup - a pipe, a device and a second pipe - seed the two
+/// mixtures by hand and then raise <see cref="AtmosDeviceUpdateEvent"/> directly, so the device
+/// logic is exercised without waiting for the atmos ticker.
+/// </remarks>
+[TestFixture]
+public sealed class TemperatureDevicesTest
+{
+    private static readonly EntProtoId PipeProto = "GasPipeStraight";
+
+    [Test]
+    public async Task TemperatureGateOnlyOpensBelowThreshold()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+
+        var server = pair.Server;
+        var entMan = server.EntMan;
+        var testMap = await pair.CreateTestMap();
+
+        var coords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
+
+        EntityUid device = default;
+        PipeNode inlet = default!;
+        PipeNode outlet = default!;
+        GasMixture inletAir = default!;
+        GasMixture outletAir = default!;
+
+        await server.WaitPost(() =>
+        {
+            // The device's inlet faces north and its outlet faces south, so the north pipe feeds the
+            // inlet and the south pipe is the outlet.
+            var southPipe = entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, -1f)));
+            device = entMan.SpawnEntity("GasTemperatureGate", coords);
+            var northPipe = entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, 1f)));
+
+            Assert.That(southPipe, Is.Not.EqualTo(EntityUid.Invalid));
+            Assert.That(northPipe, Is.Not.EqualTo(EntityUid.Invalid));
+        });
+
+        await pair.RunTicksSync(5);
+
+        await server.WaitAssertion(() =>
+        {
+            var gate = entMan.GetComponent<GasTemperatureGateComponent>(device);
+            gate.Enabled = true;
+            gate.TargetTemperature = 273.15f;
+
+            // The gate only runs when powered.
+            entMan.GetComponent<ApcPowerReceiverComponent>(device).Powered = true;
+
+            (inlet, outlet) = GetNodes(entMan, device);
+            inletAir = inlet.Air;
+            outletAir = outlet.Air;
+
+            inletAir.SetMoles(Gas.Oxygen, 100f);
+            inletAir.Temperature = 200f;
+            outletAir.SetMoles(Gas.Oxygen, 10f);
+            outletAir.Temperature = 200f;
+        });
+
+        // Cold inlet: the condition is met, gas should move.
+        var inletMolesBefore = 0f;
+        var outletMolesBefore = 0f;
+
+        await server.WaitAssertion(() =>
+        {
+            inletMolesBefore = inletAir.TotalMoles;
+            outletMolesBefore = outletAir.TotalMoles;
+            Raise(entMan, device);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(inletAir.TotalMoles, Is.LessThan(inletMolesBefore), "Gas should leave the inlet.");
+            Assert.That(outletAir.TotalMoles, Is.GreaterThan(outletMolesBefore), "Gas should reach the outlet.");
+        });
+
+        // Hot inlet: the condition is no longer met, the gate must stay shut.
+        await server.WaitAssertion(() =>
+        {
+            inletAir.Temperature = 400f;
+            inletMolesBefore = inletAir.TotalMoles;
+            outletMolesBefore = outletAir.TotalMoles;
+            Raise(entMan, device);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(inletAir.TotalMoles, Is.EqualTo(inletMolesBefore).Within(0.01f), "Gas must not leave the inlet.");
+            Assert.That(outletAir.TotalMoles, Is.EqualTo(outletMolesBefore).Within(0.01f), "Gas must not reach the outlet.");
+        });
+
+        // Inverting the gate flips the condition.
+        await server.WaitAssertion(() =>
+        {
+            entMan.GetComponent<GasTemperatureGateComponent>(device).Inverted = true;
+            inletMolesBefore = inletAir.TotalMoles;
+            Raise(entMan, device);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(inletAir.TotalMoles, Is.LessThan(inletMolesBefore), "An inverted gate should open on hot gas.");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task TemperaturePumpMovesHeatButNotGas()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+
+        var server = pair.Server;
+        var entMan = server.EntMan;
+        var testMap = await pair.CreateTestMap();
+
+        var coords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
+
+        EntityUid device = default;
+        GasMixture inletAir = default!;
+        GasMixture outletAir = default!;
+
+        await server.WaitPost(() =>
+        {
+            entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, -1f)));
+            device = entMan.SpawnEntity("GasTemperaturePump", coords);
+            entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, 1f)));
+        });
+
+        await pair.RunTicksSync(5);
+
+        await server.WaitAssertion(() =>
+        {
+            var pump = entMan.GetComponent<GasTemperaturePumpComponent>(device);
+            pump.Enabled = true;
+            pump.HeatTransferRate = 100f;
+            entMan.GetComponent<ApcPowerReceiverComponent>(device).Powered = true;
+
+            var (inlet, outlet) = GetNodes(entMan, device);
+            inletAir = inlet.Air;
+            outletAir = outlet.Air;
+
+            // Same gas and same amount on both sides, so equal temperature deltas mean equal energy.
+            inletAir.SetMoles(Gas.Oxygen, 100f);
+            inletAir.Temperature = 400f;
+            outletAir.SetMoles(Gas.Oxygen, 100f);
+            outletAir.Temperature = 200f;
+        });
+
+        var inletMoles = 0f;
+        var outletMoles = 0f;
+
+        await server.WaitAssertion(() =>
+        {
+            inletMoles = inletAir.TotalMoles;
+            outletMoles = outletAir.TotalMoles;
+            Raise(entMan, device);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(inletAir.Temperature, Is.LessThan(400f), "The inlet should be cooled.");
+            Assert.That(outletAir.Temperature, Is.GreaterThan(200f), "The outlet should be heated.");
+
+            // The pump moves heat only.
+            Assert.That(inletAir.TotalMoles, Is.EqualTo(inletMoles).Within(0.001f));
+            Assert.That(outletAir.TotalMoles, Is.EqualTo(outletMoles).Within(0.001f));
+
+            // Energy is conserved: whatever the inlet lost, the outlet gained.
+            Assert.That(inletAir.Temperature + outletAir.Temperature, Is.EqualTo(600f).Within(0.5f));
+        });
+
+        // Cold inlet: heat must not travel backwards.
+        await server.WaitAssertion(() =>
+        {
+            inletAir.Temperature = 150f;
+            outletAir.Temperature = 300f;
+            Raise(entMan, device);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(inletAir.Temperature, Is.EqualTo(150f).Within(0.01f), "The pump must not cool the inlet below the outlet.");
+            Assert.That(outletAir.Temperature, Is.EqualTo(300f).Within(0.01f));
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task HeatExchangerEqualisesWithoutMovingGas()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+
+        var server = pair.Server;
+        var entMan = server.EntMan;
+        var testMap = await pair.CreateTestMap();
+
+        var coords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
+
+        EntityUid device = default;
+        GasMixture inletAir = default!;
+        GasMixture outletAir = default!;
+
+        await server.WaitPost(() =>
+        {
+            entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, -1f)));
+            device = entMan.SpawnEntity("GasHeatExchanger", coords);
+            entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, 1f)));
+        });
+
+        await pair.RunTicksSync(5);
+
+        await server.WaitAssertion(() =>
+        {
+            var (inlet, outlet) = GetNodes(entMan, device);
+            inletAir = inlet.Air;
+            outletAir = outlet.Air;
+
+            inletAir.SetMoles(Gas.Oxygen, 100f);
+            inletAir.Temperature = 500f;
+            outletAir.SetMoles(Gas.Oxygen, 100f);
+            outletAir.Temperature = 300f;
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            Raise(entMan, device);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(inletAir.Temperature, Is.EqualTo(400f).Within(1f), "The hot side should cool to the equilibrium.");
+            Assert.That(outletAir.Temperature, Is.EqualTo(400f).Within(1f), "The cold side should warm to the equilibrium.");
+
+            // Equal moles and equal heat capacity, so nothing should have moved.
+            Assert.That(inletAir.TotalMoles, Is.EqualTo(100f).Within(0.01f));
+            Assert.That(outletAir.TotalMoles, Is.EqualTo(100f).Within(0.01f));
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task AtmosMeterReadsItsPipeline()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+
+        var server = pair.Server;
+        var entMan = server.EntMan;
+        var testMap = await pair.CreateTestMap();
+
+        var coords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
+
+        EntityUid device = default;
+        PipeNode monitored = default!;
+
+        await server.WaitPost(() =>
+        {
+            entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, -1f)));
+            entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, 1f)));
+            device = entMan.SpawnEntity("GasMeter", coords);
+        });
+
+        await pair.RunTicksSync(5);
+
+        await server.WaitAssertion(() =>
+        {
+            var container = entMan.GetComponent<NodeContainerComponent>(device);
+            monitored = (PipeNode) container.Nodes["monitored"];
+
+            // Roughly two atmospheres of warm gas.
+            monitored.Air.SetMoles(Gas.Nitrogen, 200f);
+            monitored.Air.Temperature = 350f;
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            Raise(entMan, device);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            var meter = entMan.GetComponent<GasMeterComponent>(device);
+
+            Assert.That(meter.Pressure, Is.GreaterThan(0f), "The meter should read a pressure.");
+            Assert.That(meter.Temperature, Is.EqualTo(350f).Within(5f), "The meter should read the temperature.");
+            Assert.That(meter.PressureLevel, Is.Not.EqualTo(GasMeterPressureLevel.Zero));
+            Assert.That(meter.TemperatureLevel, Is.EqualTo(GasMeterTemperatureLevel.Warm));
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    private static (PipeNode inlet, PipeNode outlet) GetNodes(IEntityManager entMan, EntityUid device)
+    {
+        var container = entMan.GetComponent<NodeContainerComponent>(device);
+
+        return ((PipeNode) container.Nodes["inlet"], (PipeNode) container.Nodes["outlet"]);
+    }
+
+    private static void Raise(IEntityManager entMan, EntityUid device)
+    {
+        var ev = new AtmosDeviceUpdateEvent(0.5f, null, null);
+        entMan.EventBus.RaiseLocalEvent(device, ref ev);
+    }
+}
