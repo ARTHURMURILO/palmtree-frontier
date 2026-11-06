@@ -55,20 +55,22 @@ public sealed class GasMeterSystem : SharedGasMeterSystem
 
     private void OnAtmosUpdate(Entity<GasMeterComponent> ent, ref AtmosDeviceUpdateEvent args)
     {
-        if (!_nodeContainer.TryGetNode(ent.Owner, ent.Comp.NodeName, out PipeNode? node))
-            return;
+        var pressure = 0f;
+        var temperature = 0f;
 
-        var air = node.Air;
+        // An unconnected pipe node reports the shared space mixture. There is nothing to measure, and
+        // the meter must not keep showing the readings of the pipeline it used to be attached to.
+        if (_nodeContainer.TryGetNode(ent.Owner, ent.Comp.NodeName, out PipeNode? node) && !node.Air.Immutable)
+        {
+            pressure = node.Air.Pressure;
+            temperature = node.Air.Temperature;
+        }
 
-        // An unconnected pipe node reports the shared space mixture; there is nothing to measure.
-        if (air.Immutable)
-            return;
+        ent.Comp.Pressure = pressure;
+        ent.Comp.Temperature = temperature;
 
-        ent.Comp.Pressure = air.Pressure;
-        ent.Comp.Temperature = air.Temperature;
-
-        var pressureLevel = GetPressureLevel(air.Pressure);
-        var temperatureLevel = GetTemperatureLevel(air.Temperature);
+        var pressureLevel = GetPressureLevel(pressure);
+        var temperatureLevel = GetTemperatureLevel(temperature);
 
         if (pressureLevel == ent.Comp.PressureLevel && temperatureLevel == ent.Comp.TemperatureLevel)
             return;

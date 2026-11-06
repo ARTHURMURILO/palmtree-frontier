@@ -46,7 +46,7 @@ public sealed partial class GasTemperaturePumpComponent : Component
     /// <summary>
     /// Highest value <see cref="HeatTransferRate"/> can be set to.
     /// </summary>
-    [DataField]
+    [DataField, AutoNetworkedField]
     public float MaxHeatTransferRate = 100f;
 
     /// <summary>
