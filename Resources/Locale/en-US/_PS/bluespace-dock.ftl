@@ -33,6 +33,7 @@ bluespace-dock-error-busy = That ship is already being processed.
 bluespace-dock-error-not-docked = The ship must be docked to this station.
 bluespace-dock-error-organic-aboard = All crew must disembark before storing the ship.
 bluespace-dock-error-dangerous-engine-aboard = A supermatter, singularity or tesla aboard must be removed before storing the ship.
+bluespace-dock-error-live-reactor-aboard = A reactor aboard is still running or hot. Shut it down and let it cool below 50 °C before storing the ship.
 bluespace-dock-error-not-civilian = Only civilian, scrap and expedition ships can be stored.
 bluespace-dock-error-insufficient-funds = You cannot afford that.
 bluespace-dock-error-bank-failed = Your bank account could not be reached.

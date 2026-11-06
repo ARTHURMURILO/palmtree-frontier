@@ -12,10 +12,9 @@ using Content.Shared._NSV13.Reactor;
 using Content.Shared.Atmos;
 using Content.Shared.Construction.Components;
 using Content.Shared.Construction.Prototypes;
-using Content.Shared._Goobstation.Supermatter.Components;
+using Content.Shared._EE.Supermatter.Components;
 using Content.Shared.Movement.Pulling.Components;
 using Content.Shared.NodeContainer;
-using Content.Shared.Movement.Pulling.Components;
 using Content.Shared.NodeContainer.NodeGroups;
 using Content.Shared.Maps;
 using Content.Shared.Physics;
@@ -183,9 +182,15 @@ public sealed class ReactorHardwareTest
             var fullProto = protoMan.Index<EntityPrototype>("Supermatter");
             Assert.That(fullProto.TryGetComponent<SupermatterComponent>(out var full), Is.True);
 
-            Assert.That(small.DelaminationPoint, Is.EqualTo(full!.DelaminationPoint),
-                "the shard is a mounting option, not a weaker engine");
-            Assert.That(small.DelamTimer, Is.EqualTo(full.DelamTimer), "the shard uses the same fuse length");
+            // The EE supermatter has no separate delamination threshold. What the shard shares with
+            // the full crystal is the failure timing; what it deliberately does not share is the
+            // sample size and the blast (the SS13 shard is a smaller, weaker version of the same
+            // engine), so pin both facts rather than claiming the two are identical.
+            Assert.That(small.DelamTimer, Is.EqualTo(full!.DelamTimer), "the shard uses the same fuse length");
+            Assert.That(small.GasEfficiency, Is.LessThan(full.GasEfficiency),
+                "the shard samples less gas than the full crystal");
+            Assert.That(small.DelamRadiusMultiplier, Is.LessThan(full.DelamRadiusMultiplier),
+                "the shard's delamination blast is smaller than the full crystal's");
 
             Assert.That(protoMan.HasIndex<EntityPrototype>("SupermatterSmallFlatpack"), Is.True,
                 "the shard needs a flatpack to be sellable");

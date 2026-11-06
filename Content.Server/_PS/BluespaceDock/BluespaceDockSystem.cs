@@ -28,6 +28,8 @@ using Content.Server._PS.ShipCombat;
 using Content.Server.Access.Systems;
 using Content.Server.Administration.Logs;
 using Content.Server.Popups;
+using Content.Server._NSV13.Reactor.Components;
+using Content.Server._NSV13.Reactor.Systems;
 using Content.Server.Radio.EntitySystems;
 using Content.Server.Preferences.Managers;
 using Content.Server.Power.Components;
@@ -162,6 +164,11 @@ public sealed class BluespaceDockSystem : EntitySystem
     [Dependency] private readonly ThrusterSystem _thruster = default!;
     [Dependency] private readonly GameTicker _gameTicker = default!;
     [Dependency] private readonly UserInterfaceSystem _ui = default!;
+
+    // Palmtree: the ship reactors, so the dock can refuse to store a live core and (for the admin
+    // force-dock path) safe one first. See FindLiveReactor / SafeReactors.
+    [Dependency] private readonly RbmkReactorSystem _rbmk = default!;
+    [Dependency] private readonly StormdriveSystem _stormdrive = default!;
 
     /// <summary>Name of the registry file. It lives next to the ship files, so anything that walks
     /// that folder has to skip it.</summary>
@@ -678,6 +685,15 @@ public sealed class BluespaceDockSystem : EntitySystem
         if (HasDangerousShipEntities(shuttleUid))
         {
             error = "bluespace-dock-error-dangerous-engine-aboard";
+            return false;
+        }
+
+        // Palmtree: a running or hot reactor may not be stored either. Its state is serialized but
+        // the gas behind it is not, so it would come back live and starve. The admin force-dock
+        // path safes the cores first (`forcedock --scram`), after which this check passes.
+        if (FindLiveReactor(shuttleUid) is not null)
+        {
+            error = "bluespace-dock-error-live-reactor-aboard";
             return false;
         }
 
@@ -2713,6 +2729,11 @@ public sealed class BluespaceDockSystem : EntitySystem
         if (!allowDangerousEngines && HasDangerousShipEntities(shuttleUid))
             return "bluespace-dock-error-dangerous-engine-aboard";
 
+        // Palmtree: no live reactor leaves the dock. This is not skippable by the admin flags above:
+        // force-dock safes the cores first (`forcedock --scram`), it does not smuggle them out.
+        if (FindLiveReactor(shuttleUid) is not null)
+            return "bluespace-dock-error-live-reactor-aboard";
+
         if (!allowOrganics && FoundOrganics(shuttleUid) is not null)
             return "bluespace-dock-error-organic-aboard";
 
@@ -3459,6 +3480,99 @@ public sealed class BluespaceDockSystem : EntitySystem
         // The sliver and the small discharge balls do not carry the full engine components.
         var prototype = MetaData(uid).EntityPrototype?.ID;
         return prototype is "SupermatterSliver" or "TeslaMiniEnergyBall" or "SupermatterZapBall";
+    }
+
+    /// <summary>Temperature below which a reactor counts as cold enough to store, in Celsius.</summary>
+    private const float ReactorStorageMaxTemperature = 50f;
+
+    /// <summary>
+    /// Palmtree: the first reactor on the grid that is not safe to store, or null when they all are.
+    /// </summary>
+    /// <remarks>
+    /// A reactor's running state and temperature are serialized, but the gas behind it is not: a
+    /// live core comes back live with an empty pipe network, starves, starts eating its own vessel
+    /// integrity, and can melt down with nobody watching. A slagged RBMK is deliberately allowed -
+    /// a wreck is legitimate cargo.
+    /// </remarks>
+    public EntityUid? FindLiveReactor(EntityUid gridUid)
+    {
+        var entities = new HashSet<EntityUid>();
+        GetEntitiesOnGrid(gridUid, entities);
+
+        foreach (var uid in entities)
+        {
+            if (IsLiveReactor(uid))
+                return uid;
+        }
+
+        return null;
+    }
+
+    private bool IsLiveReactor(EntityUid uid)
+    {
+        if (TryComp<RbmkReactorComponent>(uid, out var rbmk))
+        {
+            // A slagged core is a wreck, not a running engine.
+            if (rbmk.Slagged)
+                return false;
+
+            return rbmk.IsRunning || rbmk.Temperature >= ReactorStorageMaxTemperature || rbmk.AlertActive;
+        }
+
+        if (TryComp<StormdriveComponent>(uid, out var drive))
+        {
+            if (drive.State is not (StormdriveState.Idle or StormdriveState.Maintenance))
+                return true;
+
+            return drive.Heat >= ReactorStorageMaxTemperature
+                   || drive.ReactorEndTimes
+                   || drive.WarningState != StormdriveWarning.None;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Palmtree: shut every reactor on the grid down and bring it to storage temperature.
+    /// </summary>
+    /// <remarks>
+    /// Used by <c>forcedock --scram</c>. The ordinary store path refuses instead of doing this
+    /// (<see cref="FindLiveReactor"/>), so a live core is never silently safed behind the crew's
+    /// back: an admin has to ask for it, and the command logs it.
+    /// </remarks>
+    /// <returns>How many reactors were safed.</returns>
+    public int SafeReactors(EntityUid gridUid)
+    {
+        var entities = new HashSet<EntityUid>();
+        GetEntitiesOnGrid(gridUid, entities);
+
+        var safed = 0;
+        foreach (var uid in entities)
+        {
+            if (TryComp<RbmkReactorComponent>(uid, out var rbmk))
+            {
+                if (rbmk.IsRunning || rbmk.Temperature > 0f)
+                    _rbmk.ShutDown(uid, rbmk);
+
+                rbmk.Temperature = Math.Min(rbmk.Temperature, 20f);
+                rbmk.AlertActive = false;
+                safed++;
+                continue;
+            }
+
+            if (TryComp<StormdriveComponent>(uid, out var drive))
+            {
+                _stormdrive.Deactivate(uid, drive);
+
+                drive.Heat = Math.Min(drive.Heat, 20f);
+                drive.ReactorEndTimes = false;
+                drive.MeltdownAt = default;
+                drive.WarningState = StormdriveWarning.None;
+                safed++;
+            }
+        }
+
+        return safed;
     }
 
     #endregion Ship state helpers

@@ -22,12 +22,21 @@ public sealed class ForceDockCommand : IConsoleCommand
     [Dependency] private readonly IEntityManager _entMan = default!;
     [Dependency] private readonly ISharedPlayerManager _player = default!;
 
+    /// <summary>Safes every reactor on the ship before the store checks run.</summary>
+    private const string ScramFlag = "--scram";
+
     public string Command => "forcedock";
     public string Description => "Stores a player's ship in the bluespace dock without requiring it to be docked.";
-    public string Help => $"{Command} <ship name | grid uid> [owner]";
+    public string Help => $"{Command} <ship name | grid uid> [owner] [--scram]";
 
     public void Execute(IConsoleShell shell, string argStr, string[] args)
     {
+        // Palmtree: `--scram` safes every reactor on the ship before the store checks run. Without
+        // it a live core is refused exactly like the console refuses it - the flag is the admin's
+        // explicit opt-in, not a silent bypass.
+        var scram = args.Contains(ScramFlag, StringComparer.OrdinalIgnoreCase);
+        args = args.Where(arg => !string.Equals(arg, ScramFlag, StringComparison.OrdinalIgnoreCase)).ToArray();
+
         if (args.Length is < 1 or > 2)
         {
             shell.WriteError($"Usage: {Help}");
@@ -96,6 +105,11 @@ public sealed class ForceDockCommand : IConsoleCommand
             }
         }
 
+        // Palmtree: the reactor check is not bypassable by force-dock. `--scram` safes the cores
+        // first and then the ordinary check passes; without it the command refuses, so an admin
+        // cannot smuggle a live core into storage by accident.
+        var safed = scram ? dock.SafeReactors(ship.Grid) : 0;
+
         // Every store check except the docking, ship-category, dangerous-engine and "nothing living aboard" rules:
         // force-dock kicks the occupants out and purges dangerous engine entities instead of refusing the ship.
         if (dock.FindStoreBlocker(ship.Grid, requireDocked: false, stationGrid: null, allowOrganics: true,
@@ -121,10 +135,14 @@ public sealed class ForceDockCommand : IConsoleCommand
             return;
         }
 
+        var scramNote = safed > 0 ? $", scarming {safed} live reactor(s) first" : string.Empty;
         _adminLog.Add(LogType.Action, LogImpact.High,
-            $"{shell.Player?.Name ?? "Console"} force-docked ship {ship.Name} into the bluespace dock as {ownerName} ({ownerUserId})");
+            $"{shell.Player?.Name ?? "Console"} force-docked ship {ship.Name} into the bluespace dock as {ownerName} ({ownerUserId}){scramNote}");
 
         shell.WriteLine($"Stored {ship.Name} for {ownerName} in the bluespace dock. No tax was charged.");
+
+        if (safed > 0)
+            shell.WriteLine($"Safed {safed} reactor(s) on {ship.Name} before storing it.");
 
         if (evacuated > 0)
             shell.WriteLine($"Moved {evacuated} living thing(s) (or ghosts/corpses) off {ship.Name} before storing it.");

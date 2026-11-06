@@ -269,7 +269,7 @@ public sealed class RbmkReactorSystem : EntitySystem
         reactor.GasAbsorptionEffectiveness = reactor.GasAbsorptionConstant;
 
         // ---------------- MODERATOR ----------------
-        if (moderatorAir.TotalMoles >= reactor.MinimumCoolantLevel)
+        if (moderatorAir.TotalMoles >= reactor.MinimumModeratorMoles)
         {
             var moderatorMoles = moderatorAir.TotalMoles;
 
@@ -281,7 +281,7 @@ public sealed class RbmkReactorSystem : EntitySystem
 
             var oxygenModifier = Math.Max(moderatorAir.GetMoles(Gas.Oxygen) / moderatorMoles * 10f, 1f);
 
-            if (totalFuelMoles >= reactor.MinimumCoolantLevel)
+            if (totalFuelMoles >= reactor.MinimumModeratorFuelMoles)
             {
                 var fuelPowerFactor = Math.Max(totalFuelMoles / moderatorMoles * 10f, 1f);
 
@@ -551,7 +551,7 @@ public sealed class RbmkReactorSystem : EntitySystem
 
         // Only top the gate up to the floor: the moderator block destroys whatever is left, so
         // refilling from empty every tick is the same as a pump with a fixed flow rate.
-        if (moderator.TotalMoles < reactor.MinimumCoolantLevel)
+        if (moderator.TotalMoles < reactor.MinimumModeratorMoles)
         {
             moderator.AdjustMoles(Gas.Plasma, reactor.PrechargeModeratorMoles);
             moderator.Temperature = Atmospherics.T20C;
@@ -883,7 +883,12 @@ public sealed class RbmkReactorSystem : EntitySystem
     ///     gone cold and unfuelled, so it deliberately does not touch the visuals itself - the
     ///     caller updates them at the end of the same tick.
     /// </summary>
-    private void ShutDown(EntityUid uid, RbmkReactorComponent reactor)
+    /// <remarks>
+    ///     Palmtree: public so the bluespace dock can safe a live core before storing a ship
+    ///     (see <c>forcedock --scram</c>). It is the reactor's own deactivate path, so a safed
+    ///     reactor is exactly what a normal shutdown produces.
+    /// </remarks>
+    public void ShutDown(EntityUid uid, RbmkReactorComponent reactor)
     {
         reactor.IsRunning = false;
         reactor.K = 0f;

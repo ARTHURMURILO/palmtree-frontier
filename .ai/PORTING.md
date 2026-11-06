@@ -1055,3 +1055,59 @@ prototypes are under `Resources/Prototypes/_CS/Shipyard/biodome*.yml`, the forma
   only on the pre-existing `Bocadillo` and `Dragonfly` listings (unrelated to this port); every
   Biodome price (105000, Sleepover 115000) is well above the 1.05× appraise minimum (appraise
   ~43196–48110).
+
+## 30. 2026-11 Ship engines (supermatter, RBMK, stormdrive) + dock reactor gate
+
+Three engine systems arrived on the `engines-*` branches and were merged into `experimental`; this
+section is the `.ai` record of them, which the branches themselves did not write.
+
+| Engine | Origin | Code | Prototypes |
+|---|---|---|---|
+| Supermatter crystal / shard / sliver | Einstein Engines (via Coyote), `/tg/` gas model | `Content.Server/_EE/Supermatter/`, `_EE/Systems/SupermatterSystem*.cs`, `Content.Shared/_EE/Supermatter/` | `Resources/Prototypes/_PS/Supermatter/` (shard, sliver, cargo, steal target) |
+| RBMK | BeeStation/NSV13 `rbmk.dm` | `Content.Server/_NSV13/Reactor/` | `Resources/Prototypes/_NSV13/Entities/Structures/Power/rbmk.yml` |
+| Stormdrive | BeeStation/NSV13 `stormdrive.dm` | `Content.Server/_NSV13/Reactor/` | `Resources/Prototypes/_NSV13/Entities/Structures/Power/stormdrive.yml` |
+
+Shared ship-scoped audio for both reactors: `EngineAudioSystem.PlayOnGrid` (Shortband-signed alarms,
+same-grid recipients only). The `/tg/` reactor gases (constricted plasma, BZ, pluoxium, nitryl,
+hyper-noblium) are **commented out** in both systems and in the tests; only vanilla plasma, tritium,
+oxygen, nitrogen, CO2, water vapour and nucleium are live on this branch. `nucleium` is the RBMK's
+own waste byproduct.
+
+### 30.1 RBMK moderator floor split (2026-11-06)
+
+The moderator gate reused `MinimumCoolantLevel` (5 mol) for two separate checks: **total** moles in
+the gate, then **fuel-weighted** moles (`plasma + 10 × tritium`). The gate is emptied wholesale
+(`moderatorAir.Clear()`) on every tick once the *total* check passes, which made the fuel check the
+real floor (a 2:1 plasma/oxygen mix needs ~7.5 mol to clear 5 mol of fuel). A ship feeding the gate
+from a low-rate source — a supermatter vent, a waste line — could never reach it, so the reactor made
+exactly 0 W instead of proportionally less, and the gas was destroyed anyway.
+
+- New `RbmkReactorComponent.MinimumModeratorMoles` and `MinimumModeratorFuelMoles` (default 5/5,
+  faithful). Both are read at the two gates and in `Recharge`'s precharge top-up.
+- The base `RbmkNuclearReactor` prototype sets `0.5` / `0.25`: power is linear in moderator moles, so
+  a small feed now makes a small, honest number of watts (≈278 kW per mole of a 66/34 plasma/oxygen
+  mix at operating temperature).
+- Keep the fuel floor below the total floor. A mix that passes the total check and fails the fuel
+  check loses the whole gate and still makes nothing.
+
+### 30.2 Bluespace Dock: no live reactor may be stored (2026-11-06)
+
+See `.ai/ideas/reactor-ship-persistence.md` (now marked implemented). `FindLiveReactor` refuses a
+running/hot RBMK or stormdrive (slagged RBMKs are allowed — a wreck is cargo), and
+`forcedock --scram` safes the cores first instead of bypassing the check. Pipe gas is not serialized,
+which is why a live core must never be stored: it would come back live and starve.
+
+### 30.3 Test-project repairs (2026-11-06)
+
+`Content.IntegrationTests` did not compile on `experimental` after the merges, which meant CI was red
+and no integration test could run. Fixed:
+
+- `Tests/_NSV13/ReactorHardwareTest.cs`: stale `Content.Shared._Goobstation.Supermatter.Components`
+  (supermatter is EE now), a duplicate `using`, and a `DelaminationPoint` assertion against a field
+  the EE component does not have (replaced with `DelamTimer` + `GasEfficiency`).
+- `Tests/_NSV13/ReactorConsolesTest.cs`: `Gas.ConstrictedPlasma` does not exist on this branch; the
+  stormdrive fuel assertion now measures `Gas.Plasma`, which is what the branch consumes.
+
+- **Validation**: `Content.Server` and `Content.IntegrationTests` build clean; `BluespaceDockReactorTest`
+  (2 tests) passes; the existing `ReactorHardwareTest` / `ReactorConsolesTest` / `BluespaceDock*`
+  suites pass.
