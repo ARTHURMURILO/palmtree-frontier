@@ -1,0 +1,54 @@
+﻿<controls:FancyWindow xmlns="https://spacestation14.io"
+                      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                      xmlns:controls="clr-namespace:Content.Client.UserInterface.Controls"
+                      SetSize="360 220"
+                      MinSize="360 220"
+                      Title="{Loc gas-temperature-pump-ui-title}"
+                      Resizable="False">
+
+    <BoxContainer Orientation="Vertical" Margin="0 8 0 0" SeparationOverride="6">
+
+        <BoxContainer Orientation="Horizontal" Margin="8 0 8 0">
+            <Label Text="{Loc gas-temperature-pump-ui-status}" Margin="0 0 6 0" />
+            <Button Name="ToggleStatusButton" MinWidth="70" />
+        </BoxContainer>
+
+        <BoxContainer Orientation="Horizontal" HorizontalExpand="True" Margin="8 0 8 0">
+            <BoxContainer Orientation="Vertical" HorizontalExpand="True" HorizontalAlignment="Left">
+                <Label Text="{Loc gas-temperature-pump-ui-inlet}" StyleClasses="LabelKeyText" />
+                <BoxContainer Orientation="Horizontal">
+                    <Label Name="InletTemperatureLabel" Text="N/A" Margin="0 0 4 0" />
+                    <Label Text="{Loc gas-temperature-pump-ui-temperature-unit}" />
+                </BoxContainer>
+            </BoxContainer>
+
+            <SpriteView Name="EntityView" SetSize="64 64" Scale="2 2" OverrideDirection="North" Margin="6 0" />
+
+            <BoxContainer Orientation="Vertical" HorizontalExpand="True" HorizontalAlignment="Right">
+                <Label Text="{Loc gas-temperature-pump-ui-outlet}" StyleClasses="LabelKeyText" HorizontalAlignment="Right" />
+                <BoxContainer Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Label Name="OutletTemperatureLabel" Text="N/A" Margin="0 0 4 0" />
+                    <Label Text="{Loc gas-temperature-pump-ui-temperature-unit}" />
+                </BoxContainer>
+            </BoxContainer>
+        </BoxContainer>
+
+        <controls:StripeBack Name="SetRateStripeBack" HorizontalExpand="True">
+            <BoxContainer Orientation="Vertical" Margin="10 8 10 8" SeparationOverride="6">
+                <BoxContainer Orientation="Horizontal" HorizontalExpand="True">
+                    <Label Text="{Loc gas-temperature-pump-ui-rate}" Margin="0 0 6 0" />
+                    <FloatSpinBox Name="RateInput" HorizontalExpand="True" MinSize="70 0" />
+                    <Button Name="SetRateButton" Text="{Loc gas-temperature-pump-ui-set}" Margin="6 0 0 0" Disabled="True" />
+                    <Button Name="SetMaxRateButton" Text="{Loc gas-temperature-pump-ui-set-max}" Margin="6 0 0 0" />
+                </BoxContainer>
+
+                <BoxContainer Orientation="Horizontal" HorizontalExpand="True">
+                    <Label Name="TransferredHeatLabel" Text="N/A" HorizontalExpand="True" />
+                    <Label Text="{Loc gas-temperature-pump-ui-heat-unit}" HorizontalAlignment="Right" />
+                </BoxContainer>
+            </BoxContainer>
+        </controls:StripeBack>
+
+    </BoxContainer>
+
+</controls:FancyWindow>
