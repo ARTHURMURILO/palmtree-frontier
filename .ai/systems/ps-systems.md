@@ -81,10 +81,24 @@ gloves' examine text mentions the attached ring.
   Phaser Lily (purple-pink beam, double damage, higher-pitched shot), medical gun.
   All five are admin-spawn only and are declared with `StaticPrice: 0` so spawning them cannot
   inject money into the economy.
+- `.../Guns/Battery/nod_laser_weapons.yml` — Command & Conquer inspired set (2026-11): Red Laser
+  Rifle (80 heat, 1 shot/s), Umagon Sniper Rifle (200 piercing, 3 shots/s, silenced) and GS Railgun
+  (50 cellular + 500 structural + 150 heat + 100 piercing, 1 shot/2 s). All are hitscan,
+  Class 5 contraband, admin-spawn only and
+  `StaticPrice: 0`; the GS Railgun uses `bigggun1.ogg`.
+- `.../Guns/Turrets/nod_laser_turret.yml` — `Nod laser turret` in Friendly (NanoTrasen) and Hostile
+  (`HostileUniversally`) variants: 20 heat, 1 shot/s, red `_PS` beam, reusing the NF laser turret
+  sprite and `lastur1.ogg`. Class 5 contraband. No packed/deployable or construction version yet.
+- `_PS/ShipCombat/weapons.yml` — `ShipTurretLaserNod` (`Nod ship laser turret`): red `_PS` beam,
+  30 heat + 10 structural, 1 shot/s. Class 5 contraband. Weaker per hit than `ShipTurretPhaser` but much faster.
 - `.../Guns/Launchers/launchers.yml` — China Lake flashbang variants.
 - `.../Guns/Projectiles/projectiles.yml`, `.../Guns/Ammunition/explosives.yml`,
   `.../Guns/Ammunition/Projectiles/hitscan.yml` (defines `PSXrayLaserCaspian`, `PhaserLethal`,
-  `HealBeam`), `.../Throwable/grenades.yml`.
+  `HealBeam` and the Nod hitscans), `.../Throwable/grenades.yml`.
+- `Resources/Textures/_PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi` — complete all-grayscale
+  port of the upstream `projectiles.rsi`, tinted per hitscan with the `color` field. Nod lasers use
+  `u_laser`; the GS railgun uses `xray` in blue-cyan; the Umagon uses a near-transparent `xray`
+  tracer. `beam.rsi` was retired in favour of this complete set.
 - `SoundCollections/weapons.yml` + `Resources/Audio/_PS/Weapons/*`, `Resources/Audio/_PS/Effects/Grenades/*`.
 
 Adaptations made when porting (old 2023 prototypes):
