@@ -1,0 +1,63 @@
+﻿<controls:FancyWindow xmlns="https://spacestation14.io"
+                      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                      xmlns:controls="clr-namespace:Content.Client.UserInterface.Controls"
+                      SetSize="360 240"
+                      MinSize="360 240"
+                      Title="{Loc gas-temperature-gate-ui-title}"
+                      Resizable="False">
+
+    <BoxContainer Orientation="Vertical" Margin="0 8 0 0" SeparationOverride="6">
+
+        <BoxContainer Orientation="Horizontal" Margin="8 0 8 0">
+            <Label Text="{Loc gas-temperature-gate-ui-status}" Margin="0 0 6 0" />
+            <Button Name="ToggleStatusButton" MinWidth="70" />
+        </BoxContainer>
+
+        <BoxContainer Orientation="Horizontal" HorizontalExpand="True" Margin="8 0 8 0">
+            <BoxContainer Orientation="Vertical" HorizontalExpand="True" HorizontalAlignment="Left">
+                <Label Text="{Loc gas-temperature-gate-ui-inlet}" StyleClasses="LabelKeyText" />
+                <BoxContainer Orientation="Horizontal">
+                    <Label Name="InletTemperatureLabel" Text="N/A" Margin="0 0 4 0" />
+                    <Label Text="{Loc gas-temperature-gate-ui-temperature-unit}" />
+                </BoxContainer>
+            </BoxContainer>
+
+            <SpriteView Name="EntityView" SetSize="64 64" Scale="2 2" OverrideDirection="North" Margin="6 0" />
+
+            <BoxContainer Orientation="Vertical" HorizontalExpand="True" HorizontalAlignment="Right">
+                <Label Text="{Loc gas-temperature-gate-ui-outlet}" StyleClasses="LabelKeyText" HorizontalAlignment="Right" />
+                <BoxContainer Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Label Name="OutletTemperatureLabel" Text="N/A" Margin="0 0 4 0" />
+                    <Label Text="{Loc gas-temperature-gate-ui-temperature-unit}" />
+                </BoxContainer>
+            </BoxContainer>
+        </BoxContainer>
+
+        <controls:StripeBack Name="SetTemperatureStripeBack" HorizontalExpand="True">
+            <BoxContainer Orientation="Vertical" Margin="10 8 10 8" SeparationOverride="6">
+                <BoxContainer Orientation="Horizontal" HorizontalExpand="True">
+                    <Label Text="{Loc gas-temperature-gate-ui-target}" Margin="0 0 6 0" />
+                    <FloatSpinBox Name="TemperatureInput" HorizontalExpand="True" MinSize="70 0" />
+                    <Button Name="SetTemperatureButton" Text="{Loc gas-temperature-gate-ui-set}" Margin="6 0 0 0" Disabled="True" />
+                    <Button Name="SetMaxTemperatureButton" Text="{Loc gas-temperature-gate-ui-set-max}" Margin="6 0 0 0" />
+                </BoxContainer>
+
+                <BoxContainer Orientation="Horizontal" HorizontalExpand="True">
+                    <Button Name="Subtract1000Button" Text="-1000" HorizontalExpand="True" Margin="0 0 2 0" StyleClasses="OpenBoth" />
+                    <Button Name="Subtract100Button" Text="-100" HorizontalExpand="True" Margin="0 0 2 0" StyleClasses="OpenBoth" />
+                    <Button Name="Subtract10Button" Text="-10" HorizontalExpand="True" Margin="0 0 2 0" StyleClasses="OpenBoth" />
+                    <Button Name="Add10Button" Text="+10" HorizontalExpand="True" Margin="0 0 2 0" StyleClasses="OpenBoth" />
+                    <Button Name="Add100Button" Text="+100" HorizontalExpand="True" Margin="0 0 2 0" StyleClasses="OpenBoth" />
+                    <Button Name="Add1000Button" Text="+1000" HorizontalExpand="True" StyleClasses="OpenBoth" />
+                </BoxContainer>
+
+                <BoxContainer Orientation="Horizontal" HorizontalExpand="True">
+                    <CheckBox Name="InvertCheckBox" Text="{Loc gas-temperature-gate-ui-invert}" HorizontalExpand="True" />
+                    <Button Name="SetToCurrentTemperatureButton" Text="{Loc gas-temperature-gate-ui-set-to-current}" />
+                </BoxContainer>
+            </BoxContainer>
+        </controls:StripeBack>
+
+    </BoxContainer>
+
+</controls:FancyWindow>

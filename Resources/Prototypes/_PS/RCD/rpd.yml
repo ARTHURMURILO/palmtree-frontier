@@ -314,3 +314,77 @@
   collisionMask: Impassable
   rotation: User
   fx: EffectRCDConstruct0
+
+# Palmtree: the passive gate was missing from the RPD even though the device and its construction
+# graph already existed upstream.
+- type: rcd
+  id: PassiveGate
+  category: PumpsValves
+  sprite:
+    sprite: Structures/Piping/Atmospherics/pump.rsi
+    state: pumpPassiveGate
+  mode: ConstructObject
+  prototype: GasPassiveGate
+  cost: 2
+  delay: 0
+  collisionMask: Impassable
+  rotation: User
+  fx: EffectRCDConstruct0
+
+# Palmtree: temperature devices ported from /tg/station.
+- type: rcd
+  id: TemperatureGate
+  category: PumpsValves
+  sprite:
+    sprite: _PS/Structures/Piping/Atmospherics/temperature_gate.rsi
+    state: tgate
+  mode: ConstructObject
+  prototype: GasTemperatureGate
+  cost: 2
+  delay: 0
+  collisionMask: Impassable
+  rotation: User
+  fx: EffectRCDConstruct0
+
+- type: rcd
+  id: TemperaturePump
+  category: PumpsValves
+  sprite:
+    sprite: _PS/Structures/Piping/Atmospherics/temperature_pump.rsi
+    state: tpump
+  mode: ConstructObject
+  prototype: GasTemperaturePump
+  cost: 2
+  delay: 0
+  collisionMask: Impassable
+  rotation: User
+  fx: EffectRCDConstruct0
+
+- type: rcd
+  id: HeatExchangerPipe
+  category: AtmosphericUtility
+  sprite:
+    sprite: _PS/Structures/Piping/Atmospherics/heat_exchanger.rsi
+    state: he
+  mode: ConstructObject
+  prototype: GasHeatExchanger
+  cost: 2
+  delay: 0
+  collisionMask: Impassable
+  rotation: User
+  fx: EffectRCDConstruct0
+
+- type: rcd
+  id: GasMeter
+  category: SensorsMonitors
+  sprite:
+    sprite: _PS/Structures/Piping/Atmospherics/atmos_meter.rsi
+    state: meter0
+  mode: ConstructObject
+  prototype: GasMeter
+  cost: 1
+  delay: 0
+  collisionMask: Impassable
+  rotation: User
+  fx: EffectRCDConstruct0
+

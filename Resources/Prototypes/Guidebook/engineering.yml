@@ -65,6 +65,7 @@
   - GasCanisters
   - Thermomachines
   - GasCondensing
+  - TemperatureDevices # Palmtree
 
 - type: guideEntry
   id: Pipes
@@ -164,6 +165,11 @@
   text: "/ServerInfo/Guidebook/Engineering/Thermomachines.xml"
   children:
   - Radiators
+
+- type: guideEntry
+  id: TemperatureDevices
+  name: guide-entry-temperaturedevices
+  text: "/ServerInfo/Guidebook/Engineering/TemperatureDevices.xml"
 
 - type: guideEntry
   id: GasCondensing
