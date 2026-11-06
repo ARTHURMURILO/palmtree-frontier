@@ -67,7 +67,8 @@ sanitized to `_`). Old strings remain valid and default to self-toggleable. Chan
     alpha split; hidden/removed markings clean up glow layers.
   - genital layers clamp below `jumpsuit`/`outerClothing`; on the client the order is
     direction-aware (south-facing genitals over hair/tails when uncovered, east/west tails under
-    hair) and `DirectionalLayerOrderSystem` rebuilds on cardinal changes.
+    hair, east/west snouts over hair when `SnoutAboveHair` is enabled) and
+    `DirectionalLayerOrderSystem` rebuilds on cardinal changes.
   - `Base*` categories add to `HiddenBaseLayers`; `UpdateLayersAgain` hides them.
 - `RemoveMarking` removes both base and `-glow` layers.
 

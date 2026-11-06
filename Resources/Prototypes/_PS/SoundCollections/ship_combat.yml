@@ -1,0 +1,6 @@
+- type: soundCollection
+  id: ShipCombatLockProcessing
+  files:
+  - /Audio/_PS/ShipCombat/processing.ogg
+  - /Audio/_PS/ShipCombat/processing2.ogg
+  - /Audio/_PS/ShipCombat/processing3.ogg

@@ -1,11 +1,17 @@
 using System.Linq;
+using Content.Client._PS.Consent;
+using Content.Client._PS.Humanoid;
+using Content.Client.Humanoid;
+using Content.Shared._PS.Consent;
 using Content.Shared._PS.Interactions;
 using Content.Shared._PS.Organs;
 using Content.Shared.Humanoid;
 using Content.Shared.Humanoid.Markings;
 using Content.Shared.Preferences;
+using Robust.Client.GameObjects;
 using Robust.Server.Player;
 using Robust.Shared.GameObjects;
+using Robust.Shared.Graphics.RSI;
 using Robust.Shared.IoC;
 
 namespace Content.IntegrationTests.Tests._PS;
@@ -132,5 +138,126 @@ public sealed class GenitalRenderTest
     {
         return humanoid.MarkingSet.TryGetCategory(MarkingCategories.Genital, out var markings)
                && markings.Count > 0;
+    }
+
+    /// <summary>
+    /// Palmtree: in side views organs use the clamped under-clothing layer path. The penis must
+    /// stay above the balls, and a marking's own sprites (breast + nipple) must keep their order.
+    /// </summary>
+    [Test]
+    [NonParallelizable] // NsfwGate is a process-wide static and other tests update it.
+    public async Task SideViewOrganLayersKeepTheirOrder()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings
+        {
+            Connected = true,
+            DummyTicker = false,
+        });
+
+        var server = pair.Server;
+        var client = pair.Client;
+
+        var serverPlayers = server.ResolveDependency<IPlayerManager>();
+
+        EntityUid mob = default;
+        await server.WaitAssertion(() =>
+        {
+            var attached = serverPlayers.Sessions.Single().AttachedEntity;
+            Assert.That(attached, Is.Not.Null);
+            mob = attached.Value;
+
+            var appearance = server.System<SharedHumanoidAppearanceSystem>();
+
+            var settings = new GenitalOrganSettings();
+            settings.Set(GenitalType.Penis, new GenitalOrganData
+            {
+                Prototype = "PenisHuman",
+                Size = 3,
+                Visibility = GenitalVisibility.VisibleUnderClothes,
+            });
+            settings.Set(GenitalType.Balls, new GenitalOrganData
+            {
+                Prototype = "BallsSingle",
+                Size = 1,
+                Visibility = GenitalVisibility.VisibleUnderClothes,
+            });
+            settings.Set(GenitalType.Breasts, new GenitalOrganData
+            {
+                Prototype = "BreastsSplurt",
+                Size = 1,
+                Visibility = GenitalVisibility.VisibleUnderClothes,
+            });
+
+            appearance.LoadProfile(mob,
+                HumanoidCharacterProfile.DefaultWithSpecies("Human").WithGenitals(settings));
+        });
+
+        await pair.RunTicksSync(10);
+
+        await client.WaitAssertion(() =>
+        {
+            var clientEntMan = client.ResolveDependency<IEntityManager>();
+            var mob = client.Session.AttachedEntity;
+            Assert.That(mob, Is.Not.Null);
+
+            var previousNsfwState = NsfwGate.State;
+            NsfwGate.SetState(NsfwConsentState.Allowed);
+
+            try
+            {
+                var appearance = client.System<HumanoidAppearanceSystem>();
+                var direction = clientEntMan.EnsureComponent<HumanoidLayerDirectionComponent>(mob.Value);
+                direction.Direction = RsiDirection.East;
+                appearance.RefreshSprite(mob.Value);
+
+                var sprite = clientEntMan.GetComponent<SpriteComponent>(mob.Value);
+                var spriteSystem = client.System<SpriteSystem>();
+
+                Assert.That(spriteSystem.LayerMapTryGet(
+                    (mob.Value, sprite),
+                    "Genital-Penis-Human-3-0-penis_human_3_0_FRONT",
+                    out var penisLayer,
+                    false), Is.True, "the penis layer must exist in the side view");
+                Assert.That(spriteSystem.LayerMapTryGet(
+                    (mob.Value, sprite),
+                    "Genital-Balls-Single1-testicles_single_1_0_FRONT",
+                    out var ballsLayer,
+                    false), Is.True, "the balls layer must exist in the side view");
+
+                Assert.That(penisLayer, Is.GreaterThan(ballsLayer),
+                    "the penis must render above the balls when facing east or west");
+
+                Assert.That(spriteSystem.LayerMapTryGet(
+                    (mob.Value, sprite),
+                    "PSGenitalBreasts0-m_breasts_pair_0_FRONT_primary",
+                    out var breastLayer,
+                    false), Is.True, "the breast layer must exist in the side view");
+                Assert.That(spriteSystem.LayerMapTryGet(
+                    (mob.Value, sprite),
+                    "PSGenitalBreasts0-m_breasts_pair_0_FRONT_secondary",
+                    out var nippleLayer,
+                    false), Is.True, "the nipple layer must exist in the side view");
+
+                Assert.That(nippleLayer, Is.GreaterThan(breastLayer),
+                    "nipples must render above breasts when facing east or west");
+            }
+            finally
+            {
+                clientEntMan.RemoveComponent<HumanoidLayerDirectionComponent>(mob.Value);
+                NsfwGate.SetState(previousNsfwState);
+            }
+        });
+
+        // Strip the organs again before returning the pair: deleting organ-bearing mobs during
+        // pool recycling trips a DEBUG-only client body assert.
+        await server.WaitAssertion(() =>
+        {
+            var appearance = server.System<SharedHumanoidAppearanceSystem>();
+            appearance.LoadProfile(mob, HumanoidCharacterProfile.DefaultWithSpecies("Human"));
+        });
+
+        await pair.RunTicksSync(5);
+
+        await pair.CleanReturnAsync();
     }
 }

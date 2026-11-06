@@ -777,3 +777,27 @@ so these fail only in CI:
   `StripStationReferences`/`UndockShuttle` must go through `RestoreStoreFailure` (station refs, deed,
   docking to the *grid it was docked to*). A stripped ship has no station member/bound components, so
   its station-bound machinery and power look "soft-broken" until it is restored.
+
+## 29. Reactor hooks: soft-fixture footprints and ship save rules (2026-11)
+
+The two ported reactors add shared machinery that is easy to break later.
+
+- **`ConstructionBlockerComponent` reserves a machine's footprint against construction without
+  making it solid.** `TileNotBlocked` is the only caller that passes
+  `includeConstructionBlockers: true` to `TurfSystem.IsTileBlocked`; every other caller keeps the
+  default `false` and is byte-for-byte unchanged. The flag adds `LookupFlags.Sensors`, which is what
+  makes a *soft* fixture visible to the lookup, and it counts a blocker's fixtures regardless of
+  `Hard` and of the collision mask. The point is the 3x3 RBMK and 3x1 stormdrive art: their centre
+  tile is solid, their end tiles are walk-over, and without the marker a girder or wall could be
+  built through the ends. Do not teach the generic physics predicate about construction; if the
+  check ever leaves `TurfSystem`, put it in `TileNotBlocked`.
+- **Adding a gas is append-only.** `Gas.Nucleium = 11`, `TotalNumberOfGases = 12`, and the gas
+  prototype's `id` must equal the enum value (`ConstantsTest` enforces the three counts). The air
+  sensor prototype must list the new gas in `gasThresholdPrototypes` or the client's `SensorInfo`
+  throws `KeyNotFoundException` on every sensor; use `ignore` for an inert gas.
+- **A reactor is only savable cold and stopped.** Ship saves skip `MapInitEvent` and restore
+  containers as data with no insert events, so a reactor must rebuild its rod list in
+  `ComponentStartup`, and must not persist a warning flag or a fuse without its deadline. `Slagged`
+  and `VesselIntegrity` are `[DataField]`s; the player's setpoint is kept. The gate belongs in
+  `BluespaceDockSystem.FindStoreBlocker`, not in the reactor; see
+  `.ai/ideas/reactor-ship-persistence.md`.

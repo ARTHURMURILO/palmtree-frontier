@@ -1,0 +1,260 @@
+# NSV13 - RBMK nuclear reactor and fuel rods.
+#
+# Ported from BeeStation/NSV13. The original works in BYOND degrees Celsius and PSI; the C# side
+# converts at the boundary, so every tunable below keeps the original units.
+#
+# ART: ported from NSV13's nsv13/icons/obj/machinery/rbmk.dmi (converted to RSI v2). Every core
+# state the DM update_icon() used is present and animated: reactor_on (6 frames), reactor_hot and
+# reactor_veryhot (3), reactor_overheat (3), reactor_slagged (3).
+#
+# PIPE LAYOUT (all three ports are on the centre tile - the sprite is 3x3 art around it):
+#   west  - coolant inlet   (cold gas in; heated and pushed to the outlet)
+#   east  - coolant outlet  (hot gas out, at core temperature)
+#   north - moderator feed  (plasma/tritium/N2/CO2; ANYTHING fed here is destroyed every tick, so
+#                            give it its own line and never share it with the coolant loop)
+# The ports are also listed in the examine text, because the original art has no visible stubs.
+
+- type: entity
+  id: RbmkNuclearReactor
+  parent: [ BaseMachine, ConstructibleMachine ]
+  name: RBMK nuclear reactor
+  description: An advanced gas-cooled nuclear reactor. Feed it plasma, cool it with gas, and pray you never see the temperature gauge climb.
+  placement:
+    mode: SnapgridCenter
+  components:
+  # No `noRot`: the reactor's pipe and cable ports turn with the hull, so the art has to turn with
+  # them. A screen-upright sprite on a turning ship pointed at ports that were no longer where they
+  # were drawn.
+  - type: Sprite
+    sprite: _NSV13/Objects/Structures/Power/rbmk.rsi
+    layers:
+    - state: reactor_off
+      map: ["core"]
+  - type: GenericVisualizer
+    visuals:
+      enum.RbmkVisuals.Core:
+        core:
+          Off: { state: reactor_off }
+          On: { state: reactor_on }
+          Hot: { state: reactor_hot }
+          VeryHot: { state: reactor_veryhot }
+          Overheat: { state: reactor_overheat }
+          Meltdown: { state: reactor_meltdown }
+          Slagged: { state: reactor_slagged }
+  # The art is 3x3, so the reserved footprint is 3x3 too. The fixture stays soft so the crew can
+  # still walk over the reactor; `ConstructionBlocker` is what stops girders and walls being built
+  # through the outer tiles (TileNotBlocked counts the blocker's fixture footprint without needing
+  # a hard collision). Pipes and cables still go down: their recipes never run that check.
+  - type: ConstructionBlocker
+  - type: Fixtures
+    fixtures:
+      fix1:
+        shape:
+          !type:PhysShapeAabb
+          bounds: "-1.5,-1.5,1.5,1.5"
+        hard: false
+        density: 190
+        mask:
+        - MachineMask
+        layer:
+        - MachineLayer
+  - type: PointLight
+    radius: 1.5
+    energy: 2
+    color: "#55BA55"
+    enabled: false
+  - type: Appearance
+  - type: AtmosDevice
+  - type: NodeContainer
+    # Opt in to the standard "It has a connector for HV cables." examine line.
+    examinable: true
+    nodes:
+      coolantIn:
+        !type:PipeNode
+        nodeGroupID: Pipe
+        pipeDirection: West
+      moderatorIn:
+        !type:PipeNode
+        nodeGroupID: Pipe
+        pipeDirection: North
+      coolantOut:
+        !type:PipeNode
+        nodeGroupID: Pipe
+        pipeDirection: East
+      # HV power take-off. Without a cable device node the PowerSupplier below is never attached
+      # to a net: the tick happily wrote MaxSupply onto a supplier that no network could see, so
+      # the reactor produced its megawatts into the void.
+      output:
+        !type:CableDeviceNode
+        nodeGroupID: HVPower
+  # Mirrors the pipe directions above so the client can draw them on examine. The art is symmetric
+  # and the nodes themselves never leave the server, so without this the player has no way to tell
+  # which face is the feed and which is the outlet once the machine has been rotated.
+  - type: ReactorPortLayout
+    coolantIn: West
+    coolantOut: East
+    moderator: North
+  # The board is only informational now (deconstruction is disabled below), but keeping it wired
+  # means a mapped or admin-spawned reactor still reports its circuitboard correctly, and the
+  # later construction path can reuse it.
+  - type: Machine
+    board: RbmkReactorMachineCircuitboard
+  # Reactors cannot be deconstructed (and cannot be constructed yet). The stock `Machine` graph
+  # lets a bare crowbar pry the whole machine back into a frame; `ReactorMachine` is a terminal
+  # node with no edges, so neither the crowbar nor the deconstruct verb can path anywhere. A
+  # proper construction path will be added later.
+  - type: Construction
+    graph: ReactorMachine
+    # The graph has a single `machine` node and no edges; pointing the deconstruction target at
+    # that same node means the deconstruct verb sees "already there" and offers nothing.
+    deconstructionTarget: machine
+  - type: RbmkReactor
+
+  # The machine has to survive its own failure. BaseMachine's Destructible thresholds delete the
+  # entity outright once it has taken 200 damage, and a meltdown deals thousands - so the reactor
+  # vanished in the blast instead of staying behind as a wreck, which is what the DM original leaves
+  # (its `icon_state` goes to the slagged/broken state and the machine is still there to be examined,
+  # repaired around, or scavenged). Emptying the thresholds keeps the machine damageable but
+  # indestructible, so the wreck is where the wreck should be.
+  - type: Destructible
+    thresholds: []
+  # Loaded fuel rods live inside the machine, exactly like the DM reactor's `contents`. They have to
+  # keep existing: the tick reads each rod's fuel power and depletion, and the console ejects the
+  # entity later. The container is declared here so clients know about it from spawn.
+  - type: ContainerContainer
+    containers:
+      rbmk_fuel: !type:Container
+  # `supplyRampRate` is load-bearing: the solver only ever moves SupplyRampPosition towards the
+  # target by rate * frameTime, so a rate of zero pins the actual supply at 0 W no matter what the
+  # tick sets MaxSupply to. 5 MW/s means a cold reactor is at full output three seconds after it
+  # starts, instead of the simulator silently exporting nothing.
+  - type: PowerSupplier
+    supplyRate: 0
+    supplyRampRate: 5000000
+    supplyRampTolerance: 500000
+  # Shows up on power monitoring consoles as a generator.
+  - type: PowerMonitoringDevice
+    group: Generator
+    loadNode: output
+    sprite: Structures/Power/power.rsi
+    state: generator
+  # A control console has to be wired to the reactor with a multitool before it will drive it. The
+  # console's link points at this sink port; proximity alone no longer binds anything.
+  - type: DeviceLinkSink
+    ports:
+      - ReactorControl
+  # Engine alarms are broadcast on the Shortband. That channel is short-range, so RadioSystem
+  # refuses to carry it without a powered telecomms server; the reactor has no relay of its own, so
+  # without this exemption a meltdown on a ship with no telecomms would be completely silent.
+  - type: TelecomExempt
+  # A reactor is bolted to the deck for its whole life. `flags: Anchorable` (and not the default
+  # Anchorable|Unanchorable) means the bolts can still be fitted to a freshly spawned unit, but a
+  # fitted one can never be wrenched up - you cannot walk off with a running core.
+  - type: Anchorable
+    flags: Anchorable
+  - type: RadiationSource
+    intensity: 0
+    slope: 0.5
+  - type: AmbientSound
+    enabled: false
+    volume: -5
+    range: 6
+    sound:
+      path: /Audio/_NSV13/Reactor/hum.ogg
+  - type: StaticPrice
+    price: 5000
+
+# Mapping/spawn-menu convenience: a reactor that is already running, fuelled and plumbed.
+- type: entity
+  id: RbmkNuclearReactorRunning
+  parent: RbmkNuclearReactor
+  suffix: Running
+  components:
+  # SS14 convenience, not a DM subtype: begin with the core already ticking at the default setpoint
+  # (`desired_k = 1`). A cold reactor starts itself the first time a fuel rod is inserted.
+  - type: RbmkReactor
+    desiredK: 1
+    running: true
+    # ...and pre-charged, because a spawned machine has no pumps behind it. This stands in for the
+    # coolant loop (cold gas restocked every tick) and the plasma feed to the moderator gate.
+    precharged: true
+    # 620 °C is just under `TemperatureOperating`, so the core reads as running and hot on spawn
+    # instead of spending twenty minutes climbing out of the "off" sprite band.
+    temperature: 620
+  # Five uranium rods loaded, the same way the pre-assembled stormdrive ships with its rods.
+  - type: ContainerFill
+    containers:
+      rbmk_fuel:
+      - RbmkFuelRodUranium
+      - RbmkFuelRodUranium
+      - RbmkFuelRodUranium
+      - RbmkFuelRodUranium
+      - RbmkFuelRodUranium
+
+# --------------------------------------------------------------------------------------------
+# Fuel rods
+# --------------------------------------------------------------------------------------------
+
+- type: entity
+  id: RbmkFuelRodUranium
+  parent: BaseItem
+  name: uranium-238 fuel rod
+  description: A titanium sheathed rod containing a measure of enriched uranium-dioxide powder, used to kick off a fission reaction.
+  components:
+  # NSV13 art: `fuel_rod` uses icons/obj/control_rod.dmi, state "irradiated".
+  - type: Sprite
+    sprite: _NSV13/Objects/Materials/control_rod.rsi
+    state: irradiated
+  - type: Item
+    size: Large
+  - type: RbmkFuelRod
+    fuelPower: 0.10
+    # This rod does not self-decay, so its starting power is 0.10 rather than the 0.20 default the
+    # self-decaying rods use. The fuel console bar is a ratio of the two.
+    originalFuelPower: 0.10
+    # DM rad_strength 500. Rescaled: see RbmkFuelRodComponent.RadStrength.
+    radStrength: 0.5
+    depletionThreshold: 100
+    depletionConversion: RbmkFuelRodPlutonium
+    depletionSpeedModifier: 1
+  - type: StaticPrice
+    price: 500
+
+- type: entity
+  id: RbmkFuelRodPlutonium
+  parent: RbmkFuelRodUranium
+  name: plutonium-239 fuel rod
+  description: A fuel rod loaded with weapons-grade plutonium. Far hotter than uranium, and it decays on its own even when left on a shelf.
+  components:
+  # NSV13: /obj/item/fuel_rod/plutonium -> state "inferior".
+  - type: Sprite
+    sprite: _NSV13/Objects/Materials/control_rod.rsi
+    state: inferior
+  - type: RbmkFuelRod
+    fuelPower: 0.20
+    originalFuelPower: 0.20
+    radStrength: 1.5
+    selfDecay: true
+    depletionThreshold: 300
+    depletionConversion: RbmkFuelRodDepleted
+
+- type: entity
+  id: RbmkFuelRodDepleted
+  parent: RbmkFuelRodUranium
+  name: depleted fuel rod
+  description: A spent fuel rod. Still frighteningly radioactive, and barely worth the metal it is sheathed in.
+  components:
+  # NSV13: /obj/item/fuel_rod/depleted -> state "normal".
+  - type: Sprite
+    sprite: _NSV13/Objects/Materials/control_rod.rsi
+    state: normal
+  # DM: depletion_conversion_type = null - a spent rod stays spent. This has to be spelled out:
+  # the prototype inherits the uranium rod's conversion, so without the explicit null a depleted
+  # rod would turn back into fresh plutonium.
+  - type: RbmkFuelRod
+    fuelPower: 0.05
+    originalFuelPower: 0.20
+    radStrength: 3
+    selfDecay: true
+    depletionThreshold: 100
+    depletionConversion: null

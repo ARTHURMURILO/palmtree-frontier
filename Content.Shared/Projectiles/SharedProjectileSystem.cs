@@ -1,4 +1,5 @@
 using System.Numerics;
+using Content.Shared._PS.ShipCombat.Components; // Palmtree: ship weapons can shoot through their own grid
 using Content.Shared.CombatMode.Pacification;
 using Content.Shared.Damage;
 using Content.Shared.DoAfter;
@@ -201,6 +202,18 @@ public abstract partial class SharedProjectileSystem : EntitySystem
     private void PreventCollision(EntityUid uid, ProjectileComponent component, ref PreventCollideEvent args)
     {
         if (component.IgnoreShooter && (args.OtherEntity == component.Shooter || args.OtherEntity == component.Weapon))
+        {
+            args.Cancelled = true;
+            return;
+        }
+
+        // Palmtree: ship turrets shoot through their own grid (the effective flag comes from the
+        // ps.ship_combat.turrets_shoot_through_hull cvar).
+        if (component.Weapon is { } weapon
+            && TryComp<ShipWeaponComponent>(weapon, out var shipWeapon)
+            && shipWeapon.ShootThroughHull
+            && Transform(weapon).GridUid is { } weaponGrid
+            && Transform(args.OtherEntity).GridUid == weaponGrid)
         {
             args.Cancelled = true;
         }

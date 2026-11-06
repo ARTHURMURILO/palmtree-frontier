@@ -122,6 +122,7 @@ namespace Content.Client.Lobby.UI
         private bool _showUndergarments = true;
         private bool _showAroused;
         private bool _updatingGenitals;
+        private bool _updatingSnoutAboveHair; // Palmtree
         private readonly Dictionary<GenitalType, GenitalControls> _genitalControls = new();
 
         private sealed class GenitalControls
@@ -275,6 +276,8 @@ namespace Content.Client.Lobby.UI
 
             CHeightSlider.OnValueChanged += _ => OnHeightChanged();
             CWidthSlider.OnValueChanged += _ => OnWidthChanged();
+            Markings.ShowSnoutAboveHair = true; // Palmtree
+            Markings.OnSnoutAboveHairChanged += OnSnoutAboveHairChanged; // Palmtree
 
             CHeightReset.OnPressed += _ =>
             {
@@ -1858,6 +1861,7 @@ namespace Content.Client.Lobby.UI
             UpdateEyePickers();
             UpdateSaveButton();
             UpdateMarkings();
+            UpdateSnoutAboveHair(); // Palmtree
             UpdateHairPickers();
             UpdateCMarkingsHair();
             UpdateCMarkingsFacialHair();
@@ -2523,6 +2527,24 @@ namespace Content.Client.Lobby.UI
             CWidthSlider.SetValueWithoutEvent(value);
             UpdateWidthLabel(value);
             Profile = Profile.WithWidth(value);
+            SetDirty();
+            ReloadProfilePreview();
+        }
+
+        // Palmtree: whether snout markings render above hair in east/west views.
+        private void UpdateSnoutAboveHair()
+        {
+            _updatingSnoutAboveHair = true;
+            Markings.SnoutAboveHair = Profile?.SnoutAboveHair ?? false;
+            _updatingSnoutAboveHair = false;
+        }
+
+        private void OnSnoutAboveHairChanged(bool pressed)
+        {
+            if (_updatingSnoutAboveHair || Profile == null || Profile.SnoutAboveHair == pressed)
+                return;
+
+            Profile = Profile.WithSnoutAboveHair(pressed);
             SetDirty();
             ReloadProfilePreview();
         }

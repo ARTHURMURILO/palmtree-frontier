@@ -354,6 +354,7 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
         humanoid.EyeColor = profile.Appearance.EyeColor;
         humanoid.Height = profile.Height; // Palmtree
         humanoid.Width = profile.Width; // Palmtree
+        humanoid.SnoutAboveHair = profile.SnoutAboveHair; // Palmtree
 
         // Palmtree: profile-driven genital organs (lobby preview). The server path uses
         // HumanoidProfileAppliedEvent; this override does not call the shared LoadProfile.
@@ -606,6 +607,17 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
                 targLayerAdj = hairLayer + layerOrder;
             }
 
+            // Palmtree: optionally draw snouts and snout covers over hair in side views. Insert them
+            // just before the first layer after the hair group so hair markings (which are added
+            // after the hair base layer) stay behind them.
+            if (humanoid.SnoutAboveHair
+                && layerSlot is HumanoidVisualLayers.Snout or HumanoidVisualLayers.SnoutCover
+                && screenDirection is RsiDirection.East or RsiDirection.West
+                && _sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.HeadSide, out var headSideLayer, false))
+            {
+                targLayerAdj = headSideLayer + layerOrder;
+            }
+
             // Palmtree: keep genital markings beneath clothing while they sit on the genital layer,
             // unless the organ uses the "Never hidden" visibility rule.
             if (layerSlot == HumanoidVisualLayers.Genital)
@@ -617,11 +629,21 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
                 }
                 else if (screenDirection != RsiDirection.South || HasCoveringClothing(entity.Owner))
                 {
-                    if (_sprite.LayerMapTryGet((entity.Owner, sprite), "jumpsuit", out var jumpsuitLayer, false))
-                        targLayerAdj = Math.Min(targLayerAdj, jumpsuitLayer - 1);
+                    // Anchor under-clothing insertions to the stable undergarment layer. Anchoring
+                    // to jumpsuit/outerClothing and inserting just before them shifts their layer
+                    // indices, so every successive organ would end up above the previous one
+                    // (balls over the penis in side views). Keep the per-sprite offset so a
+                    // marking's own sprites (e.g. breast + nipple) also stay ordered.
+                    var layerAnchor = -1;
+                    if (_sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.UndergarmentTop, out var underwearLayer, false))
+                        layerAnchor = underwearLayer + 1;
+                    else if (_sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.UndergarmentBottom, out var underwearBottomLayer, false))
+                        layerAnchor = underwearBottomLayer + 1;
+                    else if (_sprite.LayerMapTryGet((entity.Owner, sprite), "jumpsuit", out var jumpsuitLayer, false))
+                        layerAnchor = jumpsuitLayer - 1;
 
-                    if (_sprite.LayerMapTryGet((entity.Owner, sprite), "outerClothing", out var outerClothingLayer, false))
-                        targLayerAdj = Math.Min(targLayerAdj, outerClothingLayer - 1);
+                    if (layerAnchor >= 0)
+                        targLayerAdj = Math.Min(targLayerAdj, layerAnchor + layerOrder);
 
                     if (targLayerAdj < 0)
                         targLayerAdj = 0;

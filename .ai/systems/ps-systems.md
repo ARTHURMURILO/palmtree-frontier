@@ -832,10 +832,12 @@ a crash can leave files behind). The tool:
   state), previews one with the live ship camera and deletes one (`TryDeleteShip`, which clears every
   deed pointing at the grid).
 - `forcedock <ship name | grid uid> [owner]` (`ForceDockCommand`) stores a ship in the dock without
-  requiring it to be docked. Every other store check still runs (`FindStoreBlocker`, so "living things
-  aboard" and the civilian-vessel rule still apply) and failures are printed to the console. The owner
+  requiring it to be docked **and without caring about its ship category** (or whether it has a
+  vessel identity at all). Living things are moved off instead of blocking the store; every other
+  check still runs (`FindStoreBlocker`) and failures are printed to the console. The owner
   defaults to the deed owner; when the given name matches a player in the round their ckey is recorded
-  too, otherwise the entry is keyed by character name alone. No tax is charged. The store mechanics
+  too, otherwise the entry is keyed by character name alone. Owner completion unions connected
+  sessions with deed owners, so offline/SSD owners are targetable too. No tax is charged. The store mechanics
   live in `BluespaceDockSystem.TryStoreShip`, shared with the dock console's own store button, and
   both go through `EvacuateGrid` first (ghosts, pets and corpses are moved off, never deleted with
   the grid).
@@ -847,11 +849,12 @@ a crash can leave files behind). The tool:
   `Resources/Prototypes/_PS/Entities/Structures/Machines/Computers/ship_registrar.yml` (sprite copy
   `Resources/Textures/_PS/Structures/Machines/ship_registrar.rsi`, the SR shipyard states).
 - Privileged slot = Station Representative's ID (the console's `AccessReader` requires
-  `HeadOfPersonnel`, which the SR has through `AllAccess`; admins bypass). The **owner is picked from
-  a dropdown of players** (`GetOwnerOptions`, keyed on their profile name like the dock) - there is
-  no second ID slot, and the owner has to be in the round holding their ID card, which takes the
-  deed. Registration also writes them a `GeneralStationRecord` with the `Captain` job on the ship's
-  station and adds `NewAccessLevels` (Captain) to their ID, exactly like a shipyard purchase.
+  `HeadOfPersonnel`, which the SR has through `AllAccess`; admins bypass). The **owner is always an
+  ID card inserted in the second slot** - there is no player dropdown, so an SSD/offline character's
+  card is enough to target them. If the card belongs to an online character their ckey/profile are
+  recovered and the usual Captain record is written; otherwise the card itself takes the deed.
+  Registration also adds `NewAccessLevels` (Captain) to the owner card, exactly like a shipyard
+  purchase.
 - Lists every grid docked to the console's station that has no deed and no
   `RegisteredVesselComponent` (`GetDockableGrids`), with name/size/value and a live `[PREVIEW]`.
 - Registration (`TryRegisterVessel`, all checks re-run server side) creates the

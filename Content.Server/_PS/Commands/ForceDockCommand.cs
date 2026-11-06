@@ -10,10 +10,10 @@ using Robust.Shared.Player;
 namespace Content.Server._PS.Commands;
 
 /// <summary>
-/// Palmtree: stores a player's ship in the bluespace dock without requiring it to be docked. Living
-/// things aboard are moved off the ship instead of refusing the store; every other check still runs
-/// (civilian vessel, not already being processed, and so on) and failures are printed to the console.
-/// No tax is charged.
+/// Palmtree: stores a player's ship in the bluespace dock without requiring it to be docked or to
+/// belong to an allowed ship category. Living things aboard are moved off the ship instead of
+/// refusing the store; every other check still runs (not already being processed, and so on) and
+/// failures are printed to the console. No tax is charged.
 /// </summary>
 [AdminCommand(AdminFlags.Admin)]
 public sealed class ForceDockCommand : IConsoleCommand
@@ -96,10 +96,10 @@ public sealed class ForceDockCommand : IConsoleCommand
             }
         }
 
-        // Every store check except "must be docked to this station" and "nothing living aboard":
-        // force-dock kicks the occupants out instead of refusing the ship.
-        if (dock.FindStoreBlocker(ship.Grid, requireDocked: false, stationGrid: null,
-                allowOrganics: true, allowDangerousEngines: true) is { } blocker)
+        // Every store check except the docking, ship-category, dangerous-engine and "nothing living aboard" rules:
+        // force-dock kicks the occupants out and purges dangerous engine entities instead of refusing the ship.
+        if (dock.FindStoreBlocker(ship.Grid, requireDocked: false, stationGrid: null, allowOrganics: true,
+                allowDangerousEngines: true, requireAllowedGroup: false) is { } blocker)
         {
             shell.WriteError(Loc.GetString(blocker));
             return;
@@ -150,9 +150,15 @@ public sealed class ForceDockCommand : IConsoleCommand
         if (args.Length == 2)
         {
             var dock = _entMan.System<BluespaceDockSystem>();
-            var owners = _player.Sessions
-                .Select(session => dock.GetCharacterName(session.UserId, null, session.AttachedEntity))
-                .Where(name => name.Length > 0);
+            // Include deed owners as well as connected sessions: an offline/SSD owner has no
+            // session to read a character name from, but their name is still on the ship's deed
+            // and is a valid owner argument (the entry is then keyed by character name alone).
+            var owners = dock.GetDeedShips()
+                .Select(ship => ship.Owner)
+                .Concat(_player.Sessions
+                    .Select(session => dock.GetCharacterName(session.UserId, null, session.AttachedEntity)))
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Distinct(StringComparer.Ordinal);
             return CompletionResult.FromHintOptions(owners, "[owner (defaults to the deed owner)]");
         }
 
