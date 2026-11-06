@@ -233,6 +233,12 @@ namespace Content.Shared.SubFloor
     [Serializable, NetSerializable]
     public enum SubfloorLayers : byte
     {
-        FirstLayer
+        FirstLayer,
+
+        /// <summary>
+        /// Palmtree: a second layer that can stay visible above a floor tile, for devices made of
+        /// more than one always-visible sprite layer (e.g. the atmos meter's gauge bar).
+        /// </summary>
+        SecondLayer,
     }
 }

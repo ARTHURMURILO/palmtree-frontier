@@ -303,6 +303,7 @@
   - type: SubFloorHide
     visibleLayers:
     - enum.SubfloorLayers.FirstLayer
+    - enum.SubfloorLayers.SecondLayer
   - type: Sprite
     sprite: _PS/Structures/Piping/Atmospherics/atmos_meter.rsi
     drawdepth: FloorObjects
@@ -310,8 +311,10 @@
     - sprite: Structures/Piping/Atmospherics/pipe.rsi
       state: pipeStraight
       map: [ "enum.PipeVisualLayers.Pipe" ]
-    - state: meter0
+    - state: meter
       map: [ "enabled", "enum.SubfloorLayers.FirstLayer" ]
+    - state: pressure0
+      map: [ "dial", "enum.SubfloorLayers.SecondLayer" ]
   - type: AtmosPipeLayers
     spriteRsiPaths:
       Primary: _PS/Structures/Piping/Atmospherics/atmos_meter.rsi
@@ -331,16 +334,15 @@
   - type: GenericVisualizer
     visuals:
       enum.GasMeterVisuals.Pressure:
-        enabled:
-          Zero: { state: meter0 }
-          Low: { state: meter1 }
-          Medium: { state: meter2 }
-          High: { state: meter3 }
-          Extreme: { state: meter4 }
-      # /tg/station tints the whole meter by temperature; the same works here because the bar and the
-      # body share one layer, so the colour lands on the bar and barely shows on the dark casing.
+        dial:
+          Zero: { state: pressure0 }
+          Low: { state: pressure1 }
+          Medium: { state: pressure2 }
+          High: { state: pressure3 }
+          Extreme: { state: pressure4 }
+      # Only the gauge bar is tinted, so the casing keeps its own colours.
       enum.GasMeterVisuals.Temperature:
-        enabled:
+        dial:
           Freezing: { color: "#4A86FF" }
           Cold: { color: "#66D9FF" }
           Normal: { color: "#9BE86B" }
@@ -369,8 +371,10 @@
     - sprite: Structures/Piping/Atmospherics/pipe_alt1.rsi
       state: pipeStraight
       map: [ "enum.PipeVisualLayers.Pipe" ]
-    - state: meter0
+    - state: meter
       map: [ "enabled", "enum.SubfloorLayers.FirstLayer" ]
+    - state: pressure0
+      map: [ "dial", "enum.SubfloorLayers.SecondLayer" ]
   - type: Construction
     node: meterAlt1
 
@@ -386,8 +390,10 @@
     - sprite: Structures/Piping/Atmospherics/pipe_alt2.rsi
       state: pipeStraight
       map: [ "enum.PipeVisualLayers.Pipe" ]
-    - state: meter0
+    - state: meter
       map: [ "enabled", "enum.SubfloorLayers.FirstLayer" ]
+    - state: pressure0
+      map: [ "dial", "enum.SubfloorLayers.SecondLayer" ]
   - type: Construction
     node: meterAlt2
 

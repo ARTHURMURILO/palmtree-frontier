@@ -379,7 +379,7 @@
   category: SensorsMonitors
   sprite:
     sprite: _PS/Structures/Piping/Atmospherics/atmos_meter.rsi
-    state: meter0
+    state: meter
   mode: ConstructObject
   prototype: GasMeter
   cost: 1
