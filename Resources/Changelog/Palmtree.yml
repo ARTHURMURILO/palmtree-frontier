@@ -1724,3 +1724,133 @@ Entries:
   time: '2026-11-03T21:25:47.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/a5d75adb8407137a7cce7e758539c2d2869ab781
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        Fixed bottom undergarments rendering under the butt and other bottom
+        organs, including when facing south.
+  id: 90115
+  time: '2026-11-04T00:24:25.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/a14b6be07c45453f906e9fbdf6d0bdd9ac195b6d
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Four discipline whips are now available from the admin spawn menu.
+  id: 90116
+  time: '2026-11-04T01:10:42.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/8031c9ad39c88939e23238dc15c27ed404721284
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Added a Jukebox volume slider to the audio options.
+  id: 90117
+  time: '2026-11-04T01:11:23.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/4cc5d06dc0031e521034bc05adb1af4b2dfbe31f
+- author: xTheLifex
+  changes:
+    - type: Tweak
+      message: >-
+        The Frontier is now presented as a SolGov-administered sector, and
+        players are free contractors or civilians rather than NanoTrasen
+        employees.
+    - type: Add
+      message: >-
+        Added guidebook lore entries for the Trans-Solar Federation, the USSP,
+        and Nanotrasen.
+    - type: Tweak
+      message: >-
+        The NFSD is now described as the Trans-Solar Federation's frontier
+        law-enforcement agency.
+    - type: Tweak
+      message: >-
+        The bank is now the Frontier Galactic Bank, and the currency is space
+        roubles.
+    - type: Tweak
+      message: >-
+        Frontier Staff, NFSD, Central Command, Medical Dispatch, and public
+        transit vessels now use the SG registry prefix.
+  id: 90118
+  time: '2026-11-04T04:28:54.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/e0d33cc92e6f6e4870c0334eea4650d343fd5d17
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: >-
+        Phaser Lily, a hand-modified phaser with a purple-pink beam, double
+        damage, and a lower-pitched shot.
+  id: 90119
+  time: '2026-11-04T13:18:29.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/1abe34c63bc7044584f6f5e3bc8a5214fdd42310
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: >-
+        Added a batch of admin-only meme mobs: laser carp, medicarp, doomba,
+        bear arms, Honkglock, securitarp, carpenter bee, phantom carp, pyro carp
+        and party carp.
+    - type: Add
+      message: Added the admin-only carp cannon, which fires carp projectiles.
+  id: 90120
+  time: '2026-11-04T13:46:07.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/92fa5806b1192120abd4f249c8b8a33e8c069c51
+- author: xTheLifex
+  changes:
+    - type: Tweak
+      message: Phaser Lily now has a slightly higher-pitched firing sound.
+  id: 90121
+  time: '2026-11-04T13:46:50.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/35354a55e953115e834e8ce42b58532f2c5833d3
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Rings can be attached to gloves.
+  id: 90122
+  time: '2026-11-05T18:48:10.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/fda10e81b5dfa83e0d52d3fa7c0a793a7d541a26
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: The biogenerator now passively generates biomass while powered.
+  id: 90123
+  time: '2026-11-05T18:48:10.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/256cedf89cf6f7481237c9cf7bd6b965de6bcc3b
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Red laser rifle, Umagon sniper rifle and GS railgun.
+    - type: Add
+      message: Nod laser turret (friendly and hostile) and Nod ship laser turret.
+    - type: Tweak
+      message: Palmtree hitscans now use an all-grayscale projectile sprite set.
+  id: 90124
+  time: '2026-11-05T20:59:26.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/b0f0766fd88255b3ef95c00e4b4833935b51aa3c
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Added tier 5 military contraband.
+    - type: Tweak
+      message: >-
+        NFSD and SR contraband amnesty, permit and turnover forms now cover
+        tiers 1-4 and explicitly exclude tier 5.
+    - type: Tweak
+      message: Handheld phasers and the Phaser Lily are now tier 2 contraband.
+    - type: Tweak
+      message: >-
+        Nod laser weapons and turrets, the Umagon, GS railgun, ship phaser
+        turret and photon torpedo launcher are now tier 5 contraband.
+  id: 90125
+  time: '2026-11-05T21:23:15.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/6938a69d81af74fafc200f52ed4ba2d6b5517d39

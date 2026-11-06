@@ -53,6 +53,13 @@ default (`rules: []` in upstream presets).
 - Contractor loadout groups are extended with `_PS` (concealment implanter), `_CS` (Bayou clothes,
   leather satchel), `_DEN` (foot protectors, clicker) loadouts.
 - `_PS` lobby backgrounds/music are separate from `_NF/lobbyscreens.yml`.
+- **Tier 5 contraband (Palmtree, 2026-11):** `_NF/contraband_severities.yml` adds `Class5`
+  (`contraband-examine-text-Class5`) and `base_contraband.yml` adds `BaseC5Contraband`
+  (`severity: Class5`, Security-only). Handheld phaser and Phaser Lily are Class 2; the ship phaser
+  turret, photon torpedo launcher, Nod laser weapons/turrets, Umagon sniper and GS railgun are
+  Class 5. The NFSD/SR amnesty, turnover-receipt, permit and Writ forms describe tiers 1-4 as
+  permit/amnesty-eligible and state that tier 5 is strictly military and cannot be permitted or
+  amnestied.
 - Shuttle console extras (`_NF/Shuttles`, plus core `Shuttles` patches): inertia dampening, service
   flags, target tracking, and the Palmtree/Coyote radar proximity alert (`.ai/PORTING.md` §20).
 - Expedition auto-recovery (Palmtree/Coyote): dead or left-behind bodies are returned to the

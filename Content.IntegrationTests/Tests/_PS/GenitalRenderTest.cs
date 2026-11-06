@@ -187,9 +187,16 @@ public sealed class GenitalRenderTest
                 Size = 1,
                 Visibility = GenitalVisibility.VisibleUnderClothes,
             });
+            settings.Set(GenitalType.Butt, new GenitalOrganData
+            {
+                Prototype = "ButtStandard",
+                Size = 1,
+                Visibility = GenitalVisibility.VisibleUnderClothes,
+            });
 
-            appearance.LoadProfile(mob,
-                HumanoidCharacterProfile.DefaultWithSpecies("Human").WithGenitals(settings));
+            var profile = HumanoidCharacterProfile.DefaultWithSpecies("Human").WithGenitals(settings);
+            profile.Appearance.Markings.Add(new Marking("UndergarmentBottomBriefs", 1));
+            appearance.LoadProfile(mob, profile);
         });
 
         await pair.RunTicksSync(10);
@@ -240,6 +247,37 @@ public sealed class GenitalRenderTest
 
                 Assert.That(nippleLayer, Is.GreaterThan(breastLayer),
                     "nipples must render above breasts when facing east or west");
+
+                Assert.That(spriteSystem.LayerMapTryGet(
+                    (mob.Value, sprite),
+                    "GenitalButt1-butt_pair_2_0_FRONT",
+                    out var buttLayer,
+                    false), Is.True, "the butt layer must exist in the side view");
+                Assert.That(spriteSystem.LayerMapTryGet(
+                    (mob.Value, sprite),
+                    "UndergarmentBottomBriefs-briefs",
+                    out var underwearLayer,
+                    false), Is.True, "the bottom undergarment layer must exist in the side view");
+
+                Assert.That(buttLayer, Is.LessThan(underwearLayer),
+                    "bottom organs must render under back undergarments");
+
+                direction.Direction = RsiDirection.South;
+                appearance.RefreshSprite(mob.Value);
+
+                Assert.That(spriteSystem.LayerMapTryGet(
+                    (mob.Value, sprite),
+                    "GenitalButt1-butt_pair_2_0_FRONT",
+                    out var southButtLayer,
+                    false), Is.True);
+                Assert.That(spriteSystem.LayerMapTryGet(
+                    (mob.Value, sprite),
+                    "UndergarmentBottomBriefs-briefs",
+                    out var southUnderwearLayer,
+                    false), Is.True);
+
+                Assert.That(southButtLayer, Is.LessThan(southUnderwearLayer),
+                    "bottom organs must also render under back undergarments facing south");
             }
             finally
             {

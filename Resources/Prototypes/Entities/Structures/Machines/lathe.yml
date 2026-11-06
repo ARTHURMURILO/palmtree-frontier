@@ -711,6 +711,9 @@
     spriteLayers:
     - beaker
   # End Frontier: emag lathe recipes, item mapper
+  # Coyote Start: Biogenerator Buffer System
+  - type: BiogeneratorBuffer
+  # End Coyote
 
 - type: entity
   parent: BaseLathe

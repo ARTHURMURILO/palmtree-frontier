@@ -1,5 +1,5 @@
 ## UI
-bank-atm-menu-title = NT Galactic Bank
+bank-atm-menu-title = Frontier Galactic Bank
 bank-atm-menu-balance-label = Balance:{" "}
 bank-atm-menu-no-bank = No Bank Account!
 bank-atm-menu-withdraw-button = Withdraw
@@ -31,7 +31,7 @@ station-bank-assets-sold = Assets Sold
 station-bank-required = (Required)
 station-bank-other = Other
 
-station-bank-requires-reason = NT Requires transaction details
+station-bank-requires-reason = Frontier Galactic Bank requires transaction details
 station-bank-unauthorized = Unauthorized!
 bank-atm-menu-cash-error = ERR: INVALID
 
