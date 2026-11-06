@@ -303,7 +303,7 @@
   - type: SubFloorHide
     visibleLayers:
     - enum.SubfloorLayers.FirstLayer
-    - enum.SubfloorLayers.SecondLayer
+    - enum.GasMeterVisualLayers.Dial
   - type: Sprite
     sprite: _PS/Structures/Piping/Atmospherics/atmos_meter.rsi
     drawdepth: FloorObjects
@@ -314,7 +314,7 @@
     - state: meter
       map: [ "enabled", "enum.SubfloorLayers.FirstLayer" ]
     - state: pressure0
-      map: [ "dial", "enum.SubfloorLayers.SecondLayer" ]
+      map: [ "enum.GasMeterVisualLayers.Dial" ]
   - type: AtmosPipeLayers
     spriteRsiPaths:
       Primary: _PS/Structures/Piping/Atmospherics/atmos_meter.rsi
@@ -334,7 +334,7 @@
   - type: GenericVisualizer
     visuals:
       enum.GasMeterVisuals.Pressure:
-        dial:
+        enum.GasMeterVisualLayers.Dial:
           Zero: { state: pressure0 }
           Low: { state: pressure1 }
           Medium: { state: pressure2 }
@@ -342,7 +342,7 @@
           Extreme: { state: pressure4 }
       # Only the gauge bar is tinted, so the casing keeps its own colours.
       enum.GasMeterVisuals.Temperature:
-        dial:
+        enum.GasMeterVisualLayers.Dial:
           Freezing: { color: "#4A86FF" }
           Cold: { color: "#66D9FF" }
           Normal: { color: "#9BE86B" }
@@ -374,7 +374,7 @@
     - state: meter
       map: [ "enabled", "enum.SubfloorLayers.FirstLayer" ]
     - state: pressure0
-      map: [ "dial", "enum.SubfloorLayers.SecondLayer" ]
+      map: [ "enum.GasMeterVisualLayers.Dial" ]
   - type: Construction
     node: meterAlt1
 
@@ -393,7 +393,7 @@
     - state: meter
       map: [ "enabled", "enum.SubfloorLayers.FirstLayer" ]
     - state: pressure0
-      map: [ "dial", "enum.SubfloorLayers.SecondLayer" ]
+      map: [ "enum.GasMeterVisualLayers.Dial" ]
   - type: Construction
     node: meterAlt2
 

@@ -105,6 +105,7 @@ Fork modules are folder/namespace prefixes:
 | `.ai/systems/genital-organs.md` | Organ-based genitals replacing genital markings: catalog, profile/DB, editor tab, cum overlay and semen drip |
 | `.ai/systems/game-ticker.md` | Round state machine, presets, rules, maps, spawn |
 | `.ai/systems/core-gameplay.md` | Interactions, body/damage, atmos, power, chemistry, construction, NPC, shuttles |
+| `.ai/systems/atmos-temperature-devices.md` | Temperature gate/pump, heat exchanger, atmos meter: /tg/ maths, pipe layers, sprites, RPD wiring |
 | `.ai/systems/content-pipeline-and-tooling.md` | Prototypes, localization, maps, tests, CI, packaging |
 | `.ai/guides/porting-from-coyote.md` | Repeatable method for porting Coyote/Floof content into this repo |
 | `.ai/guides/porting-from-ss13.md` | Porting BYOND SS13 features, `.dmm` maps and sprites into this repo |

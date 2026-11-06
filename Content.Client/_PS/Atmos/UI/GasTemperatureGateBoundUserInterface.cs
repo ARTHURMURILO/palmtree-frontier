@@ -25,6 +25,14 @@ public sealed class GasTemperatureGateBoundUserInterface(EntityUid owner, Enum u
         _window.TargetTemperatureChanged += OnTargetTemperatureChanged;
         _window.InvertedChanged += OnInvertedChanged;
 
+        // The input field is only filled in on open: the server dirties the sensor readings once a
+        // second, and rewriting the spin box from Update() would eat whatever the player is typing.
+        if (EntMan.TryGetComponent(Owner, out GasTemperatureGateComponent? gate))
+        {
+            _window.MaxTemperature = gate.MaxTemperature;
+            _window.SetTargetTemperature(gate.TargetTemperature);
+        }
+
         Update();
     }
 
@@ -40,7 +48,6 @@ public sealed class GasTemperatureGateBoundUserInterface(EntityUid owner, Enum u
 
         _window.MaxTemperature = gate.MaxTemperature;
         _window.UpdateStatusButton(gate.Enabled);
-        _window.SetTargetTemperature(gate.TargetTemperature);
         _window.SetInverted(gate.Inverted);
         _window.UpdateInfo(gate.InletTemperature, gate.OutletTemperature);
     }
