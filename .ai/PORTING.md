@@ -95,6 +95,22 @@
   `Content.IntegrationTests/Tests/_PS/InteractionPanelTest.cs` and the `ServerDbSqliteTests`
   round-trip.
 
+### 3.4 Temperature atmos devices (2026-11, `_PS`)
+
+Ported from the current `/tg/station` checkout (`tgstation-master`), not from Coyote:
+
+- **Temperature gate**, **temperature pump**, **heat exchanger** and **atmos meter** — four atmos
+  devices SS14 has no equivalent for. Each is a binary/unary device on the vanilla `AtmosDevice` +
+  `PipeNode` + `AtmosDeviceUpdateEvent` framework, with three pipe layer prototypes, a construction
+  graph, an RPD mode, a guidebook page and an integration test.
+- **Passive gate RPD entry**: `GasPassiveGate` already existed upstream (component, system, layer
+  prototypes, construction, guide) but was never added to the RPD radial, so it was only reachable
+  through the construction menu.
+- Sprites are the TG originals repacked for SS14 (same source as the vanilla atmos pumps); regenerate
+  them with `gen_atmos_tg_sprites.py` in the workspace root. Design decisions and known gaps:
+  `.ai/systems/atmos-temperature-devices.md`. Test:
+  `Content.IntegrationTests/Tests/_PS/Atmos/TemperatureDevicesTest.cs`.
+
 ## 4. What was deliberately NOT ported
 
 | Feature | Reason / status |

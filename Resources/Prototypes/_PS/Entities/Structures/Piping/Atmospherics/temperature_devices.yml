@@ -1,0 +1,394 @@
+# Palmtree: atmospherics devices ported from /tg/station.
+#
+# Each device ships as three prototypes, one per pipe layer, exactly like the vanilla pumps: the
+# RPD picks the right one when it places the device (see AtmosPipeLayers.alternativePrototypes) and
+# a multitool layer change swaps the sprite at runtime.
+
+# region Temperature gate
+
+- type: entity
+  parent: GasBinaryBase
+  id: GasTemperatureGate
+  name: temperature gate
+  description: A gate that only lets gas through while the gas on its inlet side is colder than the set temperature.
+  placement:
+    mode: AlignAtmosPipeLayers
+  components:
+  - type: ExtensionCableReceiver
+  - type: LightningTarget
+    priority: 1
+  - type: ApcPowerReceiver
+    powerLoad: 200
+  - type: Rotatable
+  - type: Transform
+    noRot: false
+  - type: SubFloorHide
+    visibleLayers:
+    - enum.SubfloorLayers.FirstLayer
+  - type: Sprite
+    sprite: _PS/Structures/Piping/Atmospherics/temperature_gate.rsi
+    layers:
+    - sprite: Structures/Piping/Atmospherics/pipe.rsi
+      state: pipeStraight
+      map: [ "enum.PipeVisualLayers.Pipe" ]
+    - state: tgate
+      map: [ "enum.SubfloorLayers.FirstLayer" ]
+  - type: AtmosPipeLayers
+    spriteRsiPaths:
+      Primary: _PS/Structures/Piping/Atmospherics/temperature_gate.rsi
+      Secondary: _PS/Structures/Piping/Atmospherics/temperature_gate_alt1.rsi
+      Tertiary: _PS/Structures/Piping/Atmospherics/temperature_gate_alt2.rsi
+    alternativePrototypes:
+      Primary: GasTemperatureGate
+      Secondary: GasTemperatureGateAlt1
+      Tertiary: GasTemperatureGateAlt2
+  - type: Appearance
+  - type: GenericVisualizer
+    visuals:
+      enum.TemperatureGateVisuals.State:
+        enum.SubfloorLayers.FirstLayer:
+          Off: { state: tgate }
+          On: { state: tgateOn }
+          Flowing: { state: tgateFlow }
+  - type: PipeColorVisuals
+  - type: GasTemperatureGate
+  - type: ActivatableUI
+    key: enum.GasTemperatureGateUiKey.Key
+  - type: ActivatableUIRequiresAnchor
+  - type: UserInterface
+    interfaces:
+      enum.GasTemperatureGateUiKey.Key:
+        type: GasTemperatureGateBoundUserInterface
+  - type: Construction
+    graph: GasTemperature
+    node: temperaturegate
+  - type: AmbientSound
+    enabled: false
+    volume: -9
+    range: 5
+    sound:
+      path: /Audio/Ambience/Objects/gas_hiss.ogg
+  - type: AtmosMonitoringConsoleDevice
+    navMapBlip: GasValve
+  - type: GuideHelp
+    guides:
+    - TemperatureDevices
+
+- type: entity
+  parent: [ GasPipeLayerAlt1, GasTemperatureGate ]
+  id: GasTemperatureGateAlt1
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: _PS/Structures/Piping/Atmospherics/temperature_gate_alt1.rsi
+    layers:
+    - sprite: Structures/Piping/Atmospherics/pipe_alt1.rsi
+      state: pipeStraight
+      map: [ "enum.PipeVisualLayers.Pipe" ]
+    - state: tgate
+      map: [ "enum.SubfloorLayers.FirstLayer" ]
+  - type: Construction
+    node: temperaturegateAlt1
+
+- type: entity
+  parent: [ GasPipeLayerAlt2, GasTemperatureGate ]
+  id: GasTemperatureGateAlt2
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: _PS/Structures/Piping/Atmospherics/temperature_gate_alt2.rsi
+    layers:
+    - sprite: Structures/Piping/Atmospherics/pipe_alt2.rsi
+      state: pipeStraight
+      map: [ "enum.PipeVisualLayers.Pipe" ]
+    - state: tgate
+      map: [ "enum.SubfloorLayers.FirstLayer" ]
+  - type: Construction
+    node: temperaturegateAlt2
+
+# endregion
+
+# region Temperature pump
+
+- type: entity
+  parent: GasBinaryBase
+  id: GasTemperaturePump
+  name: temperature pump
+  description: Moves heat from one pipeline to another. The input gets colder and the output gets hotter.
+  placement:
+    mode: AlignAtmosPipeLayers
+  components:
+  - type: ExtensionCableReceiver
+  - type: LightningTarget
+    priority: 1
+  - type: ApcPowerReceiver
+    powerLoad: 200
+  - type: Rotatable
+  - type: Transform
+    noRot: false
+  - type: SubFloorHide
+    visibleLayers:
+    - enum.SubfloorLayers.FirstLayer
+  - type: Sprite
+    sprite: _PS/Structures/Piping/Atmospherics/temperature_pump.rsi
+    layers:
+    - sprite: Structures/Piping/Atmospherics/pipe.rsi
+      state: pipeStraight
+      map: [ "enum.PipeVisualLayers.Pipe" ]
+    - state: tpump
+      map: [ "enum.SubfloorLayers.FirstLayer" ]
+  - type: AtmosPipeLayers
+    spriteRsiPaths:
+      Primary: _PS/Structures/Piping/Atmospherics/temperature_pump.rsi
+      Secondary: _PS/Structures/Piping/Atmospherics/temperature_pump_alt1.rsi
+      Tertiary: _PS/Structures/Piping/Atmospherics/temperature_pump_alt2.rsi
+    alternativePrototypes:
+      Primary: GasTemperaturePump
+      Secondary: GasTemperaturePumpAlt1
+      Tertiary: GasTemperaturePumpAlt2
+  - type: Appearance
+  - type: GenericVisualizer
+    visuals:
+      enum.PumpVisuals.Enabled:
+        enum.SubfloorLayers.FirstLayer:
+          True: { state: tpumpOn }
+          False: { state: tpump }
+  - type: PipeColorVisuals
+  - type: GasTemperaturePump
+  - type: ActivatableUI
+    key: enum.GasTemperaturePumpUiKey.Key
+  - type: ActivatableUIRequiresAnchor
+  - type: UserInterface
+    interfaces:
+      enum.GasTemperaturePumpUiKey.Key:
+        type: GasTemperaturePumpBoundUserInterface
+  - type: Construction
+    graph: GasTemperature
+    node: temperaturepump
+  - type: AmbientSound
+    enabled: false
+    volume: -9
+    range: 5
+    sound:
+      path: /Audio/Ambience/Objects/gas_pump.ogg
+  - type: AtmosMonitoringConsoleDevice
+    navMapBlip: Thermoregulator
+  - type: GuideHelp
+    guides:
+    - TemperatureDevices
+
+- type: entity
+  parent: [ GasPipeLayerAlt1, GasTemperaturePump ]
+  id: GasTemperaturePumpAlt1
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: _PS/Structures/Piping/Atmospherics/temperature_pump_alt1.rsi
+    layers:
+    - sprite: Structures/Piping/Atmospherics/pipe_alt1.rsi
+      state: pipeStraight
+      map: [ "enum.PipeVisualLayers.Pipe" ]
+    - state: tpump
+      map: [ "enum.SubfloorLayers.FirstLayer" ]
+  - type: Construction
+    node: temperaturepumpAlt1
+
+- type: entity
+  parent: [ GasPipeLayerAlt2, GasTemperaturePump ]
+  id: GasTemperaturePumpAlt2
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: _PS/Structures/Piping/Atmospherics/temperature_pump_alt2.rsi
+    layers:
+    - sprite: Structures/Piping/Atmospherics/pipe_alt2.rsi
+      state: pipeStraight
+      map: [ "enum.PipeVisualLayers.Pipe" ]
+    - state: tpump
+      map: [ "enum.SubfloorLayers.FirstLayer" ]
+  - type: Construction
+    node: temperaturepumpAlt2
+
+# endregion
+
+# region Heat exchanger
+
+- type: entity
+  parent: GasBinaryBase
+  id: GasHeatExchanger
+  name: heat exchanger
+  description: Exchanges heat between two connected pipelines. No gas moves through it.
+  placement:
+    mode: AlignAtmosPipeLayers
+  components:
+  - type: Rotatable
+  - type: Transform
+    noRot: false
+  - type: SubFloorHide
+    visibleLayers:
+    - enum.SubfloorLayers.FirstLayer
+  - type: Sprite
+    sprite: _PS/Structures/Piping/Atmospherics/heat_exchanger.rsi
+    layers:
+    - sprite: Structures/Piping/Atmospherics/pipe.rsi
+      state: pipeStraight
+      map: [ "enum.PipeVisualLayers.Pipe" ]
+    - state: he
+      map: [ "enum.SubfloorLayers.FirstLayer" ]
+  - type: AtmosPipeLayers
+    spriteRsiPaths:
+      Primary: _PS/Structures/Piping/Atmospherics/heat_exchanger.rsi
+      Secondary: _PS/Structures/Piping/Atmospherics/heat_exchanger_alt1.rsi
+      Tertiary: _PS/Structures/Piping/Atmospherics/heat_exchanger_alt2.rsi
+    alternativePrototypes:
+      Primary: GasHeatExchanger
+      Secondary: GasHeatExchangerAlt1
+      Tertiary: GasHeatExchangerAlt2
+  - type: Appearance
+  - type: PipeColorVisuals
+  - type: GasHeatExchanger
+  - type: Construction
+    graph: GasTemperature
+    node: heatexchanger
+  - type: AtmosMonitoringConsoleDevice
+    navMapBlip: Thermoregulator
+  - type: GuideHelp
+    guides:
+    - TemperatureDevices
+
+- type: entity
+  parent: [ GasPipeLayerAlt1, GasHeatExchanger ]
+  id: GasHeatExchangerAlt1
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: _PS/Structures/Piping/Atmospherics/heat_exchanger_alt1.rsi
+    layers:
+    - sprite: Structures/Piping/Atmospherics/pipe_alt1.rsi
+      state: pipeStraight
+      map: [ "enum.PipeVisualLayers.Pipe" ]
+    - state: he
+      map: [ "enum.SubfloorLayers.FirstLayer" ]
+  - type: Construction
+    node: heatexchangerAlt1
+
+- type: entity
+  parent: [ GasPipeLayerAlt2, GasHeatExchanger ]
+  id: GasHeatExchangerAlt2
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: _PS/Structures/Piping/Atmospherics/heat_exchanger_alt2.rsi
+    layers:
+    - sprite: Structures/Piping/Atmospherics/pipe_alt2.rsi
+      state: pipeStraight
+      map: [ "enum.PipeVisualLayers.Pipe" ]
+    - state: he
+      map: [ "enum.SubfloorLayers.FirstLayer" ]
+  - type: Construction
+    node: heatexchangerAlt2
+
+# endregion
+
+# region Atmos meter
+
+- type: entity
+  parent: GasBinaryBase
+  id: GasMeter
+  name: atmos meter
+  description: A pressure and temperature gauge for the pipeline it is attached to.
+  placement:
+    mode: AlignAtmosPipeLayers
+  components:
+  - type: SubFloorHide
+    visibleLayers:
+    - enum.SubfloorLayers.FirstLayer
+  - type: Sprite
+    sprite: _PS/Structures/Piping/Atmospherics/atmos_meter.rsi
+    drawdepth: FloorObjects
+    layers:
+    - sprite: Structures/Piping/Atmospherics/pipe.rsi
+      state: pipeStraight
+      map: [ "enum.PipeVisualLayers.Pipe" ]
+    - state: meter0
+      map: [ "enabled", "enum.SubfloorLayers.FirstLayer" ]
+  - type: AtmosPipeLayers
+    spriteRsiPaths:
+      Primary: _PS/Structures/Piping/Atmospherics/atmos_meter.rsi
+      Secondary: _PS/Structures/Piping/Atmospherics/atmos_meter_alt1.rsi
+      Tertiary: _PS/Structures/Piping/Atmospherics/atmos_meter_alt2.rsi
+    alternativePrototypes:
+      Primary: GasMeter
+      Secondary: GasMeterAlt1
+      Tertiary: GasMeterAlt2
+  - type: NodeContainer
+    nodes:
+      monitored:
+        !type:PipeNode
+        nodeGroupID: Pipe
+        pipeDirection: Longitudinal
+  - type: Appearance
+  - type: GenericVisualizer
+    visuals:
+      enum.GasMeterVisuals.Pressure:
+        enabled:
+          Zero: { state: meter0 }
+          Low: { state: meter1 }
+          Medium: { state: meter2 }
+          High: { state: meter3 }
+          Extreme: { state: meter4 }
+      # /tg/station tints the whole meter by temperature; the same works here because the bar and the
+      # body share one layer, so the colour lands on the bar and barely shows on the dark casing.
+      enum.GasMeterVisuals.Temperature:
+        enabled:
+          Freezing: { color: "#4A86FF" }
+          Cold: { color: "#66D9FF" }
+          Normal: { color: "#9BE86B" }
+          Warm: { color: "#FFD24A" }
+          Hot: { color: "#FF8A3D" }
+          Burning: { color: "#FF4D4D" }
+  - type: PipeColorVisuals
+  - type: GasMeter
+  - type: Construction
+    graph: GasTemperature
+    node: meter
+  - type: AtmosMonitoringConsoleDevice
+  - type: GuideHelp
+    guides:
+    - TemperatureDevices
+
+- type: entity
+  parent: [ GasPipeLayerAlt1, GasMeter ]
+  id: GasMeterAlt1
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: _PS/Structures/Piping/Atmospherics/atmos_meter_alt1.rsi
+    drawdepth: FloorObjects
+    layers:
+    - sprite: Structures/Piping/Atmospherics/pipe_alt1.rsi
+      state: pipeStraight
+      map: [ "enum.PipeVisualLayers.Pipe" ]
+    - state: meter0
+      map: [ "enabled", "enum.SubfloorLayers.FirstLayer" ]
+  - type: Construction
+    node: meterAlt1
+
+- type: entity
+  parent: [ GasPipeLayerAlt2, GasMeter ]
+  id: GasMeterAlt2
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: _PS/Structures/Piping/Atmospherics/atmos_meter_alt2.rsi
+    drawdepth: FloorObjects
+    layers:
+    - sprite: Structures/Piping/Atmospherics/pipe_alt2.rsi
+      state: pipeStraight
+      map: [ "enum.PipeVisualLayers.Pipe" ]
+    - state: meter0
+      map: [ "enabled", "enum.SubfloorLayers.FirstLayer" ]
+  - type: Construction
+    node: meterAlt2
+
+# endregion
