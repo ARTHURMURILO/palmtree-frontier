@@ -29,6 +29,7 @@ public sealed class GasTemperatureGateBoundUserInterface(EntityUid owner, Enum u
         // second, and rewriting the spin box from Update() would eat whatever the player is typing.
         if (EntMan.TryGetComponent(Owner, out GasTemperatureGateComponent? gate))
         {
+            _window.MinTemperature = gate.MinTemperature;
             _window.MaxTemperature = gate.MaxTemperature;
             _window.SetTargetTemperature(gate.TargetTemperature);
         }

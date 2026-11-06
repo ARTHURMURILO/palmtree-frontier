@@ -44,13 +44,13 @@ public sealed partial class GasTemperatureGateComponent : Component
     /// <summary>
     /// Lowest temperature the target can be set to.
     /// </summary>
-    [DataField]
+    [DataField, AutoNetworkedField]
     public float MinTemperature = Atmospherics.TCMB;
 
     /// <summary>
     /// Highest temperature the target can be set to.
     /// </summary>
-    [DataField]
+    [DataField, AutoNetworkedField]
     public float MaxTemperature = 4500f;
 
     /// <summary>

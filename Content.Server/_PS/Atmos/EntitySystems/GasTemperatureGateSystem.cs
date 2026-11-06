@@ -87,6 +87,17 @@ public sealed class GasTemperatureGateSystem : SharedGasTemperatureGateSystem
             return;
         }
 
+        // A node with no pipeline behind it reads as the immutable space mixture, and Merge() drops
+        // anything fed into an immutable mixture, so a transfer into one would lose the gas. Anchored
+        // devices always end up in a node group, so this is defensive rather than a live case.
+        if (inletAir.Immutable || outletAir.Immutable)
+        {
+            _ambientSound.SetAmbience(ent, false);
+            SetReadings(ent, inletAir, outletAir, 0f);
+            SetState(ent, TemperatureGateState.Off);
+            return;
+        }
+
         if (!ent.Comp.Enabled || !_power.IsPowered(ent.Owner))
         {
             _ambientSound.SetAmbience(ent, false);
