@@ -1,0 +1,96 @@
+# NSV13 - stormdrive control rods and reactor core.
+#
+# Ported from `control_rods.dm`. A rod is a physical item: it has integrity that is worn down while
+# it moderates a live core, and an effectiveness multiplier that the reactor averages. The plasma
+# variant has NEGATIVE effectiveness - it feeds the reaction instead of damping it.
+#
+# ART: nsv13/icons/obj/control_rod.dmi, converted to RSI v2.
+
+- type: entity
+  id: ControlRod
+  parent: BaseItem
+  name: nanocarbon reactor control rod
+  description: A standard nanocarbon reactor control rod.
+  components:
+  - type: Sprite
+    sprite: _NSV13/Objects/Materials/control_rod.rsi
+    state: normal
+  - type: Item
+    size: Huge
+  - type: ControlRod
+    integrity: 100
+    maxIntegrity: 100
+    effectiveness: 1
+
+- type: entity
+  parent: ControlRod
+  id: ControlRodInferior
+  name: techfab manufactured reactor control rod
+  description: Manufactured onboard. Techfabs lack the resolution to completely solidify the core.
+  components:
+  - type: Sprite
+    state: inferior
+  - type: ControlRod
+    integrity: 80
+    maxIntegrity: 80
+    effectiveness: 0.8
+
+- type: entity
+  parent: ControlRod
+  id: ControlRodSuperior
+  name: crystalline nanocarbon reactor control rod
+  description: A superior nanocarbon control rod, yielding a longer lifetime.
+  components:
+  - type: Sprite
+    state: superior
+  - type: ControlRod
+    integrity: 200
+    maxIntegrity: 200
+    effectiveness: 1
+
+- type: entity
+  parent: ControlRod
+  id: ControlRodPlasma
+  name: nanocarbon sheathed plasma reactor control rod
+  description: A nanocarbon sheet surrounds the plasma core of this control rod. It does not moderate the reaction - it fuels it.
+  components:
+  - type: Sprite
+    state: plasma
+  - type: ControlRod
+    integrity: 100
+    maxIntegrity: 100
+    effectiveness: -0.5
+
+- type: entity
+  parent: ControlRod
+  id: ControlRodIrradiated
+  name: depleted reactor control rod
+  description: A reactor control rod saturated with radioactive particles. No longer effective.
+  components:
+  - type: Sprite
+    state: irradiated
+  - type: ControlRod
+    integrity: 0
+    maxIntegrity: 100
+    effectiveness: 0
+    # This rod *is* the replacement a burnt-out rod is swapped for; the core must not try to
+    # replace it again (the DM can_cool() skips /obj/item/control_rod/irradiated explicitly).
+    replaceable: false
+  - type: RadiationSource
+    intensity: 3
+    slope: 1
+
+- type: entity
+  parent: BaseItem
+  id: StormdriveCore
+  name: class IV nuclear storm drive reactor core
+  description: A live reactor core for a class IV nuclear storm drive, packaged and ready for heavy-duty lifting equipment.
+  components:
+  - type: Sprite
+    sprite: _NSV13/Objects/Materials/control_rod.rsi
+    state: stormdrive_core
+  - type: Item
+    size: Huge
+  - type: StormdriveCore
+  - type: StaticPrice
+    price: 5000

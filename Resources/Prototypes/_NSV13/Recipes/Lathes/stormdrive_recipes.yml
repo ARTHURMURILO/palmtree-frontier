@@ -1,0 +1,46 @@
+# NSV13 - lathe recipes for the stormdrive.
+#
+# The DM techweb had two nodes: `reactor_control_rods` (cheap, techfab-made rods) and
+# `stormdrive_reactor_control` (the console board). The machine boards and the reactors themselves were
+# department-printed rather than researched, so they are folded into the same two nodes here.
+
+# Split out of reactor_recipes.yml, same reason as rbmk_recipes.yml.
+- type: latheRecipe
+  parent: [ BaseGoldCircuitboardRecipe, BaseEngineeringMachineRecipeCategory ]
+  id: StormdriveReactorMachineCircuitboard
+  result: StormdriveReactorMachineCircuitboard
+
+- type: latheRecipe
+  parent: [ BaseSilverCircuitboardRecipe, BaseEngineeringMachineRecipeCategory ]
+  id: StormdriveConsoleCircuitboard
+  result: StormdriveConsoleCircuitboard
+
+# DM: /datum/design/reactor_control_rods - iron 500 + titanium 500 for the techfab rod.
+
+# Palmtree: the final step of the meltdown repair chain needs a StormdriveCore, and nothing in the
+# tree produced or sold one. Without this recipe the four-step recovery consumes 25 uranium and a
+# weld and can never be finished. Unlocked by NFStormdriveMachinery, whose entityIcon is this core.
+- type: latheRecipe
+  id: StormdriveCore
+  result: StormdriveCore
+  materials:
+    Steel: 2000
+    Plasteel: 1000
+    Uranium: 500
+  categories:
+  - Engineering
+  icon:
+    sprite: _NSV13/Objects/Materials/control_rod.rsi
+    state: stormdrive_core
+
+- type: latheRecipe
+  id: ControlRodInferior
+  result: ControlRodInferior
+  materials:
+    Steel: 500
+    Plasteel: 500
+  categories:
+  - Engineering
+  icon:
+    sprite: _NSV13/Objects/Materials/control_rod.rsi
+    state: inferior

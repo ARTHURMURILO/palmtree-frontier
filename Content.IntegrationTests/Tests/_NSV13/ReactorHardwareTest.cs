@@ -1,17 +1,19 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
-
 using System.Collections.Generic;
 using System.Linq;
 using Content.Server._NF.DangerTether;
-using Content.Server.Construction.Components;
 using Content.Server.NodeContainer;
 using Content.Server.NodeContainer.Nodes;
 using Content.Server.Power.Components;
 using Content.Server.Power.Nodes;
+using Content.Server.Shuttles.Components;
+using Content.Shared.Cargo.Prototypes;
+using Content.Server.Construction.Components;
 using Content.Shared._NSV13.Reactor;
 using Content.Shared.Atmos;
 using Content.Shared.Construction.Components;
 using Content.Shared.Construction.Prototypes;
+using Content.Shared._Goobstation.Supermatter.Components;
+using Content.Shared.Movement.Pulling.Components;
 using Content.Shared.NodeContainer;
 using Content.Shared.Movement.Pulling.Components;
 using Content.Shared.NodeContainer.NodeGroups;
@@ -23,9 +25,9 @@ using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Maths;
-using Robust.Shared.Physics.Components;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Physics;
+using Robust.Shared.Physics.Components;
 
 namespace Content.IntegrationTests.Tests._NSV13;
 
@@ -47,6 +49,7 @@ namespace Content.IntegrationTests.Tests._NSV13;
 public sealed class ReactorHardwareTest
 {
     private const string Rbmk = "RbmkNuclearReactor";
+    private const string Stormdrive = "StormdriveReactor";
 
     /// <summary>
     ///     Both reactors must present an HV take-off, a supplier that can actually ramp, and no way
@@ -54,7 +57,7 @@ public sealed class ReactorHardwareTest
     /// </summary>
     [Test]
     [TestCase(Rbmk)]
-    // [TestCase(Stormdrive)] // BRANCH NOTE (rbmk branch): the stormdrive lives on its own branch.
+    [TestCase(Stormdrive)]
     public async Task ReactorExportsHighVoltageAndCannotBeUnwrenched(string protoId)
     {
         await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
@@ -102,72 +105,6 @@ public sealed class ReactorHardwareTest
     }
 
     /// <summary>
-    ///     The examine overlay takes its faces from <see cref="ReactorPortLayoutComponent"/>, not
-    ///     from the pipe nodes - those are <c>serverOnly</c>, so the client never sees them. That
-    ///     leaves two copies of the same fact, and a silent drift would point the coolant arrows at
-    ///     the wrong face of a machine whose art gives no hint either way.
-    /// </summary>
-    [Test]
-    [TestCase(Rbmk)]
-    public async Task ReactorPortLayoutMatchesItsPipeNodes(string protoId)
-    {
-        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true, Connected = true });
-        var server = pair.Server;
-        var client = pair.Client;
-        var testMap = await pair.CreateTestMap();
-        var entMan = server.ResolveDependency<IEntityManager>();
-        EntityUid reactor = default;
-        NetEntity netReactor = default;
-
-        await server.WaitAssertion(() =>
-        {
-            reactor = entMan.SpawnEntity(protoId, testMap.GridCoords);
-            netReactor = entMan.GetNetEntity(reactor);
-            var nodes = entMan.GetComponent<NodeContainerComponent>(reactor).Nodes;
-            var layout = entMan.GetComponent<ReactorPortLayoutComponent>(reactor);
-
-            AssertFace(nodes, "coolantIn", layout.CoolantIn);
-            AssertFace(nodes, "coolantOut", layout.CoolantOut);
-            AssertFace(nodes, "moderatorIn", layout.Moderator);
-
-            static void AssertFace(Dictionary<string, Node> nodes, string nodeName, Direction face)
-            {
-                Assert.That(nodes.TryGetValue(nodeName, out var node), Is.True, $"{nodeName} is missing");
-                Assert.That(node, Is.InstanceOf<PipeNode>(), $"{nodeName} must be a pipe node");
-                Assert.That(face, Is.Not.EqualTo(Direction.Invalid),
-                    $"{nodeName} has no face in the overlay layout, so the client cannot draw it");
-
-                var pipeFace = ((PipeNode) node!).OriginalPipeDirection;
-                Assert.That(pipeFace, Is.EqualTo(face.ToPipeDirection()),
-                    $"{nodeName}: the overlay points at {face}, the pipe node is on {pipeFace}");
-            }
-        });
-
-        await pair.RunTicksSync(5);
-
-        // The faces are the only thing the client is allowed to know: the pipe nodes never leave
-        // the server. If the component state does not actually cross the wire the overlay has
-        // nothing to draw and the whole feature is silently dead, so assert it here.
-        await client.WaitAssertion(() =>
-        {
-            var clientEntMan = client.ResolveDependency<IEntityManager>();
-            var clientReactor = clientEntMan.GetEntity(netReactor);
-
-            Assert.That(clientReactor.IsValid, Is.True, "the reactor entity did not reach the client");
-
-            Assert.That(clientEntMan.HasComponent<ReactorPortLayoutComponent>(clientReactor), Is.True,
-                "the port faces have to reach the client");
-
-            var layout = clientEntMan.GetComponent<ReactorPortLayoutComponent>(clientReactor);
-            Assert.That(layout.CoolantIn, Is.EqualTo(Direction.West), "client-side coolant inlet face");
-            Assert.That(layout.CoolantOut, Is.EqualTo(Direction.East), "client-side coolant outlet face");
-            Assert.That(layout.Moderator, Is.EqualTo(Direction.North), "client-side moderator face");
-        });
-
-        await pair.CleanReturnAsync();
-    }
-
-    /// <summary>
     ///     A reactor with HV cable under it and a load on the net must actually deliver, not merely
     ///     report a figure on its own console.
     /// </summary>
@@ -206,11 +143,134 @@ public sealed class ReactorHardwareTest
     }
 
     /// <summary>
+    ///     The supermatter shard is the movable, purchasable crystal: it has to spawn unanchored and
+    ///     keep both anchor flags, or it cannot be carried aboard and bolted down.
+    /// </summary>
+    [Test]
+    public async Task SupermatterShardIsMovableAndOnSale()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var protoMan = server.ResolveDependency<IPrototypeManager>();
+
+        await server.WaitAssertion(() =>
+        {
+            var uid = entMan.SpawnEntity("SupermatterSmall", testMap.GridCoords);
+
+            Assert.That(entMan.GetComponent<TransformComponent>(uid).Anchored, Is.False,
+                "the shard ships loose so it can be dragged around");
+
+            // Same [Access] restriction as above: assert the wiring, not the flags.
+            Assert.That(entMan.HasComponent<AnchorableComponent>(uid), Is.True,
+                "the shard must be wrenchable, or it cannot be installed aboard a ship");
+
+            // Dragging in this engine is pull-based, and pulling needs Pullable. The crystal does not
+            // inherit it from BaseItem/BaseStructure like every other movable thing does.
+            Assert.That(entMan.HasComponent<PullableComponent>(uid), Is.True,
+                "the shard must be pullable, or it cannot be dragged onto a ship");
+
+            // Pulling rejects static bodies. The parent's Physics defaults to Static and only the
+            // anchoring system flips it to Dynamic on an explicit unanchor, so a freshly spawned
+            // shard could not be dragged until it was wrenched down and back up.
+            Assert.That(entMan.GetComponent<PhysicsComponent>(uid).BodyType, Is.EqualTo(BodyType.Dynamic),
+                "the shard must spawn with a dynamic body or it cannot be pulled");
+
+            // Same crystal as the full-size one: identical failure modes and output.
+            var small = entMan.GetComponent<SupermatterComponent>(uid);
+
+            var fullProto = protoMan.Index<EntityPrototype>("Supermatter");
+            Assert.That(fullProto.TryGetComponent<SupermatterComponent>(out var full), Is.True);
+
+            Assert.That(small.DelaminationPoint, Is.EqualTo(full!.DelaminationPoint),
+                "the shard is a mounting option, not a weaker engine");
+            Assert.That(small.DelamTimer, Is.EqualTo(full.DelamTimer), "the shard uses the same fuse length");
+
+            Assert.That(protoMan.HasIndex<EntityPrototype>("SupermatterSmallFlatpack"), Is.True,
+                "the shard needs a flatpack to be sellable");
+            Assert.That(protoMan.HasIndex<CargoProductPrototype>("EngineSupermatterShard"), Is.True,
+                "the shard should be purchasable through cargo");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    ///     A supermatter collapse that eats the floor out from under itself must not lose the
+    ///     singularity to the danger tether: the ship grid is the tether, and it is still the ship
+    ///     grid even after the tile below is gone.
+    /// </summary>
+    [Test]
+    public async Task SingularityOnAShipSurvivesLosingItsFloor()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var grid = testMap.Grid.Owner;
+        EntityUid singularity = default;
+
+        await server.WaitAssertion(() =>
+        {
+            // Test maps are not guaranteed to be shuttles; a real ship grid always is.
+            entMan.EnsureComponent<ShuttleComponent>(grid);
+
+            // Give the grid a deck rather than a single tile: a one-tile grid is deleted when its
+            // last tile goes, which would delete the singularity with it and prove nothing.
+            var map = entMan.System<SharedMapSystem>();
+            var gridComp = entMan.GetComponent<MapGridComponent>(grid);
+            for (var x = -4; x <= 4; x++)
+            {
+                for (var y = -4; y <= 4; y++)
+                    map.SetTile(grid, gridComp, new Vector2i(x, y), new Tile(1));
+            }
+
+            singularity = entMan.SpawnEntity("Singularity", testMap.GridCoords);
+
+            var tether = entMan.System<DangerTetherSystem>();
+            Assert.That(tether.AnyTetherInRange(singularity), Is.True,
+                "a singularity on a ship grid must count as tethered");
+        });
+
+        await pair.RunTicksSync(10);
+
+        await server.WaitAssertion(() =>
+        {
+            var map = entMan.System<SharedMapSystem>();
+            var gridComp = entMan.GetComponent<MapGridComponent>(grid);
+
+            // The event horizon eats the tile it is standing on. Removing a tile deparents everything
+            // on it to the map, so the singularity is now "in space" over its own hole - it must
+            // still count as the ship's problem, or the tether culls it half a second later.
+            map.SetTile(grid, gridComp, Vector2i.Zero, Tile.Empty);
+
+            Assert.That(entMan.EntityExists(singularity), Is.True,
+                "removing a tile must not delete the singularity");
+
+            var tether = entMan.System<DangerTetherSystem>();
+            Assert.That(tether.AnyTetherInRange(singularity), Is.True,
+                "a danger hovering over the hole it ate is still tethered to the ship");
+        });
+
+        await pair.RunTicksSync(120);
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(entMan.EntityExists(singularity), Is.True,
+                "the danger tether must not cull the singularity for eating its own floor");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
     ///     The reactor footprint must reserve its tiles against girders and walls without turning
     ///     the machine into a wall itself.
     /// </summary>
     [Test]
     [TestCase("RbmkNuclearReactor", 1.5f, 1.5f, 2.5f, 2.5f, false)]
+    [TestCase("StormdriveReactor", 1.5f, 0.5f, 0.5f, 1.5f, true)]
     public async Task ReactorFootprintReservesConstructionWithoutBeingSolid(
         string protoId, float edgeX, float edgeY, float outsideX, float outsideY, bool centreSolid)
     {
@@ -273,4 +333,87 @@ public sealed class ReactorHardwareTest
         await pair.CleanReturnAsync();
     }
 
+    /// <summary>
+    ///     The examine overlay takes its faces from <see cref="ReactorPortLayoutComponent"/>, not
+    ///     from the pipe nodes - those are <c>serverOnly</c>, so the client never sees them. That
+    ///     leaves two copies of the same fact, and a silent drift would point the arrows at the
+    ///     wrong face of a machine whose art gives no hint either way.
+    /// </summary>
+    [Test]
+    [TestCase(Rbmk)]
+    [TestCase(Stormdrive)]
+    public async Task ReactorPortLayoutMatchesItsPipeNodes(string protoId)
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true, Connected = true });
+        var server = pair.Server;
+        var client = pair.Client;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        EntityUid reactor = default;
+        NetEntity netReactor = default;
+
+        await server.WaitAssertion(() =>
+        {
+            reactor = entMan.SpawnEntity(protoId, testMap.GridCoords);
+            netReactor = entMan.GetNetEntity(reactor);
+            var nodes = entMan.GetComponent<NodeContainerComponent>(reactor).Nodes;
+            var layout = entMan.GetComponent<ReactorPortLayoutComponent>(reactor);
+
+            if (protoId == Rbmk)
+            {
+                AssertFace(nodes, "coolantIn", layout.CoolantIn);
+                AssertFace(nodes, "coolantOut", layout.CoolantOut);
+                AssertFace(nodes, "moderatorIn", layout.Moderator);
+            }
+            else
+            {
+                AssertFace(nodes, "fuel", layout.Fuel);
+                AssertFace(nodes, "waste", layout.Waste);
+            }
+
+            static void AssertFace(Dictionary<string, Node> nodes, string nodeName, Direction face)
+            {
+                Assert.That(nodes.TryGetValue(nodeName, out var node), Is.True, $"{nodeName} is missing");
+                Assert.That(node, Is.InstanceOf<PipeNode>(), $"{nodeName} must be a pipe node");
+                Assert.That(face, Is.Not.EqualTo(Direction.Invalid),
+                    $"{nodeName} has no face in the overlay layout, so the client cannot draw it");
+
+                var pipeFace = ((PipeNode) node!).OriginalPipeDirection;
+                Assert.That(pipeFace, Is.EqualTo(face.ToPipeDirection()),
+                    $"{nodeName}: the overlay points at {face}, the pipe node is on {pipeFace}");
+            }
+        });
+
+        await pair.RunTicksSync(5);
+
+        // The faces are the only thing the client is allowed to know: the pipe nodes never leave
+        // the server. If the component state does not actually cross the wire the overlay has
+        // nothing to draw and the whole feature is silently dead, so assert it here.
+        await client.WaitAssertion(() =>
+        {
+            var clientEntMan = client.ResolveDependency<IEntityManager>();
+            var clientReactor = clientEntMan.GetEntity(netReactor);
+
+            Assert.That(clientReactor.IsValid, Is.True, "the reactor entity did not reach the client");
+
+            Assert.That(clientEntMan.HasComponent<ReactorPortLayoutComponent>(clientReactor), Is.True,
+                "the port faces have to reach the client");
+
+            var layout = clientEntMan.GetComponent<ReactorPortLayoutComponent>(clientReactor);
+
+            if (protoId == Rbmk)
+            {
+                Assert.That(layout.CoolantIn, Is.EqualTo(Direction.West), "client-side coolant inlet face");
+                Assert.That(layout.CoolantOut, Is.EqualTo(Direction.East), "client-side coolant outlet face");
+                Assert.That(layout.Moderator, Is.EqualTo(Direction.North), "client-side moderator face");
+            }
+            else
+            {
+                Assert.That(layout.Fuel, Is.EqualTo(Direction.East), "client-side fuel face");
+                Assert.That(layout.Waste, Is.EqualTo(Direction.West), "client-side waste face");
+            }
+        });
+
+        await pair.CleanReturnAsync();
+    }
 }

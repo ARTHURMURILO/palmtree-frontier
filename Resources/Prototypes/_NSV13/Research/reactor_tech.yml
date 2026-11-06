@@ -1,26 +1,43 @@
-# NSV13 - research for the ported RBMK reactor.
+# NSV13 - research for the ported reactors.
 #
 # This fork's live tech tree is `Resources/Prototypes/_NF/Research/techtree.yml` (the older
-# `Resources/Prototypes/Research/*.yml` files are marked IGNORED on the Frontier), so this node joins
-# the `NFEngineering` tree with an explicit grid position rather than a separate tree of its own.
+# `Resources/Prototypes/Research/*.yml` files are marked IGNORED on the Frontier), so these nodes join
+# the `NFEngineering` tree with explicit grid positions rather than a separate tree of their own.
 #
-# Mirrors the DM techweb: `reactor_control_rods` was basic engineering. The RBMK has no control rods
-# of its own, so this branch's node is a plain "reactor machinery" gate for the boards and the vessel
-# sealant.
+# Mirrors the DM techweb: `reactor_control_rods` was basic engineering, and the stormdrive machinery
+# node required advanced engineering + advanced power. Costs are the fork's scale, not BYOND's 2500.
 
 - type: technology
-  id: NFReactorMachinery
-  name: research-technology-reactor-machinery
-  entityIcon: RbmkReactorMachineCircuitboard
+  id: NFReactorControlRods
+  name: research-technology-reactor-control-rods
+  entityIcon: ControlRod
   discipline: NFEngineering
   tier: 2
   cost: 5000
   recipeUnlocks:
+  - ControlRodInferior
   - ReactorSealant
   - RbmkReactorMachineCircuitboard
   - RbmkConsoleCircuitboard
   technologyPrerequisites:
   - NFBasicPowerGeneration
-  # 4,28 is already NFAdvancedPowerGeneration's slot in the live techtree; placing this node
-  # there drew two research buttons on top of each other.
+  # 4, 28 is already NFAdvancedPowerGeneration. Sit one column left of the stormdrive node
+  # instead, diagonally off the basic power generator it requires.
   position: 3, 29
+
+- type: technology
+  id: NFStormdriveMachinery
+  name: research-technology-stormdrive-machinery
+  entityIcon: StormdriveCore
+  discipline: NFEngineering
+  tier: 3
+  cost: 15000
+  recipeUnlocks:
+  - StormdriveReactorMachineCircuitboard
+  - StormdriveConsoleCircuitboard
+  - StormdriveCore
+  technologyPrerequisites:
+  - NFReactorControlRods
+  - NFAdvancedPowercells
+  prerequisiteLineType: Diagonal
+  position: 4, 29

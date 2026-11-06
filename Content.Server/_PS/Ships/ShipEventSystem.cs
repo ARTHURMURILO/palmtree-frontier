@@ -190,6 +190,9 @@ public sealed class ShipEventSystem : EntitySystem
     /// </remarks>
     public void ShakeLocal(EntityUid source, float radius = 6f, float strength = 1f)
     {
+        // Palmtree: the grid check is the whole point of this helper. Without it a shake on one
+        // ship kicks the camera of every player within radius on any grid, which at a dock is the
+        // neighbour's cockpit.
         if (TerminatingOrDeleted(source) || !TryGetGrid(source, out var grid))
             return;
 
