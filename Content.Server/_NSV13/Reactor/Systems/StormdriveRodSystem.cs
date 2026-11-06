@@ -111,7 +111,7 @@ public sealed class StormdriveRodSystem : EntitySystem
             _emp.EmpPulse(_transform.GetMapCoordinates(uid), 3f, 5f, 5f);
 
             ZapUser(args.User, 20f);
-            _radiation.IrradiateEntity(args.User, 25f, 1f);
+            _radiation.IrradiateEntity(args.User, 25f, 0f, 1f);
         }
 
         _doAfter.TryStartDoAfter(new DoAfterArgs(EntityManager, args.User, InstallTime,
@@ -176,7 +176,7 @@ public sealed class StormdriveRodSystem : EntitySystem
             _audio.PlayPvs("/Audio/Items/welder.ogg", uid);
             _emp.EmpPulse(_transform.GetMapCoordinates(uid), 3f, 5f, 5f);
             ZapUser(args.Actor, 20f);
-            _radiation.IrradiateEntity(args.Actor, 25f, 1f);
+            _radiation.IrradiateEntity(args.Actor, 25f, 0f, 1f);
         }
 
         _doAfter.TryStartDoAfter(new DoAfterArgs(EntityManager, args.Actor, InstallTime,
