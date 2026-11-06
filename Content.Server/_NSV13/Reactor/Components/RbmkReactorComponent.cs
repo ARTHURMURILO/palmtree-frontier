@@ -141,6 +141,33 @@ public sealed partial class RbmkReactorComponent : Component
     [DataField]
     public float MinimumCoolantLevel = 5f;
 
+    /// <summary>
+    ///     Palmtree: total moles of gas that must be sitting in the moderator gate before the core
+    ///     will process it at all.
+    /// </summary>
+    /// <remarks>
+    ///     Split out of <see cref="MinimumCoolantLevel"/>, which the moderator gate used to share.
+    ///     The coolant inlet has to swallow a whole ship's heat, so it wants a high floor; the
+    ///     moderator gate only has to be non-empty for the reaction to scale down smoothly. Sharing
+    ///     one number meant a ship feeding the gate from a low-rate source (a supermatter vent, a
+    ///     trickle from a waste line) could never reach it, and power was exactly zero rather than
+    ///     proportionally small. Keep the fuel floor (<see cref="MinimumModeratorFuelMoles"/>) at or
+    ///     below this one, or the gate passes the total check, is destroyed, and still makes nothing.
+    /// </remarks>
+    [DataField]
+    public float MinimumModeratorMoles = 5f;
+
+    /// <summary>
+    ///     Palmtree: fuel-weighted moles (plasma + 10x tritium) the moderator gate must contain before
+    ///     the reaction produces any power.
+    /// </summary>
+    /// <remarks>
+    ///     The gate is destroyed in full once the total check passes, so this is the number a low-rate
+    ///     feed has to clear: with a 2:1 plasma/oxygen mix, 5 mol of fuel means ~7.5 mol of mixture.
+    /// </remarks>
+    [DataField]
+    public float MinimumModeratorFuelMoles = 5f;
+
     /// <summary>Consecutive ticks without enough coolant. Decays twice as fast as it accumulates.</summary>
     [ViewVariables(VVAccess.ReadOnly)]
     public int NoCoolantTicks;

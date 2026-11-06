@@ -109,6 +109,15 @@
     # that same node means the deconstruct verb sees "already there" and offers nothing.
     deconstructionTarget: machine
   - type: RbmkReactor
+    # Palmtree: a ship feeds the moderator gate from whatever gas source it has, and that source can
+    # be a lot slower than a station's plasma miner. The gate used to share the coolant inlet's
+    # 5-mole floor, so a low-rate feed (a supermatter vent, a waste line) never reached it: the
+    # reactor made exactly 0 W instead of proportionally less, and the gate was still destroyed.
+    # Power is linear in moderator moles, so a small feed now makes a small, honest number of watts.
+    # Keep the fuel floor below the total floor: the gate clears on the total check, so a mix that
+    # passes the first and fails the second loses its gas for nothing.
+    minimumModeratorMoles: 0.5
+    minimumModeratorFuelMoles: 0.25
 
   # The machine has to survive its own failure. BaseMachine's Destructible thresholds delete the
   # entity outright once it has taken 200 damage, and a meltdown deals thousands - so the reactor

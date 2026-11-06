@@ -1,15 +1,24 @@
 # Reactor ship persistence
 
-**Status:** Proposed. Nothing implemented. The ship save/load path belongs to the maintainer
-(`Content.Server/_PS/BluespaceDock/`), so this document is the hand-off: the problem, the policy, and
-the exact hook points, with no code changes from the engine branches.
+**Status:** **Implemented (2026-11-06).** The data-restore fixes landed on the engine branches and the
+policy layer below landed on `experimental`:
+
+- `BluespaceDockSystem.FindLiveReactor` / `IsLiveReactor` is the gate; it is wired into both
+  `FindStoreBlocker` (so the console refuses early) and `TrySaveShipFile` (the choke point every
+  store goes through).
+- `BluespaceDockSystem.SafeReactors` is the scram: `RbmkReactorSystem.ShutDown` (now public) for the
+  RBMK and `StormdriveSystem.Deactivate` for the drive, plus the remaining fuse/warning state.
+- `forcedock --scram` runs the scram *before* the ordinary checks, so force-dock cannot smuggle a
+  live core out either; the admin log records how many cores were safed.
+- Locale key: `bluespace-dock-error-live-reactor-aboard`.
+- Regression test: `Content.IntegrationTests/Tests/_PS/BluespaceDockReactorTest.cs`.
 
 **Scope:** RBMK (`engines-rbmk`) and stormdrive (`engines-stormdrive`), plus the shared save path in
 `Content.Server/_PS/BluespaceDock/BluespaceDockSystem.cs` and
 `Content.Server/_PS/Commands/ForceDockCommand.cs`.
 
-**Touched areas (when implemented):** `_PS/BluespaceDock`, `_PS/Commands/ForceDockCommand.cs`, the two
-reactor components/systems, one or two locale keys, and the dock integration test fixture.
+**Touched areas:** `_PS/BluespaceDock`, `_PS/Commands/ForceDockCommand.cs`, `RbmkReactorSystem`
+(`ShutDown` made public), one locale key, and the dock integration test fixture.
 
 ---
 
