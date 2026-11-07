@@ -86,8 +86,8 @@ load = IdlePower + |heat/s| * PowerPerHeat * (1 + |heat/s| / PowerSoftCap)
 load *= 1.5 - 0.5 * efficiency
 ```
 
-With the defaults a typical 18 kW job draws about 7.7 kW, and a job at the 50 kW cap draws about
-25 kW. The machine is never cheaper per joule than the vanilla freezer (COP 3.9); it buys capacity and
+With the defaults a typical 18 kW job draws about 6.5 kW, and a job at the 78 kW cap draws about
+40 kW. The machine is never cheaper per joule than the vanilla freezer (COP 3.9); it buys capacity and
 both directions instead.
 
 ### Safeties
@@ -107,7 +107,7 @@ guaranteed on the first tick.
 
 | Part | Effect |
 |---|---|
-| `MatterBin` 2x | `HeatCapacity = 5000 * 2^(rating-1)`, `MaxHeatRate = 50 kW * 2^(rating-1)`, `PowerSoftCap = 50 kW * 2^(rating-1)` |
+| `MatterBin` 2x | `HeatCapacity = 5000 * 2^(rating-1)`, `MaxHeatRate = 78 kW * 2^(rating-1)`, `PowerSoftCap = 78 kW * 2^(rating-1)` |
 | `Manipulator` 2x | `EfficiencyFloor = min(0.25 * rating, 0.9)` |
 
 `RefreshPartsEvent` (Frontier's machine upgrading) drives both. The ceiling on the transfer scales with
@@ -125,7 +125,7 @@ maximum heat rate and efficiency floor, so a player who installs better parts ca
    `exchange_target` update only ran in the cooling branch. That is the asymmetry that made freezers
    "harder" and heaters free. Here the waste loop is never optional, in either direction. This is a
    deliberate change, not an oversight.
-2. **The transfer is capped** at `MaxHeatRate` (50 kW) and by what either mixture can take. /tg/station
+2. **The transfer is capped** at `MaxHeatRate` (78 kW, four stock freezers' worth) and by what either mixture can take. /tg/station
    moved `(C1*C2)/(C1+C2) * delta` per tick with no ceiling, which for a 200 K difference is about
    300 kW - enough to empty a ship's APC in one tick.
 3. **The compressor's waste heat is the electrical draw**, not a fixed 5000 J. /tg/station's constant
