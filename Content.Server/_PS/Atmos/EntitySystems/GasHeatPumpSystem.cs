@@ -65,18 +65,22 @@ public sealed class GasHeatPumpSystem : SharedGasHeatPumpSystem
         var bins = args.PartRatings.GetValueOrDefault(ent.Comp.MachinePartHeatCapacity, 1f);
         var manipulators = args.PartRatings.GetValueOrDefault(ent.Comp.MachinePartEfficiency, 1f);
 
-        // Both the machine's heat capacity and the ceiling on the transfer scale with the bins.
-        // The exchange term below is dominated by the gas's own heat capacity once the machine's is
-        // large, so scaling the capacity alone would leave the bins with almost nothing to do.
+        // The machine's heat capacity scales with the bins. The exchange term below is dominated by
+        // the gas's own heat capacity once the machine's is large, so capacity alone would leave the
+        // bins with almost nothing to do; the transfer ceiling follows its own, flatter curve.
         var binMultiplier = MathF.Pow(2f, bins - 1f);
 
         ent.Comp.HeatCapacity = ent.Comp.BaseHeatCapacity * binMultiplier;
-        ent.Comp.MaxHeatRate = ent.Comp.BaseMaxHeatRate * binMultiplier;
-        ent.Comp.PowerSoftCap = ent.Comp.BasePowerSoftCap * binMultiplier;
+
+        var heatRate = ent.Comp.HeatRateByRating.Length == 0
+            ? ent.Comp.BaseMaxHeatRate
+            : HeatRateForRating(ent.Comp.HeatRateByRating, bins);
+
+        ent.Comp.MaxHeatRate = heatRate;
+        ent.Comp.PowerSoftCap = heatRate;
 
         // Better bins are a better compressor as well as a bigger one: the power moved per joule
-        // drops with every rating, which is what keeps a fully upgraded machine near 48 kW instead of
-        // the 140 kW that scaling the throughput alone would cost.
+        // drops with every rating, so the higher tiers move their heat more cheaply.
         ent.Comp.PowerPerHeat = ent.Comp.BasePowerPerHeat *
                                 MathF.Pow(ent.Comp.PowerPerHeatPerBin, bins - 1f);
 
@@ -94,6 +98,19 @@ public sealed class GasHeatPumpSystem : SharedGasHeatPumpSystem
             ent.Comp.MinTemperature, ent.Comp.MaxTemperature);
 
         Dirty(ent);
+    }
+
+    /// <summary>
+    /// Reads the heat-rate curve at a (possibly fractional) part rating. Ratings are averages, so a
+    /// machine with mixed bins lands between two entries.
+    /// </summary>
+    private static float HeatRateForRating(float[] rates, float rating)
+    {
+        var position = Math.Clamp(rating - 1f, 0f, rates.Length - 1f);
+        var lower = Math.Min((int) MathF.Floor(position), rates.Length - 1);
+        var upper = Math.Min(lower + 1, rates.Length - 1);
+
+        return rates[lower] + (rates[upper] - rates[lower]) * (position - lower);
     }
 
     /// <summary>

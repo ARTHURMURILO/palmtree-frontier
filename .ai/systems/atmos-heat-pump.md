@@ -87,16 +87,16 @@ load = IdlePower + |heat/s| * PowerPerHeat * (1 + |heat/s| * PowerSoftCapSlope /
 load *= 1.5 - 0.5 * efficiency
 ```
 
-With the defaults a typical 18 kW job draws about 2.5 kW, and a job at the 78 kW cap draws about
-12 kW. That is a COP of about 6.5 at the ceiling, better than the vanilla freezer's 3.9: a heat pump
-is supposed to win on efficiency, and the waste loop is where it pays for the capacity. The
+With the defaults a typical 18 kW job draws about 3.5 kW, and a job at the 120 kW cap draws about
+28 kW. That is a COP of about 4.3 at a stock ceiling, better than the vanilla freezer's 3.9: a heat
+pump is supposed to win on efficiency, and the waste loop is where it pays for the capacity. The
 superlinear term still makes a hard job cost more per joule than a light one, it is just not
 punitive.
 
-Bins are a better compressor, not just a bigger one: `PowerPerHeat` falls with the rating
-(`0.096 * 0.802^(rating-1)`, half over the three steps), so the upgrade range is also an efficiency
-range. The ceiling COP runs about 6.5, 8.2, 10.4 and 13 across the four tiers; with tier-four bins the
-624 kW ceiling draws about 48 kW, not the ~140 kW that scaling the throughput alone would cost.
+The transfer ceiling itself follows a flatter curve than a doubling (`HeatRateByRating`: 120, 250,
+450 and 700 kW), so the lower tiers are already worth running a real loop on. `PowerPerHeat` still
+falls with the rating (`0.15 * 0.7^(rating-1)`), so the ceiling COP runs about 4.3, 6.1, 8.8 and 12.5;
+a fully upgraded machine moves 700 kW and draws about 56 kW at its ceiling.
 
 ### Safeties
 
@@ -115,7 +115,7 @@ guaranteed on the first tick.
 
 | Part | Effect |
 |---|---|
-| `MatterBin` 2x | `HeatCapacity = 5000 * 2^(rating-1)`, `MaxHeatRate = 78 kW * 2^(rating-1)`, `PowerSoftCap = 78 kW * 2^(rating-1)`, `PowerPerHeat = 0.096 * 0.802^(rating-1)` |
+| `MatterBin` 2x | `HeatCapacity = 5000 * 2^(rating-1)`, `MaxHeatRate` from `HeatRateByRating` (120/250/450/700 kW), `PowerSoftCap = MaxHeatRate`, `PowerPerHeat = 0.15 * 0.7^(rating-1)` |
 | `Manipulator` 2x | `EfficiencyFloor = min(0.25 * rating, 0.9)`, `MinTemperature = 73.15 - 15*(rating-1)`, `MaxTemperature = 593.15 + 200*(rating-1)` |
 
 `RefreshPartsEvent` (Frontier's machine upgrading) drives both. The ceiling on the transfer scales with
@@ -133,7 +133,7 @@ maximum heat rate and efficiency floor, so a player who installs better parts ca
    `exchange_target` update only ran in the cooling branch. That is the asymmetry that made freezers
    "harder" and heaters free. Here the waste loop is never optional, in either direction. This is a
    deliberate change, not an oversight.
-2. **The transfer is capped** at `MaxHeatRate` (78 kW, four stock freezers' worth) and by what either mixture can take. /tg/station
+2. **The transfer is capped** at `MaxHeatRate` (120 kW stock, 700 kW at tier four) and by what either mixture can take. /tg/station
    moved `(C1*C2)/(C1+C2) * delta` per tick with no ceiling, which for a 200 K difference is about
    300 kW - enough to empty a ship's APC in one tick.
 3. **The compressor's waste heat is the electrical draw**, not a fixed 5000 J. /tg/station's constant

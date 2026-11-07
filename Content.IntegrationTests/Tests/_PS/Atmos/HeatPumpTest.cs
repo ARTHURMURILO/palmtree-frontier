@@ -819,8 +819,10 @@ public sealed class HeatPumpTest
                 {
                     Assert.That(pump.HeatCapacity, Is.EqualTo(pump.BaseHeatCapacity * 4f).Within(1f),
                         "a tier three matter bin should quadruple the heat capacity");
-                    Assert.That(pump.MaxHeatRate, Is.EqualTo(pump.BaseMaxHeatRate * 4f).Within(1f),
-                        "a tier three matter bin should quadruple the most heat the machine can move");
+                    Assert.That(pump.MaxHeatRate, Is.EqualTo(450_000f).Within(1f),
+                        "a tier three matter bin should hit the third entry of the heat-rate curve");
+                    Assert.That(pump.PowerSoftCap, Is.EqualTo(pump.MaxHeatRate).Within(1f),
+                        "the soft cap should stay at the machine's own ceiling");
                     Assert.That(pump.EfficiencyFloor, Is.EqualTo(pump.MaxEfficiencyFloor).Within(0.001f),
                         "tier four manipulators should reach the efficiency floor ceiling");
                     Assert.That(pump.PowerPerHeat,
@@ -871,8 +873,7 @@ public sealed class HeatPumpTest
             var stock = 0f;
             var stockPower = 0f;
             var upgraded = 0f;
-            var maxHeat = 0f;
-            var maxLoad = 0f;
+            var upgradedPower = 0f;
 
             await server.WaitAssertion(() =>
             {
@@ -891,7 +892,9 @@ public sealed class HeatPumpTest
             await server.WaitAssertion(() =>
             {
                 var pump = entMan.GetComponent<GasHeatPumpComponent>(device);
-                SetGas(entMan, device, 500f, 300f);
+                // More gas on both sides and a bigger difference, so the upgraded machine is pushing
+                // against its 700 kW ceiling rather than against the gas's own heat capacity.
+                SetGas(entMan, device, 700f, 300f, 200f);
 
                 entMan.EventBus.RaiseLocalEvent(device, new RefreshPartsEvent
                 {
@@ -903,37 +906,23 @@ public sealed class HeatPumpTest
 
                 Raise(entMan, device);
                 upgraded = MathF.Abs(pump.HeatMoved);
-            });
-
-            await server.WaitAssertion(() =>
-            {
-                var pump = entMan.GetComponent<GasHeatPumpComponent>(device);
-                // Big enough a difference that the machine is running into its 624 kW ceiling: the
-                // exchange term is limited by the gas's own heat capacity, so a smaller delta would
-                // never reach the cap.
-                SetGas(entMan, device, 950f, 300f);
-
-                Raise(entMan, device);
-                maxHeat = MathF.Abs(pump.HeatMoved);
-                maxLoad = entMan.GetComponent<ApcPowerReceiverComponent>(device).Load;
+                upgradedPower = entMan.GetComponent<ApcPowerReceiverComponent>(device).Load;
             });
 
             await server.WaitAssertion(() =>
             {
                 Assert.Multiple(() =>
                 {
-                    Assert.That(stock, Is.GreaterThan(60_000f).And.LessThanOrEqualTo(78_000f),
-                        "a stock machine should be running into its 78 kW ceiling");
-                    Assert.That(upgraded, Is.GreaterThan(stock * 2f),
-                        "better bins should raise the ceiling and let the machine move much more heat");
-                    Assert.That(stock / stockPower, Is.GreaterThan(6f),
-                        "a stock heat pump should land around a COP of 6.5 at its ceiling");
-                    Assert.That(maxHeat, Is.GreaterThan(500_000f),
-                        "a tier four machine should be working near its 624 kW ceiling");
-                    Assert.That(maxLoad, Is.LessThan(55_000f),
-                        "a fully upgraded machine should draw about 48 kW at full tilt, not 140");
-                    Assert.That(maxHeat / maxLoad, Is.GreaterThan(12f),
-                        "a fully upgraded machine should land around a COP of 13");
+                    Assert.That(stock, Is.GreaterThan(100_000f).And.LessThanOrEqualTo(120_000f),
+                        "a stock machine should be running into its 120 kW ceiling");
+                    Assert.That(upgraded, Is.GreaterThan(600_000f),
+                        "a tier four machine should be working near its 700 kW ceiling");
+                    Assert.That(upgradedPower, Is.LessThan(60_000f),
+                        "a fully upgraded machine should draw about 56 kW at its ceiling");
+                    Assert.That(stock / stockPower, Is.GreaterThan(4f),
+                        "even a stock heat pump should beat the freezer's COP of 3.9");
+                    Assert.That(upgraded / upgradedPower, Is.GreaterThan(12f),
+                        "a fully upgraded machine should land around a COP of 12.5");
                 });
             });
         }
@@ -952,12 +941,13 @@ public sealed class HeatPumpTest
         return (gas.Air, waste.Air);
     }
 
-    private static void SetGas(IEntityManager entMan, EntityUid device, float gasTemperature, float wasteTemperature)
+    private static void SetGas(IEntityManager entMan, EntityUid device, float gasTemperature,
+        float wasteTemperature, float moles = 100f)
     {
         var (gas, waste) = GetAir(entMan, device);
-        gas.SetMoles(Gas.Oxygen, 100f);
+        gas.SetMoles(Gas.Oxygen, moles);
         gas.Temperature = gasTemperature;
-        waste.SetMoles(Gas.Oxygen, 100f);
+        waste.SetMoles(Gas.Oxygen, moles);
         waste.Temperature = wasteTemperature;
     }
 
