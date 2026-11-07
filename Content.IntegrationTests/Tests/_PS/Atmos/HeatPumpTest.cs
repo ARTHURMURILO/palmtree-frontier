@@ -7,6 +7,8 @@ using Content.Shared.Atmos;
 using Content.Shared.NodeContainer;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
+using Robust.Shared.Maths;
 using Robust.Shared.Prototypes;
 
 namespace Content.IntegrationTests.Tests._PS.Atmos;
@@ -22,6 +24,81 @@ namespace Content.IntegrationTests.Tests._PS.Atmos;
 public sealed class HeatPumpTest
 {
     private static readonly EntProtoId PipeProto = "GasPipeStraight";
+
+    [Test]
+    public async Task HeatPumpConnectsToThePipesItFacesWhenTurned()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+
+        try
+        {
+            var server = pair.Server;
+            var entMan = server.EntMan;
+            var testMap = await pair.CreateTestMap();
+            var coords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
+
+            EntityUid device = default;
+            EntityUid west = default;
+            EntityUid east = default;
+
+            await server.WaitPost(() =>
+            {
+                // The test map is a single tile; the pipes need tiles of their own, both to stand on and
+                // for the grid to cover them, or they cannot be anchored.
+                var mapSys = server.System<SharedMapSystem>();
+                var gridComp = entMan.GetComponent<MapGridComponent>(testMap.Grid.Owner);
+                var tile = testMap.Tile.Tile;
+                mapSys.SetTile(testMap.Grid.Owner, gridComp, new Vector2i(-1, 0), tile);
+                mapSys.SetTile(testMap.Grid.Owner, gridComp, new Vector2i(1, 0), tile);
+
+                // A pipe run going east to west. Straight pipes are longitudinal, so the pipes and the
+                // machine all get the same quarter turn a player would give them with R.
+                west = entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(-1f, 0f)));
+                device = entMan.SpawnEntity("GasThermoMachineHeatPump", coords);
+                east = entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(1f, 0f)));
+
+                var quarterTurn = new Angle(Math.PI / 2);
+                var westXform = entMan.GetComponent<TransformComponent>(west);
+                var eastXform = entMan.GetComponent<TransformComponent>(east);
+                var deviceXform = entMan.GetComponent<TransformComponent>(device);
+
+                // Pipe nodes only join a network while the entity is anchored.
+                westXform.Anchored = true;
+                eastXform.Anchored = true;
+
+                // Straight pipes are longitudinal, so they get the same quarter turn as the machine.
+                westXform.LocalRotation = quarterTurn;
+                eastXform.LocalRotation = quarterTurn;
+                deviceXform.LocalRotation = quarterTurn;
+            });
+
+            await pair.RunTicksSync(5);
+
+            await server.WaitAssertion(() =>
+            {
+                var gas = (PipeNode) entMan.GetComponent<NodeContainerComponent>(device).Nodes["gas"];
+                var waste = (PipeNode) entMan.GetComponent<NodeContainerComponent>(device).Nodes["waste"];
+                var westNode = (PipeNode) entMan.GetComponent<NodeContainerComponent>(west).Nodes["pipe"];
+                var eastNode = (PipeNode) entMan.GetComponent<NodeContainerComponent>(east).Nodes["pipe"];
+
+                Assert.Multiple(() =>
+                {
+                    Assert.That(gas.CurrentPipeDirection, Is.EqualTo(PipeDirection.East),
+                        "the gas port should face east after a quarter turn");
+                    Assert.That(waste.CurrentPipeDirection, Is.EqualTo(PipeDirection.West),
+                        "the waste port should face west after a quarter turn");
+                    Assert.That(gas.NodeGroup, Is.SameAs(eastNode.NodeGroup),
+                        "the gas port should join the pipe it faces");
+                    Assert.That(waste.NodeGroup, Is.SameAs(westNode.NodeGroup),
+                        "the waste port should join the pipe it faces");
+                });
+            });
+        }
+        finally
+        {
+            await pair.CleanReturnAsync();
+        }
+    }
 
     [Test]
     public async Task HeatPumpCoolsTheGasIntoTheWasteLoop()
@@ -43,7 +120,7 @@ public sealed class HeatPumpTest
             await server.WaitPost(() =>
             {
                 entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, -1f)));
-                device = entMan.SpawnEntity("GasHeatPump", coords);
+                device = entMan.SpawnEntity("GasThermoMachineHeatPump", coords);
                 entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, 1f)));
             });
 
@@ -108,7 +185,7 @@ public sealed class HeatPumpTest
             await server.WaitPost(() =>
             {
                 entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, -1f)));
-                device = entMan.SpawnEntity("GasHeatPump", coords);
+                device = entMan.SpawnEntity("GasThermoMachineHeatPump", coords);
                 entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, 1f)));
             });
 
@@ -174,7 +251,7 @@ public sealed class HeatPumpTest
             await server.WaitPost(() =>
             {
                 entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, -1f)));
-                device = entMan.SpawnEntity("GasHeatPump", coords);
+                device = entMan.SpawnEntity("GasThermoMachineHeatPump", coords);
                 entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, 1f)));
             });
 
@@ -253,7 +330,7 @@ public sealed class HeatPumpTest
             await server.WaitPost(() =>
             {
                 entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, -1f)));
-                device = entMan.SpawnEntity("GasHeatPump", coords);
+                device = entMan.SpawnEntity("GasThermoMachineHeatPump", coords);
                 entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, 1f)));
             });
 
@@ -327,7 +404,7 @@ public sealed class HeatPumpTest
             await server.WaitPost(() =>
             {
                 entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, -1f)));
-                device = entMan.SpawnEntity("GasHeatPump", coords);
+                device = entMan.SpawnEntity("GasThermoMachineHeatPump", coords);
                 entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, 1f)));
             });
 
@@ -384,7 +461,7 @@ public sealed class HeatPumpTest
             {
                 // Gas port piped in, waste port left hanging.
                 entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, -1f)));
-                device = entMan.SpawnEntity("GasHeatPump", coords);
+                device = entMan.SpawnEntity("GasThermoMachineHeatPump", coords);
             });
 
             await pair.RunTicksSync(5);
@@ -437,7 +514,7 @@ public sealed class HeatPumpTest
             await server.WaitPost(() =>
             {
                 entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, -1f)));
-                device = entMan.SpawnEntity("GasHeatPump", coords);
+                device = entMan.SpawnEntity("GasThermoMachineHeatPump", coords);
                 entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, 1f)));
             });
 
@@ -497,7 +574,7 @@ public sealed class HeatPumpTest
             await server.WaitPost(() =>
             {
                 entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, -1f)));
-                device = entMan.SpawnEntity("GasHeatPump", coords);
+                device = entMan.SpawnEntity("GasThermoMachineHeatPump", coords);
                 entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, 1f)));
             });
 
@@ -559,7 +636,7 @@ public sealed class HeatPumpTest
             await server.WaitPost(() =>
             {
                 entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, -1f)));
-                device = entMan.SpawnEntity("GasHeatPump", coords);
+                device = entMan.SpawnEntity("GasThermoMachineHeatPump", coords);
                 entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, 1f)));
             });
 

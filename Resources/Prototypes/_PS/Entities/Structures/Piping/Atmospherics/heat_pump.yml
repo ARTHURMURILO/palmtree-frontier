@@ -8,7 +8,7 @@
 
 - type: entity
   parent: [ BaseMachinePowered, ConstructibleMachine ]
-  id: GasHeatPump
+  id: GasThermoMachineHeatPump
   name: heat pump
   description: Moves heat between two pipe networks instead of making it. Needs a waste loop to dump the heat into.
   placement:
@@ -47,9 +47,9 @@
           OnHeating: { state: heaterOn }
   - type: AtmosPipeLayers
     alternativePrototypes:
-      Primary: GasHeatPump
-      Secondary: GasHeatPumpAlt1
-      Tertiary: GasHeatPumpAlt2
+      Primary: GasThermoMachineHeatPump
+      Secondary: GasThermoMachineHeatPumpAlt1
+      Tertiary: GasThermoMachineHeatPumpAlt2
   - type: NodeContainer
     nodes:
       # The gas port sits where a freezer's port does, so a heat pump drops into an existing wall.
@@ -88,11 +88,11 @@
     - HeatPump
 
 - type: entity
-  parent: [ GasPipeLayerAlt1, GasHeatPump ]
-  id: GasHeatPumpAlt1
+  parent: [ GasPipeLayerAlt1, GasThermoMachineHeatPump ]
+  id: GasThermoMachineHeatPumpAlt1
   categories: [ HideSpawnMenu ]
 
 - type: entity
-  parent: [ GasPipeLayerAlt2, GasHeatPump ]
-  id: GasHeatPumpAlt2
+  parent: [ GasPipeLayerAlt2, GasThermoMachineHeatPump ]
+  id: GasThermoMachineHeatPumpAlt2
   categories: [ HideSpawnMenu ]

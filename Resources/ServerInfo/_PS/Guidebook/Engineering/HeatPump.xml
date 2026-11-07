@@ -1,5 +1,5 @@
 <Document>
-  <GuideEntityEmbed Entity="GasHeatPump" Caption="heat pump" />
+  <GuideEntityEmbed Entity="GasThermoMachineHeatPump" Caption="heat pump" />
   <Box>
     <GuideEntityEmbed Entity="GasThermoMachineFreezer" Caption="freezer" />
     <GuideEntityEmbed Entity="GasThermoMachineHeater" Caption="heater" />

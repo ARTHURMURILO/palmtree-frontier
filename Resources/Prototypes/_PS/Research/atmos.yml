@@ -4,7 +4,7 @@
 - type: technology
   id: NFAtmosphericHeatPump
   name: research-technology-atmospheric-heat-pump
-  entityIcon: GasHeatPump
+  entityIcon: GasThermoMachineHeatPump
   discipline: NFEngineering
   tier: 2
   cost: 12500
