@@ -60,6 +60,14 @@ public sealed class ReactorFlatpackTest
             var mvCable = entMan.SpawnEntity("CableMV",
                 mapSys.GridTileToLocal(testMap.Grid.Owner, testMap.Grid.Comp, center + new Vector2i(1, 1)));
 
+            // A pipe laid across a port must not make the flatpack skip its own stub: the two
+            // nodes would not line up, leaving the port dead.
+            var westPort = center + new Vector2i(-1, 0);
+            var crossPipe = entMan.SpawnEntity("GasPipeStraight",
+                mapSys.GridTileToLocal(testMap.Grid.Owner, testMap.Grid.Comp, westPort));
+            if (!entMan.GetComponent<TransformComponent>(crossPipe).Anchored)
+                server.System<SharedTransformSystem>().AnchorEntity(crossPipe);
+
             var reactor = entMan.SpawnEntity("RbmkNuclearReactor", testMap.GridCoords);
             entMan.EventBus.RaiseLocalEvent(reactor, new FlatpackUnpackedEvent(flatpack, EntityUid.Invalid, reactor), true);
 
@@ -84,6 +92,11 @@ public sealed class ReactorFlatpackTest
                             && container.Nodes.Values.Any(node => node is PipeNode))
                 .ToList();
             Assert.That(pipeStubs, Has.Count.EqualTo(3), "one straight stub on each of the three ports");
+            Assert.That(pipeStubs.Any(p => mapSys.TileIndicesFor(testMap.Grid.Owner, testMap.Grid.Comp,
+                    entMan.GetComponent<TransformComponent>(p).Coordinates) == westPort), Is.True,
+                "a pipe across the west port must not stop the flatpack laying its own stub there");
+            Assert.That(entMan.HasComponent<NodeContainerComponent>(crossPipe), Is.True,
+                "the flatpack must not delete a pipe that was already there");
 
             foreach (var stub in pipeStubs)
             {

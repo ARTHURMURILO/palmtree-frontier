@@ -146,7 +146,7 @@ public sealed class ReactorAssemblySystem : EntitySystem
 
                 var portDir = pipe.CurrentPipeDirection.ToDirection();
                 var pos = center.Offset(portDir);
-                if (HasPipe(gridUid, grid, pos))
+                if (HasConnectingPipe(gridUid, grid, pos, pipe, portDir))
                     continue;
 
                 var pipeEnt = Spawn("GasPipeStraight", _map.GridTileToLocal(gridUid, grid, pos));
@@ -195,12 +195,29 @@ public sealed class ReactorAssemblySystem : EntitySystem
                && container.Nodes.Values.Any(node => node is PipeNode);
     }
 
-    private bool HasPipe(EntityUid gridUid, MapGridComponent grid, Vector2i pos)
+    /// <summary>
+    ///     Whether the port tile already carries a pipe that actually faces this port. A pipe laid
+    ///     across the port (or on another layer) does not join the reactor's net, so the flatpack
+    ///     still lays its own stub.
+    /// </summary>
+    private bool HasConnectingPipe(EntityUid gridUid, MapGridComponent grid, Vector2i pos, PipeNode port, Direction portDir)
     {
         foreach (var anchored in _map.GetAnchoredEntities((gridUid, grid), pos))
         {
-            if (HasPipe(anchored))
-                return true;
+            if (!TryComp<NodeContainerComponent>(anchored, out var container))
+                continue;
+
+            foreach (var node in container.Nodes.Values)
+            {
+                if (node is not PipeNode other)
+                    continue;
+
+                if (other.NodeGroupID != port.NodeGroupID || other.CurrentPipeLayer != port.CurrentPipeLayer)
+                    continue;
+
+                if (other.CurrentPipeDirection.HasDirection(portDir.GetOpposite().ToPipeDirection()))
+                    return true;
+            }
         }
 
         return false;
@@ -245,8 +262,10 @@ public sealed class ReactorAssemblySystem : EntitySystem
             if (drive.ReactorEndTimes || drive.State == StormdriveState.Meltdown)
                 return Loc.GetString("reactor-deconstruct-melted");
 
-            if (drive.State is StormdriveState.Running or StormdriveState.Repair
-                or StormdriveState.Reinforce or StormdriveState.Refit)
+            if (drive.State is StormdriveState.Repair or StormdriveState.Reinforce or StormdriveState.Refit)
+                return Loc.GetString("reactor-deconstruct-repair");
+
+            if (drive.State == StormdriveState.Running)
                 return Loc.GetString("reactor-deconstruct-running");
 
             if (drive.Heat > ent.Comp.ColdLimit)
