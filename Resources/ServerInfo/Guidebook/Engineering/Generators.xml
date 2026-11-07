@@ -4,6 +4,17 @@
 
   Engineers are intended to setup low-tier generators like Solar Arrays and the AME at the start of the shift, to give enough time to setup higher-tier generators like the Singularity Engine for sustained power for the rest of the shift.
 
+
+  ## Stormdrive
+  The Class IV storm drive is the fusion reactor fitted to most ships. Unlike the engines on this
+  page it is a complete machine with its own control console, and it is the only generator here whose
+  failure can take the ship with it. The [textlink="Stormdrive" link="Stormdrive"] page covers it in
+  full: the stability margin the console watches, the rod presets, and how to bring a hot core back.
+
+  <Box>
+    <GuideEntityEmbed Entity="StormdriveReactor" Caption=""/>
+  </Box>
+
   <Box>
     <GuideEntityEmbed Entity="SingularityGenerator" Caption=""/>
     <GuideEntityEmbed Entity="TeslaGenerator" Caption=""/>

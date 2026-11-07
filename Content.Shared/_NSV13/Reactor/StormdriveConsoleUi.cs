@@ -31,6 +31,30 @@ public sealed class StormdriveConsoleBoundUserInterfaceState : BoundUserInterfac
     /// <summary>Aggregate control-rod integrity, 0..100.</summary>
     public float RodIntegrity;
 
+    /// <summary>
+    ///     The hidden 0..100 stability score, now shown on the console.
+    /// </summary>
+    /// <remarks>
+    ///     The drive has always simulated this; the original DM showed it on a floating countdown
+    ///     above the reactor, which the port never brought over. Without it the only feedback was
+    ///     gravity pulls and unexplained heat spikes.
+    /// </remarks>
+    public float ReactorStability;
+
+    /// <summary>
+    ///     Stability change over the last process tick, expressed per second. Positive is recovery.
+    /// </summary>
+    public float StabilityDelta;
+
+    /// <summary>Why stability moved on the last process tick.</summary>
+    public StormdriveStabilityCause StabilityCause;
+
+    /// <summary>Stability below which heat/rate spikes can occur; sent so the window can colour itself.</summary>
+    public float StabilitySpikeThreshold = 75f;
+
+    /// <summary>Stability below which anomalies can spawn.</summary>
+    public float StabilityAnomalyThreshold = 15f;
+
     /// <summary>Rod insertion, 0 (fully withdrawn, maximum reactivity) .. 100 (shut down).</summary>
     public float RodPercent;
 
@@ -44,17 +68,10 @@ public sealed class StormdriveConsoleBoundUserInterfaceState : BoundUserInterfac
     public float TheoreticalMaximumPower;
 
     /// <summary>
-    ///     Fuel burn, in moles per second. The reactor's own figure is per two-second process
-    ///     tick, so the raw reaction rate must not be sent next to a "mol/s" label.
+    ///     Reaction rate, in moles per second. The reactor's own figure is per two-second process
+    ///     tick, so the raw value is divided by the tick before it is sent next to a "mol/s" label.
     /// </summary>
     public float ReactionRate;
-
-    /// <summary>
-    ///     Fuel actually burned, in moles per second. <see cref="ReactionRate"/> is the vanilla
-    ///     reaction rate in moles per process tick; the drive only removes a fraction of it
-    ///     (<c>FuelConsumptionFactor</c>), so the raw figure overstates the real burn.
-    /// </summary>
-    public float FuelConsumptionRate;
 
     public float TemperatureHot;
     public float TemperatureCritical;
@@ -139,6 +156,42 @@ public enum StormdriveConsoleState
     Repair = 5,
     Reinforce = 6,
     Refit = 7,
+}
+
+/// <summary>
+///     Why the stormdrive's stability moved on the last process tick.
+/// </summary>
+/// <remarks>
+///     The number alone is the same problem the RBMK integrity bar had: it falls and the engineer
+///     has to guess. The fuel-line conditions are all visible (the ratio and moles bars), so the
+///     console can name the exact one that is bleeding stability and what to do about it.
+/// </remarks>
+[Serializable, NetSerializable]
+public enum StormdriveStabilityCause : byte
+{
+    /// <summary>Nothing is moving it: rich mix at the cap, or an idle core.</summary>
+    None = 0,
+
+    /// <summary>Rich mix under the pressure line; the core is recovering at +0.5/tick.</summary>
+    Recovering = 1,
+
+    /// <summary>Rich mix, but the line is over the mole line: the recovery is being cancelled.</summary>
+    RichOverpressure = 2,
+
+    /// <summary>Fuel ratio is 12.5–25%; the reaction runs, but stability bleeds slowly.</summary>
+    Lean = 3,
+
+    /// <summary>Lean and over pressure: the fast bleed.</summary>
+    LeanOverpressure = 4,
+
+    /// <summary>Reaction starved: fuel below 12.5 %, or fewer moles than the reaction rate.</summary>
+    Starved = 5,
+
+    /// <summary>A power overload hit the core this tick.</summary>
+    Overload = 6,
+
+    /// <summary>Containment failed and an anomaly tore loose; the refund is why stability jumped up.</summary>
+    Anomaly = 7,
 }
 
 /// <summary>Set the rod insertion directly, 0..100.</summary>

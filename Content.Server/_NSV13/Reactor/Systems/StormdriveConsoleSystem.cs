@@ -244,6 +244,11 @@ public sealed class StormdriveConsoleSystem : EntitySystem
         state.State = (StormdriveConsoleState) (int) reactor.State;
         state.Heat = reactor.Heat;
         state.RodIntegrity = Math.Clamp(reactor.ControlRodIntegrity, 0f, 100f);
+        state.ReactorStability = Math.Clamp(reactor.ReactorStability, 0f, 100f);
+        state.StabilityDelta = reactor.LastStabilityDelta;
+        state.StabilityCause = reactor.LastStabilityCause;
+        state.StabilitySpikeThreshold = reactor.StabilitySpikeThreshold;
+        state.StabilityAnomalyThreshold = reactor.StabilityAnomalyThreshold;
         state.RodPercent = reactor.ControlRodPercent;
         state.PipeOpen = reactor.DumpingFuel;
         state.LastPowerProduced = reactor.LastPowerProduced;
@@ -251,11 +256,6 @@ public sealed class StormdriveConsoleSystem : EntitySystem
         // The simulation figure is moles per process tick; the window labels it mol/s.
         state.ReactionRate = reactor.ReactionRate / MathF.Max(reactor.ProcessInterval, 0.01f);
 
-        // What the pipe actually loses is the reaction times FuelConsumptionFactor, so the fuel
-        // burn readout has to scale with it as well.
-        state.FuelConsumptionRate = reactor.ReactionRate
-                                   * Math.Clamp(reactor.FuelConsumptionFactor, 0.01f, 1f)
-                                   / MathF.Max(reactor.ProcessInterval, 0.01f);
         state.TemperatureHot = reactor.TemperatureHot;
         state.TemperatureCritical = reactor.TemperatureCritical;
         state.TemperatureMeltdown = reactor.TemperatureMeltdown;
