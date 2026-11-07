@@ -14,7 +14,7 @@
     - state: power_generator
   - type: Flatpack
     entity: StormdriveReactor
-    unpackDelay: 30
+    unpackDelay: 10
   - type: ReactorFlatpack
     footprint: 1,1
     deconstructDelay: 30

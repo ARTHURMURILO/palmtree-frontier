@@ -1,14 +1,17 @@
 using System;
 using System.Linq;
+using Content.Server.Construction.Components;
 using Content.Server.NodeContainer;
 using Content.Server.NodeContainer.Nodes;
 using Content.Server.Power.Components;
 using Content.Server._NSV13.Reactor.Components;
 using Content.Shared.Atmos;
+using Content.Shared.Atmos.Components;
 using Content.Shared.Construction;
 using Content.Shared.Construction.Components;
 using Content.Shared.NodeContainer;
 using Content.Shared.Power;
+using Robust.Shared.Containers;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
@@ -48,9 +51,10 @@ public sealed class ReactorFlatpackTest
 
             var flatpackProto = protoMan.Index<EntityPrototype>("RbmkReactorFlatpack");
             Assert.That(flatpackProto.TryGetComponent<FlatpackComponent>(out var flatpackComp), Is.True);
-            Assert.That(flatpackComp!.UnpackDelay, Is.EqualTo(TimeSpan.FromSeconds(60)));
+            Assert.That(flatpackComp!.UnpackDelay, Is.EqualTo(TimeSpan.FromSeconds(10)));
             Assert.That(flatpackProto.TryGetComponent<ReactorFlatpackComponent>(out var site), Is.True);
             Assert.That(site!.Footprint, Is.EqualTo(new Vector2i(3, 3)));
+            Assert.That(site.DeconstructDelay, Is.EqualTo(TimeSpan.FromSeconds(30)));
 
             var flatpack = entMan.SpawnEntity("RbmkReactorFlatpack", testMap.GridCoords);
             var center = mapSys.TileIndicesFor(testMap.Grid.Owner, testMap.Grid.Comp, testMap.GridCoords);
@@ -76,6 +80,14 @@ public sealed class ReactorFlatpackTest
             Assert.That(assembly!.Parts.Count, Is.EqualTo(12), "nine HV cables and three pipe stubs");
             Assert.That(entMan.GetComponent<TransformComponent>(reactor).Anchored, Is.True,
                 "the reactor has to be bolted down or its nodes never join a net");
+
+            // MachineComponent silently fills these on MapInit. A flatpack is the finished reactor,
+            // so packing it must not hand out a free board and stock parts.
+            var machineContainers = entMan.GetComponent<ContainerManagerComponent>(reactor).Containers;
+            Assert.That(machineContainers[MachineFrameComponent.BoardContainerName].Count, Is.Zero,
+                "the flatpack must not contain a free reactor circuitboard");
+            Assert.That(machineContainers[MachineFrameComponent.PartContainerName].Count, Is.Zero,
+                "the flatpack must not contain free machine stock parts");
 
             var hvCables = assembly.Parts
                 .Where(p => entMan.TryGetComponent<CableComponent>(p, out var cable)
@@ -127,6 +139,75 @@ public sealed class ReactorFlatpackTest
                         $"the flatpack's footing is missing at {center + new Vector2i(x, y)}");
                 }
             }
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task RbmkFlatpackVetoesFinishedFloorPrimaryPipesAndAtmosDevices()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var mapSys = server.System<SharedMapSystem>();
+        var xformSys = server.System<SharedTransformSystem>();
+        var tiles = server.ResolveDependency<ITileDefinitionManager>();
+
+        await server.WaitAssertion(() =>
+        {
+            var plating = tiles["Plating"];
+            for (var x = -2; x <= 2; x++)
+            {
+                for (var y = -2; y <= 2; y++)
+                    mapSys.SetTile(testMap.Grid.Owner, testMap.Grid.Comp, new Vector2i(x, y), new Tile(plating.TileId));
+            }
+
+            var flatpack = entMan.SpawnEntity("RbmkReactorFlatpack", testMap.GridCoords);
+            var center = mapSys.TileIndicesFor(testMap.Grid.Owner, testMap.Grid.Comp, testMap.GridCoords);
+            var obstacle = center + new Vector2i(1, 1);
+
+            FlatpackUnpackAttemptEvent Attempt()
+            {
+                var ev = new FlatpackUnpackAttemptEvent(flatpack, EntityUid.Invalid, testMap.Grid.Owner, center);
+                entMan.EventBus.RaiseLocalEvent(flatpack, ref ev);
+                return ev;
+            }
+
+            Assert.That(Attempt().Cancelled, Is.False, "bare plating should allow the unpack");
+
+            // A finished floor above the plating is exactly the case the crew must clear first.
+            mapSys.SetTile(testMap.Grid.Owner, testMap.Grid.Comp, obstacle, new Tile(tiles["FloorSteel"].TileId));
+            var floored = Attempt();
+            Assert.That(floored.Cancelled, Is.True, "a finished floor must veto the unpack");
+            Assert.That(floored.Message, Is.Not.Null);
+
+            mapSys.SetTile(testMap.Grid.Owner, testMap.Grid.Comp, obstacle, new Tile(plating.TileId));
+
+            var pipe = entMan.SpawnEntity("GasPipeStraight",
+                mapSys.GridTileToLocal(testMap.Grid.Owner, testMap.Grid.Comp, obstacle));
+            if (!entMan.GetComponent<TransformComponent>(pipe).Anchored)
+                xformSys.AnchorEntity(pipe);
+
+            Assert.That(Attempt().Cancelled, Is.True, "primary-layer piping must veto the unpack");
+
+            var pipeNode = entMan.GetComponent<NodeContainerComponent>(pipe).Nodes.Values
+                .OfType<PipeNode>()
+                .Single();
+            pipeNode.CurrentPipeLayer = AtmosPipeLayer.Secondary;
+            Assert.That(Attempt().Cancelled, Is.False, "off-layer piping must not veto the unpack");
+
+            entMan.DeleteEntity(pipe);
+
+            var pump = entMan.SpawnEntity("GasPressurePump",
+                mapSys.GridTileToLocal(testMap.Grid.Owner, testMap.Grid.Comp, obstacle));
+            if (!entMan.GetComponent<TransformComponent>(pump).Anchored)
+                xformSys.AnchorEntity(pump);
+
+            var device = Attempt();
+            Assert.That(device.Cancelled, Is.True, "an atmos device must veto the unpack even off the primary layer");
+            Assert.That(device.Message, Is.Not.Null);
         });
 
         await pair.CleanReturnAsync();
