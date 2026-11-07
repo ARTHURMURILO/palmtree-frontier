@@ -72,4 +72,14 @@
   <Box>
     [color=#999999][italic]Zero-maintenance passive power source[italic][/color]
   </Box>
+  ## RBMK
+  The AGCNR, or "RBMK", is a gas-cooled reactor: a coolant loop carries the heat out, a moderator gas
+  sets the reaction, and uranium rods supply the neutrons. It is a complete machine with its own
+  console, and it fails in three different ways, two of them violently. The
+  [textlink="RBMK" link="Rbmk"] page covers the console, the start-up order and the vessel's limits.
+
+  <Box>
+    <GuideEntityEmbed Entity="RbmkNuclearReactor" Caption=""/>
+  </Box>
+
 </Document>

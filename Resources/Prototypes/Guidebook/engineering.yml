@@ -309,6 +309,7 @@
   children:
   - PortableGenerator
   - AME
+  - Rbmk # Palmtree
   - SingularityTeslaEngine
   - TEG
   - RTG

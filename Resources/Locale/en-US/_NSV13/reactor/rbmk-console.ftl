@@ -4,7 +4,9 @@
 
 rbmk-console-title = RBMK reactor control
 rbmk-console-no-reactor = NO REACTOR LINKED. Use a multitool on the console and then on the reactor.
-rbmk-console-status-running = CORE CRITICAL - REACTOR RUNNING
+rbmk-console-status-running = REACTOR RUNNING
+rbmk-console-status-hot = CORE HOT - REACTOR RUNNING
+rbmk-console-status-critical = CORE CRITICAL - REACTOR RUNNING
 rbmk-console-status-idle = Reactor subcritical
 rbmk-console-status-slagged = CORE DESTROYED - SLAGGED
 rbmk-console-reactivity-value = { $k } K
@@ -39,3 +41,6 @@ rbmk-console-legend-pressure = Reactor Pressure (PSI):
 rbmk-console-legend-coolant = Coolant temperature (°C):
 rbmk-console-legend-outlet = Outlet temperature (°C):
 rbmk-console-no-fuel = No fuel rods loaded.
+
+# Guidebook page name; the entry itself is Resources/Prototypes/_NSV13/Guidebook/rbmk.yml.
+guide-entry-rbmk = RBMK
