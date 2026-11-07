@@ -2,6 +2,7 @@ using Content.Shared.Construction.Components;
 using Content.Shared.Administration.Logs;
 using Content.Shared.Containers.ItemSlots;
 using Content.Shared.Database;
+using Content.Shared.DoAfter;
 using Content.Shared.Examine;
 using Content.Shared.Interaction;
 using Content.Shared.Materials;
@@ -36,6 +37,7 @@ public abstract class SharedFlatpackSystem : EntitySystem
     public override void Initialize()
     {
         SubscribeLocalEvent<FlatpackComponent, InteractUsingEvent>(OnFlatpackInteractUsing);
+        SubscribeLocalEvent<FlatpackComponent, FlatpackUnpackDoAfterEvent>(OnUnpackDoAfter);
         SubscribeLocalEvent<FlatpackComponent, ExaminedEvent>(OnFlatpackExamined);
 
         SubscribeLocalEvent<FlatpackCreatorComponent, ItemSlotInsertAttemptEvent>(OnInsertAttempt);
@@ -61,12 +63,43 @@ public abstract class SharedFlatpackSystem : EntitySystem
         if (!_tool.HasQuality(args.Used, comp.QualityNeeded) || _container.IsEntityInContainer(ent))
             return;
 
+        args.Handled = true;
+
+        if (comp.UnpackDelay > TimeSpan.Zero)
+        {
+            _tool.UseTool(args.Used,
+                args.User,
+                uid,
+                (float) comp.UnpackDelay.TotalSeconds,
+                new[] { comp.QualityNeeded.Id },
+                new FlatpackUnpackDoAfterEvent());
+            return;
+        }
+
+        TryUnpack(ent, args.User);
+    }
+
+    private void OnUnpackDoAfter(Entity<FlatpackComponent> ent, ref FlatpackUnpackDoAfterEvent args)
+    {
+        if (args.Cancelled)
+            return;
+
+        TryUnpack(ent, args.User);
+    }
+
+    /// <summary>
+    ///     Checks that the flatpack has somewhere to go and, on the server, spawns its contents.
+    /// </summary>
+    private void TryUnpack(Entity<FlatpackComponent> ent, EntityUid user)
+    {
+        var (uid, comp) = ent;
+        if (_container.IsEntityInContainer(ent))
+            return;
+
         var xform = Transform(ent);
 
         if (xform.GridUid is not { } grid || !TryComp<MapGridComponent>(grid, out var gridComp))
             return;
-
-        args.Handled = true;
 
         if (comp.Entity == null)
         {
@@ -87,25 +120,34 @@ public abstract class SharedFlatpackSystem : EntitySystem
         {
             // this popup is on the server because the predicts on the intersection is crazy
             if (_net.IsServer)
-                _popup.PopupEntity(Loc.GetString("flatpack-unpack-no-room"), uid, args.User);
+                _popup.PopupEntity(Loc.GetString("flatpack-unpack-no-room"), uid, user);
             return;
         }
 
-        if (_net.IsServer)
+        var attempt = new FlatpackUnpackAttemptEvent(uid, user, grid, buildPos);
+        RaiseLocalEvent(uid, ref attempt);
+        if (attempt.Cancelled)
         {
-            var spawn = Spawn(comp.Entity, _map.GridTileToLocal(grid, gridComp, buildPos));
-            if (TryComp(spawn, out TransformComponent? spawnXform)) // Frontier: rotatable flatpacks
-                spawnXform.LocalRotation = xform.LocalRotation.GetCardinalDir().ToAngle(); // Frontier: rotatable flatpacks
-            if (TryComp<StationBoundObjectComponent>(uid, out var bound)) // Frontier: station binding
-                BindToStation(spawn, bound); // Frontier: station binding
-
-            _adminLogger.Add(LogType.Construction,
-                LogImpact.Low,
-                $"{ToPrettyString(args.User):player} unpacked {ToPrettyString(spawn):entity} at {xform.Coordinates} from {ToPrettyString(uid):entity}");
-            QueueDel(uid);
+            if (_net.IsServer && attempt.Message != null)
+                _popup.PopupEntity(attempt.Message, uid, user);
+            return;
         }
 
-        _audio.PlayPredicted(comp.UnpackSound, args.Used, args.User);
+        if (!_net.IsServer)
+            return;
+
+        var spawn = Spawn(comp.Entity, _map.GridTileToLocal(grid, gridComp, buildPos));
+        if (TryComp(spawn, out TransformComponent? spawnXform)) // Frontier: rotatable flatpacks
+            spawnXform.LocalRotation = xform.LocalRotation.GetCardinalDir().ToAngle(); // Frontier: rotatable flatpacks
+        if (TryComp<StationBoundObjectComponent>(uid, out var bound)) // Frontier: station binding
+            BindToStation(spawn, bound); // Frontier: station binding
+
+        _adminLogger.Add(LogType.Construction,
+            LogImpact.Low,
+            $"{ToPrettyString(user):player} unpacked {ToPrettyString(spawn):entity} at {xform.Coordinates} from {ToPrettyString(uid):entity}");
+        RaiseLocalEvent(spawn, new FlatpackUnpackedEvent(uid, user, spawn), true);
+        QueueDel(uid);
+        _audio.PlayPredicted(comp.UnpackSound, uid, user);
     }
 
     private void OnFlatpackExamined(Entity<FlatpackComponent> ent, ref ExaminedEvent args)

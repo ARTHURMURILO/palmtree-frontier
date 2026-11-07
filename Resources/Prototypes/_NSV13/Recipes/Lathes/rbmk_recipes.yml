@@ -5,10 +5,31 @@
 # department-printed rather than researched, so they are folded into the same two nodes here.
 
 # Split out of reactor_recipes.yml so each engine ships its own manufacturing chain.
+#
+# The reactor is not a machine board: it ships as a flatpack, bought from cargo or printed here once
+# researched. Fuel rods are a separate consumable print.
 - type: latheRecipe
-  parent: [ BaseGoldCircuitboardRecipe, BaseEngineeringMachineRecipeCategory ]
-  id: RbmkReactorMachineCircuitboard
-  result: RbmkReactorMachineCircuitboard
+  id: RbmkReactorFlatpack
+  result: RbmkReactorFlatpack
+  materials:
+    Steel: 15000
+    Glass: 1000
+    Plasteel: 4000
+    Plastic: 1000
+    Uranium: 8000
+  categories:
+  - Engineering
+  completetime: 120
+
+- type: latheRecipe
+  id: RbmkFuelRodUranium
+  result: RbmkFuelRodUranium
+  materials:
+    Steel: 1000
+    Uranium: 3000
+  categories:
+  - Engineering
+  completetime: 30
 
 - type: latheRecipe
   parent: [ BaseSilverCircuitboardRecipe, BaseEngineeringMachineRecipeCategory ]

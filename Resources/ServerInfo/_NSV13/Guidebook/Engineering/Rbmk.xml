@@ -10,6 +10,14 @@
     <GuideEntityEmbed Entity="RbmkFuelRodUranium" Caption="uranium fuel rod"/>
   </Box>
 
+  ## Getting one
+  The RBMK is sold by cargo as a flatpack, or printed from the engineering tech tree once researched.
+  Use a multitool on the flatpack and wait for it to unfold. The flatpack lays its own reinforced
+  footing, an HV cable across the footprint, and a pipe stub on each of the three ports, so the fitter
+  only has to run services to the edge of the reactor. It does not arrive fuelled.
+  A cold, shut-down RBMK can be packed back into its flatpack from the context menu; a running, hot
+  or slagged one cannot. Fuel rods are separate: each one is a 30 uranium, 10 metal print.
+
   ## The console
   - [bold]K (neutrons per generation):[/bold] the reactivity the control rods are chasing. 0–3.
   - [bold]Rod insertion:[/bold] the inverse of the K setpoint; 100 % is fully inserted.

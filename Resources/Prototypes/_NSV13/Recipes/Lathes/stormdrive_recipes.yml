@@ -5,10 +5,21 @@
 # department-printed rather than researched, so they are folded into the same two nodes here.
 
 # Split out of reactor_recipes.yml, same reason as rbmk_recipes.yml.
+#
+# The drive itself is not a machine board: it ships as a flatpack, bought from cargo or printed here
+# once researched. The console board stays a normal department print.
 - type: latheRecipe
-  parent: [ BaseGoldCircuitboardRecipe, BaseEngineeringMachineRecipeCategory ]
-  id: StormdriveReactorMachineCircuitboard
-  result: StormdriveReactorMachineCircuitboard
+  id: StormdriveReactorFlatpack
+  result: StormdriveReactorFlatpack
+  materials:
+    Steel: 7500
+    Glass: 600
+    Plasteel: 2400
+    Plastic: 600
+    Uranium: 4800
+  categories:
+  - Engineering
+  completetime: 90
 
 - type: latheRecipe
   parent: [ BaseSilverCircuitboardRecipe, BaseEngineeringMachineRecipeCategory ]

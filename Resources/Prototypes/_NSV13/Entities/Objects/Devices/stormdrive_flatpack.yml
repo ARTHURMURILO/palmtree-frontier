@@ -1,0 +1,38 @@
+# NSV13/Palmtree: the stormdrive flatpack.
+#
+# The flatpack carries no site works; the drive drops on its own tile and the crew runs its own
+# fuel, waste and HV lines. Deconstruction returns the same flatpack.
+- type: entity
+  parent: BaseFlatpack
+  id: StormdriveReactorFlatpack
+  name: stormdrive reactor flatpack
+  description: A flatpack used for constructing a class IV nuclear storm drive. Just the drive; the deck fittings are yours to sort out.
+  components:
+  - type: Sprite
+    sprite: _NF/Objects/Devices/flatpack.rsi
+    layers:
+    - state: power_generator
+  - type: Flatpack
+    entity: StormdriveReactor
+    unpackDelay: 30
+  - type: ReactorFlatpack
+    footprint: 1,1
+    deconstructDelay: 30
+    coldLimit: 50
+  - type: StaticPrice
+    price: 15000
+  - type: GuideHelp
+    guides:
+    - Stormdrive
+
+# Cargo bundle: the drive flatpack plus the console board that controls it.
+- type: entity
+  parent: CrateEngineering
+  id: CrateStormdriveReactor
+  name: stormdrive reactor crate
+  description: A stormdrive reactor flatpack and the control console board that talks to it.
+  components:
+  - type: StorageFill
+    contents:
+    - id: StormdriveReactorFlatpack
+    - id: StormdriveConsoleCircuitboard

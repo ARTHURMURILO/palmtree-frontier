@@ -27,3 +27,25 @@
   cost: 4000
   category: cargoproduct-category-name-engineering
   group: market
+
+# NSV13/Palmtree: reactor flatpacks. The crate carries the reactor and its console board; fuel and
+# control rods are separate.
+- type: cargoProduct
+  id: EngineRbmkReactor
+  icon:
+    sprite: _NF/Objects/Devices/flatpack.rsi
+    state: power_generator
+  product: CrateRbmkReactor
+  cost: 40000
+  category: cargoproduct-category-name-engineering
+  group: market
+
+- type: cargoProduct
+  id: EngineStormdriveReactor
+  icon:
+    sprite: _NF/Objects/Devices/flatpack.rsi
+    state: power_generator
+  product: CrateStormdriveReactor
+  cost: 30000
+  category: cargoproduct-category-name-engineering
+  group: market

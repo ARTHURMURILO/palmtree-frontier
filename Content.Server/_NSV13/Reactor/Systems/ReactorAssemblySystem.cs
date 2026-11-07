@@ -1,0 +1,330 @@
+using System.Linq;
+using Content.Server.NodeContainer.Nodes;
+using Content.Server.Power.Components;
+using Content.Server._NSV13.Reactor.Components;
+using Content.Shared.Administration.Logs;
+using Content.Shared.Atmos;
+using Content.Shared.Construction;
+using Content.Shared.Construction.Components;
+using Content.Shared.Database;
+using Content.Shared.DoAfter;
+using Content.Shared.NodeContainer;
+using Content.Shared.Popups;
+using Content.Shared.Verbs;
+using Content.Shared._NSV13.Reactor;
+using Robust.Shared.Containers;
+using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
+using Robust.Shared.Prototypes;
+
+namespace Content.Server._NSV13.Reactor.Systems;
+
+/// <summary>
+///     Handles reactor flatpacks: validates the footprint before spawning, lays the site works around the
+///     fresh reactor, and packs a cold, shut-down reactor back into its flatpack.
+/// </summary>
+public sealed class ReactorAssemblySystem : EntitySystem
+{
+    [Dependency] private readonly ISharedAdminLogManager _adminLogger = default!;
+    [Dependency] private readonly SharedContainerSystem _container = default!;
+    [Dependency] private readonly SharedDoAfterSystem _doAfter = default!;
+    [Dependency] private readonly SharedMapSystem _map = default!;
+    [Dependency] private readonly SharedPopupSystem _popup = default!;
+    [Dependency] private readonly SharedTransformSystem _transform = default!;
+    [Dependency] private readonly ITileDefinitionManager _tileManager = default!;
+
+    public override void Initialize()
+    {
+        SubscribeLocalEvent<FlatpackComponent, FlatpackUnpackAttemptEvent>(OnFlatpackAttempt);
+        SubscribeLocalEvent<FlatpackUnpackedEvent>(OnFlatpackUnpacked);
+
+        SubscribeLocalEvent<ReactorAssemblyComponent, GetVerbsEvent<Verb>>(OnGetVerbs);
+        SubscribeLocalEvent<ReactorAssemblyComponent, ReactorDeconstructDoAfterEvent>(OnDeconstructDoAfter);
+    }
+
+    private void OnFlatpackAttempt(Entity<FlatpackComponent> ent, ref FlatpackUnpackAttemptEvent args)
+    {
+        if (!TryComp<ReactorFlatpackComponent>(ent, out var pack))
+            return;
+
+        if (!TryComp<MapGridComponent>(args.Grid, out var grid))
+        {
+            Cancel(ref args, "reactor-flatpack-no-grid");
+            return;
+        }
+
+        var half = new Vector2i(pack.Footprint.X / 2, pack.Footprint.Y / 2);
+        for (var x = -half.X; x <= half.X; x++)
+        {
+            for (var y = -half.Y; y <= half.Y; y++)
+            {
+                var pos = args.Position + new Vector2i(x, y);
+
+                if (!_map.TryGetTileRef(args.Grid, grid, pos, out var tileRef) || tileRef.Tile.IsEmpty)
+                {
+                    Cancel(ref args, "reactor-flatpack-needs-floor");
+                    return;
+                }
+
+                foreach (var anchored in _map.GetAnchoredEntities((args.Grid, grid), pos))
+                {
+                    // Cables and pipes are expected under a reactor and get replaced or reused.
+                    if (HasComp<CableComponent>(anchored) || HasPipe(anchored))
+                        continue;
+
+                    Cancel(ref args, "reactor-flatpack-blocked");
+                    return;
+                }
+            }
+        }
+    }
+
+    private void Cancel(ref FlatpackUnpackAttemptEvent args, LocId message)
+    {
+        args.Cancelled = true;
+        args.Message = Loc.GetString(message);
+    }
+
+    private void OnFlatpackUnpacked(FlatpackUnpackedEvent args)
+    {
+        if (!TryComp<ReactorFlatpackComponent>(args.Flatpack, out var pack))
+            return;
+
+        if (TerminatingOrDeleted(args.Spawned))
+            return;
+
+        var reactor = args.Spawned;
+        var xform = Transform(reactor);
+        if (!xform.Anchored)
+            _transform.AnchorEntity(reactor);
+
+        var assembly = EnsureComp<ReactorAssemblyComponent>(reactor);
+        assembly.DeconstructDelay = pack.DeconstructDelay;
+        assembly.ColdLimit = pack.ColdLimit;
+        if (MetaData(args.Flatpack).EntityPrototype is { } flatpackProto)
+            assembly.Flatpack = flatpackProto.ID;
+
+        if (xform.GridUid is not { } gridUid || !TryComp<MapGridComponent>(gridUid, out var grid))
+            return;
+
+        var center = _map.TileIndicesFor(gridUid, grid, xform.Coordinates);
+        var rotation = xform.LocalRotation;
+        var tiles = FootprintTiles(center, pack.Footprint);
+
+        if (pack.Floor != null)
+        {
+            var floor = _tileManager[pack.Floor];
+            assembly.FloorTile = floor.TileId;
+
+            foreach (var pos in tiles)
+            {
+                if (!_map.TryGetTileRef(gridUid, grid, pos, out var tileRef))
+                    continue;
+
+                assembly.Floors.Add((pos, tileRef.Tile));
+                _map.SetTile(gridUid, grid, pos, new Tile(floor.TileId));
+            }
+        }
+
+        if (pack.CableOnFootprint)
+        {
+            foreach (var pos in tiles)
+            {
+                if (HasCable(gridUid, grid, pos))
+                    continue;
+
+                assembly.Parts.Add(Spawn("CableHV", _map.GridTileToLocal(gridUid, grid, pos)));
+            }
+        }
+
+        if (pack.PipesOnPorts && TryComp<NodeContainerComponent>(reactor, out var nodes))
+        {
+            foreach (var node in nodes.Nodes.Values)
+            {
+                if (node is not PipeNode pipe)
+                    continue;
+
+                var pos = center.Offset(pipe.CurrentPipeDirection.ToDirection());
+                if (HasPipe(gridUid, grid, pos))
+                    continue;
+
+                var pipeEnt = Spawn("GasPipeStraight", _map.GridTileToLocal(gridUid, grid, pos));
+                _transform.SetLocalRotation(pipeEnt, rotation);
+                if (!Transform(pipeEnt).Anchored)
+                    _transform.AnchorEntity(pipeEnt);
+                assembly.Parts.Add(pipeEnt);
+            }
+        }
+    }
+
+    private static List<Vector2i> FootprintTiles(Vector2i center, Vector2i footprint)
+    {
+        var tiles = new List<Vector2i>();
+        var half = new Vector2i(footprint.X / 2, footprint.Y / 2);
+
+        for (var x = -half.X; x <= half.X; x++)
+        {
+            for (var y = -half.Y; y <= half.Y; y++)
+                tiles.Add(center + new Vector2i(x, y));
+        }
+
+        return tiles;
+    }
+
+    private bool HasCable(EntityUid gridUid, MapGridComponent grid, Vector2i pos)
+    {
+        foreach (var anchored in _map.GetAnchoredEntities((gridUid, grid), pos))
+        {
+            if (HasComp<CableComponent>(anchored))
+                return true;
+        }
+
+        return false;
+    }
+
+    private bool HasPipe(EntityUid entity)
+    {
+        return TryComp<NodeContainerComponent>(entity, out var container)
+               && container.Nodes.Values.Any(node => node is PipeNode);
+    }
+
+    private bool HasPipe(EntityUid gridUid, MapGridComponent grid, Vector2i pos)
+    {
+        foreach (var anchored in _map.GetAnchoredEntities((gridUid, grid), pos))
+        {
+            if (HasPipe(anchored))
+                return true;
+        }
+
+        return false;
+    }
+
+    private void OnGetVerbs(Entity<ReactorAssemblyComponent> ent, ref GetVerbsEvent<Verb> args)
+    {
+        if (!args.CanAccess || !args.CanInteract)
+            return;
+
+        var user = args.User;
+        var reason = GetBlockReason(ent);
+
+        args.Verbs.Add(new Verb
+        {
+            Text = Loc.GetString("reactor-deconstruct-verb"),
+            Act = () => StartDeconstruct(ent, user),
+            Disabled = reason != null,
+            Message = reason,
+            Impact = LogImpact.High,
+        });
+    }
+
+    private string? GetBlockReason(Entity<ReactorAssemblyComponent> ent)
+    {
+        if (TryComp<RbmkReactorComponent>(ent, out var rbmk))
+        {
+            if (rbmk.Slagged)
+                return Loc.GetString("reactor-deconstruct-melted");
+
+            if (rbmk.IsRunning)
+                return Loc.GetString("reactor-deconstruct-running");
+
+            if (rbmk.Temperature > ent.Comp.ColdLimit)
+                return Loc.GetString("reactor-deconstruct-hot");
+
+            return null;
+        }
+
+        if (TryComp<StormdriveComponent>(ent, out var drive))
+        {
+            if (drive.ReactorEndTimes || drive.State == StormdriveState.Meltdown)
+                return Loc.GetString("reactor-deconstruct-melted");
+
+            if (drive.State is StormdriveState.Running or StormdriveState.Repair
+                or StormdriveState.Reinforce or StormdriveState.Refit)
+                return Loc.GetString("reactor-deconstruct-running");
+
+            if (drive.Heat > ent.Comp.ColdLimit)
+                return Loc.GetString("reactor-deconstruct-hot");
+
+            return null;
+        }
+
+        return Loc.GetString("reactor-deconstruct-invalid");
+    }
+
+    private void StartDeconstruct(Entity<ReactorAssemblyComponent> ent, EntityUid user)
+    {
+        var args = new DoAfterArgs(EntityManager,
+            user,
+            ent.Comp.DeconstructDelay,
+            new ReactorDeconstructDoAfterEvent(),
+            ent,
+            target: ent)
+        {
+            BreakOnMove = true,
+            NeedHand = false,
+        };
+
+        _doAfter.TryStartDoAfter(args);
+    }
+
+    private void OnDeconstructDoAfter(Entity<ReactorAssemblyComponent> ent, ref ReactorDeconstructDoAfterEvent args)
+    {
+        if (args.Cancelled)
+            return;
+
+        var reason = GetBlockReason(ent);
+        if (reason != null)
+        {
+            _popup.PopupEntity(reason, ent, args.User);
+            return;
+        }
+
+        args.Handled = true;
+        Deconstruct(ent, args.User);
+    }
+
+    private void Deconstruct(Entity<ReactorAssemblyComponent> ent, EntityUid user)
+    {
+        var uid = ent.Owner;
+        var xform = Transform(uid);
+        var coords = xform.Coordinates;
+        var rotation = xform.LocalRotation;
+
+        // The rods (and any fitted parts) come out before the machine goes, or they would go with it.
+        if (TryComp<ContainerManagerComponent>(uid, out var containers))
+        {
+            foreach (var container in containers.Containers.Values)
+            {
+                if (container.Count > 0)
+                    _container.EmptyContainer(container, destination: coords);
+            }
+        }
+
+        foreach (var part in ent.Comp.Parts)
+        {
+            if (!TerminatingOrDeleted(part))
+                QueueDel(part);
+        }
+
+        if (xform.GridUid is { } gridUid && TryComp<MapGridComponent>(gridUid, out var grid))
+        {
+            foreach (var (pos, original) in ent.Comp.Floors)
+            {
+                // Only restore deck the flatpack itself laid; leave crew changes alone.
+                if (_map.TryGetTileRef(gridUid, grid, pos, out var tileRef) && tileRef.Tile.TypeId == ent.Comp.FloorTile)
+                    _map.SetTile(gridUid, grid, pos, original);
+            }
+        }
+
+        var flatpack = Spawn(ent.Comp.Flatpack, coords);
+        _transform.SetLocalRotation(flatpack, rotation);
+
+        _popup.PopupEntity(Loc.GetString("reactor-deconstruct-done"), uid, user);
+        _adminLogger.Add(LogType.Construction,
+            LogImpact.Medium,
+            $"{ToPrettyString(user):player} packed {ToPrettyString(uid):entity} back into {ToPrettyString(flatpack):entity}");
+
+        QueueDel(uid);
+    }
+}
+
