@@ -74,6 +74,9 @@ gas-heat-pump-ui-no-waste = The waste port has no gas in it. There is nothing fo
 gas-heat-pump-upgrade-heat-capacity = Heat capacity
 gas-heat-pump-upgrade-heat-rate = Maximum heat moved
 gas-heat-pump-upgrade-efficiency = Minimum efficiency
+gas-heat-pump-upgrade-power = Power use
+gas-heat-pump-upgrade-min-temperature = Minimum temperature
+gas-heat-pump-upgrade-max-temperature = Maximum temperature
 gas-heat-pump-ui-no-power = The heat pump has no power.
 
 gas-heat-pump-examined-status = The heat pump is [color={$statusColor}]{$enabled ->

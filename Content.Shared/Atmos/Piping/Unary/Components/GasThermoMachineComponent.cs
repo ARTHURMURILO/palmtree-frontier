@@ -74,6 +74,39 @@ namespace Content.Shared.Atmos.Piping.Unary.Components
         public float MaxTemperature = 593.15f;
 
         /// <summary>
+        ///     Palmtree: <see cref="MinTemperature"/> with stock parts. Better capacitors widen the
+        ///     range the machine can be set to, which is what the hellfire machines override.
+        /// </summary>
+        [DataField]
+        public float BaseMinTemperature = 73.15f;
+
+        /// <summary>
+        ///     Palmtree: <see cref="MaxTemperature"/> with stock parts.
+        /// </summary>
+        [DataField]
+        public float BaseMaxTemperature = 593.15f;
+
+        /// <summary>
+        ///     Palmtree: how many kelvin colder each capacitor rating above stock lets the target be
+        ///     set to.
+        /// </summary>
+        [DataField]
+        public float MinTemperaturePerRating = 15f;
+
+        /// <summary>
+        ///     Palmtree: how many kelvin hotter each capacitor rating above stock lets the target be
+        ///     set to.
+        /// </summary>
+        [DataField]
+        public float MaxTemperaturePerRating = 200f;
+
+        /// <summary>
+        ///     Palmtree: the machine part whose rating widens the temperature range.
+        /// </summary>
+        [DataField(customTypeSerializer: typeof(PrototypeIdSerializer<MachinePartPrototype>))]
+        public string MachinePartTemperature = "Capacitor";
+
+        /// <summary>
         /// Last amount of energy added/removed from the attached pipe network
         /// </summary>
         [DataField]

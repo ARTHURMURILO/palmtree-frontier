@@ -93,6 +93,11 @@ supposed to beat a resistive machine, and this one beats the vanilla freezer's C
 working range. The superlinear term still makes a hard job cost more per joule than a light one, it
 is just no longer punitive.
 
+Bins are a better compressor, not just a bigger one: `PowerPerHeat` falls with the rating
+(`0.15 * 0.7^(rating-1)`), so the upgrade range is also an efficiency range. With tier-four bins the
+624 kW ceiling draws about 50 kW (COP ~12.5), not the ~140 kW that scaling the throughput alone
+would cost.
+
 ### Safeties
 
 Waste loop above `SafeTemperature` (200 000 K): the machine switches itself off and pops a warning.
@@ -110,8 +115,8 @@ guaranteed on the first tick.
 
 | Part | Effect |
 |---|---|
-| `MatterBin` 2x | `HeatCapacity = 5000 * 2^(rating-1)`, `MaxHeatRate = 78 kW * 2^(rating-1)`, `PowerSoftCap = 78 kW * 2^(rating-1)` |
-| `Manipulator` 2x | `EfficiencyFloor = min(0.25 * rating, 0.9)` |
+| `MatterBin` 2x | `HeatCapacity = 5000 * 2^(rating-1)`, `MaxHeatRate = 78 kW * 2^(rating-1)`, `PowerSoftCap = 78 kW * 2^(rating-1)`, `PowerPerHeat = 0.15 * 0.7^(rating-1)` |
+| `Manipulator` 2x | `EfficiencyFloor = min(0.25 * rating, 0.9)`, `MinTemperature = 73.15 - 15*(rating-1)`, `MaxTemperature = 593.15 + 200*(rating-1)` |
 
 `RefreshPartsEvent` (Frontier's machine upgrading) drives both. The ceiling on the transfer scales with
 the bins as well as the heat capacity: `C1*C2/(C1+C2)` saturates at the gas's own heat capacity once

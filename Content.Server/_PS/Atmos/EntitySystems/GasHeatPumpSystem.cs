@@ -73,8 +73,27 @@ public sealed class GasHeatPumpSystem : SharedGasHeatPumpSystem
         ent.Comp.HeatCapacity = ent.Comp.BaseHeatCapacity * binMultiplier;
         ent.Comp.MaxHeatRate = ent.Comp.BaseMaxHeatRate * binMultiplier;
         ent.Comp.PowerSoftCap = ent.Comp.BasePowerSoftCap * binMultiplier;
+
+        // Better bins are a better compressor as well as a bigger one: the power moved per joule
+        // drops with every rating, which is what keeps a fully upgraded machine at about 50 kW
+        // instead of the 140 kW that scaling the throughput alone would cost.
+        ent.Comp.PowerPerHeat = ent.Comp.BasePowerPerHeat *
+                                MathF.Pow(ent.Comp.PowerPerHeatPerBin, bins - 1f);
+
         ent.Comp.EfficiencyFloor = MathF.Min(ent.Comp.BaseEfficiencyFloor * manipulators,
             ent.Comp.MaxEfficiencyFloor);
+
+        // Better manipulators are finer control as well as better efficiency: the compressor can
+        // build a bigger temperature lift, so the range you can ask the machine for widens.
+        var rangeRating = MathF.Max(0f, manipulators - 1f);
+        ent.Comp.MinTemperature = MathF.Max(Atmospherics.TCMB,
+            ent.Comp.BaseMinTemperature - ent.Comp.MinTemperaturePerRating * rangeRating);
+        ent.Comp.MaxTemperature = MathF.Min(Atmospherics.Tmax,
+            ent.Comp.BaseMaxTemperature + ent.Comp.MaxTemperaturePerRating * rangeRating);
+        ent.Comp.TargetTemperature = Math.Clamp(ent.Comp.TargetTemperature,
+            ent.Comp.MinTemperature, ent.Comp.MaxTemperature);
+
+        Dirty(ent);
     }
 
     /// <summary>
@@ -89,6 +108,12 @@ public sealed class GasHeatPumpSystem : SharedGasHeatPumpSystem
             component.MaxHeatRate / component.BaseMaxHeatRate);
         args.AddPercentageUpgrade("gas-heat-pump-upgrade-efficiency",
             component.EfficiencyFloor / component.BaseEfficiencyFloor);
+        args.AddPercentageUpgrade("gas-heat-pump-upgrade-power",
+            component.PowerPerHeat / component.BasePowerPerHeat);
+        args.AddPercentageUpgrade("gas-heat-pump-upgrade-min-temperature",
+            component.MinTemperature / component.BaseMinTemperature);
+        args.AddPercentageUpgrade("gas-heat-pump-upgrade-max-temperature",
+            component.MaxTemperature / component.BaseMaxTemperature);
     }
 
     private void OnMapInit(Entity<GasHeatPumpComponent> ent, ref MapInitEvent args)

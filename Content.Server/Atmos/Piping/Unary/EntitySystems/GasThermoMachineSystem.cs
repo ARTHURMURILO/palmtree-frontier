@@ -112,6 +112,19 @@ namespace Content.Server.Atmos.Piping.Unary.EntitySystems
         {
             var rating = args.PartRatings.GetValueOrDefault(component.MachinePartHeatCapacity, 1f);
             component.HeatCapacity = component.BaseHeatCapacity * rating;
+
+            // Palmtree: better capacitors widen the range the thermostat can be set to. The hellfire
+            // machines override the stock bounds, hence the base fields.
+            var rangeRating = MathF.Max(0f,
+                args.PartRatings.GetValueOrDefault(component.MachinePartTemperature, 1f) - 1f);
+            component.MinTemperature = MathF.Max(Atmospherics.TCMB,
+                component.BaseMinTemperature - component.MinTemperaturePerRating * rangeRating);
+            component.MaxTemperature = MathF.Min(Atmospherics.Tmax,
+                component.BaseMaxTemperature + component.MaxTemperaturePerRating * rangeRating);
+            component.TargetTemperature = Math.Clamp(component.TargetTemperature,
+                component.MinTemperature, component.MaxTemperature);
+
+            Dirty(uid, component);
         }
 
         /// <summary>
@@ -122,6 +135,11 @@ namespace Content.Server.Atmos.Piping.Unary.EntitySystems
             var multiplier = component.HeatCapacity / component.BaseHeatCapacity;
             args.AddPercentageUpgrade("gas-thermomachine-upgrade-heat-capacity", multiplier);
             args.AddPercentageUpgrade("gas-thermomachine-upgrade-power-use", multiplier);
+
+            args.AddPercentageUpgrade("gas-thermomachine-upgrade-min-temperature",
+                component.MinTemperature / component.BaseMinTemperature);
+            args.AddPercentageUpgrade("gas-thermomachine-upgrade-max-temperature",
+                component.MaxTemperature / component.BaseMaxTemperature);
         }
 
         /// <summary>
