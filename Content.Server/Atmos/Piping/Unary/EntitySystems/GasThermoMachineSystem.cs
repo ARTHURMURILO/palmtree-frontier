@@ -11,6 +11,7 @@ using Content.Shared.Atmos.Piping.Unary.Components;
 using JetBrains.Annotations;
 using Content.Server.Power.EntitySystems;
 using Content.Shared.Atmos.Piping.Unary.Systems;
+using Content.Shared.Construction.Components;
 using Content.Shared.DeviceNetwork;
 using Content.Shared.DeviceNetwork.Events;
 using Content.Shared.Examine;
@@ -31,6 +32,8 @@ namespace Content.Server.Atmos.Piping.Unary.EntitySystems
             base.Initialize();
 
             SubscribeLocalEvent<GasThermoMachineComponent, AtmosDeviceUpdateEvent>(OnThermoMachineUpdated);
+            SubscribeLocalEvent<GasThermoMachineComponent, RefreshPartsEvent>(OnRefreshParts); // Palmtree
+            SubscribeLocalEvent<GasThermoMachineComponent, UpgradeExamineEvent>(OnUpgradeExamine); // Palmtree
 
             // Device network
             SubscribeLocalEvent<GasThermoMachineComponent, DeviceNetworkPacketEvent>(OnPacketRecv);
@@ -98,6 +101,27 @@ namespace Content.Server.Atmos.Piping.Unary.EntitySystems
             }
 
             receiver.Load = thermoMachine.HeatCapacity;// * scale; // we're not ready for dynamic load yet, see note above
+        }
+
+        /// <summary>
+        /// Palmtree: matter bins scale the machine's heat capacity. Because the thermomachine's heat
+        /// capacity is also its power draw, upgrading the bins raises both the heat moved and the
+        /// running cost, so the coefficient of performance stays what the prototype says it is.
+        /// </summary>
+        private void OnRefreshParts(EntityUid uid, GasThermoMachineComponent component, RefreshPartsEvent args)
+        {
+            var rating = args.PartRatings.GetValueOrDefault(component.MachinePartHeatCapacity, 1f);
+            component.HeatCapacity = component.BaseHeatCapacity * rating;
+        }
+
+        /// <summary>
+        /// Palmtree: shows what the installed parts did in the machine's "Upgrades" examine entry.
+        /// </summary>
+        private void OnUpgradeExamine(EntityUid uid, GasThermoMachineComponent component, UpgradeExamineEvent args)
+        {
+            var multiplier = component.HeatCapacity / component.BaseHeatCapacity;
+            args.AddPercentageUpgrade("gas-thermomachine-upgrade-heat-capacity", multiplier);
+            args.AddPercentageUpgrade("gas-thermomachine-upgrade-power-use", multiplier);
         }
 
         /// <summary>
