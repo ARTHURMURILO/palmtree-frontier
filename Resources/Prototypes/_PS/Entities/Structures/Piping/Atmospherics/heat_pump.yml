@@ -31,10 +31,12 @@
       map: [ "enum.WiresVisualLayers.MaintenancePanel" ]
     # The two port markings: green is the gas port, red is the waste port. They are the layers
     # that have to follow the rotation, so they render with the sprite's rotation and not the
-    # snapped one.
+    # snapped one. They also own their pipe layer's art; see AtmosPipeLayers below.
     - state: portWaste
+      map: [ "portWaste" ]
       renderingStrategy: Default
     - state: portGas
+      map: [ "portGas" ]
       renderingStrategy: Default
   - type: Appearance
   - type: GenericVisualizer
@@ -46,10 +48,23 @@
           OffHeating: { state: heaterOff }
           OnHeating: { state: heaterOn }
   - type: AtmosPipeLayers
+    # A multitool changes the layer; the screwdriver is left to the maintenance panel.
+    tool: Pulsing
     alternativePrototypes:
       Primary: GasThermoMachineHeatPump
       Secondary: GasThermoMachineHeatPumpAlt1
       Tertiary: GasThermoMachineHeatPumpAlt2
+    # Each layer draws its pipes a few pixels off centre, so the port markings have their own file
+    # per layer and move with the pipe they sit on.
+    spriteLayersRsiPaths:
+      portWaste:
+        Primary: _PS/Structures/Piping/Atmospherics/heat_pump.rsi
+        Secondary: _PS/Structures/Piping/Atmospherics/heat_pump_alt1.rsi
+        Tertiary: _PS/Structures/Piping/Atmospherics/heat_pump_alt2.rsi
+      portGas:
+        Primary: _PS/Structures/Piping/Atmospherics/heat_pump.rsi
+        Secondary: _PS/Structures/Piping/Atmospherics/heat_pump_alt1.rsi
+        Tertiary: _PS/Structures/Piping/Atmospherics/heat_pump_alt2.rsi
   - type: NodeContainer
     nodes:
       # The gas port sits where a freezer's port does, so a heat pump drops into an existing wall.

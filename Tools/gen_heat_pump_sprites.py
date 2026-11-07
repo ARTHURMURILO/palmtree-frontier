@@ -137,6 +137,32 @@ def port_nub(frames: list[Image.Image], facing: str) -> Image.Image:
     return out
 
 
+# The vanilla pipe sprite is drawn a few pixels off the tile centre for the two alt layers: a
+# vertical run shifts sideways, a horizontal run shifts up or down, and the two layers mirror each
+# other. These are the numbers measured off pipe.rsi, pipe_alt1.rsi and pipe_alt2.rsi.
+LAYER_SHIFT = {1: 7, 2: -7}
+
+
+def layer_shift(frame_index: int, layer: int) -> tuple[int, int]:
+    """How far a port nub moves on an alt pipe layer, so it stays on the pipe it marks."""
+    shift = LAYER_SHIFT.get(layer, 0)
+    if shift == 0:
+        return (0, 0)
+
+    # A port facing north or south belongs to a vertical run, which the layer shifts sideways; one
+    # facing east or west belongs to a horizontal run, which shifts up or down instead.
+    if DIRS[frame_index] in ("South", "North"):
+        return (shift, 0)
+    return (0, -shift)
+
+
+def offset_frame(frame: Image.Image, dx: int, dy: int) -> Image.Image:
+    """Move a frame, clipping whatever leaves the tile."""
+    out = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    out.paste(frame, (dx, dy), frame)
+    return out
+
+
 def build_states() -> dict[str, tuple[int, list[Image.Image]]]:
     """The two port states, four directions each, tinted the way /tg/station tinted its ports."""
     pipe = load_frames(SOURCE / "thermomachine.rsi/pipe.png", 4)
@@ -150,7 +176,7 @@ def build_states() -> dict[str, tuple[int, list[Image.Image]]]:
     }
 
 
-def write_rsi(folder: pathlib.Path, generated: dict[str, tuple[int, list[Image.Image]]]):
+def write_rsi(folder: pathlib.Path, generated: dict[str, tuple[int, list[Image.Image]]], with_body: bool = True):
     folder.mkdir(parents=True, exist_ok=True)
     for old in folder.glob("*.png"):
         old.unlink()
@@ -171,10 +197,12 @@ def write_rsi(folder: pathlib.Path, generated: dict[str, tuple[int, list[Image.I
         "states": [],
     }
 
-    # The body states are the vanilla files, untouched, so the running animation survives.
-    for name in BODY_STATES:
-        shutil.copyfile(SOURCE / "thermomachine.rsi" / f"{name}.png", folder / f"{name}.png")
-        meta["states"].append(source_states[name])
+    # The body states are the vanilla files, untouched, so the running animation survives. The alt
+    # layer files only carry the port markings, so they skip this.
+    if with_body:
+        for name in BODY_STATES:
+            shutil.copyfile(SOURCE / "thermomachine.rsi" / f"{name}.png", folder / f"{name}.png")
+            meta["states"].append(source_states[name])
 
     for name, (directions, frames) in generated.items():
         sheet = Image.new("RGBA", (SIZE * 2, SIZE * 2), (0, 0, 0, 0))
@@ -192,8 +220,19 @@ def main():
                         help="folder to write the .rsi files into (default: %(default)s)")
     args = parser.parse_args()
 
-    write_rsi(args.out / "heat_pump.rsi", build_states())
+    states = build_states()
+
+    write_rsi(args.out / "heat_pump.rsi", states)
     print("wrote", args.out / "heat_pump.rsi")
+
+    # One file per pipe layer, holding the port markings where that layer draws its pipes.
+    for layer, suffix in ((1, "alt1"), (2, "alt2")):
+        shifted = {
+            name: (directions, [offset_frame(frame, *layer_shift(i, layer)) for i, frame in enumerate(frames)])
+            for name, (directions, frames) in states.items()
+        }
+        write_rsi(args.out / f"heat_pump_{suffix}.rsi", shifted, with_body=False)
+        print("wrote", args.out / f"heat_pump_{suffix}.rsi")
 
 
 if __name__ == "__main__":
