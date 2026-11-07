@@ -823,7 +823,8 @@ public sealed class HeatPumpTest
                         "a tier three matter bin should quadruple the most heat the machine can move");
                     Assert.That(pump.EfficiencyFloor, Is.EqualTo(pump.MaxEfficiencyFloor).Within(0.001f),
                         "tier four manipulators should reach the efficiency floor ceiling");
-                    Assert.That(pump.PowerPerHeat, Is.EqualTo(pump.BasePowerPerHeat * 0.49f).Within(0.0001f),
+                    Assert.That(pump.PowerPerHeat,
+                        Is.EqualTo(pump.BasePowerPerHeat * pump.PowerPerHeatPerBin * pump.PowerPerHeatPerBin).Within(0.0001f),
                         "a tier three matter bin should make the compressor correspondingly more efficient");
                     Assert.That(pump.MinTemperature, Is.EqualTo(28.15f).Within(0.01f),
                         "tier four manipulators should let the machine be set 45 K colder");
@@ -925,12 +926,14 @@ public sealed class HeatPumpTest
                         "a stock machine should be running into its 78 kW ceiling");
                     Assert.That(upgraded, Is.GreaterThan(stock * 2f),
                         "better bins should raise the ceiling and let the machine move much more heat");
-                    Assert.That(stock / stockPower, Is.GreaterThan(3.9f),
-                        "the heat pump should be more efficient per joule than a thermomachine");
+                    Assert.That(stock / stockPower, Is.GreaterThan(6f),
+                        "a stock heat pump should land around a COP of 6.5 at its ceiling");
                     Assert.That(maxHeat, Is.GreaterThan(500_000f),
                         "a tier four machine should be working near its 624 kW ceiling");
                     Assert.That(maxLoad, Is.LessThan(55_000f),
-                        "a fully upgraded machine should draw about 50 kW at full tilt, not 140");
+                        "a fully upgraded machine should draw about 48 kW at full tilt, not 140");
+                    Assert.That(maxHeat / maxLoad, Is.GreaterThan(12f),
+                        "a fully upgraded machine should land around a COP of 13");
                 });
             });
         }
