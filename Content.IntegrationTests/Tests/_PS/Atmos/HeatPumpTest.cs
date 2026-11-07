@@ -1,9 +1,11 @@
 using System.Numerics;
+using Content.Server.Atmos.EntitySystems;
 using Content.Server.Atmos.Piping.Components;
 using Content.Server.NodeContainer.Nodes;
 using Content.Server.Power.Components;
 using Content.Shared._PS.Atmos.Components;
 using Content.Shared.Atmos;
+using Content.Shared.Atmos.Components;
 using Content.Shared.NodeContainer;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
@@ -91,6 +93,83 @@ public sealed class HeatPumpTest
                         "the gas port should join the pipe it faces");
                     Assert.That(waste.NodeGroup, Is.SameAs(westNode.NodeGroup),
                         "the waste port should join the pipe it faces");
+                });
+            });
+        }
+        finally
+        {
+            await pair.CleanReturnAsync();
+        }
+    }
+
+    [Test]
+    public async Task HeatPumpFollowsThePipeLayerItIsSetTo()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+
+        try
+        {
+            var server = pair.Server;
+            var entMan = server.EntMan;
+            var testMap = await pair.CreateTestMap();
+            var coords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
+
+            EntityUid device = default;
+            EntityUid east = default;
+
+            await server.WaitPost(() =>
+            {
+                var mapSys = server.System<SharedMapSystem>();
+                var gridComp = entMan.GetComponent<MapGridComponent>(testMap.Grid.Owner);
+                var tile = testMap.Tile.Tile;
+                mapSys.SetTile(testMap.Grid.Owner, gridComp, new Vector2i(-1, 0), tile);
+                mapSys.SetTile(testMap.Grid.Owner, gridComp, new Vector2i(1, 0), tile);
+
+                // The whole run is on the second pipe layer; the machine starts on the first.
+                var westPipe = entMan.SpawnEntity("GasPipeStraightAlt1", coords.Offset(new Vector2(-1f, 0f)));
+                device = entMan.SpawnEntity("GasThermoMachineHeatPump", coords);
+                east = entMan.SpawnEntity("GasPipeStraightAlt1", coords.Offset(new Vector2(1f, 0f)));
+
+                var quarterTurn = new Angle(Math.PI / 2);
+                foreach (var uid in new[] { westPipe, east })
+                {
+                    var xf = entMan.GetComponent<TransformComponent>(uid);
+                    xf.Anchored = true;
+                    xf.LocalRotation = quarterTurn;
+                }
+
+                entMan.GetComponent<TransformComponent>(device).LocalRotation = quarterTurn;
+            });
+
+            await pair.RunTicksSync(10);
+
+            await server.WaitAssertion(() =>
+            {
+                var gas = (PipeNode) entMan.GetComponent<NodeContainerComponent>(device).Nodes["gas"];
+                var eastNode = (PipeNode) entMan.GetComponent<NodeContainerComponent>(east).Nodes["pipe"];
+
+                Assert.That(gas.NodeGroup, Is.Not.SameAs(eastNode.NodeGroup),
+                    "a machine on the primary layer should not join a second layer pipe");
+            });
+
+            await server.WaitPost(() =>
+            {
+                var layers = entMan.GetComponent<AtmosPipeLayersComponent>(device);
+                server.System<AtmosPipeLayersSystem>().SetPipeLayer(new Entity<AtmosPipeLayersComponent>(device, layers), AtmosPipeLayer.Secondary);
+            });
+
+            await pair.RunTicksSync(10);
+
+            await server.WaitAssertion(() =>
+            {
+                var gas = (PipeNode) entMan.GetComponent<NodeContainerComponent>(device).Nodes["gas"];
+                var eastNode = (PipeNode) entMan.GetComponent<NodeContainerComponent>(east).Nodes["pipe"];
+
+                Assert.Multiple(() =>
+                {
+                    Assert.That(gas.CurrentPipeLayer, Is.EqualTo(AtmosPipeLayer.Secondary));
+                    Assert.That(gas.NodeGroup, Is.SameAs(eastNode.NodeGroup),
+                        "the machine should follow the run onto the second layer");
                 });
             });
         }
