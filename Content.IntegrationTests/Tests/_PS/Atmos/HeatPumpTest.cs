@@ -862,6 +862,7 @@ public sealed class HeatPumpTest
             await pair.RunTicksSync(5);
 
             var stock = 0f;
+            var stockPower = 0f;
             var upgraded = 0f;
 
             await server.WaitAssertion(() =>
@@ -875,6 +876,7 @@ public sealed class HeatPumpTest
                 SetGas(entMan, device, 500f, 300f);
                 Raise(entMan, device);
                 stock = MathF.Abs(pump.HeatMoved);
+                stockPower = entMan.GetComponent<ApcPowerReceiverComponent>(device).Load;
             });
 
             await server.WaitAssertion(() =>
@@ -902,6 +904,8 @@ public sealed class HeatPumpTest
                         "a stock machine should be running into its 78 kW ceiling");
                     Assert.That(upgraded, Is.GreaterThan(stock * 2f),
                         "better bins should raise the ceiling and let the machine move much more heat");
+                    Assert.That(stock / stockPower, Is.GreaterThan(3.9f),
+                        "the heat pump should be more efficient per joule than a thermomachine");
                 });
             });
         }

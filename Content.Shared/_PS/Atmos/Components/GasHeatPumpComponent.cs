@@ -205,10 +205,12 @@ public sealed partial class GasHeatPumpComponent : Component
 
     /// <summary>
     /// Watts of input per watt of heat moved at low load. The inverse of a coefficient of
-    /// performance, so 0.25 is a COP of 4.
+    /// performance: 0.15 is a COP of about 6.7 before the soft cap below makes hard work cost more.
+    /// A heat pump is meant to beat a resistive heater by a wide margin; the waste loop is the price
+    /// of the capacity, not of the efficiency.
     /// </summary>
     [DataField]
-    public float PowerPerHeat = 0.25f;
+    public float PowerPerHeat = 0.15f;
 
     /// <summary>
     /// Heat moved per second at which the power cost starts growing faster than the heat moved, in
@@ -224,6 +226,14 @@ public sealed partial class GasHeatPumpComponent : Component
     /// </summary>
     [DataField]
     public float BasePowerSoftCap = 78_000f;
+
+    /// <summary>
+    /// How much the cost per joule has grown by the time the machine reaches <see cref="PowerSoftCap"/>.
+    /// 0.5 means a full-load job costs 1.5 times as much per joule as a light one. /tg/station's curve
+    /// was much steeper, which left a hard-working heat pump barely better than a resistive heater.
+    /// </summary>
+    [DataField]
+    public float PowerSoftCapSlope = 0.5f;
 
     /// <summary>
     /// The UI key used to open this device's interface.
