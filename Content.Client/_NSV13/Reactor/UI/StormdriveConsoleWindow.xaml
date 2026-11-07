@@ -69,6 +69,19 @@
                         <Label Name="HeatLabel" Margin="4 0" Text="--" />
                     </ProgressBar>
 
+                    <!-- Stability: the score the DM original floated above the reactor, finally on
+                         the console. The diagnosis line mirrors the RBMK vessel-integrity readout:
+                         a falling number without a reason is just a mystery. -->
+                    <BoxContainer Orientation="Horizontal" SeparationOverride="4">
+                        <Label Text="{Loc 'stormdrive-console-stability'}" StyleClasses="LabelSubText"
+                               VerticalAlignment="Center" HorizontalExpand="True" />
+                        <Button Name="StabilityHelp" Text="?" MinSize="24 24" />
+                    </BoxContainer>
+                    <ProgressBar Name="StabilityBar" MinValue="0" MaxValue="100" SetHeight="22">
+                        <Label Name="StabilityLabel" Margin="4 0" Text="--" />
+                    </ProgressBar>
+                    <Label Name="StabilityDiagnosisLabel" Text="" StyleClasses="LabelSubText" />
+
                     <Label Text="{Loc 'stormdrive-console-rod-integrity'}" StyleClasses="LabelSubText" />
                     <ProgressBar Name="RodIntegrityBar" MinValue="0" MaxValue="1" SetHeight="22">
                         <Label Name="RodIntegrityLabel" Margin="4 0" Text="--" />

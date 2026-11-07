@@ -2,7 +2,12 @@
 
 using Content.Server._NSV13.Reactor.Components;
 using Content.Server._NSV13.Reactor.Systems;
+using Content.Server.NodeContainer.EntitySystems;
+using Content.Server.NodeContainer.Nodes;
 using Content.Server.Power.Components;
+using Content.Shared._NSV13.Reactor;
+using Content.Shared.Atmos;
+using Content.Shared.NodeContainer;
 using Content.Shared.Radiation.Components;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
@@ -235,6 +240,143 @@ public sealed class StormdriveTest
                 slag++;
 
             Assert.That(slag, Is.Zero, "the stormdrive must not scatter corium - that is the RBMK's failure mode");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    ///     The new console diagnosis must name the fuel-line branch the tick actually took: a rich
+    ///     mix recovers, and an empty line starves. This is the data behind the stability bar.
+    /// </summary>
+    [Test]
+    public async Task StabilityDiagnosisTracksTheFuelLine()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+
+        EntityUid uid = default;
+
+        await server.WaitAssertion(() =>
+        {
+            uid = entMan.SpawnEntity("StormdriveReactorRunning", testMap.GridCoords);
+        });
+
+        // The pipe node is wired during map init; writing gas before that is lost. This is the same
+        // reason the older fuel-consumption test waits before filling the line.
+        await pair.RunTicksSync(4);
+
+        await server.WaitAssertion(() =>
+        {
+            var comp = entMan.GetComponent<StormdriveComponent>(uid);
+            var nodes = entMan.GetComponent<NodeContainerComponent>(uid);
+            var fuel = (PipeNode) nodes.Nodes[comp.FuelInputName];
+
+            // Compress the clock so the test can see several process ticks without waiting 2 s each.
+            comp.ProcessInterval = 0.05f;
+            comp.NextProcess = TimeSpan.Zero;
+
+            fuel.Air.Clear();
+            fuel.Air.AdjustMoles(Gas.Plasma, 40f);
+            fuel.Air.Temperature = Atmospherics.T20C;
+
+            // Pin the drive below the stability cap so the rich branch has room to heal it.
+            comp.Heat = 200f;
+            comp.ReactionRate = 5f;
+            comp.ReactorStability = 50f;
+        });
+
+        await pair.RunTicksSync(4);
+
+        await server.WaitAssertion(() =>
+        {
+            var comp = entMan.GetComponent<StormdriveComponent>(uid);
+
+            Assert.That(comp.LastStabilityCause, Is.EqualTo(StormdriveStabilityCause.Recovering),
+                "a rich, under-pressure line should be reported as recovering");
+            Assert.That(comp.LastStabilityDelta, Is.GreaterThan(0f),
+                "recovering means the per-second rate is positive");
+
+            var nodes = entMan.GetComponent<NodeContainerComponent>(uid);
+            var fuel = (PipeNode) nodes.Nodes[comp.FuelInputName];
+            fuel.Air.Clear();
+            comp.NextProcess = TimeSpan.Zero;
+        });
+
+        await pair.RunTicksSync(4);
+
+        await server.WaitAssertion(() =>
+        {
+            var comp = entMan.GetComponent<StormdriveComponent>(uid);
+
+            Assert.That(comp.LastStabilityCause, Is.EqualTo(StormdriveStabilityCause.Starved),
+                "an empty line should be reported as starved");
+            Assert.That(comp.LastStabilityDelta, Is.LessThan(0f),
+                "starving means the per-second rate is negative");
+            Assert.That(comp.ReactorStability, Is.LessThan(50f),
+                "starving must cost stability");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    ///     The diagnosis must read the mixture <c>React()</c> charged, not the one the tick started
+    ///     with: the slug leaves the line before the over-pressure check, so a line just above the
+    ///     amber band still recovers instead of bleeding.
+    /// </summary>
+    [Test]
+    public async Task StabilityDiagnosisUsesTheConsumedLine()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+
+        EntityUid uid = default;
+
+        await server.WaitAssertion(() =>
+        {
+            uid = entMan.SpawnEntity("StormdriveReactorRunning", testMap.GridCoords);
+        });
+
+        await pair.RunTicksSync(4);
+
+        await server.WaitAssertion(() =>
+        {
+            var comp = entMan.GetComponent<StormdriveComponent>(uid);
+            var nodes = entMan.GetComponent<NodeContainerComponent>(uid);
+            var fuel = (PipeNode) nodes.Nodes[comp.FuelInputName];
+
+            // One process tick only: ten seconds between ticks keeps the next one far outside the
+            // test window, so a second, safer tick cannot overwrite the cause under test.
+            comp.ProcessInterval = 10f;
+            comp.NextProcess = TimeSpan.Zero;
+
+            // 82 moles at rate 5 with the 0.5 consumption factor: the tick starts above the
+            // rate * 12 + 20 = 80 amber line, but React() removes 2.5 before it checks, leaving
+            // 79.5 - under the line, so the rich mix recovers instead of bleeding.
+            fuel.Air.Clear();
+            fuel.Air.AdjustMoles(Gas.Plasma, 82f);
+            fuel.Air.Temperature = Atmospherics.T20C;
+
+            comp.Heat = 200f;
+            comp.ReactionRate = 5f;
+            comp.ReactorStability = 50f;
+        });
+
+        await pair.RunTicksSync(4);
+
+        await server.WaitAssertion(() =>
+        {
+            var comp = entMan.GetComponent<StormdriveComponent>(uid);
+
+            Assert.That(comp.LastStabilityCause, Is.EqualTo(StormdriveStabilityCause.Recovering),
+                "82 - 2.5 moles is under the 80 mole over-pressure line, so the rich mix recovers");
+            Assert.That(comp.LastStabilityDelta, Is.GreaterThan(0f),
+                "the rich mix should still be recovering");
         });
 
         await pair.CleanReturnAsync();

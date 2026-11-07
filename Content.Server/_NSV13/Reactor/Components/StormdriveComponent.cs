@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+using Content.Shared._NSV13.Reactor;
 using Content.Shared.Atmos;
 using Content.Shared.Explosion;
 using Robust.Shared.Audio;
@@ -169,6 +170,29 @@ public sealed partial class StormdriveComponent : Component
     public float ReactorStability = 100f;
 
     /// <summary>
+    ///     Stability change over the most recent process tick, expressed per second.
+    /// </summary>
+    /// <remarks>
+    ///     Stored rather than recomputed on the console: the behaviour depends on which branch the
+    ///     tick actually took (starved, lean + over pressure, rich, overload), and a console that
+    ///     only sees the current mixture can disagree with the simulation.
+    /// </remarks>
+    [ViewVariables(VVAccess.ReadOnly)]
+    public float LastStabilityDelta;
+
+    /// <summary>Why stability moved on the most recent process tick, for the console diagnosis.</summary>
+    [ViewVariables(VVAccess.ReadOnly)]
+    public StormdriveStabilityCause LastStabilityCause = StormdriveStabilityCause.None;
+
+    /// <summary>Stability below which the heat/rate spike roll can fire.</summary>
+    [DataField]
+    public float StabilitySpikeThreshold = 75f;
+
+    /// <summary>Stability below which the containment-failure anomaly roll can fire.</summary>
+    [DataField]
+    public float StabilityAnomalyThreshold = 15f;
+
+    /// <summary>
     ///     Palmtree: hard cap on the radius of the instability gravity pull, in tiles.
     /// </summary>
     /// <remarks>
@@ -320,6 +344,41 @@ public sealed partial class StormdriveComponent : Component
 
     [DataField]
     public SoundSpecifier ExplosionSound = new SoundPathSpecifier("/Audio/_NSV13/Reactor/explode.ogg");
+
+    /// <summary>
+    ///     Played when an unstable core yanks everything toward itself (<see cref="GravityPullMaxRadius"/>).
+    ///     The DM original played <c>empulse.ogg</c>, which this fork does not ship, so the engine's
+    ///     own EMP sound stood in. That file is mastered to full scale (0 dBFS peak, -9 dB mean) and
+    ///     the pull can fire as often as every ten seconds, so at default volume it was a thunderclap
+    ///     in the ear of anyone in the engine bay on a drive that was merely wobbling. It now plays
+    ///     16 dB down, pitched low so it reads as a lurch underfoot rather than a strike, and bounded
+    ///     so it does not carry across the ship.
+    /// </summary>
+    [DataField]
+    public SoundSpecifier GravityPullSound = new SoundPathSpecifier("/Audio/Effects/Lightning/lightningbolt.ogg")
+    {
+        Params = new AudioParams
+        {
+            Volume = -16f,
+            Pitch = 0.72f,
+            MaxDistance = 12f,
+            ReferenceDistance = 3f,
+        },
+    };
+
+    /// <summary>
+    ///     Played when the core tears an anomaly loose. Same stand-in file, but this is a
+    ///     once-per-anomaly event that should actually land, so it is trimmed rather than muffled.
+    /// </summary>
+    [DataField]
+    public SoundSpecifier AnomalySpawnSound = new SoundPathSpecifier("/Audio/Effects/Lightning/lightningbolt.ogg")
+    {
+        Params = new AudioParams
+        {
+            Volume = -8f,
+            MaxDistance = 12f,
+        },
+    };
 
     /// <summary>
     ///     Anomalies a critically unstable core can tear loose. These are inert stock anomalies

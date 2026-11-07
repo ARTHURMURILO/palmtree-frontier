@@ -1,0 +1,112 @@
+<Document>
+  # Stormdrive
+  The Class IV storm drive is the fusion reactor fitted to most ships. It injects plasma into a
+  fission core and turns the heat into electricity. It is a simple machine to connect: fuel goes in
+  one pipe, nucleium waste comes out the other.
+
+  <Box>
+    <GuideEntityEmbed Entity="StormdriveReactor" Caption="storm drive"/>
+    <GuideEntityEmbed Entity="StormdriveControlConsole" Caption="control console"/>
+    <GuideEntityEmbed Entity="ControlRod" Caption="control rod"/>
+  </Box>
+
+  ## Before you start
+  - Mount five control rods in the rod bay. The drive cannot cool without them.
+  - Fill the fuel line with [bold]plasma[/bold]. Tritium is the high-yield alternative once you know
+    the machine, but it runs hotter and cools worse.
+  - Set the control rods to AZ-5 (100 %) before fuelling. A cold core is a safe core.
+  - Ignite with the particle accelerator. A level-3 shot carries enough heat on its own.
+
+  ## The console
+  The console is linked to the drive with a multitool. It shows:
+
+  - [bold]Core temperature[/bold] — colour-coded against the hot, critical and meltdown thresholds.
+  - [bold]Stability[/bold] — the 0–100 safety margin, with a line underneath naming what is moving it.
+    The small [bold]?[/bold] next to the bar repeats this page in short form.
+  - [bold]Control rods[/bold] — the mean integrity of the mounted rods.
+  - [bold]Output[/bold] — the power actually delivered last cycle.
+  - [bold]Reaction rate[/bold] — how fast the core is eating its fuel, in moles per second.
+  - [bold]Fuel ratio[/bold] — the share of the fuel line that is plasma or tritium.
+  - [bold]Fuel moles[/bold] — the total gas in the line, against the over-pressure bands.
+  - [bold]Fuel line composition[/bold] — every gas, with a rolling graph.
+
+  ## Stability
+  Stability is the drive's safety margin. The control rods do not touch it; only the fuel line does.
+  It recovers while the mix is rich and the line is not over-pressurised, and it bleeds away when the
+  mix is lean, the line is over pressure, or the core is starved of fuel. The stability bar on the
+  console, and the line of text under it, tell you which of those is happening right now.
+
+  The drive works in two-second cycles, and stability moves once per cycle:
+
+  - [bold]Fuel ratio 25 % or more, fuel moles under the amber line:[/bold] +0.5 per cycle, recovering.
+  - [bold]Rich but over the amber line:[/bold] the recovery is cancelled; −0.01 per cycle.
+  - [bold]Fuel ratio 12.5–25 %:[/bold] −0.01 per cycle.
+  - [bold]Lean and over the line:[/bold] −0.52 per cycle.
+  - [bold]Fuel below 12.5 %, or fewer moles than one cycle of throughput:[/bold] −1 per cycle. The
+    reaction stops, heat falls, and stability dies. A falling temperature is not proof of safety.
+
+  Below 75, every cycle has a chance of a jolt: half the time the core takes a burst of heat, the
+  other half the reaction rate itself jumps by a fifth to a third. That heat burst is checked against
+  the meltdown threshold in the same cycle, so a hot core with low stability can arm a meltdown
+  without the temperature ever looking alarming. Below 15, the core starts tearing anomalies loose.
+
+  [bold]The two fuel bars are the controls.[/bold] Keep both green. The Fuel Moles bar turns amber above
+  [bold]24 × the reaction rate in mol/s + 20[/bold] moles; the Fuel Ratio bar turns green at 25 % fuel.
+  If either is not green, recovery has stopped or is about to, so treat it as a warning light rather
+  than a promise. The mole threshold moves with the reaction rate, so a reaction that slows down can
+  turn a previously safe mole count into over pressure.
+
+  ## Presets
+  - [bold]AZ-1 (0 %):[/bold] rods fully withdrawn. Maximum reactivity and cooling disabled. This is the
+    meltdown setting.
+  - [bold]AZ-2 (5 %):[/bold] hot operation, about 720 °C. Only for a core with high stability and a
+    raised meltdown threshold.
+  - [bold]AZ-3 (16 %):[/bold] nominal, about 340 °C.
+  - [bold]AZ-4 (33.6 %):[/bold] cold start, about 100 °C.
+  - [bold]AZ-5 (100 %):[/bold] SCRAM. Rods fully inserted; the core cools to zero.
+  - [bold]AZ-6:[/bold] maintenance. Only from idle.
+  - [bold]AZ-7:[/bold] fuel dump. Moves the fuel line to the waste line.
+
+  Rod wear scales with output and insertion depth, so a long SCRAM wears rods faster than a relaxed
+  33.6 % setting. Check the rod integrity bar. At 0 % integrity the rods fail and cooling stops
+  entirely, which is a different failure path from low stability.
+
+  ## Gases
+  - [bold]Plasma:[/bold] the standard fuel. It feeds the reaction, but it lowers power per mole.
+  - [bold]Tritium:[/bold] high-yield fuel. It feeds the reaction much harder, raises power and raises
+    the meltdown threshold, but lowers cooling. Treat it as a hot-rodding option, not a default.
+  - [bold]Oxygen:[/bold] power. Raises the power multiplier; no effect on stability.
+  - [bold]Nitrogen:[/bold] moderator. Lowers the reaction rate and raises cooling; useful for keeping a
+    hot core controllable.
+  - [bold]Carbon dioxide:[/bold] moderator. Raises cooling and lowers power.
+  - [bold]Water vapour:[/bold] lowers the reaction rate. A shutdown gas.
+  - [bold]Nitrous oxide:[/bold] raises the temperature thresholds, including meltdown, at the cost of
+    faster rod wear.
+  - [bold]Nucleium:[/bold] waste. It lowers cooling and the meltdown threshold and reduces power. Vent
+    the waste line; do not let it back up into the fuel line.
+
+  Plasma and nitrogen cancel each other's reaction-rate contribution at a 1:1 ratio. A mix of
+  33 % plasma, 33 % oxygen and 33 % nitrogen therefore has a net reaction-rate modifier of zero, and
+  the reaction barely runs at low temperature. Use more plasma or less nitrogen if you want power.
+
+  ## Meltdown
+  The core melts down when its temperature passes the meltdown threshold. On a plain plasma mix that
+  is 800 °C; nitrous oxide and tritium raise it, nucleium lowers it. The drive gives you an
+  18-second fuse, but it also destroys every control rod when the fuse starts, so cooling is off for
+  the whole countdown. The only way to survive an armed fuse is to starve the reaction (fuel below
+  12.5 %), which makes the core lose 5 °C per cycle; if you were barely over the line, that can save
+  you.
+
+  If the core is hot and stability is low, do not wait for the alarm:
+
+  - [bold]SCRAM[/bold] to 100 % and keep the fuel ratio rich. The rods reduce the reaction rate, which
+    shrinks the stability heat bursts.
+  - [bold]Lower the input pressure[/bold] if the Fuel Moles bar is amber or red.
+  - [bold]Add moderator[/bold] (nitrogen or carbon dioxide) if the core is above 670 °C; at that point
+    even a full SCRAM cannot out-cool the heat term without it.
+  - [bold]If it is already armed,[/bold] dump the fuel or flood the line with nitrogen or carbon dioxide
+    to starve the reaction, and hope you were only just over the threshold.
+
+  A full shutdown below 20 °C resets stability to 100 on the next ignition. That is the clean way out
+  of a low-stability spiral.
+</Document>

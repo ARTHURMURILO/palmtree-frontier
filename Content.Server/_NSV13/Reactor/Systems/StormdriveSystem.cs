@@ -305,6 +305,12 @@ public sealed class StormdriveSystem : EntitySystem
             return;
         }
 
+        // Per-tick diagnosis. Cleared before anything can move stability so a stale cause from the
+        // previous tick cannot be blamed for this one; the console reads these two fields.
+        var stabilityBefore = comp.ReactorStability;
+        comp.LastStabilityCause = StormdriveStabilityCause.None;
+        comp.LastStabilityDelta = 0f;
+
         // Step 3: the armed meltdown countdown. This runs before the pipe lookup on purpose: it
         // needs neither node, and a drive that loses a pipe mid-fuse must still detonate or fizzle
         // instead of staying armed forever with its console banner hidden.
@@ -346,6 +352,38 @@ public sealed class StormdriveSystem : EntitySystem
         {
             comp.ReactorStability -= 1f;
             comp.HeatGain = -5f;
+            comp.LastStabilityCause = StormdriveStabilityCause.Starved;
+        }
+
+        if (comp.LastStabilityCause != StormdriveStabilityCause.Starved)
+        {
+            // The same conditions React() just charged for. It takes the slug out of the line before
+            // it reads the moles, so this has to label the mixture that is left as well: using the
+            // moles the tick started with reported "over pressure" on a tick whose actual charge was
+            // the rich-mix recovery, because the two differ by the consumed slug.
+            var remainingMoles = air1.TotalMoles;
+            var remainingFuel = remainingMoles <= 0f
+                ? 0f
+                : (air1.GetMoles(Gas.Plasma) + air1.GetMoles(Gas.Tritium)) / remainingMoles * 100f;
+
+            if (remainingMoles > comp.ReactionRate * 12f + 20f)
+            {
+                comp.LastStabilityCause = remainingFuel >= 25f
+                    ? StormdriveStabilityCause.RichOverpressure
+                    : StormdriveStabilityCause.LeanOverpressure;
+            }
+            else if (remainingFuel >= 25f)
+            {
+                // At the cap the rich branch takes its one-hundredth-of-a-point maintenance loss,
+                // so it is holding rather than recovering.
+                comp.LastStabilityCause = stabilityBefore >= 100f
+                    ? StormdriveStabilityCause.None
+                    : StormdriveStabilityCause.Recovering;
+            }
+            else
+            {
+                comp.LastStabilityCause = StormdriveStabilityCause.Lean;
+            }
         }
 
         // Steps 10-12: electrical power, from the temperature *before* this tick's heat gain.
@@ -370,6 +408,12 @@ public sealed class StormdriveSystem : EntitySystem
         HandleTemperatureReinforcement(comp);
         HandleFuelProduction(comp, air1, air2);
         HandleReactorStability(uid, comp);
+
+        // The console reports a per-second rate, like the RBMK's integrity loss. This is the actual
+        // movement, clamped/anomaly refund included, so the number cannot disagree with the bar.
+        comp.LastStabilityDelta = (comp.ReactorStability - stabilityBefore)
+                                  / MathF.Max(comp.ProcessInterval, 0.01f);
+
         UpdateStatus(uid, comp);
         UpdateVisuals(uid, comp);
 
@@ -732,6 +776,7 @@ public sealed class StormdriveSystem : EntitySystem
             {
                 BreakLights(uid, 12f, 3);
                 comp.ReactorStability -= _random.Next(5, 11);
+                comp.LastStabilityCause = StormdriveStabilityCause.Overload;
             }
             return;
         }
@@ -746,6 +791,7 @@ public sealed class StormdriveSystem : EntitySystem
         {
             BreakLights(uid, 12f, 5);
             comp.ReactorStability -= _random.Next(10, 21);
+            comp.LastStabilityCause = StormdriveStabilityCause.Overload;
         }
     }
 
@@ -831,9 +877,9 @@ public sealed class StormdriveSystem : EntitySystem
         if (_timing.CurTime >= comp.NextGravityPull &&
             _random.Prob((100f - comp.ReactorStability) / 3f / 100f))
         {
-            // DM plays /sound/effects/empulse.ogg; this fork has no such file, so use the sound the
-            // engine's own EMP effect uses instead of logging a missing resource every pulse.
-            _audio.PlayPvs("/Audio/Effects/Lightning/lightningbolt.ogg", uid);
+            // DM plays /sound/effects/empulse.ogg, which this fork does not ship; the stand-in and
+            // its (deliberately quiet) mix live in GravityPullSound.
+            _audio.PlayPvs(comp.GravityPullSound, uid);
 
             comp.NextGravityPull = _timing.CurTime + comp.GravityPullCooldown;
 
@@ -843,7 +889,7 @@ public sealed class StormdriveSystem : EntitySystem
             _shipEvent.GravityPull(uid, radius, 1.5f, TimeSpan.FromSeconds(1));
         }
 
-        if (comp.ReactorStability < 75f)
+        if (comp.ReactorStability < comp.StabilitySpikeThreshold)
         {
             if (_random.Prob((100f - comp.ReactorStability) / 4f / 100f))
             {
@@ -857,7 +903,7 @@ public sealed class StormdriveSystem : EntitySystem
         // §handle_reactor_stability(): below 15 % stability the core starts tearing anomalies into
         // realspace. The DM roll is weird - it ranges 1..10 and only 9 and 10 make a squall - so the
         // weighting is 40 / 40 / 20 for surge / sheer / squall.
-        if (comp.ReactorStability < 15f && _random.Prob(0.01f))
+        if (comp.ReactorStability < comp.StabilityAnomalyThreshold && _random.Prob(0.01f))
         {
             var roll = _random.Next(1, 11);
             var proto = roll switch
@@ -878,17 +924,18 @@ public sealed class StormdriveSystem : EntitySystem
             var anomaly = Spawn(proto, Transform(uid).Coordinates);
             _transform.PlaceNextTo(anomaly, uid);
             comp.ReactorStability += 15f;
-            _audio.PlayPvs("/Audio/Effects/Lightning/lightningbolt.ogg", uid);
+            comp.LastStabilityCause = StormdriveStabilityCause.Anomaly;
+            _audio.PlayPvs(comp.AnomalySpawnSound, uid);
         }
 
         // Entropy nudge. First match wins, exactly like the DM range switch.
         if (comp.ReactorStability < 1f)
             comp.Heat += 1f;
-        else if (comp.ReactorStability < 15f)
+        else if (comp.ReactorStability < comp.StabilityAnomalyThreshold)
             comp.Heat += 0.5f;
         else if (comp.ReactorStability < 30f)
             comp.Heat += 0.1f;
-        else if (comp.ReactorStability < 75f)
+        else if (comp.ReactorStability < comp.StabilitySpikeThreshold)
             comp.Heat += 0.01f;
     }
 

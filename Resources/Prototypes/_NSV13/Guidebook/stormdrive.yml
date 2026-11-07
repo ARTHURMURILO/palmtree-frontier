@@ -1,0 +1,10 @@
+# NSV13/Palmtree: the stormdrive guidebook page.
+#
+# Kept in a fork-owned file so the upstream engineering tree stays readable; Generators links it
+# from Resources/Prototypes/Guidebook/engineering.yml. The page describes THIS fork, not the
+# upstream NSV13 wiki: constricted plasma and the other reactor gases do not exist here, and the
+# stormdrive's stability score is now on its console instead of floating above the machine.
+- type: guideEntry
+  id: Stormdrive
+  name: guide-entry-stormdrive
+  text: "/ServerInfo/_NSV13/Guidebook/Engineering/Stormdrive.xml"
