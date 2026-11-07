@@ -7,7 +7,7 @@ using Robust.Shared.Serialization;
 namespace Content.Shared.Construction.Components;
 
 /// <summary>
-/// This is used for an object that can instantly create a machine upon having a tool applied to it.
+/// This is used for an object that unpacks into a machine (or a whole reactor site) when a tool is applied. <see cref="UnpackDelay"/> can make the job take time.
 /// </summary>
 [RegisterComponent, NetworkedComponent, AutoGenerateComponentState]
 [Access(typeof(SharedFlatpackSystem))]

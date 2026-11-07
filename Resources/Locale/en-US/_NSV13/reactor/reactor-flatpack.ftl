@@ -4,6 +4,7 @@ reactor-flatpack-blocked = Something is in the way of the reactor's footing.
 
 reactor-deconstruct-verb = Deconstruct reactor
 reactor-deconstruct-running = The core is online. Shut it down first.
+reactor-deconstruct-repair = The core is under repair and cannot be packed up.
 reactor-deconstruct-hot = The core is still too hot to pack up.
 reactor-deconstruct-melted = The core has melted down and cannot be packed up.
 reactor-deconstruct-invalid = This reactor cannot be packed up.

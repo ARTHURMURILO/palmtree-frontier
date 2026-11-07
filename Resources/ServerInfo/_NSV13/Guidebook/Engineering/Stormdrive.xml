@@ -14,8 +14,8 @@
   The drive is sold by cargo as a flatpack, or printed from the engineering tech tree once researched.
   Use a multitool on the flatpack and wait for it to unfold. Unlike the RBMK it brings no footing or
   cabling: it drops the drive alone, so run the fuel and waste lines and the HV cable yourself.
-  A cold, shut-down drive can be packed back into its flatpack from the context menu; a running or
-  melting drive cannot. The flatpack does not include control rods. They are printed separately, and
+  A cold, shut-down drive built from a flatpack can be packed back into its flatpack from the context
+  menu; a running or melting drive cannot. The flatpack does not include control rods. They are printed separately, and
   the drive is not safe to light without them.
 
   ## Before you start
