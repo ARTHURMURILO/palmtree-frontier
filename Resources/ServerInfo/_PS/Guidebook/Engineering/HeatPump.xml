@@ -8,12 +8,12 @@
   ## What it is
 
   The heat pump is a freezer and a heater in one machine, with a catch: it does not make heat, it
-  **moves** it. It has two pipe connections on opposite ends.
+  [bold]moves[/bold] it. It has two pipe connections on opposite ends.
 
-  - The **green end** is the gas port. This is the pipe you are conditioning, and it sits where a
-    freezer's pipe would be.
-  - The **red end** is the waste port. When the machine cools, this is where the heat goes. When it
-    heats, this is where the heat comes from.
+  - The [bold]green end[/bold] is the gas port. This is the pipe you are conditioning, and it sits
+    where a freezer's pipe would be.
+  - The [bold]red end[/bold] is the waste port. When the machine cools, this is where the heat goes.
+    When it heats, this is where the heat comes from.
 
   Wire it up, set a target temperature, and it will work out by itself whether it has to cool or heat.
 
@@ -33,11 +33,14 @@
   loop heats up the machine loses efficiency, and it loses a lot more if either pipe is nearly empty
   — gas is what carries the heat away.
 
-  Better parts help:
+  Better parts help. The [bold]Upgrades[/bold] entry in the machine's examine menu shows what the
+  installed parts changed:
 
-  - **Matter bins** let the machine move more heat per second.
-  - **Manipulators** raise the floor the efficiency falls back to when the waste loop is hot. They do
-    not help an empty pipe: with no gas to carry the heat, even a fully upgraded machine crawls.
+  - [bold]Matter bins[/bold] give the machine more heat capacity and raise the most heat it can move
+    in a second, from 50 kW on stock parts to 400 kW with the best bins.
+  - [bold]Manipulators[/bold] raise the floor the efficiency falls back to when the waste loop is
+    hot, from 25% on stock parts to 90% with the best ones. They do not help an empty pipe: with no
+    gas to carry the heat, even a fully upgraded machine crawls.
 
   ## Safeties
 

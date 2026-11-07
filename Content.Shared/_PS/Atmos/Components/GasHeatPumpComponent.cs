@@ -121,11 +121,21 @@ public sealed partial class GasHeatPumpComponent : Component
     /// <summary>
     /// Hard ceiling on how much heat the machine can move, in joules per second. Without it a big
     /// temperature difference would move hundreds of kilowatts per second and take an APC with it;
-    /// 50 kW is about two and a half times what a vanilla freezer can do.
+    /// 50 kW is about two and a half times what a vanilla freezer can do. Better matter bins raise
+    /// it, because the exchange term below is otherwise limited by the gas and the bins would not
+    /// change how fast the machine can work at all.
     /// </summary>
     [DataField]
     [GuidebookData]
     public float MaxHeatRate = 50_000f;
+
+    /// <summary>
+    /// <see cref="MaxHeatRate"/> with stock parts. Each matter bin rating doubles it, the same way
+    /// each rating doubles <see cref="HeatCapacity"/>; the hard ceiling stays at 400 kW with the
+    /// best bins so a single machine cannot take an APC with it.
+    /// </summary>
+    [DataField]
+    public float BaseMaxHeatRate = 50_000f;
 
     /// <summary>
     /// The compressor stops adding its own waste heat once the gas is this close to the setpoint, so
@@ -202,10 +212,17 @@ public sealed partial class GasHeatPumpComponent : Component
     /// <summary>
     /// Heat moved per second at which the power cost starts growing faster than the heat moved, in
     /// watts. /tg/station made the cost superlinear; this is the same idea with numbers that fit an
-    /// SS14 APC.
+    /// SS14 APC. Better matter bins raise it together with <see cref="MaxHeatRate"/>, so an upgraded
+    /// machine is not paying the soft cap penalty for work a bigger compressor is supposed to do.
     /// </summary>
     [DataField]
     public float PowerSoftCap = 50_000f;
+
+    /// <summary>
+    /// <see cref="PowerSoftCap"/> with stock parts.
+    /// </summary>
+    [DataField]
+    public float BasePowerSoftCap = 50_000f;
 
     /// <summary>
     /// The UI key used to open this device's interface.
