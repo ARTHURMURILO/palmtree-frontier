@@ -49,3 +49,44 @@ gas-meter-examined-temperature = The thermometer reads [color=lightblue]{$temper
 
 # Guidebook
 guide-entry-temperaturedevices = Temperature devices
+
+# Heat pump
+gas-heat-pump-ui-title = Heat Pump
+gas-heat-pump-ui-status = Status
+gas-heat-pump-ui-status-on = On
+gas-heat-pump-ui-status-off = Off
+gas-heat-pump-ui-mode-cooling = Cooling
+gas-heat-pump-ui-mode-heating = Heating
+gas-heat-pump-ui-efficiency = Efficiency {$efficiency}%
+gas-heat-pump-ui-gas = Gas port
+gas-heat-pump-ui-waste = Waste port
+gas-heat-pump-ui-temperature-unit = K
+gas-heat-pump-ui-pressure-unit = kPa
+gas-heat-pump-ui-target = Target temperature
+gas-heat-pump-ui-set = Set
+gas-heat-pump-ui-set-max = Max
+gas-heat-pump-ui-set-to-current = Use current
+gas-heat-pump-ui-safeties = Thermal safeties
+gas-heat-pump-ui-moving = Heat moved
+gas-heat-pump-ui-moving-amount = {$amount} kW {$direction}
+gas-heat-pump-ui-moving-in = in
+gas-heat-pump-ui-moving-out = out
+gas-heat-pump-ui-idle = Idle
+gas-heat-pump-ui-no-waste = The waste port has no gas in it. The heat has nowhere to go.
+
+gas-heat-pump-examined-status = The heat pump is [color={$statusColor}]{$enabled ->
+[true] running
+*[false] off
+}[/color].
+gas-heat-pump-examined-mode = It is currently [color=lightblue]{$mode}[/color].
+gas-heat-pump-examined-temperature = The thermostat is set to [color=lightblue]{$temperature} K[/color].
+gas-heat-pump-examined-gas = Gas port: [color=lightblue]{$temperature} K[/color] at [color=lightblue]{$pressure} kPa[/color].
+gas-heat-pump-examined-waste = Waste port: [color=lightblue]{$temperature} K[/color] at [color=lightblue]{$pressure} kPa[/color].
+gas-heat-pump-examined-efficiency = It is running at [color=lightblue]{$efficiency}%[/color] efficiency.
+gas-heat-pump-examined-safeties-off = The thermal safeties have been [color=red]tampered with[/color].
+gas-heat-pump-mode-cooling = cooling
+gas-heat-pump-mode-heating = heating
+gas-heat-pump-safeties-tripped = The waste loop has reached critical levels, the heat pump shuts down!
+
+guide-entry-heat-pump = Heat Pump
+research-technology-atmospheric-heat-pump = Atmospheric Heat Pump

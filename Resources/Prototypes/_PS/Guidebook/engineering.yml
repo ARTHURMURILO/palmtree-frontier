@@ -3,3 +3,8 @@
   id: TemperatureDevices
   name: guide-entry-temperaturedevices
   text: "/ServerInfo/_PS/Guidebook/Engineering/TemperatureDevices.xml"
+
+- type: guideEntry
+  id: HeatPump
+  name: guide-entry-heat-pump
+  text: "/ServerInfo/_PS/Guidebook/Engineering/HeatPump.xml"

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Document>
+  <GuideEntityEmbed Entity="GasHeatPump" Caption="heat pump" />
+  <Box>
+    <GuideEntityEmbed Entity="GasThermoMachineFreezer" Caption="freezer" />
+    <GuideEntityEmbed Entity="GasThermoMachineHeater" Caption="heater" />
+  </Box>
+
+  ## What it is
+
+  The heat pump is a freezer and a heater in one machine, with a catch: it does not make heat, it
+  **moves** it. It has two pipe connections on opposite ends.
+
+  - The **green end** is the gas port. This is the pipe you are conditioning, and it sits where a
+    freezer's pipe would be.
+  - The **red end** is the waste port. When the machine cools, this is where the heat goes. When it
+    heats, this is where the heat comes from.
+
+  Wire it up, set a target temperature, and it will work out by itself whether it has to cool or heat.
+
+  ## Why you need a waste loop
+
+  A normal freezer in space can throw heat away for free, so it will happily cool a pipe to 73 K with
+  nothing else attached. The heat pump cannot: every joule it takes out of the gas has to end up in
+  the red pipe, and every joule it puts into the gas comes out of the red pipe.
+
+  That means the red pipe needs somewhere for the heat to go — a radiator loop, a big tank of gas, or
+  a cold part of the ship. Cooling into a waste loop that is already hot is slow and expensive.
+
+  ## Efficiency
+
+  The machine works best when the waste loop is close to the temperature of the gas. As the waste
+  loop heats up the machine loses efficiency, and it loses a lot more if either pipe is nearly empty
+  — gas is what carries the heat away.
+
+  Better parts help:
+
+  - **Matter bins** let the machine move more heat per second.
+  - **Manipulators** raise the efficiency it will never drop below, so a good machine keeps working
+    even into a hot loop.
+
+  ## Safeties
+
+  If the waste loop gets hot enough to be dangerous, the heat pump shuts itself down. The safeties can
+  be switched off from the interface, and an emagged machine has them off already — at that point the
+  waste loop will keep climbing until the machine fails, and when it fails it takes the room with it.
+</Document>

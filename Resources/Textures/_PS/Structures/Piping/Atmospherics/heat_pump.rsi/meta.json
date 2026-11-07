@@ -1,0 +1,43 @@
+{
+    "version": 1,
+    "license": "CC-BY-SA-3.0",
+    "copyright": "Body taken from Structures/Piping/Atmospherics/thermomachine.rsi (CC-BY-SA-3.0, from /tg/station); the port markings are pipe.rsi recoloured after the two-port thermomachine /tg/station had in 2021-2022 (PR #57831). Repacked for Palmtree.",
+    "size": {
+        "x": 32,
+        "y": 32
+    },
+    "states": [
+        {
+            "name": "freezerOff",
+            "directions": 1
+        },
+        {
+            "name": "freezerOn",
+            "directions": 1
+        },
+        {
+            "name": "freezerPanelOpen",
+            "directions": 1
+        },
+        {
+            "name": "heaterOff",
+            "directions": 1
+        },
+        {
+            "name": "heaterOn",
+            "directions": 1
+        },
+        {
+            "name": "heaterPanelOpen",
+            "directions": 1
+        },
+        {
+            "name": "portGas",
+            "directions": 4
+        },
+        {
+            "name": "portWaste",
+            "directions": 4
+        }
+    ]
+}

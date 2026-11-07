@@ -111,6 +111,24 @@ Ported from the current `/tg/station` checkout (`tgstation-master`), not from Co
   `.ai/systems/atmos-temperature-devices.md`. Test:
   `Content.IntegrationTests/Tests/_PS/Atmos/TemperatureDevicesTest.cs`.
 
+### 3.5 Heat pump, the two-port thermomachine (2026-11, `_PS`)
+
+The freezer/heater /tg/station had from 2021 to 2022 (`binary/thermomachine`, PR #57831, later removed
+in #66411): the same machine, but it moves heat between two pipes instead of making it. Ported as a
+**sidegrade** - the vanilla freezer and heater are untouched and stay researchable.
+
+- Not a port of the *current* /tg/station code, which has reverted to the unary thermomachine; the
+  source is the last version before the revert (commit `d7f3828d`), kept in the workspace as
+  `tg-thermomachine-2022.dm`.
+- Heating takes heat out of the waste loop rather than making it from nothing, which is a deliberate
+  deviation from /tg/station. Everything else (efficiency falloff, mole penalty, safeties, emag
+  explosion, superlinear power) follows the original.
+- New research node `NFAtmosphericHeatPump` (NFEngineering, tier 2, 12500) hanging off
+  `NFAtmosphericTech`, unlocking only the new board.
+- Design decisions and the full list of deviations: `.ai/systems/atmos-heat-pump.md`. Test:
+  `Content.IntegrationTests/Tests/_PS/Atmos/HeatPumpTest.cs`. Sprites:
+  `Tools/gen_heat_pump_sprites.py` (vanilla thermomachine body + vanilla pipe tinted green/red).
+
 ## 4. What was deliberately NOT ported
 
 | Feature | Reason / status |
