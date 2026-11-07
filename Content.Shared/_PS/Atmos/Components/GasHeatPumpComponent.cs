@@ -146,22 +146,26 @@ public sealed partial class GasHeatPumpComponent : Component
     /// <summary>
     /// Hard ceiling on how much heat the machine can move, in joules per second. Without it a big
     /// temperature difference would move hundreds of kilowatts per second and take an APC with it.
-    /// 78 kW is four times what a vanilla freezer moves (5 kW at a COP of 3.9, so 19.5 kW), which
-    /// is the exchange rate an expansion machine gets you but only if the waste loop can take the
-    /// heat. Better matter bins raise it, because the exchange term below is otherwise limited by
-    /// the gas and the bins would not change how fast the machine can work at all.
+    /// Stock is 120 kW, about six vanilla freezers' worth, and the best bins take it to 700 kW; both
+    /// only mean anything if the waste loop can take the heat.
     /// </summary>
     [DataField]
     [GuidebookData]
-    public float MaxHeatRate = 78_000f;
+    public float MaxHeatRate = 120_000f;
 
     /// <summary>
-    /// <see cref="MaxHeatRate"/> with stock parts. Each matter bin rating doubles it, the same way
-    /// each rating doubles <see cref="HeatCapacity"/>; the hard ceiling stays at 624 kW with the
-    /// best bins so a single machine cannot take an APC with it.
+    /// <see cref="MaxHeatRate"/> with stock parts.
     /// </summary>
     [DataField]
-    public float BaseMaxHeatRate = 78_000f;
+    public float BaseMaxHeatRate = 120_000f;
+
+    /// <summary>
+    /// Heat moved per second at each matter bin rating, from stock to the best parts. The steps are
+    /// deliberately flatter than a doubling so the lower tiers are already worth running a real loop
+    /// on instead of only the last one. Fractional ratings, from mixed parts, interpolate.
+    /// </summary>
+    [DataField]
+    public float[] HeatRateByRating = { 120_000f, 250_000f, 450_000f, 700_000f };
 
     /// <summary>
     /// The compressor stops adding its own waste heat once the gas is this close to the setpoint, so
@@ -230,42 +234,36 @@ public sealed partial class GasHeatPumpComponent : Component
 
     /// <summary>
     /// Watts of input per watt of heat moved at low load. The inverse of a coefficient of
-    /// performance: a stock machine lands at a COP of about 6.5 at its ceiling once the soft cap
-    /// below is counted. A heat pump is meant to beat a resistive heater by a wide margin; the waste
-    /// loop is the price of the capacity, not of the efficiency. Better matter bins divide it by
-    /// <see cref="PowerPerHeatPerBin"/>.
+    /// performance: 0.15 is a COP of about 6.7 at low load, and the soft cap below brings that down
+    /// to about 4.3 at a stock machine's ceiling. A heat pump beats a resistive heater by a wide
+    /// margin; the waste loop is the price of the capacity, not of the efficiency. Better matter bins
+    /// multiply it by <see cref="PowerPerHeatPerBin"/>.
     /// </summary>
     [DataField]
-    public float PowerPerHeat = 0.096f;
+    public float PowerPerHeat = 0.15f;
 
     /// <summary>
     /// <see cref="PowerPerHeat"/> with stock parts.
     /// </summary>
     [DataField]
-    public float BasePowerPerHeat = 0.096f;
+    public float BasePowerPerHeat = 0.15f;
 
     /// <summary>
     /// What each matter bin rating above stock multiplies <see cref="PowerPerHeat"/> by. Better bins
-    /// are a better compressor, not just a bigger one: 0.802 is half over the three upgrade steps, so
-    /// the machine goes from a COP of about 6.5 at the stock ceiling to about 13 at the 624 kW one.
+    /// are a better compressor as well as a bigger one, so the ceiling COP runs about 4.3, 6.1, 8.8
+    /// and 12.5 across the four tiers.
     /// </summary>
     [DataField]
-    public float PowerPerHeatPerBin = 0.802f;
+    public float PowerPerHeatPerBin = 0.7f;
 
     /// <summary>
     /// Heat moved per second at which the power cost starts growing faster than the heat moved, in
     /// watts. /tg/station made the cost superlinear; this is the same idea with numbers that fit an
-    /// SS14 APC. Better matter bins raise it together with <see cref="MaxHeatRate"/>, so an upgraded
-    /// machine is not paying the soft cap penalty for work a bigger compressor is supposed to do.
+    /// SS14 APC. Refreshing parts keeps it equal to <see cref="MaxHeatRate"/>, so every tier pays the
+    /// same relative penalty at its own ceiling.
     /// </summary>
     [DataField]
-    public float PowerSoftCap = 78_000f;
-
-    /// <summary>
-    /// <see cref="PowerSoftCap"/> with stock parts.
-    /// </summary>
-    [DataField]
-    public float BasePowerSoftCap = 78_000f;
+    public float PowerSoftCap = 120_000f;
 
     /// <summary>
     /// How much the cost per joule has grown by the time the machine reaches <see cref="PowerSoftCap"/>.
