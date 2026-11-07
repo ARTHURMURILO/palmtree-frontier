@@ -68,10 +68,8 @@ gas-heat-pump-ui-set-max = Max
 gas-heat-pump-ui-set-to-current = Use current
 gas-heat-pump-ui-safeties = Thermal safeties
 gas-heat-pump-ui-moving = Heat moved
-gas-heat-pump-ui-moving-amount = {$amount} kW {$direction}
-gas-heat-pump-ui-moving-in = in
-gas-heat-pump-ui-moving-out = out
-gas-heat-pump-ui-idle = Idle
+gas-heat-pump-ui-moving-amount = {$amount} kW
+gas-heat-pump-ui-moving-none = 0 kW
 gas-heat-pump-ui-no-waste = The waste port has no gas in it. There is nothing for the heat to move into.
 gas-heat-pump-ui-no-power = The heat pump has no power.
 
