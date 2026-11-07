@@ -1,0 +1,15 @@
+# Palmtree: the heat pump is a sidegrade to the standard freezer/heater, so it gets its own node
+# hanging off NFAtmosphericTech instead of replacing anything.
+
+- type: technology
+  id: NFAtmosphericHeatPump
+  name: research-technology-atmospheric-heat-pump
+  entityIcon: GasHeatPump
+  discipline: NFEngineering
+  tier: 2
+  cost: 12500
+  recipeUnlocks:
+  - HeatPumpMachineCircuitBoard
+  technologyPrerequisites:
+  - NFAtmosphericTech
+  position: 2, 34

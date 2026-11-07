@@ -1,0 +1,90 @@
+# Palmtree: the heat pump.
+#
+# A two-port thermomachine: the gas port is driven towards the target temperature and the heat is
+# pushed into, or taken out of, the waste port. The vanilla freezer and heater keep working exactly as
+# they always have and stay researchable; this is the sidegrade that has to obey thermodynamics.
+#
+# Ported from /tg/station's binary thermomachine (PR #57831, 2021-2022).
+
+- type: entity
+  parent: [ BaseMachinePowered, ConstructibleMachine ]
+  id: GasHeatPump
+  name: heat pump
+  description: Moves heat between two pipe networks instead of making it. Needs a waste loop to dump the heat into.
+  placement:
+    mode: AlignAtmosPipeLayers
+  components:
+  - type: Sprite
+    sprite: _PS/Structures/Piping/Atmospherics/heat_pump.rsi
+    snapCardinals: true
+    layers:
+    - state: freezerOff
+      map: [ "enum.PowerDeviceVisualLayers.Powered" ]
+    - state: freezerPanelOpen
+      map: [ "enum.WiresVisualLayers.MaintenancePanel" ]
+    # The two port markings: green is the gas port, red is the waste port.
+    - state: portWaste
+    - state: portGas
+  - type: Appearance
+  - type: GenericVisualizer
+    visuals:
+      enum.GasHeatPumpVisuals.State:
+        enum.PowerDeviceVisualLayers.Powered:
+          OffCooling: { state: freezerOff }
+          OnCooling: { state: freezerOn }
+          OffHeating: { state: heaterOff }
+          OnHeating: { state: heaterOn }
+        enum.WiresVisualLayers.MaintenancePanel:
+          OffCooling: { state: freezerPanelOpen }
+          OnCooling: { state: freezerPanelOpen }
+          OffHeating: { state: heaterPanelOpen }
+          OnHeating: { state: heaterPanelOpen }
+  - type: AtmosPipeLayers
+    alternativePrototypes:
+      Primary: GasHeatPump
+      Secondary: GasHeatPumpAlt1
+      Tertiary: GasHeatPumpAlt2
+  - type: NodeContainer
+    nodes:
+      # The gas port sits where a freezer's port does, so a heat pump drops into an existing wall.
+      gas:
+        !type:PipeNode
+        nodeGroupID: Pipe
+        pipeDirection: South
+      waste:
+        !type:PipeNode
+        nodeGroupID: Pipe
+        pipeDirection: North
+  - type: GasHeatPump
+  - type: AtmosDevice
+  - type: Rotatable
+  - type: Transform
+    noRot: false
+  - type: ApcPowerReceiver
+    powerLoad: 500
+  - type: ActivatableUI
+    key: enum.GasHeatPumpUiKey.Key
+  - type: ActivatableUIRequiresAnchor
+  - type: UserInterface
+    interfaces:
+      enum.GasHeatPumpUiKey.Key:
+        type: GasHeatPumpBoundUserInterface
+  - type: Machine
+    board: HeatPumpMachineCircuitBoard
+  - type: AtmosMonitoringConsoleDevice
+    navMapBlip: Thermoregulator
+  - type: GuideHelp
+    guides:
+    - HeatPump
+
+- type: entity
+  parent: [ GasPipeLayerAlt1, GasHeatPump ]
+  id: GasHeatPumpAlt1
+  suffix: Alt1
+  categories: [ HideSpawnMenu ]
+
+- type: entity
+  parent: [ GasPipeLayerAlt2, GasHeatPump ]
+  id: GasHeatPumpAlt2
+  suffix: Alt2
+  categories: [ HideSpawnMenu ]

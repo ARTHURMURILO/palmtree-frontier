@@ -87,3 +87,29 @@ public enum GasMeterVisualLayers : byte
     /// </summary>
     Dial,
 }
+
+/// <summary>
+/// Appearance keys of the heat pump. The body art is the vanilla freezer/heater art, so the only
+/// thing that changes is which of the four combinations it is showing.
+/// </summary>
+[Serializable, NetSerializable]
+public enum GasHeatPumpVisuals : byte
+{
+    /// <summary>
+    /// Which body state the machine is in. See <see cref="GasHeatPumpVisualState"/>.
+    /// </summary>
+    State,
+}
+
+/// <summary>
+/// Body states of the heat pump: the freezer art while cooling, the heater art while heating, and the
+/// running variant of each while the machine is on.
+/// </summary>
+[Serializable, NetSerializable]
+public enum GasHeatPumpVisualState : byte
+{
+    OffCooling,
+    OnCooling,
+    OffHeating,
+    OnHeating,
+}

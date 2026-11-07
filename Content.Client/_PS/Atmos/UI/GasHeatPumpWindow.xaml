@@ -1,0 +1,80 @@
+<controls:FancyWindow xmlns="https://spacestation14.io"
+                      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                      xmlns:controls="clr-namespace:Content.Client.UserInterface.Controls"
+                      SetSize="430 400"
+                      MinSize="430 400"
+                      Title="{Loc gas-heat-pump-ui-title}"
+                      Resizable="True">
+
+    <BoxContainer Orientation="Vertical" Margin="0 8 0 0" SeparationOverride="6">
+
+        <BoxContainer Orientation="Horizontal" Margin="8 0 8 0" SeparationOverride="6">
+            <Label Text="{Loc gas-heat-pump-ui-status}" />
+            <Button Name="ToggleStatusButton" MinWidth="70" />
+            <Label Name="ModeLabel" Margin="8 0 0 0" />
+            <Label Name="EfficiencyLabel" HorizontalExpand="True" HorizontalAlignment="Right" />
+        </BoxContainer>
+
+        <BoxContainer Orientation="Horizontal" HorizontalExpand="True" Margin="8 0 8 0">
+            <BoxContainer Orientation="Vertical" HorizontalExpand="True" HorizontalAlignment="Left">
+                <Label Text="{Loc gas-heat-pump-ui-gas}" StyleClasses="LabelKeyText" />
+                <BoxContainer Orientation="Horizontal">
+                    <Label Name="GasTemperatureLabel" Text="N/A" Margin="0 0 4 0" />
+                    <Label Text="{Loc gas-heat-pump-ui-temperature-unit}" />
+                </BoxContainer>
+                <BoxContainer Orientation="Horizontal">
+                    <Label Name="GasPressureLabel" Text="N/A" Margin="0 0 4 0" />
+                    <Label Text="{Loc gas-heat-pump-ui-pressure-unit}" />
+                </BoxContainer>
+            </BoxContainer>
+
+            <SpriteView Name="EntityView" SetSize="64 64" Scale="2 2" OverrideDirection="North" Margin="6 0" />
+
+            <BoxContainer Orientation="Vertical" HorizontalExpand="True" HorizontalAlignment="Right">
+                <Label Text="{Loc gas-heat-pump-ui-waste}" StyleClasses="LabelKeyText" HorizontalAlignment="Right" />
+                <BoxContainer Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Label Name="WasteTemperatureLabel" Text="N/A" Margin="0 0 4 0" />
+                    <Label Text="{Loc gas-heat-pump-ui-temperature-unit}" />
+                </BoxContainer>
+                <BoxContainer Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Label Name="WastePressureLabel" Text="N/A" Margin="0 0 4 0" />
+                    <Label Text="{Loc gas-heat-pump-ui-pressure-unit}" />
+                </BoxContainer>
+            </BoxContainer>
+        </BoxContainer>
+
+        <Label Name="WarningLabel" Margin="8 0 8 0" Visible="False" StyleClasses="LabelSubText" />
+
+        <controls:StripeBack Name="SetTemperatureStripeBack" HorizontalExpand="True">
+            <BoxContainer Orientation="Vertical" Margin="10 8 10 8" SeparationOverride="6">
+                <Label Text="{Loc gas-heat-pump-ui-target}" StyleClasses="LabelKeyText" />
+                <BoxContainer Orientation="Horizontal" HorizontalExpand="True" SeparationOverride="6">
+                    <FloatSpinBox Name="TemperatureInput" HorizontalExpand="True" MinSize="140 0" />
+                    <Button Name="SetTemperatureButton" Text="{Loc gas-heat-pump-ui-set}" MinWidth="55" Disabled="True" />
+                    <Button Name="SetMaxTemperatureButton" Text="{Loc gas-heat-pump-ui-set-max}" MinWidth="55" />
+                </BoxContainer>
+
+                <BoxContainer Orientation="Horizontal" HorizontalExpand="True">
+                    <Button Name="Subtract1000Button" Text="-1000" HorizontalExpand="True" Margin="0 0 2 0" StyleClasses="OpenBoth" />
+                    <Button Name="Subtract100Button" Text="-100" HorizontalExpand="True" Margin="0 0 2 0" StyleClasses="OpenBoth" />
+                    <Button Name="Subtract10Button" Text="-10" HorizontalExpand="True" Margin="0 0 2 0" StyleClasses="OpenBoth" />
+                    <Button Name="Add10Button" Text="+10" HorizontalExpand="True" Margin="0 0 2 0" StyleClasses="OpenBoth" />
+                    <Button Name="Add100Button" Text="+100" HorizontalExpand="True" Margin="0 0 2 0" StyleClasses="OpenBoth" />
+                    <Button Name="Add1000Button" Text="+1000" HorizontalExpand="True" StyleClasses="OpenBoth" />
+                </BoxContainer>
+
+                <BoxContainer Orientation="Horizontal" HorizontalExpand="True" SeparationOverride="6">
+                    <CheckBox Name="SafetiesCheckBox" Text="{Loc gas-heat-pump-ui-safeties}" HorizontalExpand="True" />
+                    <Button Name="SetToCurrentTemperatureButton" Text="{Loc gas-heat-pump-ui-set-to-current}" MinWidth="110" />
+                </BoxContainer>
+            </BoxContainer>
+        </controls:StripeBack>
+
+        <BoxContainer Orientation="Horizontal" Margin="8 0 8 8" SeparationOverride="6">
+            <Label Text="{Loc gas-heat-pump-ui-moving}" />
+            <Label Name="HeatMovedLabel" Text="N/A" />
+        </BoxContainer>
+
+    </BoxContainer>
+
+</controls:FancyWindow>
