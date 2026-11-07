@@ -128,9 +128,11 @@ def port_nub(frames: list[Image.Image], facing: str) -> Image.Image:
         # One pixel taller than the south one, so it reaches the body.
         out.alpha_composite(frames[index].crop(NORTH_NUB), (NORTH_NUB[0], NORTH_NUB[1]))
     else:
+        # The vanilla pipe's sideways frames carry their barrel at rows 13-17, so the nub sits there
+        # and not a pixel lower, or the two look misaligned where they meet.
         nub = frames[DIRS.index("South")].crop(SOUTH_NUB).transpose(
             Image.ROTATE_90 if facing == "East" else Image.ROTATE_270)
-        out.alpha_composite(nub, (SIZE - nub.width, 14) if facing == "East" else (0, 14))
+        out.alpha_composite(nub, (SIZE - nub.width, 13) if facing == "East" else (0, 13))
 
     return out
 
