@@ -161,14 +161,6 @@ public abstract class SharedGasHeatPumpSystem : EntitySystem
     }
 
     /// <summary>
-    /// Drops the paused UI update timer back to zero so the next tick sends fresh readings.
-    /// </summary>
-    public void ResetUiTimer(Entity<GasHeatPumpComponent> ent)
-    {
-        ent.Comp.NextUiUpdate = TimeSpan.Zero;
-    }
-
-    /// <summary>
     /// Refreshes an open window. The server has nothing to do; the client overrides this.
     /// </summary>
     protected virtual void UpdateUi(Entity<GasHeatPumpComponent> ent)

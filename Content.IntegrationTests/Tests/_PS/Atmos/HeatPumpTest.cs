@@ -536,6 +536,77 @@ public sealed class HeatPumpTest
         }
     }
 
+    /// <summary>
+    /// With the safeties off the machine stops caring about the waste loop, and the loop eventually
+    /// takes it with it. The roll is probabilistic, so the test gives it enough tries that a failure
+    /// would mean the path is unreachable.
+    /// </summary>
+    [Test]
+    public async Task HeatPumpDetonatesWithTheSafetiesOff()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+
+        try
+        {
+            var server = pair.Server;
+            var entMan = server.EntMan;
+            var testMap = await pair.CreateTestMap();
+
+            var coords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
+
+            EntityUid device = default;
+
+            await server.WaitPost(() =>
+            {
+                entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, -1f)));
+                device = entMan.SpawnEntity("GasHeatPump", coords);
+                entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, 1f)));
+            });
+
+            await pair.RunTicksSync(5);
+
+            await server.WaitAssertion(() =>
+            {
+                var pump = entMan.GetComponent<GasHeatPumpComponent>(device);
+                pump.Enabled = true;
+                pump.TargetTemperature = 250f;
+                pump.Safeties = false;
+                entMan.GetComponent<ApcPowerReceiverComponent>(device).Powered = true;
+
+                var (gas, waste) = GetAir(entMan, device);
+                gas.SetMoles(Gas.Oxygen, 100f);
+                gas.Temperature = 300f;
+                waste.SetMoles(Gas.Oxygen, 100f);
+                waste.Temperature = pump.SafeTemperature + pump.DetonationMargin + 1000f;
+            });
+
+            var destroyed = false;
+
+            for (var attempt = 0; attempt < 30 && !destroyed; attempt++)
+            {
+                await server.WaitAssertion(() =>
+                {
+                    // The roll is throttled to once a second; skip the wait.
+                    entMan.GetComponent<GasHeatPumpComponent>(device).NextDetonationCheck = TimeSpan.Zero;
+                    Raise(entMan, device);
+                });
+
+                await pair.RunTicksSync(1);
+                await server.WaitAssertion(() => destroyed = !entMan.EntityExists(device));
+            }
+
+            await server.WaitAssertion(() =>
+            {
+                Assert.That(destroyed, Is.True,
+                    "A machine with the safeties off should eventually blow up on a hot waste loop.");
+            });
+        }
+        finally
+        {
+            await pair.CleanReturnAsync();
+        }
+    }
+
     private static (GasMixture gas, GasMixture waste) GetAir(IEntityManager entMan, EntityUid device)
     {
         var container = entMan.GetComponent<NodeContainerComponent>(device);

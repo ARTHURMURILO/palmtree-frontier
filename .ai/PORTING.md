@@ -121,10 +121,14 @@ in #66411): the same machine, but it moves heat between two pipes instead of mak
   source is the last version before the revert (commit `d7f3828d`), kept in the workspace as
   `tg-thermomachine-2022.dm`.
 - Heating takes heat out of the waste loop rather than making it from nothing, which is a deliberate
-  deviation from /tg/station. Everything else (efficiency falloff, mole penalty, safeties, emag
-  explosion, superlinear power) follows the original.
+  deviation from /tg/station (the original only moved heat while cooling). Five more were needed
+  because SS14 is not BYOND: the transfer is capped by `MaxHeatRate` and by what each mixture can
+  absorb, the compressor's waste heat is its electrical draw, the parts efficiency floor is capped at
+  0.9, and the safeties threshold is 200 000 K rather than 500 000 K because a gas mixture here
+  cannot exceed `Atmospherics.Tmax`. All of them are listed in `.ai/systems/atmos-heat-pump.md`.
 - New research node `NFAtmosphericHeatPump` (NFEngineering, tier 2, 12500) hanging off
-  `NFAtmosphericTech`, unlocking only the new board.
+  `NFAtmosphericTech`, unlocking only the new board, which is added to the `NFEngineeringBoardsStatic`
+  lathe pack and the blueprints pack.
 - Design decisions and the full list of deviations: `.ai/systems/atmos-heat-pump.md`. Test:
   `Content.IntegrationTests/Tests/_PS/Atmos/HeatPumpTest.cs`. Sprites:
   `Tools/gen_heat_pump_sprites.py` (vanilla thermomachine body + vanilla pipe tinted green/red).

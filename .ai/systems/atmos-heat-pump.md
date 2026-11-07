@@ -25,7 +25,10 @@
 | Locale | `Resources/Locale/en-US/_PS/atmos-devices.ftl` |
 | Tests | `Content.IntegrationTests/Tests/_PS/Atmos/HeatPumpTest.cs` |
 
-Upstream files touched: the engineering guidebook category (one child line, `# Palmtree`) - nothing else.
+Upstream files touched, all one line each and marked `# Palmtree`: the engineering guidebook category
+(`Resources/Prototypes/Guidebook/engineering.yml`), the `NFEngineeringBoardsStatic` lathe pack and the
+blueprints pack (both under `Resources/Prototypes/_NF/Recipes/Lathes/Packs/`) so the board is actually
+printable and the technology tree test stays green.
 
 ## The two ports
 
@@ -48,7 +51,8 @@ waste += -exchanged + motor                  # motor = the electricity the compr
 ```
 
 Everything the gas loses arrives in the waste loop, so the only heat that appears from nowhere is the
-compressor's own waste heat - and that is the electricity it burns, not a separate constant.
+compressor's own waste heat - and that is the electricity it burns, not a separate constant. It is
+only added while cooling: /tg/station had no use for it while heating, and neither has this port.
 
 The transfer is also clamped by what the waste loop can actually supply or absorb: an SS14 gas mixture
 is clamped to `Atmospherics.TCMB`..`Tmax`, so an over-sized transfer would be silently truncated and
@@ -91,8 +95,10 @@ both directions instead.
 Waste loop above `SafeTemperature` (200 000 K): the machine switches itself off and pops a warning.
 With the safeties off - via the interface, or because the machine was emagged - it detonates instead,
 rolled at most once a second, with a chance that grows with the loop temperature
-(`log6(T) * 10`, so ~73% at 500 000 K and 100% at 6^10 K), and only once the loop is
-`DetonationMargin` (2000 K) past the threshold.
+(`log6(T) * 10`, clamped to 100%: ~68% at the 200 000 K threshold and ~70% at `Atmospherics.Tmax`,
+which is as hot as a mixture can get), and only once the loop is `DetonationMargin` (2000 K) past the
+threshold. A machine with the safeties off is therefore very likely to go up within a few seconds, not
+guaranteed on the first tick.
 
 200 000 K rather than /tg/station's 500 000 K because a gas mixture here cannot go above
 `Atmospherics.Tmax` (262 144 K) - the original threshold could never fire.
