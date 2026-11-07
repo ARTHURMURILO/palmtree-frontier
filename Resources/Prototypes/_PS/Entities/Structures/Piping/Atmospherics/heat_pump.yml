@@ -106,8 +106,42 @@
   parent: [ GasPipeLayerAlt1, GasThermoMachineHeatPump ]
   id: GasThermoMachineHeatPumpAlt1
   categories: [ HideSpawnMenu ]
+  components:
+  # The markings are taken from this layer's file, so the placement ghost shifts them the same way
+  # the pipes on that layer are drawn and you can see which layer you are about to place on.
+  - type: Sprite
+    layers:
+    - state: freezerOff
+      map: [ "enum.PowerDeviceVisualLayers.Powered" ]
+    - state: freezerPanelOpen
+      map: [ "enum.WiresVisualLayers.MaintenancePanel" ]
+    - state: portWaste
+      map: [ "portWaste" ]
+      renderingStrategy: Default
+      sprite: _PS/Structures/Piping/Atmospherics/heat_pump_alt1.rsi
+    - state: portGas
+      map: [ "portGas" ]
+      renderingStrategy: Default
+      sprite: _PS/Structures/Piping/Atmospherics/heat_pump_alt1.rsi
 
 - type: entity
   parent: [ GasPipeLayerAlt2, GasThermoMachineHeatPump ]
   id: GasThermoMachineHeatPumpAlt2
   categories: [ HideSpawnMenu ]
+  components:
+  # The markings are taken from this layer's file, so the placement ghost shifts them the same way
+  # the pipes on that layer are drawn and you can see which layer you are about to place on.
+  - type: Sprite
+    layers:
+    - state: freezerOff
+      map: [ "enum.PowerDeviceVisualLayers.Powered" ]
+    - state: freezerPanelOpen
+      map: [ "enum.WiresVisualLayers.MaintenancePanel" ]
+    - state: portWaste
+      map: [ "portWaste" ]
+      renderingStrategy: Default
+      sprite: _PS/Structures/Piping/Atmospherics/heat_pump_alt2.rsi
+    - state: portGas
+      map: [ "portGas" ]
+      renderingStrategy: Default
+      sprite: _PS/Structures/Piping/Atmospherics/heat_pump_alt2.rsi
