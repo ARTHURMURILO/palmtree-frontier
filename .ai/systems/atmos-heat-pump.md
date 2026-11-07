@@ -18,7 +18,7 @@
 | Prototypes (3 pipe layers) | `Resources/Prototypes/_PS/Entities/Structures/Piping/Atmospherics/heat_pump.yml` |
 | Circuitboard | `Resources/Prototypes/_PS/Entities/Objects/Devices/Circuitboards/heat_pump.yml` |
 | Lathe recipe | `Resources/Prototypes/_PS/Recipes/Lathes/heat_pump.yml` |
-| Research node | `Resources/Prototypes/_PS/Research/atmos.yml` (`NFAtmosphericHeatPump`) |
+| Research | `NFAdvancedAtmospherics` in `Resources/Prototypes/_NF/Research/techtree.yml`, alongside the hellfire freezer |
 | Sprites | `Resources/Textures/_PS/Structures/Piping/Atmospherics/heat_pump.rsi` |
 | Sprite generator | `Tools/gen_heat_pump_sprites.py` |
 | Guidebook | `Resources/Prototypes/_PS/Guidebook/engineering.yml`, `Resources/ServerInfo/_PS/Guidebook/Engineering/HeatPump.xml` |

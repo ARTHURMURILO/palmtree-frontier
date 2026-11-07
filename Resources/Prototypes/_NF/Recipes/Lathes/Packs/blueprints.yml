@@ -95,7 +95,6 @@
   # AtmosphericTech
   - ThermomachineFreezerMachineCircuitBoard
   - GasRecyclerMachineCircuitboard
-  - HeatPumpMachineCircuitBoard # Palmtree
   # RipleyAPLU
   - RipleyHarness
   - RipleyLArm
@@ -116,6 +115,7 @@
   - SmallGyroscopeMachineCircuitboard
   # AdvancedAtmospherics
   - HellfireFreezerMachineCircuitBoard
+  - HeatPumpMachineCircuitBoard # Palmtree
   - PortableScrubberMachineCircuitBoard
   - HolofanProjector
   - AlertsComputerCircuitboard

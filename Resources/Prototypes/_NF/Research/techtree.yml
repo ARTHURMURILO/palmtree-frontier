@@ -1514,6 +1514,7 @@
   cost: 7500
   recipeUnlocks:
   - HellfireFreezerMachineCircuitBoard
+  - HeatPumpMachineCircuitBoard # Palmtree
   technologyPrerequisites:
   - NFAtmosphericTech
   position: 1, 34
