@@ -1,6 +1,8 @@
 using Content.Shared.Atmos;
+using Content.Shared.Construction.Prototypes;
 using Content.Shared.Guidebook;
 using Robust.Shared.GameStates;
+using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype;
 
 namespace Content.Shared.Atmos.Piping.Unary.Components
 {
@@ -17,6 +19,19 @@ namespace Content.Shared.Atmos.Piping.Unary.Components
         [DataField]
         [GuidebookData]
         public float HeatCapacity = 5000;
+
+        /// <summary>
+        ///     Palmtree: <see cref="HeatCapacity"/> with stock parts. The machine's heat capacity is
+        ///     also what it draws, so better parts move more heat and cost proportionally more to run.
+        /// </summary>
+        [DataField]
+        public float BaseHeatCapacity = 5000;
+
+        /// <summary>
+        ///     Palmtree: the machine part whose rating scales <see cref="HeatCapacity"/>.
+        /// </summary>
+        [DataField(customTypeSerializer: typeof(PrototypeIdSerializer<MachinePartPrototype>))]
+        public string MachinePartHeatCapacity = "MatterBin";
 
         [DataField, AutoNetworkedField]
         public float TargetTemperature = Atmospherics.T20C;
