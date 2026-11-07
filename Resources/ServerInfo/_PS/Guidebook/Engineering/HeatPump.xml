@@ -25,7 +25,8 @@
   the red pipe, and every joule it puts into the gas comes out of the red pipe.
 
   That means the red pipe needs somewhere for the heat to go — a radiator loop, a big tank of gas, or
-  a cold part of the ship. Cooling into a waste loop that is already hot is slow and expensive.
+  a cold part of the ship — and it needs to actually have gas in it, because gas is what carries the
+  heat. Cooling into a waste loop that is already hot is slow and expensive.
 
   ## Efficiency
 
@@ -43,5 +44,5 @@
 
   If the waste loop gets hot enough to be dangerous, the heat pump shuts itself down. The safeties can
   be switched off from the interface, and an emagged machine has them off already — at that point the
-  waste loop will keep climbing until the machine fails, and when it fails it takes the room with it.
+  waste loop keeps climbing, and eventually the machine gives up and explodes.
 </Document>

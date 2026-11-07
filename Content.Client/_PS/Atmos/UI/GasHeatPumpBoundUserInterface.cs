@@ -1,4 +1,5 @@
 using Content.Shared._PS.Atmos.Components;
+using Content.Shared.Power.EntitySystems;
 using Content.Shared.IdentityManagement;
 using JetBrains.Annotations;
 using Robust.Client.UserInterface;
@@ -49,7 +50,10 @@ public sealed class GasHeatPumpBoundUserInterface(EntityUid owner, Enum uiKey) :
 
         _window.MinTemperature = pump.MinTemperature;
         _window.MaxTemperature = pump.MaxTemperature;
+        var powered = EntMan.System<SharedPowerReceiverSystem>().IsPowered(Owner);
+
         _window.UpdateStatusButton(pump.Enabled);
+        _window.SetPowered(powered);
         _window.SetSafeties(pump.Safeties);
         _window.UpdateInfo(
             pump.Cooling,

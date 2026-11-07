@@ -72,7 +72,8 @@ gas-heat-pump-ui-moving-amount = {$amount} kW {$direction}
 gas-heat-pump-ui-moving-in = in
 gas-heat-pump-ui-moving-out = out
 gas-heat-pump-ui-idle = Idle
-gas-heat-pump-ui-no-waste = The waste port has no gas in it. The heat has nowhere to go.
+gas-heat-pump-ui-no-waste = The waste port has no gas in it. There is nothing for the heat to move into.
+gas-heat-pump-ui-no-power = The heat pump has no power.
 
 gas-heat-pump-examined-status = The heat pump is [color={$statusColor}]{$enabled ->
 [true] running
