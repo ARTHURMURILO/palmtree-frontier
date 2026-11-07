@@ -26,6 +26,12 @@ public sealed partial class FlatpackComponent : Component
     public EntProtoId? Entity;
 
     /// <summary>
+    /// How long unpacking takes. Zero keeps the original instant unpack.
+    /// </summary>
+    [DataField, ViewVariables(VVAccess.ReadWrite), AutoNetworkedField]
+    public TimeSpan UnpackDelay = TimeSpan.Zero;
+
+    /// <summary>
     /// Sound effect played upon the object being unpacked.
     /// </summary>
     [DataField, ViewVariables(VVAccess.ReadWrite), AutoNetworkedField]

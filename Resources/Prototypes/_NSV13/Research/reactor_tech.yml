@@ -17,8 +17,9 @@
   recipeUnlocks:
   - ControlRodInferior
   - ReactorSealant
-  - RbmkReactorMachineCircuitboard
+  - RbmkReactorFlatpack
   - RbmkConsoleCircuitboard
+  - RbmkFuelRodUranium
   technologyPrerequisites:
   - NFBasicPowerGeneration
   # 4, 28 is already NFAdvancedPowerGeneration. Sit one column left of the stormdrive node
@@ -33,7 +34,7 @@
   tier: 3
   cost: 15000
   recipeUnlocks:
-  - StormdriveReactorMachineCircuitboard
+  - StormdriveReactorFlatpack
   - StormdriveConsoleCircuitboard
   - StormdriveCore
   technologyPrerequisites:
