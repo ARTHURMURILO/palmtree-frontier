@@ -16,7 +16,6 @@
   components:
   - type: Sprite
     sprite: _PS/Structures/Piping/Atmospherics/heat_pump.rsi
-    snapCardinals: true
     layers:
     - state: freezerOff
       map: [ "enum.PowerDeviceVisualLayers.Powered" ]
