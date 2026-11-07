@@ -230,27 +230,27 @@ public sealed partial class GasHeatPumpComponent : Component
 
     /// <summary>
     /// Watts of input per watt of heat moved at low load. The inverse of a coefficient of
-    /// performance: 0.15 is a COP of about 6.7 before the soft cap below makes hard work cost more.
-    /// A heat pump is meant to beat a resistive heater by a wide margin; the waste loop is the price
-    /// of the capacity, not of the efficiency. Better matter bins divide it by
+    /// performance: a stock machine lands at a COP of about 6.5 at its ceiling once the soft cap
+    /// below is counted. A heat pump is meant to beat a resistive heater by a wide margin; the waste
+    /// loop is the price of the capacity, not of the efficiency. Better matter bins divide it by
     /// <see cref="PowerPerHeatPerBin"/>.
     /// </summary>
     [DataField]
-    public float PowerPerHeat = 0.15f;
+    public float PowerPerHeat = 0.096f;
 
     /// <summary>
     /// <see cref="PowerPerHeat"/> with stock parts.
     /// </summary>
     [DataField]
-    public float BasePowerPerHeat = 0.15f;
+    public float BasePowerPerHeat = 0.096f;
 
     /// <summary>
-    /// What each matter bin rating above stock divides <see cref="PowerPerHeat"/> by. Better bins are
-    /// a better compressor, not just a bigger one: 0.7 leaves a fully upgraded machine at about 50 kW
-    /// of draw at its 624 kW ceiling, instead of the ~140 kW a bigger-only compressor would need.
+    /// What each matter bin rating above stock multiplies <see cref="PowerPerHeat"/> by. Better bins
+    /// are a better compressor, not just a bigger one: 0.802 is half over the three upgrade steps, so
+    /// the machine goes from a COP of about 6.5 at the stock ceiling to about 13 at the 624 kW one.
     /// </summary>
     [DataField]
-    public float PowerPerHeatPerBin = 0.7f;
+    public float PowerPerHeatPerBin = 0.802f;
 
     /// <summary>
     /// Heat moved per second at which the power cost starts growing faster than the heat moved, in

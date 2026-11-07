@@ -87,16 +87,16 @@ load = IdlePower + |heat/s| * PowerPerHeat * (1 + |heat/s| * PowerSoftCapSlope /
 load *= 1.5 - 0.5 * efficiency
 ```
 
-With the defaults a typical 18 kW job draws about 3.5 kW, and a job at the 78 kW cap draws about
-18 kW. That is a COP of roughly 5-6 at normal load and about 4.3 at the ceiling: a heat pump is
-supposed to beat a resistive machine, and this one beats the vanilla freezer's COP 3.9 across its
-working range. The superlinear term still makes a hard job cost more per joule than a light one, it
-is just no longer punitive.
+With the defaults a typical 18 kW job draws about 2.5 kW, and a job at the 78 kW cap draws about
+12 kW. That is a COP of about 6.5 at the ceiling, better than the vanilla freezer's 3.9: a heat pump
+is supposed to win on efficiency, and the waste loop is where it pays for the capacity. The
+superlinear term still makes a hard job cost more per joule than a light one, it is just not
+punitive.
 
 Bins are a better compressor, not just a bigger one: `PowerPerHeat` falls with the rating
-(`0.15 * 0.7^(rating-1)`), so the upgrade range is also an efficiency range. With tier-four bins the
-624 kW ceiling draws about 50 kW (COP ~12.5), not the ~140 kW that scaling the throughput alone
-would cost.
+(`0.096 * 0.802^(rating-1)`, half over the three steps), so the upgrade range is also an efficiency
+range. The ceiling COP runs about 6.5, 8.2, 10.4 and 13 across the four tiers; with tier-four bins the
+624 kW ceiling draws about 48 kW, not the ~140 kW that scaling the throughput alone would cost.
 
 ### Safeties
 
@@ -115,7 +115,7 @@ guaranteed on the first tick.
 
 | Part | Effect |
 |---|---|
-| `MatterBin` 2x | `HeatCapacity = 5000 * 2^(rating-1)`, `MaxHeatRate = 78 kW * 2^(rating-1)`, `PowerSoftCap = 78 kW * 2^(rating-1)`, `PowerPerHeat = 0.15 * 0.7^(rating-1)` |
+| `MatterBin` 2x | `HeatCapacity = 5000 * 2^(rating-1)`, `MaxHeatRate = 78 kW * 2^(rating-1)`, `PowerSoftCap = 78 kW * 2^(rating-1)`, `PowerPerHeat = 0.096 * 0.802^(rating-1)` |
 | `Manipulator` 2x | `EfficiencyFloor = min(0.25 * rating, 0.9)`, `MinTemperature = 73.15 - 15*(rating-1)`, `MaxTemperature = 593.15 + 200*(rating-1)` |
 
 `RefreshPartsEvent` (Frontier's machine upgrading) drives both. The ceiling on the transfer scales with

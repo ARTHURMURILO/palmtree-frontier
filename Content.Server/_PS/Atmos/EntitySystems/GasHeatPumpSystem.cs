@@ -75,8 +75,8 @@ public sealed class GasHeatPumpSystem : SharedGasHeatPumpSystem
         ent.Comp.PowerSoftCap = ent.Comp.BasePowerSoftCap * binMultiplier;
 
         // Better bins are a better compressor as well as a bigger one: the power moved per joule
-        // drops with every rating, which is what keeps a fully upgraded machine at about 50 kW
-        // instead of the 140 kW that scaling the throughput alone would cost.
+        // drops with every rating, which is what keeps a fully upgraded machine near 48 kW instead of
+        // the 140 kW that scaling the throughput alone would cost.
         ent.Comp.PowerPerHeat = ent.Comp.BasePowerPerHeat *
                                 MathF.Pow(ent.Comp.PowerPerHeatPerBin, bins - 1f);
 
