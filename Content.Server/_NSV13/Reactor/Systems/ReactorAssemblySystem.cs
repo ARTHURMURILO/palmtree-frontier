@@ -1,13 +1,17 @@
 using System.Linq;
+using Content.Server.Atmos.Piping.Components;
+using Content.Server.Construction.Components;
 using Content.Server.NodeContainer.Nodes;
 using Content.Server.Power.Components;
 using Content.Server._NSV13.Reactor.Components;
 using Content.Shared.Administration.Logs;
 using Content.Shared.Atmos;
+using Content.Shared.Atmos.Components;
 using Content.Shared.Construction;
 using Content.Shared.Construction.Components;
 using Content.Shared.Database;
 using Content.Shared.DoAfter;
+using Content.Shared.Maps;
 using Content.Shared.NodeContainer;
 using Content.Shared.Popups;
 using Content.Shared.Power;
@@ -67,9 +71,35 @@ public sealed class ReactorAssemblySystem : EntitySystem
                     return;
                 }
 
+                // The site has to be bare subfloor (plating or its scaffolding). A finished floor
+                // - steel, carpet, wood - sits above the deck and would be covered by the reactor
+                // without the crew deliberately pulling it up first.
+                if (_tileManager[tileRef.Tile.TypeId] is ContentTileDefinition tileDef &&
+                    (!tileDef.IsSubFloor || tileDef.ID == ContentTileDefinition.SpaceID))
+                {
+                    Cancel(ref args, "reactor-flatpack-needs-bare-floor");
+                    return;
+                }
+
                 foreach (var anchored in _map.GetAnchoredEntities((args.Grid, grid), pos))
                 {
-                    // Cables and pipes are expected under a reactor and get replaced or reused.
+                    // Pumps, filters, mixers and vents keep working under a buried reactor and
+                    // would be impossible to reach. No pipe layer makes an atmos device okay.
+                    if (HasComp<AtmosDeviceComponent>(anchored))
+                    {
+                        Cancel(ref args, "reactor-flatpack-atmos-device");
+                        return;
+                    }
+
+                    // Primary-layer piping would be capped by the reactor's ports and its own
+                    // stubs. Pipes on another layer stay separate and reachable, so they pass.
+                    if (HasPrimaryLayerPipe(anchored))
+                    {
+                        Cancel(ref args, "reactor-flatpack-pipe");
+                        return;
+                    }
+
+                    // Cables and off-layer pipes are expected under a reactor and are reused.
                     if (HasComp<CableComponent>(anchored) || HasPipe(anchored))
                         continue;
 
@@ -95,6 +125,14 @@ public sealed class ReactorAssemblySystem : EntitySystem
             return;
 
         var reactor = args.Spawned;
+
+        // MachineComponent fills two hidden containers on MapInit: the circuitboard that would
+        // normally build this machine, and the stock parts it needs. A flatpack is the finished
+        // reactor, not a kit, so the crew never supplied those. Delete them instead of leaving
+        // them inside: otherwise every unpack/deconstruct cycle mints a free board and parts,
+        // and the board can be used in a machine frame to build a second reactor.
+        StripMachineInternals(reactor);
+
         var xform = Transform(reactor);
         if (!xform.Anchored)
             _transform.AnchorEntity(reactor);
@@ -162,6 +200,23 @@ public sealed class ReactorAssemblySystem : EntitySystem
         }
     }
 
+    /// <summary>
+    ///     Deletes the board and stock parts that <see cref="MachineComponent"/> spawns into every
+    ///     machine on MapInit. A flatpack-spawned reactor is complete on arrival; those internals
+    ///     would otherwise be free loot hidden inside it, and the board can rebuild the reactor.
+    /// </summary>
+    private void StripMachineInternals(EntityUid reactor)
+    {
+        if (!TryComp<ContainerManagerComponent>(reactor, out var containers))
+            return;
+
+        foreach (var name in new[] { MachineFrameComponent.BoardContainerName, MachineFrameComponent.PartContainerName })
+        {
+            if (containers.Containers.TryGetValue(name, out var container))
+                _container.CleanContainer(container);
+        }
+    }
+
     private static List<Vector2i> FootprintTiles(Vector2i center, Vector2i footprint)
     {
         var tiles = new List<Vector2i>();
@@ -193,6 +248,19 @@ public sealed class ReactorAssemblySystem : EntitySystem
     {
         return TryComp<NodeContainerComponent>(entity, out var container)
                && container.Nodes.Values.Any(node => node is PipeNode);
+    }
+
+    /// <summary>
+    ///     Whether the entity carries a pipe on the primary atmos layer, which is the layer the
+    ///     reactor's own ports and stubs live on. Pipes on other layers do not join that line.
+    /// </summary>
+    private bool HasPrimaryLayerPipe(EntityUid entity)
+    {
+        if (!TryComp<NodeContainerComponent>(entity, out var container))
+            return false;
+
+        return container.Nodes.Values.Any(node =>
+            node is PipeNode pipe && pipe.CurrentPipeLayer == AtmosPipeLayer.Primary);
     }
 
     /// <summary>
@@ -322,10 +390,16 @@ public sealed class ReactorAssemblySystem : EntitySystem
         var rotation = xform.LocalRotation;
 
         // The rods (and any fitted parts) come out before the machine goes, or they would go with it.
+        // The machine's hidden board and stock-part containers are not contents: they are an
+        // artifact of MachineComponent and must be deleted with the reactor, never ejected. New
+        // flatpacks are stripped on unpack; this also covers a reactor from an older save.
         if (TryComp<ContainerManagerComponent>(uid, out var containers))
         {
-            foreach (var container in containers.Containers.Values)
+            foreach (var (name, container) in containers.Containers)
             {
+                if (name is MachineFrameComponent.BoardContainerName or MachineFrameComponent.PartContainerName)
+                    continue;
+
                 if (container.Count > 0)
                     _container.EmptyContainer(container, destination: coords);
             }

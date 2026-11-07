@@ -15,13 +15,13 @@
     - state: power_generator
   - type: Flatpack
     entity: RbmkNuclearReactor
-    unpackDelay: 60
+    unpackDelay: 10
   - type: ReactorFlatpack
     footprint: 3,3
     floor: FloorReinforced
     cableOnFootprint: true
     pipesOnPorts: true
-    deconstructDelay: 60
+    deconstructDelay: 30
     coldLimit: 100
   - type: StaticPrice
     price: 20000
