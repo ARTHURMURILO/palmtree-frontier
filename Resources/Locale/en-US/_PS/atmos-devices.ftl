@@ -71,6 +71,9 @@ gas-heat-pump-ui-moving = Heat moved
 gas-heat-pump-ui-moving-amount = {$amount} kW
 gas-heat-pump-ui-moving-none = 0 kW
 gas-heat-pump-ui-no-waste = The waste port has no gas in it. There is nothing for the heat to move into.
+gas-heat-pump-upgrade-heat-capacity = Heat capacity
+gas-heat-pump-upgrade-heat-rate = Maximum heat moved
+gas-heat-pump-upgrade-efficiency = Minimum efficiency
 gas-heat-pump-ui-no-power = The heat pump has no power.
 
 gas-heat-pump-examined-status = The heat pump is [color={$statusColor}]{$enabled ->

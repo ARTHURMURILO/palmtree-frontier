@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Numerics;
 using Content.Server.Atmos.EntitySystems;
 using Content.Server.Atmos.Piping.Components;
@@ -6,6 +7,7 @@ using Content.Server.Power.Components;
 using Content.Shared._PS.Atmos.Components;
 using Content.Shared.Atmos;
 using Content.Shared.Atmos.Components;
+using Content.Shared.Construction.Components;
 using Content.Shared.NodeContainer;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
@@ -763,6 +765,152 @@ public sealed class HeatPumpTest
         }
     }
 
+    /// <summary>
+    /// The machine has to react to its parts, and the bin rating has to raise the ceiling on the
+    /// transfer as well as the heat capacity: the capacity alone is swamped by the gas's own, so
+    /// without the ceiling a fully upgraded machine would move the same heat as a stock one.
+    /// </summary>
+    [Test]
+    public async Task HeatPumpUpgradesWithItsParts()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+
+        try
+        {
+            var server = pair.Server;
+            var entMan = server.EntMan;
+            var testMap = await pair.CreateTestMap();
+
+            var coords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
+
+            EntityUid device = default;
+
+            await server.WaitPost(() =>
+            {
+                device = entMan.SpawnEntity("GasThermoMachineHeatPump", coords);
+            });
+
+            await pair.RunTicksSync(5);
+
+            await server.WaitAssertion(() =>
+            {
+                var pump = entMan.GetComponent<GasHeatPumpComponent>(device);
+
+                Assert.Multiple(() =>
+                {
+                    Assert.That(pump.HeatCapacity, Is.EqualTo(pump.BaseHeatCapacity),
+                        "a machine with no parts should start on the stock heat capacity");
+                    Assert.That(pump.MaxHeatRate, Is.EqualTo(pump.BaseMaxHeatRate),
+                        "a machine with no parts should start on the stock heat rate");
+                    Assert.That(pump.EfficiencyFloor, Is.EqualTo(pump.BaseEfficiencyFloor),
+                        "a machine with no parts should start on the stock efficiency floor");
+                });
+
+                entMan.EventBus.RaiseLocalEvent(device, new RefreshPartsEvent
+                {
+                    PartRatings = new Dictionary<string, float>
+                    {
+                        [pump.MachinePartHeatCapacity] = 3f,
+                        [pump.MachinePartEfficiency] = 4f,
+                    },
+                }, true);
+
+                Assert.Multiple(() =>
+                {
+                    Assert.That(pump.HeatCapacity, Is.EqualTo(pump.BaseHeatCapacity * 4f).Within(1f),
+                        "a tier three matter bin should quadruple the heat capacity");
+                    Assert.That(pump.MaxHeatRate, Is.EqualTo(pump.BaseMaxHeatRate * 4f).Within(1f),
+                        "a tier three matter bin should quadruple the most heat the machine can move");
+                    Assert.That(pump.EfficiencyFloor, Is.EqualTo(pump.MaxEfficiencyFloor).Within(0.001f),
+                        "tier four manipulators should reach the efficiency floor ceiling");
+                });
+            });
+        }
+        finally
+        {
+            await pair.CleanReturnAsync();
+        }
+    }
+
+    /// <summary>
+    /// And the parts have to show up in the thing the player watches: the same gas and the same
+    /// temperatures have to move more heat once the bins are better, not just change a number on the
+    /// component.
+    /// </summary>
+    [Test]
+    public async Task HeatPumpMovesMoreHeatWithBetterBins()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+
+        try
+        {
+            var server = pair.Server;
+            var entMan = server.EntMan;
+            var testMap = await pair.CreateTestMap();
+
+            var coords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
+
+            EntityUid device = default;
+
+            await server.WaitPost(() =>
+            {
+                entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, -1f)));
+                device = entMan.SpawnEntity("GasThermoMachineHeatPump", coords);
+                entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, 1f)));
+            });
+
+            await pair.RunTicksSync(5);
+
+            var stock = 0f;
+            var upgraded = 0f;
+
+            await server.WaitAssertion(() =>
+            {
+                var pump = entMan.GetComponent<GasHeatPumpComponent>(device);
+                pump.Enabled = true;
+                pump.TargetTemperature = 300f;
+                pump.MotorHeatDeadband = 1000f;
+                entMan.GetComponent<ApcPowerReceiverComponent>(device).Powered = true;
+
+                SetGas(entMan, device, 500f, 300f);
+                Raise(entMan, device);
+                stock = MathF.Abs(pump.HeatMoved);
+            });
+
+            await server.WaitAssertion(() =>
+            {
+                var pump = entMan.GetComponent<GasHeatPumpComponent>(device);
+                SetGas(entMan, device, 500f, 300f);
+
+                entMan.EventBus.RaiseLocalEvent(device, new RefreshPartsEvent
+                {
+                    PartRatings = new Dictionary<string, float>
+                    {
+                        [pump.MachinePartHeatCapacity] = 4f,
+                    },
+                }, true);
+
+                Raise(entMan, device);
+                upgraded = MathF.Abs(pump.HeatMoved);
+            });
+
+            await server.WaitAssertion(() =>
+            {
+                Assert.Multiple(() =>
+                {
+                    Assert.That(stock, Is.GreaterThan(40_000f).And.LessThanOrEqualTo(50_000f),
+                        "a stock machine should be running into its 50 kW ceiling");
+                    Assert.That(upgraded, Is.GreaterThan(stock * 2f),
+                        "better bins should raise the ceiling and let the machine move much more heat");
+                });
+            });
+        }
+        finally
+        {
+            await pair.CleanReturnAsync();
+        }
+    }
+
     private static (GasMixture gas, GasMixture waste) GetAir(IEntityManager entMan, EntityUid device)
     {
         var container = entMan.GetComponent<NodeContainerComponent>(device);
@@ -770,6 +918,15 @@ public sealed class HeatPumpTest
         var waste = (PipeNode) container.Nodes["waste"];
 
         return (gas.Air, waste.Air);
+    }
+
+    private static void SetGas(IEntityManager entMan, EntityUid device, float gasTemperature, float wasteTemperature)
+    {
+        var (gas, waste) = GetAir(entMan, device);
+        gas.SetMoles(Gas.Oxygen, 100f);
+        gas.Temperature = gasTemperature;
+        waste.SetMoles(Gas.Oxygen, 100f);
+        waste.Temperature = wasteTemperature;
     }
 
     private static void Raise(IEntityManager entMan, EntityUid device)

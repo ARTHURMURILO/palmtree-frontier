@@ -107,10 +107,17 @@ guaranteed on the first tick.
 
 | Part | Effect |
 |---|---|
-| `MatterBin` 2x | `HeatCapacity = 5000 * 2^(rating-1)` |
+| `MatterBin` 2x | `HeatCapacity = 5000 * 2^(rating-1)`, `MaxHeatRate = 50 kW * 2^(rating-1)`, `PowerSoftCap = 50 kW * 2^(rating-1)` |
 | `Manipulator` 2x | `EfficiencyFloor = min(0.25 * rating, 0.9)` |
 
-`RefreshPartsEvent` (Frontier's machine upgrading) drives both.
+`RefreshPartsEvent` (Frontier's machine upgrading) drives both. The ceiling on the transfer scales with
+the bins as well as the heat capacity: `C1*C2/(C1+C2)` saturates at the gas's own heat capacity once
+the machine's is large, so scaling `HeatCapacity` alone left the bins with almost nothing to do.
+`PowerSoftCap` scales with it too, so an upgraded machine does not pay the superlinear penalty for
+work its bigger compressor is meant to do.
+
+`UpgradeExamineEvent` feeds the machine's "Upgrades" examine verb with the resulting heat capacity,
+maximum heat rate and efficiency floor, so a player who installs better parts can see what changed.
 
 ## Deviations from /tg/station, and why
 

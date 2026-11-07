@@ -52,6 +52,7 @@ public sealed class GasHeatPumpSystem : SharedGasHeatPumpSystem
         base.Initialize();
 
         SubscribeLocalEvent<GasHeatPumpComponent, RefreshPartsEvent>(OnRefreshParts);
+        SubscribeLocalEvent<GasHeatPumpComponent, UpgradeExamineEvent>(OnUpgradeExamine);
         SubscribeLocalEvent<GasHeatPumpComponent, MapInitEvent>(OnMapInit);
         SubscribeLocalEvent<GasHeatPumpComponent, AtmosDeviceUpdateEvent>(OnAtmosUpdate);
     }
@@ -62,10 +63,32 @@ public sealed class GasHeatPumpSystem : SharedGasHeatPumpSystem
     private void OnRefreshParts(Entity<GasHeatPumpComponent> ent, ref RefreshPartsEvent args)
     {
         var bins = args.PartRatings.GetValueOrDefault(ent.Comp.MachinePartHeatCapacity, 1f);
-        var lasers = args.PartRatings.GetValueOrDefault(ent.Comp.MachinePartEfficiency, 1f);
+        var manipulators = args.PartRatings.GetValueOrDefault(ent.Comp.MachinePartEfficiency, 1f);
 
-        ent.Comp.HeatCapacity = ent.Comp.BaseHeatCapacity * MathF.Pow(2f, bins - 1f);
-        ent.Comp.EfficiencyFloor = MathF.Min(ent.Comp.BaseEfficiencyFloor * lasers, ent.Comp.MaxEfficiencyFloor);
+        // Both the machine's heat capacity and the ceiling on the transfer scale with the bins.
+        // The exchange term below is dominated by the gas's own heat capacity once the machine's is
+        // large, so scaling the capacity alone would leave the bins with almost nothing to do.
+        var binMultiplier = MathF.Pow(2f, bins - 1f);
+
+        ent.Comp.HeatCapacity = ent.Comp.BaseHeatCapacity * binMultiplier;
+        ent.Comp.MaxHeatRate = ent.Comp.BaseMaxHeatRate * binMultiplier;
+        ent.Comp.PowerSoftCap = ent.Comp.BasePowerSoftCap * binMultiplier;
+        ent.Comp.EfficiencyFloor = MathF.Min(ent.Comp.BaseEfficiencyFloor * manipulators,
+            ent.Comp.MaxEfficiencyFloor);
+    }
+
+    /// <summary>
+    /// Lists what the installed parts changed in the machine's "Upgrades" examine entry, so a player
+    /// who installs better bins and manipulators can see what they bought.
+    /// </summary>
+    private void OnUpgradeExamine(EntityUid uid, GasHeatPumpComponent component, UpgradeExamineEvent args)
+    {
+        args.AddPercentageUpgrade("gas-heat-pump-upgrade-heat-capacity",
+            component.HeatCapacity / component.BaseHeatCapacity);
+        args.AddPercentageUpgrade("gas-heat-pump-upgrade-heat-rate",
+            component.MaxHeatRate / component.BaseMaxHeatRate);
+        args.AddPercentageUpgrade("gas-heat-pump-upgrade-efficiency",
+            component.EfficiencyFloor / component.BaseEfficiencyFloor);
     }
 
     private void OnMapInit(Entity<GasHeatPumpComponent> ent, ref MapInitEvent args)
