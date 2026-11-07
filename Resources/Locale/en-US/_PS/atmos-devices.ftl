@@ -94,4 +94,3 @@ gas-heat-pump-mode-heating = heating
 gas-heat-pump-safeties-tripped = The waste loop has reached critical levels, the heat pump shuts down!
 
 guide-entry-heat-pump = Heat Pump
-research-technology-atmospheric-heat-pump = Atmospheric Heat Pump

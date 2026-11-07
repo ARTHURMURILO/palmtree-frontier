@@ -126,8 +126,8 @@ in #66411): the same machine, but it moves heat between two pipes instead of mak
   absorb, the compressor's waste heat is its electrical draw, the parts efficiency floor is capped at
   0.9, and the safeties threshold is 200 000 K rather than 500 000 K because a gas mixture here
   cannot exceed `Atmospherics.Tmax`. All of them are listed in `.ai/systems/atmos-heat-pump.md`.
-- New research node `NFAtmosphericHeatPump` (NFEngineering, tier 2, 12500) hanging off
-  `NFAtmosphericTech`, unlocking only the new board, which is added to the `NFEngineeringBoardsStatic`
+- The new board is unlocked by the existing `NFAdvancedAtmospherics` node, alongside the hellfire
+  freezer, rather than by a research node of its own, and is added to the `NFEngineeringBoardsStatic`
   lathe pack and the blueprints pack.
 - Design decisions and the full list of deviations: `.ai/systems/atmos-heat-pump.md`. Test:
   `Content.IntegrationTests/Tests/_PS/Atmos/HeatPumpTest.cs`. Sprites:

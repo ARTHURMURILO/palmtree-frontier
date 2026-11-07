@@ -3,8 +3,8 @@
 - type: entity
   id: HeatPumpMachineCircuitBoard
   parent: BaseMachineCircuitboard
-  name: heat pump machine board
-  description: A machine printed circuit board for a heat pump.
+  name: heat pump thermomachine machine board
+  description: A machine printed circuit board for a heat pump thermomachine.
   components:
   - type: Sprite
     state: engineering
