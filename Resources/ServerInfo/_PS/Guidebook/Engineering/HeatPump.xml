@@ -37,7 +37,7 @@
   installed parts changed:
 
   - [bold]Matter bins[/bold] give the machine more heat capacity and raise the most heat it can move
-    in a second, from 50 kW on stock parts to 400 kW with the best bins.
+    in a second, from 78 kW on stock parts to 624 kW with the best bins.
   - [bold]Manipulators[/bold] raise the floor the efficiency falls back to when the waste loop is
     hot, from 25% on stock parts to 90% with the best ones. They do not help an empty pipe: with no
     gas to carry the heat, even a fully upgraded machine crawls.

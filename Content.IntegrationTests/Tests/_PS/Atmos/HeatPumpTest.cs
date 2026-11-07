@@ -898,8 +898,8 @@ public sealed class HeatPumpTest
             {
                 Assert.Multiple(() =>
                 {
-                    Assert.That(stock, Is.GreaterThan(40_000f).And.LessThanOrEqualTo(50_000f),
-                        "a stock machine should be running into its 50 kW ceiling");
+                    Assert.That(stock, Is.GreaterThan(60_000f).And.LessThanOrEqualTo(78_000f),
+                        "a stock machine should be running into its 78 kW ceiling");
                     Assert.That(upgraded, Is.GreaterThan(stock * 2f),
                         "better bins should raise the ceiling and let the machine move much more heat");
                 });
