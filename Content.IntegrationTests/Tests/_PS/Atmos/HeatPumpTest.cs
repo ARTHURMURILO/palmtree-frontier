@@ -932,6 +932,68 @@ public sealed class HeatPumpTest
         }
     }
 
+    /// <summary>
+    /// The heat-rate table is read at the average bin rating, so mixed parts land between two
+    /// entries; the ends clamp, an empty table falls back to stock, and an out-of-range target is
+    /// pulled back into whichever range the parts just set.
+    /// </summary>
+    [Test]
+    public async Task HeatPumpHeatRateInterpolatesBetweenRatings()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+
+        try
+        {
+            var server = pair.Server;
+            var entMan = server.EntMan;
+            var testMap = await pair.CreateTestMap();
+
+            var coords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
+
+            EntityUid device = default;
+
+            await server.WaitPost(() =>
+            {
+                device = entMan.SpawnEntity("GasThermoMachineHeatPump", coords);
+            });
+
+            await pair.RunTicksSync(5);
+
+            await server.WaitAssertion(() =>
+            {
+                var pump = entMan.GetComponent<GasHeatPumpComponent>(device);
+
+                // Mixed bins average to a fractional rating; the curve is read between entries.
+                RaiseParts(entMan, device, pump.MachinePartHeatCapacity, 2.5f);
+                Assert.That(pump.MaxHeatRate, Is.EqualTo(350_000f).Within(1f),
+                    "a 2.5 bin rating should land halfway between 250 and 450 kW");
+
+                // Ratings outside the table clamp to the ends.
+                RaiseParts(entMan, device, pump.MachinePartHeatCapacity, 0f);
+                Assert.That(pump.MaxHeatRate, Is.EqualTo(pump.HeatRateByRating[0]).Within(1f));
+
+                RaiseParts(entMan, device, pump.MachinePartHeatCapacity, 9f);
+                Assert.That(pump.MaxHeatRate, Is.EqualTo(pump.HeatRateByRating[^1]).Within(1f));
+
+                // A machine with no table at all falls back to the stock ceiling instead of putting
+                // zero into the power curve.
+                pump.HeatRateByRating = Array.Empty<float>();
+                RaiseParts(entMan, device, pump.MachinePartHeatCapacity, 4f);
+                Assert.That(pump.MaxHeatRate, Is.EqualTo(pump.BaseMaxHeatRate).Within(1f));
+
+                // An out-of-range target is pulled back into the range the new parts set.
+                pump.TargetTemperature = 2000f;
+                RaiseParts(entMan, device, pump.MachinePartEfficiency, 1f);
+                Assert.That(pump.TargetTemperature, Is.EqualTo(pump.MaxTemperature).Within(0.01f),
+                    "the target should be clamped when the parts take the range away");
+            });
+        }
+        finally
+        {
+            await pair.CleanReturnAsync();
+        }
+    }
+
     private static (GasMixture gas, GasMixture waste) GetAir(IEntityManager entMan, EntityUid device)
     {
         var container = entMan.GetComponent<NodeContainerComponent>(device);
@@ -949,6 +1011,17 @@ public sealed class HeatPumpTest
         gas.Temperature = gasTemperature;
         waste.SetMoles(Gas.Oxygen, moles);
         waste.Temperature = wasteTemperature;
+    }
+
+    private static void RaiseParts(IEntityManager entMan, EntityUid device, string part, float rating)
+    {
+        entMan.EventBus.RaiseLocalEvent(device, new RefreshPartsEvent
+        {
+            PartRatings = new Dictionary<string, float>
+            {
+                [part] = rating,
+            },
+        }, true);
     }
 
     private static void Raise(IEntityManager entMan, EntityUid device)

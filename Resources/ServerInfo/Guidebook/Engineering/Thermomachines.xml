@@ -44,6 +44,7 @@
 
   They draw [color=orange][protodata="GasThermoMachineFreezer" comp="GasThermoMachine" member="HeatCapacity" format="N0"/] W[/color] of power and can heat or cool gas in a pipenet to as high as [color=orange][protodata="GasThermoMachineFreezer" comp="GasThermoMachine" member="MaxTemperature"/] K[/color] or as low as [color=orange][protodata="GasThermoMachineFreezer" comp="GasThermoMachine" member="MinTemperature"/] K[/color].
 
+  <!-- Palmtree: machine part upgrades -->
   Like any other machine, a pipenet thermomachine can be upgraded with better parts: matter bins raise how much heat it moves per second (at the cost of drawing proportionally more power), and capacitors widen the temperature range it can be set to.
 
   You can swap the mode of the thermomachine by deconstructing it and using a screwdriver on its circuit board.

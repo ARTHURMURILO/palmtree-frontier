@@ -119,6 +119,11 @@ public abstract class SharedGasHeatPumpSystem : EntitySystem
     private void OnChangeTemperatureMessage(Entity<GasHeatPumpComponent> ent,
         ref GasHeatPumpChangeTemperatureMessage args)
     {
+        // A malformed client message must not put NaN into the setpoint: it would survive the clamp
+        // and then poison the gas mixture on the next atmos tick.
+        if (!float.IsFinite(args.Temperature))
+            return;
+
         ent.Comp.TargetTemperature = Math.Clamp(args.Temperature, ent.Comp.MinTemperature, ent.Comp.MaxTemperature);
         _adminLogger.Add(LogType.AtmosTemperatureChanged,
             LogImpact.Medium,

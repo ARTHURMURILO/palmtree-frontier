@@ -256,7 +256,8 @@ public sealed class GasHeatPumpSystem : SharedGasHeatPumpSystem
         var heatPerSecond = exchanged / MathF.Max(dt, 1e-4f);
         var load = GetPowerDraw(comp, heatPerSecond, efficiency);
 
-        // Everything the machine draws ends up as heat, and while cooling it ends up in the loop.
+        // While cooling, the machine's own draw ends up as heat in the waste loop. Heating does not
+        // add motor heat, so the term only applies to the cooling branch.
         var motor = cooling && MathF.Abs(delta) >= comp.MotorHeatDeadband ? load * dt : 0f;
 
         _atmosphere.AddHeat(gas, exchanged);

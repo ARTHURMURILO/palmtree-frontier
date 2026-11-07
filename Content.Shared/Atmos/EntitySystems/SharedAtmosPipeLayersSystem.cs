@@ -10,7 +10,7 @@ using Content.Shared.Tools;
 using Content.Shared.Tools.Components;
 using Content.Shared.Tools.Systems;
 using Content.Shared.Verbs;
-using Content.Shared.Wires;
+using Content.Shared.Wires; // Palmtree
 using Robust.Shared.Prototypes;
 using System.Diagnostics.CodeAnalysis;
 
@@ -129,9 +129,11 @@ public abstract partial class SharedAtmosPipeLayersSystem : EntitySystem
         // Palmtree: the screwdriver both opens a machine's maintenance panel and cycles a pipe's
         // layer, and on a machine the second one moved its ports onto another pipe layer, so every
         // screw silently dropped the connections. The panel wins; changing a machine's layer is
-        // still available from the right-click verbs.
+        // still available from the right-click verbs. An open panel wins as well: a multitool pulse
+        // there is wiring, not a layer change, and the wire handler setting Handled does not cancel
+        // a layer-change DoAfter that has already started.
         if (TryComp<WiresPanelComponent>(ent.Owner, out var wiresPanel) &&
-            _tool.HasQuality(args.Used, wiresPanel.OpeningTool, tool))
+            (wiresPanel.Open || _tool.HasQuality(args.Used, wiresPanel.OpeningTool, tool)))
             return;
 
         if (TryComp<SubFloorHideComponent>(ent, out var subFloorHide) && subFloorHide.IsUnderCover)
