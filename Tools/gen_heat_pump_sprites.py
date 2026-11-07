@@ -150,9 +150,10 @@ def write_rsi(folder: pathlib.Path, generated: dict[str, tuple[int, list[Image.I
         "version": 1,
         "license": "CC-BY-SA-3.0",
         "copyright": (
-            "Body taken from Structures/Piping/Atmospherics/thermomachine.rsi (CC-BY-SA-3.0, "
-            "from /tg/station); the port markings are pipe.rsi recoloured after the two-port "
-            "thermomachine /tg/station had in 2021-2022 (PR #57831). Repacked for Palmtree."
+            "Body: base sprites taken from tgstation, split to display on two layers "
+            "(machinebody/panel) by Menshin for SS14, edited by chromiumboy. Port markings: "
+            "pipe.rsi recoloured after the two-port thermomachine /tg/station had in 2021-2022 "
+            "(PR #57831). Repacked for Palmtree."
         ),
         "size": {"x": SIZE, "y": SIZE},
         "states": [],

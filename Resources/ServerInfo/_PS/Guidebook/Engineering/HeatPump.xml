@@ -37,8 +37,8 @@
   Better parts help:
 
   - **Matter bins** let the machine move more heat per second.
-  - **Manipulators** raise the efficiency it will never drop below, so a good machine keeps working
-    even into a hot loop.
+  - **Manipulators** raise the floor the efficiency falls back to when the waste loop is hot. They do
+    not help an empty pipe: with no gas to carry the heat, even a fully upgraded machine crawls.
 
   ## Safeties
 

@@ -32,7 +32,6 @@ public sealed partial class GasHeatPumpWindow : FancyWindow
 
     private float _gasTemperature;
     private bool _powered = true;
-    private bool _cooling = true;
     private float _wastePressure;
 
     public GasHeatPumpWindow()
@@ -143,7 +142,6 @@ public sealed partial class GasHeatPumpWindow : FancyWindow
         float heatMoved)
     {
         _gasTemperature = gasTemperature;
-        _cooling = cooling;
         _wastePressure = wastePressure;
 
         ModeLabel.Text = Loc.GetString(cooling
@@ -181,7 +179,7 @@ public sealed partial class GasHeatPumpWindow : FancyWindow
             return;
         }
 
-        if (_wastePressure < 1f)
+        if (PumpEnabled && _wastePressure < 1f)
         {
             WarningLabel.Text = Loc.GetString("gas-heat-pump-ui-no-waste");
             WarningLabel.Visible = true;
