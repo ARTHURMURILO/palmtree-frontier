@@ -39,11 +39,13 @@
   Better parts help. The [bold]Upgrades[/bold] entry in the machine's examine menu shows what the
   installed parts changed:
 
-  - [bold]Matter bins[/bold] give the machine more heat capacity and raise the most heat it can move
-    in a second, from 78 kW on stock parts to 624 kW with the best bins.
+  - [bold]Matter bins[/bold] give the machine more heat capacity, raise the most heat it can move in
+    a second, and make it thriftier with power: the best bins take it from 78 kW to 624 kW, and a
+    full-tilt machine with them draws about 50 kW.
   - [bold]Manipulators[/bold] raise the floor the efficiency falls back to when the waste loop is
-    hot, from 25% on stock parts to 90% with the best ones. They do not help an empty pipe: with no
-    gas to carry the heat, even a fully upgraded machine crawls.
+    hot, from 25% on stock parts to 90% with the best ones, and widen the range of temperatures you
+    can ask for, from 73-593 K to 28-1193 K. They do not help an empty pipe: with no gas to carry
+    the heat, even a fully upgraded machine crawls.
 
   ## Safeties
 

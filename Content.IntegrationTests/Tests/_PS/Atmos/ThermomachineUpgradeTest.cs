@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Numerics;
+using Content.Shared.Atmos;
 using Content.Shared.Atmos.Piping.Unary.Components;
 using Content.Shared.Construction.Components;
 using Robust.Shared.GameObjects;
@@ -56,6 +57,16 @@ public sealed class ThermomachineUpgradeTest
                 Assert.That(component.HeatCapacity, Is.EqualTo(component.BaseHeatCapacity * 4f).Within(1f),
                     "a tier four matter bin should quadruple the heat moved and the power draw");
 
+                Raise(entMan, freezer, component.MachinePartTemperature, 4f);
+
+                Assert.Multiple(() =>
+                {
+                    Assert.That(component.MinTemperature, Is.EqualTo(28.15f).Within(0.01f),
+                        "tier four capacitors should let the freezer be set 45 K colder");
+                    Assert.That(component.MaxTemperature, Is.EqualTo(1193.15f).Within(0.01f),
+                        "tier four capacitors should let the freezer be set 600 K hotter");
+                });
+
                 var hellfireComponent = entMan.GetComponent<GasThermoMachineComponent>(hellfire);
 
                 Assert.Multiple(() =>
@@ -70,6 +81,16 @@ public sealed class ThermomachineUpgradeTest
 
                 Assert.That(hellfireComponent.HeatCapacity, Is.EqualTo(120_000f).Within(1f),
                     "a tier three matter bin should triple the hellfire machine's heat capacity");
+
+                Raise(entMan, hellfire, hellfireComponent.MachinePartTemperature, 3f);
+
+                Assert.Multiple(() =>
+                {
+                    Assert.That(hellfireComponent.MinTemperature, Is.EqualTo(Atmospherics.TCMB).Within(0.01f),
+                        "the hellfire freezer's own base is cold enough that better capacitors hit the gas floor");
+                    Assert.That(hellfireComponent.MaxTemperature, Is.EqualTo(993.15f).Within(0.01f),
+                        "capacitors should widen the hellfire freezer's range from its own base");
+                });
             });
         }
         finally

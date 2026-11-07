@@ -823,6 +823,12 @@ public sealed class HeatPumpTest
                         "a tier three matter bin should quadruple the most heat the machine can move");
                     Assert.That(pump.EfficiencyFloor, Is.EqualTo(pump.MaxEfficiencyFloor).Within(0.001f),
                         "tier four manipulators should reach the efficiency floor ceiling");
+                    Assert.That(pump.PowerPerHeat, Is.EqualTo(pump.BasePowerPerHeat * 0.49f).Within(0.0001f),
+                        "a tier three matter bin should make the compressor correspondingly more efficient");
+                    Assert.That(pump.MinTemperature, Is.EqualTo(28.15f).Within(0.01f),
+                        "tier four manipulators should let the machine be set 45 K colder");
+                    Assert.That(pump.MaxTemperature, Is.EqualTo(1193.15f).Within(0.01f),
+                        "tier four manipulators should let the machine be set 600 K hotter");
                 });
             });
         }
@@ -864,6 +870,8 @@ public sealed class HeatPumpTest
             var stock = 0f;
             var stockPower = 0f;
             var upgraded = 0f;
+            var maxHeat = 0f;
+            var maxLoad = 0f;
 
             await server.WaitAssertion(() =>
             {
@@ -898,6 +906,19 @@ public sealed class HeatPumpTest
 
             await server.WaitAssertion(() =>
             {
+                var pump = entMan.GetComponent<GasHeatPumpComponent>(device);
+                // Big enough a difference that the machine is running into its 624 kW ceiling: the
+                // exchange term is limited by the gas's own heat capacity, so a smaller delta would
+                // never reach the cap.
+                SetGas(entMan, device, 950f, 300f);
+
+                Raise(entMan, device);
+                maxHeat = MathF.Abs(pump.HeatMoved);
+                maxLoad = entMan.GetComponent<ApcPowerReceiverComponent>(device).Load;
+            });
+
+            await server.WaitAssertion(() =>
+            {
                 Assert.Multiple(() =>
                 {
                     Assert.That(stock, Is.GreaterThan(60_000f).And.LessThanOrEqualTo(78_000f),
@@ -906,6 +927,10 @@ public sealed class HeatPumpTest
                         "better bins should raise the ceiling and let the machine move much more heat");
                     Assert.That(stock / stockPower, Is.GreaterThan(3.9f),
                         "the heat pump should be more efficient per joule than a thermomachine");
+                    Assert.That(maxHeat, Is.GreaterThan(500_000f),
+                        "a tier four machine should be working near its 624 kW ceiling");
+                    Assert.That(maxLoad, Is.LessThan(55_000f),
+                        "a fully upgraded machine should draw about 50 kW at full tilt, not 140");
                 });
             });
         }

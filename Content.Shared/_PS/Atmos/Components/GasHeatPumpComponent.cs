@@ -69,6 +69,31 @@ public sealed partial class GasHeatPumpComponent : Component
     public float MaxTemperature = 593.15f;
 
     /// <summary>
+    /// <see cref="MinTemperature"/> and <see cref="MaxTemperature"/> with stock parts. Better
+    /// manipulators widen the range, because the compressor can build a bigger temperature lift.
+    /// </summary>
+    [DataField]
+    public float BaseMinTemperature = 73.15f;
+
+    /// <summary>
+    /// <see cref="MaxTemperature"/> with stock parts.
+    /// </summary>
+    [DataField]
+    public float BaseMaxTemperature = 593.15f;
+
+    /// <summary>
+    /// How many kelvin colder each manipulator rating above stock lets the target be set to.
+    /// </summary>
+    [DataField]
+    public float MinTemperaturePerRating = 15f;
+
+    /// <summary>
+    /// How many kelvin hotter each manipulator rating above stock lets the target be set to.
+    /// </summary>
+    [DataField]
+    public float MaxTemperaturePerRating = 200f;
+
+    /// <summary>
     /// Thermal mass of the machine itself, in joules per kelvin. Together with the gas's own heat
     /// capacity this decides how much heat can be moved per second; it is the <c>C2</c> of
     /// /tg/station's equation.
@@ -207,10 +232,25 @@ public sealed partial class GasHeatPumpComponent : Component
     /// Watts of input per watt of heat moved at low load. The inverse of a coefficient of
     /// performance: 0.15 is a COP of about 6.7 before the soft cap below makes hard work cost more.
     /// A heat pump is meant to beat a resistive heater by a wide margin; the waste loop is the price
-    /// of the capacity, not of the efficiency.
+    /// of the capacity, not of the efficiency. Better matter bins divide it by
+    /// <see cref="PowerPerHeatPerBin"/>.
     /// </summary>
     [DataField]
     public float PowerPerHeat = 0.15f;
+
+    /// <summary>
+    /// <see cref="PowerPerHeat"/> with stock parts.
+    /// </summary>
+    [DataField]
+    public float BasePowerPerHeat = 0.15f;
+
+    /// <summary>
+    /// What each matter bin rating above stock divides <see cref="PowerPerHeat"/> by. Better bins are
+    /// a better compressor, not just a bigger one: 0.7 leaves a fully upgraded machine at about 50 kW
+    /// of draw at its 624 kW ceiling, instead of the ~140 kW a bigger-only compressor would need.
+    /// </summary>
+    [DataField]
+    public float PowerPerHeatPerBin = 0.7f;
 
     /// <summary>
     /// Heat moved per second at which the power cost starts growing faster than the heat moved, in
