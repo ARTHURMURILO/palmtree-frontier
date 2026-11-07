@@ -9,10 +9,11 @@ them - green for the gas port (`COLOR_LIME`), red for the thermal/waste port
 
 Layers, bottom to top:
     body        freezer/heater off/on, plus the open-panel state
-    portWaste   red cuff of pipe on the waste end (the opposite end to the gas port)
-    portGas     green cuff of pipe on the gas port
-The cuffs are drawn over the body, the same way the /tg/station overlay was drawn on top of the
-machine, so both ports stay readable in all four facings.
+    portWaste   red port nub on the waste end (the opposite end to the gas port)
+    portGas     green port nub on the gas port
+Both nubs are the vanilla thermomachine's own `pipe` state tinted the way /tg/station tinted them, and
+are drawn over the body, the same way /tg/station drew its overlay. A nub rather than a length of pipe:
+the machine body fills its tile, so a pipe would look like it was cutting through the machine.
 
 Facing
     Body states are one-direction (the machine is a box), the port states are four-direction, the
@@ -102,35 +103,44 @@ def tint(image: Image.Image, color: tuple[int, int, int]) -> Image.Image:
     return out
 
 
-def cuff(image: Image.Image, edge: str, depth: int = 6) -> Image.Image:
-    """Keep only the band of pipe nearest `edge`, so the marking reads as a coloured cuff at the
-    port instead of a pipe hidden behind the machine body."""
-    out = image.copy()
-    px = out.load()
-    for y in range(SIZE):
-        for x in range(SIZE):
-            if px[x, y][3] == 0:
-                continue
-            keep = {
-                "top": y < depth,
-                "bottom": y >= SIZE - depth,
-                "left": x < depth,
-                "right": x >= SIZE - depth,
-            }[edge]
-            if not keep:
-                px[x, y] = (0, 0, 0, 0)
+def opposite_index(index: int) -> int:
+    """Atlas order is South, North, East, West, so opposites are pairs 0/1 and 2/3."""
+    return (index + 1) if index % 2 == 0 else (index - 1)
+
+
+# The vanilla connector, cut out of the thermomachine's own `pipe` state. South and north are the
+# original pieces (they are different heights, which is why one cannot just be the other flipped);
+# east and west are the south piece turned a quarter turn, because the vanilla ones are clipped down
+# to two or three pixels and look nothing like the other two.
+SOUTH_NUB = (13, 28, 18, 32)
+NORTH_NUB = (13, 0, 18, 5)
+
+
+def port_nub(frames: list[Image.Image], facing: str) -> Image.Image:
+    """The connector for one facing, on a 32x32 tile, flush against the machine body."""
+    out = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    index = DIRS.index(facing)
+
+    if facing == "South":
+        # Sits on the body's bottom edge.
+        out.alpha_composite(frames[index].crop(SOUTH_NUB), (SOUTH_NUB[0], SOUTH_NUB[1]))
+    elif facing == "North":
+        # One pixel taller than the south one, so it reaches the body.
+        out.alpha_composite(frames[index].crop(NORTH_NUB), (NORTH_NUB[0], NORTH_NUB[1]))
+    else:
+        nub = frames[DIRS.index("South")].crop(SOUTH_NUB).transpose(
+            Image.ROTATE_90 if facing == "East" else Image.ROTATE_270)
+        out.alpha_composite(nub, (SIZE - nub.width, 14) if facing == "East" else (0, 14))
+
     return out
 
 
 def build_states() -> dict[str, tuple[int, list[Image.Image]]]:
-    """The two generated port states, four directions each."""
-    pipe = load_frames(SOURCE / "pipe.rsi/pipeStraight.png", 4)
+    """The two port states, four directions each, tinted the way /tg/station tinted its ports."""
+    pipe = load_frames(SOURCE / "thermomachine.rsi/pipe.png", 4)
 
-    gas: list[Image.Image] = []
-    waste: list[Image.Image] = []
-    for i, facing in enumerate(DIRS):
-        gas.append(cuff(tint(pipe[i], GAS_COLOR), EDGE[facing]))
-        waste.append(cuff(tint(pipe[i], WASTE_COLOR), EDGE[OPPOSITE[facing]]))
+    gas = [tint(port_nub(pipe, DIRS[i]), GAS_COLOR) for i in range(4)]
+    waste = [tint(port_nub(pipe, DIRS[opposite_index(i)]), WASTE_COLOR) for i in range(4)]
 
     return {
         "portGas": (4, gas),
