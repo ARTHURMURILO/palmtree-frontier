@@ -16,15 +16,26 @@
   components:
   - type: Sprite
     sprite: _PS/Structures/Piping/Atmospherics/heat_pump.rsi
+    # The body stays upright and the port markings turn around it, which is what the vanilla
+    # thermomachine does: cardinal snapping keeps the body's one-direction states facing south,
+    # while the four-directional port layers pick the frame for the direction the machine faces.
+    snapCardinals: true
+    # Needed so that the port layers can opt out of the snapping below; without it the client
+    # asserts when it measures the sprite (see AtmosSpriteBoundsTest).
+    granularLayersRendering: true
     layers:
     - state: freezerOff
       map: [ "enum.PowerDeviceVisualLayers.Powered" ]
     # WiresPanel owns the visibility of this layer; the state itself never changes.
     - state: freezerPanelOpen
       map: [ "enum.WiresVisualLayers.MaintenancePanel" ]
-    # The two port markings: green is the gas port, red is the waste port.
+    # The two port markings: green is the gas port, red is the waste port. They are the layers
+    # that have to follow the rotation, so they render with the sprite's rotation and not the
+    # snapped one.
     - state: portWaste
+      renderingStrategy: Default
     - state: portGas
+      renderingStrategy: Default
   - type: Appearance
   - type: GenericVisualizer
     visuals:
