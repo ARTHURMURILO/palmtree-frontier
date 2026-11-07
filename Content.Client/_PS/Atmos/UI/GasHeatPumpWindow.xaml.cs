@@ -157,12 +157,9 @@ public sealed partial class GasHeatPumpWindow : FancyWindow
         WastePressureLabel.Text = float.Round(wastePressure).ToString();
 
         HeatMovedLabel.Text = MathF.Abs(heatMoved) < 1f
-            ? Loc.GetString("gas-heat-pump-ui-idle")
+            ? Loc.GetString("gas-heat-pump-ui-moving-none")
             : Loc.GetString("gas-heat-pump-ui-moving-amount",
-                ("amount", $"{MathF.Abs(heatMoved) / 1000f:0.#}"),
-                ("direction", Loc.GetString(cooling
-                    ? "gas-heat-pump-ui-moving-out"
-                    : "gas-heat-pump-ui-moving-in")));
+                ("amount", $"{MathF.Abs(heatMoved) / 1000f:0.#}"));
 
         RefreshWarning();
     }
