@@ -33,6 +33,9 @@
   loop heats up the machine loses efficiency, and it loses a lot more if either pipe is nearly empty
   — gas is what carries the heat away.
 
+  Because it moves heat instead of making it, the heat pump gets more cooling out of a joule than a
+  freezer does, as long as the waste loop can absorb the heat.
+
   Better parts help. The [bold]Upgrades[/bold] entry in the machine's examine menu shows what the
   installed parts changed:
 

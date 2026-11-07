@@ -292,7 +292,8 @@ public sealed class GasHeatPumpSystem : SharedGasHeatPumpSystem
     private static float GetPowerDraw(GasHeatPumpComponent comp, float heatPerSecond, float efficiency)
     {
         var heat = MathF.Abs(heatPerSecond);
-        var load = comp.IdlePower + heat * comp.PowerPerHeat * (1f + heat / comp.PowerSoftCap);
+        var load = comp.IdlePower
+                   + heat * comp.PowerPerHeat * (1f + heat * comp.PowerSoftCapSlope / comp.PowerSoftCap);
 
         return load * (1.5f - 0.5f * efficiency);
     }

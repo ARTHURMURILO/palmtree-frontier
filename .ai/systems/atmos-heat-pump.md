@@ -79,16 +79,19 @@ The mole penalty is applied *after* the parts floor, and the floor is capped at
 
 ### Power
 
-Superlinear in the heat moved, like /tg/station, but with numbers that fit an SS14 APC:
+Superlinear in the heat moved, like /tg/station, but much gentler and with numbers that fit an
+SS14 APC:
 
 ```
-load = IdlePower + |heat/s| * PowerPerHeat * (1 + |heat/s| / PowerSoftCap)
+load = IdlePower + |heat/s| * PowerPerHeat * (1 + |heat/s| * PowerSoftCapSlope / PowerSoftCap)
 load *= 1.5 - 0.5 * efficiency
 ```
 
-With the defaults a typical 18 kW job draws about 6.5 kW, and a job at the 78 kW cap draws about
-40 kW. The machine is never cheaper per joule than the vanilla freezer (COP 3.9); it buys capacity and
-both directions instead.
+With the defaults a typical 18 kW job draws about 3.5 kW, and a job at the 78 kW cap draws about
+18 kW. That is a COP of roughly 5-6 at normal load and about 4.3 at the ceiling: a heat pump is
+supposed to beat a resistive machine, and this one beats the vanilla freezer's COP 3.9 across its
+working range. The superlinear term still makes a hard job cost more per joule than a light one, it
+is just no longer punitive.
 
 ### Safeties
 
