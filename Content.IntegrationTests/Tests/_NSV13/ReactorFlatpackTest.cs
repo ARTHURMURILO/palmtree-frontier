@@ -1,8 +1,14 @@
 using System;
 using System.Linq;
+using Content.Server.NodeContainer;
+using Content.Server.NodeContainer.Nodes;
+using Content.Server.Power.Components;
 using Content.Server._NSV13.Reactor.Components;
+using Content.Shared.Atmos;
 using Content.Shared.Construction;
 using Content.Shared.Construction.Components;
+using Content.Shared.NodeContainer;
+using Content.Shared.Power;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
@@ -47,6 +53,13 @@ public sealed class ReactorFlatpackTest
             Assert.That(site!.Footprint, Is.EqualTo(new Vector2i(3, 3)));
 
             var flatpack = entMan.SpawnEntity("RbmkReactorFlatpack", testMap.GridCoords);
+            var center = mapSys.TileIndicesFor(testMap.Grid.Owner, testMap.Grid.Comp, testMap.GridCoords);
+
+            // An MV cable already running through the footprint must not stop the HV mesh being
+            // laid: a skipped tile can leave the reactor's own take-off with no HV node.
+            var mvCable = entMan.SpawnEntity("CableMV",
+                mapSys.GridTileToLocal(testMap.Grid.Owner, testMap.Grid.Comp, center + new Vector2i(1, 1)));
+
             var reactor = entMan.SpawnEntity("RbmkNuclearReactor", testMap.GridCoords);
             entMan.EventBus.RaiseLocalEvent(reactor, new FlatpackUnpackedEvent(flatpack, EntityUid.Invalid, reactor), true);
 
@@ -56,7 +69,40 @@ public sealed class ReactorFlatpackTest
             Assert.That(entMan.GetComponent<TransformComponent>(reactor).Anchored, Is.True,
                 "the reactor has to be bolted down or its nodes never join a net");
 
-            var center = mapSys.TileIndicesFor(testMap.Grid.Owner, testMap.Grid.Comp, testMap.GridCoords);
+            var hvCables = assembly.Parts
+                .Where(p => entMan.TryGetComponent<CableComponent>(p, out var cable)
+                            && cable.CableType == CableType.HighVoltage)
+                .ToList();
+            Assert.That(hvCables, Has.Count.EqualTo(9), "every footprint tile needs its own HV cable");
+            Assert.That(entMan.HasComponent<CableComponent>(mvCable), Is.True,
+                "the flatpack must not delete a cable that was already there");
+
+            // The stubs have to be turned onto their own ports; copying the reactor's rotation
+            // covers the north port by accident, but lays east and west across their ports.
+            var pipeStubs = assembly.Parts
+                .Where(p => entMan.TryGetComponent<NodeContainerComponent>(p, out var container)
+                            && container.Nodes.Values.Any(node => node is PipeNode))
+                .ToList();
+            Assert.That(pipeStubs, Has.Count.EqualTo(3), "one straight stub on each of the three ports");
+
+            foreach (var stub in pipeStubs)
+            {
+                var stubPos = mapSys.TileIndicesFor(testMap.Grid.Owner, testMap.Grid.Comp,
+                    entMan.GetComponent<TransformComponent>(stub).Coordinates);
+                var offset = stubPos - center;
+
+                // Vector2i.GetCardinalDir() uses the raw atan2 angle, which is not the convention
+                // Direction.ToAngle() uses; ToIntVec() is what the pipe nodes themselves offset by.
+                var toStub = DirectionExtensions.AllDirections.Single(dir => dir.ToIntVec() == offset);
+                var node = entMan.GetComponent<NodeContainerComponent>(stub).Nodes.Values
+                    .OfType<PipeNode>()
+                    .Single();
+
+                Assert.That(node.CurrentPipeDirection.HasDirection(toStub.GetOpposite().ToPipeDirection()), Is.True,
+                    $"the {toStub} stub at {stubPos} (centre {center}) is {node.CurrentPipeDirection}, " +
+                    $"but its port needs {toStub.GetOpposite().ToPipeDirection()}");
+            }
+
             var reinforced = tiles["FloorReinforced"].TileId;
 
             for (var x = -1; x <= 1; x++)

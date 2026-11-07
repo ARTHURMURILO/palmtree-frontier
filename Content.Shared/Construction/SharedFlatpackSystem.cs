@@ -93,6 +93,12 @@ public abstract class SharedFlatpackSystem : EntitySystem
     private void TryUnpack(Entity<FlatpackComponent> ent, EntityUid user)
     {
         var (uid, comp) = ent;
+
+        // Two players can finish their do-afters on the same tick. By the time the second runs, the
+        // first has already queued the flatpack for deletion, so it must not spawn a second copy.
+        if (TerminatingOrDeleted(uid) || EntityManager.IsQueuedForDeletion(uid))
+            return;
+
         if (_container.IsEntityInContainer(ent))
             return;
 

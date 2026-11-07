@@ -10,6 +10,7 @@ using Content.Shared.Database;
 using Content.Shared.DoAfter;
 using Content.Shared.NodeContainer;
 using Content.Shared.Popups;
+using Content.Shared.Power;
 using Content.Shared.Verbs;
 using Content.Shared._NSV13.Reactor;
 using Robust.Shared.Containers;
@@ -108,7 +109,6 @@ public sealed class ReactorAssemblySystem : EntitySystem
             return;
 
         var center = _map.TileIndicesFor(gridUid, grid, xform.Coordinates);
-        var rotation = xform.LocalRotation;
         var tiles = FootprintTiles(center, pack.Footprint);
 
         if (pack.Floor != null)
@@ -144,12 +144,17 @@ public sealed class ReactorAssemblySystem : EntitySystem
                 if (node is not PipeNode pipe)
                     continue;
 
-                var pos = center.Offset(pipe.CurrentPipeDirection.ToDirection());
+                var portDir = pipe.CurrentPipeDirection.ToDirection();
+                var pos = center.Offset(portDir);
                 if (HasPipe(gridUid, grid, pos))
                     continue;
 
                 var pipeEnt = Spawn("GasPipeStraight", _map.GridTileToLocal(gridUid, grid, pos));
-                _transform.SetLocalRotation(pipeEnt, rotation);
+
+                // A straight pipe runs north-south at zero rotation. Only the moderator port is on
+                // that axis, so copying the reactor's rotation would lay the two coolant stubs
+                // across their ports, where their nodes never join the reactor's pipe net.
+                _transform.SetLocalRotation(pipeEnt, portDir.ToAngle() - Direction.North.ToAngle());
                 if (!Transform(pipeEnt).Anchored)
                     _transform.AnchorEntity(pipeEnt);
                 assembly.Parts.Add(pipeEnt);
@@ -175,7 +180,9 @@ public sealed class ReactorAssemblySystem : EntitySystem
     {
         foreach (var anchored in _map.GetAnchoredEntities((gridUid, grid), pos))
         {
-            if (HasComp<CableComponent>(anchored))
+            // Only an existing HV run can stand in for the mesh tile. An APC or MV cable through
+            // the footprint must not skip the HV cable, or the reactor's take-off is left unwired.
+            if (TryComp<CableComponent>(anchored, out var cable) && cable.CableType == CableType.HighVoltage)
                 return true;
         }
 
@@ -270,6 +277,11 @@ public sealed class ReactorAssemblySystem : EntitySystem
     private void OnDeconstructDoAfter(Entity<ReactorAssemblyComponent> ent, ref ReactorDeconstructDoAfterEvent args)
     {
         if (args.Cancelled)
+            return;
+
+        // Two players can finish their do-afters on the same tick. The first already handed the
+        // flatpack back and queued the reactor for deletion, so the second must not refund another.
+        if (TerminatingOrDeleted(ent.Owner) || EntityManager.IsQueuedForDeletion(ent.Owner))
             return;
 
         var reason = GetBlockReason(ent);
