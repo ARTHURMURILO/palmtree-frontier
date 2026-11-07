@@ -7,6 +7,7 @@ using Content.Shared.Database;
 using Content.Shared.Emag.Systems;
 using Content.Shared.Examine;
 using Content.Shared.Power;
+using Content.Shared.Power.EntitySystems;
 using Content.Shared.UserInterface;
 using Robust.Shared.Serialization;
 
@@ -21,6 +22,7 @@ public abstract class SharedGasHeatPumpSystem : EntitySystem
     [Dependency] private readonly ISharedAdminLogManager _adminLogger = default!;
     [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
     [Dependency] protected readonly SharedUserInterfaceSystem UserInterfaceSystem = default!;
+    [Dependency] protected readonly SharedPowerReceiverSystem Receiver = default!;
 
     public override void Initialize()
     {
@@ -144,7 +146,10 @@ public abstract class SharedGasHeatPumpSystem : EntitySystem
         if (!TryComp(ent.Owner, out AppearanceComponent? appearance))
             return;
 
-        var state = (ent.Comp.Cooling, ent.Comp.Enabled) switch
+        // The running art means "working right now", so an enabled machine without power shows as off.
+        var running = ent.Comp.Enabled && Receiver.IsPowered(ent.Owner);
+
+        var state = (ent.Comp.Cooling, running) switch
         {
             (true, true) => GasHeatPumpVisualState.OnCooling,
             (true, false) => GasHeatPumpVisualState.OffCooling,

@@ -33,6 +33,7 @@ from __future__ import annotations
 import argparse
 import json
 import pathlib
+import shutil
 
 from PIL import Image
 
@@ -43,6 +44,7 @@ OUT = REPO / "Resources/Textures/_PS/Structures/Piping/Atmospherics"
 SIZE = 32
 DIRS = ["South", "North", "East", "West"]  # RSI 2x2 order
 
+# Copied verbatim, frames and animation delays included: the running states are animated.
 BODY_STATES = [
     "freezerOff",
     "freezerOn",
@@ -121,13 +123,8 @@ def cuff(image: Image.Image, edge: str, depth: int = 6) -> Image.Image:
 
 
 def build_states() -> dict[str, tuple[int, list[Image.Image]]]:
-    """state name -> (directions, frames), with the layers already composited."""
+    """The two generated port states, four directions each."""
     pipe = load_frames(SOURCE / "pipe.rsi/pipeStraight.png", 4)
-
-    states: dict[str, tuple[int, list[Image.Image]]] = {}
-
-    for name in BODY_STATES:
-        states[name] = (1, load_frames(SOURCE / "thermomachine.rsi" / f"{name}.png", 1))
 
     gas: list[Image.Image] = []
     waste: list[Image.Image] = []
@@ -135,15 +132,19 @@ def build_states() -> dict[str, tuple[int, list[Image.Image]]]:
         gas.append(cuff(tint(pipe[i], GAS_COLOR), EDGE[facing]))
         waste.append(cuff(tint(pipe[i], WASTE_COLOR), EDGE[OPPOSITE[facing]]))
 
-    states["portGas"] = (4, gas)
-    states["portWaste"] = (4, waste)
-    return states
+    return {
+        "portGas": (4, gas),
+        "portWaste": (4, waste),
+    }
 
 
-def write_rsi(folder: pathlib.Path, states: dict[str, tuple[int, list[Image.Image]]]):
+def write_rsi(folder: pathlib.Path, generated: dict[str, tuple[int, list[Image.Image]]]):
     folder.mkdir(parents=True, exist_ok=True)
     for old in folder.glob("*.png"):
         old.unlink()
+
+    source_meta = json.loads((SOURCE / "thermomachine.rsi/meta.json").read_text())
+    source_states = {state["name"]: state for state in source_meta["states"]}
 
     meta = {
         "version": 1,
@@ -157,7 +158,12 @@ def write_rsi(folder: pathlib.Path, states: dict[str, tuple[int, list[Image.Imag
         "states": [],
     }
 
-    for name, (directions, frames) in states.items():
+    # The body states are the vanilla files, untouched, so the running animation survives.
+    for name in BODY_STATES:
+        shutil.copyfile(SOURCE / "thermomachine.rsi" / f"{name}.png", folder / f"{name}.png")
+        meta["states"].append(source_states[name])
+
+    for name, (directions, frames) in generated.items():
         sheet = Image.new("RGBA", (SIZE * 2, SIZE * 2), (0, 0, 0, 0))
         for i, frame in enumerate(frames):
             sheet.paste(frame, ((i % 2) * SIZE, (i // 2) * SIZE))

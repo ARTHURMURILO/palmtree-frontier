@@ -6,8 +6,8 @@ using Content.Server.NodeContainer.Nodes;
 using Content.Server.Power.Components;
 using Content.Shared._PS.Atmos.Components;
 using Content.Shared._PS.Atmos.EntitySystems;
-using Content.Shared.Construction.Components;
 using Content.Shared.Atmos;
+using Content.Shared.Construction.Components;
 using Content.Shared.Popups;
 using Content.Shared.Power.EntitySystems;
 using JetBrains.Annotations;
@@ -21,20 +21,20 @@ namespace Content.Server._PS.Atmos.EntitySystems;
 /// amount is pushed into (or taken out of) the waste port, so no heat is created or destroyed.
 /// </summary>
 /// <remarks>
-/// The maths is /tg/station's binary thermomachine, with the power draw rescaled to an SS14 APC:
+/// The maths is /tg/station's binary thermomachine, with three corrections the original needed for
+/// Space Station 14:
 /// <code>
 /// C1      gas heat capacity, C2 machine heat capacity
-/// heat    (target - gas) * C1*C2/(C1+C2) * dt
-/// cooling the gas loses heat * efficiency, the waste loop gains that plus the compressor's own heat
-/// heating the gas gains heat * efficiency, taken straight out of the waste loop
+/// rate    clamp((target - gas) * C1*C2/(C1+C2), -MaxHeatRate, MaxHeatRate)
+/// heat    rate * dt * efficiency, signed: negative means the gas loses it
 /// </code>
-/// <para>
-/// /tg/station only moved heat when cooling - a heating machine made heat out of nothing. This one
-/// takes it from the waste loop in both directions, which is what a heat pump is, and is why the
-/// waste loop is never optional.
-/// </para>
-/// Efficiency is what makes it a machine and not a magic heat deleter: it falls as the waste loop
-/// runs hotter than the gas, and it collapses if either side has almost no gas in it.
+/// <list type="number">
+/// <item>The transfer is clamped by what the waste loop can actually supply or absorb, because a gas
+/// mixture here is clamped to <see cref="Atmospherics.TCMB"/>..<see cref="Atmospherics.Tmax"/> and an
+/// unclamped transfer would silently create or destroy the difference.</item>
+/// <item>Heating takes the heat out of the waste loop instead of making it.</item>
+/// <item>The compressor's waste heat is the electricity it just drew, so it cannot exceed it.</item>
+/// </list>
 /// </remarks>
 [UsedImplicitly]
 public sealed class GasHeatPumpSystem : SharedGasHeatPumpSystem
@@ -51,8 +51,8 @@ public sealed class GasHeatPumpSystem : SharedGasHeatPumpSystem
     {
         base.Initialize();
 
-        SubscribeLocalEvent<GasHeatPumpComponent, MapInitEvent>(OnMapInit);
         SubscribeLocalEvent<GasHeatPumpComponent, RefreshPartsEvent>(OnRefreshParts);
+        SubscribeLocalEvent<GasHeatPumpComponent, MapInitEvent>(OnMapInit);
         SubscribeLocalEvent<GasHeatPumpComponent, AtmosDeviceUpdateEvent>(OnAtmosUpdate);
     }
 
@@ -65,7 +65,7 @@ public sealed class GasHeatPumpSystem : SharedGasHeatPumpSystem
         var lasers = args.PartRatings.GetValueOrDefault(ent.Comp.MachinePartEfficiency, 1f);
 
         ent.Comp.HeatCapacity = ent.Comp.BaseHeatCapacity * MathF.Pow(2f, bins - 1f);
-        ent.Comp.EfficiencyFloor = MathF.Min(ent.Comp.BaseEfficiencyFloor * lasers, 1f);
+        ent.Comp.EfficiencyFloor = MathF.Min(ent.Comp.BaseEfficiencyFloor * lasers, ent.Comp.MaxEfficiencyFloor);
     }
 
     private void OnMapInit(Entity<GasHeatPumpComponent> ent, ref MapInitEvent args)
@@ -102,7 +102,7 @@ public sealed class GasHeatPumpSystem : SharedGasHeatPumpSystem
         if (!_nodeContainer.TryGetNodes(ent.Owner, comp.GasPortName, comp.WastePortName,
                 out PipeNode? gasNode, out PipeNode? wasteNode))
         {
-            SetLoad(ent, comp.IdlePower);
+            Idle(ent);
             return;
         }
 
@@ -112,7 +112,7 @@ public sealed class GasHeatPumpSystem : SharedGasHeatPumpSystem
         // Both ports on one pipeline, or a port that isn't hooked up to a pipeline at all.
         if (ReferenceEquals(gas, waste) || gas.Immutable || waste.Immutable)
         {
-            SetLoad(ent, comp.IdlePower);
+            Idle(ent);
             return;
         }
 
@@ -123,7 +123,7 @@ public sealed class GasHeatPumpSystem : SharedGasHeatPumpSystem
 
         if (!comp.Enabled || !_power.IsPowered(ent.Owner))
         {
-            SetLoad(ent, comp.IdlePower);
+            Idle(ent);
             return;
         }
 
@@ -141,28 +141,14 @@ public sealed class GasHeatPumpSystem : SharedGasHeatPumpSystem
 
         // A waste loop this hot means the safeties are the only thing between the machine and a hole in
         // the ship.
-        if (cooling && comp.WasteTemperature > comp.SafeTemperature)
-        {
-            if (comp.Safeties)
-            {
-                comp.Enabled = false;
-                Dirty(ent);
-                UpdateAppearance(ent);
-                UpdateUi(ent);
-                _popup.PopupEntity(Loc.GetString("gas-heat-pump-safeties-tripped"), ent, PopupType.MediumCaution);
-                SetLoad(ent, comp.IdlePower);
-                return;
-            }
-
-            Detonate(ent);
+        if (cooling && comp.WasteTemperature > comp.SafeTemperature && !CheckSafeties(ent))
             return;
-        }
 
         // Nothing to do when the gas already sits on the setpoint.
         if (MathF.Abs(delta) < 0.1f || gas.TotalMoles < 0.01f)
         {
             comp.Efficiency = 1f;
-            SetLoad(ent, comp.IdlePower);
+            Idle(ent);
             return;
         }
 
@@ -170,56 +156,99 @@ public sealed class GasHeatPumpSystem : SharedGasHeatPumpSystem
         if (waste.TotalMoles < 0.01f)
         {
             comp.Efficiency = 0f;
-            SetLoad(ent, comp.IdlePower);
+            Idle(ent);
             return;
         }
 
         var gasCapacity = _atmosphere.GetHeatCapacity(gas, true);
-        if (gasCapacity <= 0f)
+        var wasteCapacity = _atmosphere.GetHeatCapacity(waste, true);
+        if (gasCapacity <= 0f || wasteCapacity <= 0f)
         {
             comp.Efficiency = 0f;
-            SetLoad(ent, comp.IdlePower);
+            Idle(ent);
             return;
         }
 
-        // Heat the machine can move this tick, before efficiency.
-        var exchange = gasCapacity * comp.HeatCapacity / (gasCapacity + comp.HeatCapacity);
-        var heat = delta * exchange * dt;
-
         var efficiency = GetEfficiency(comp, gas, waste, cooling);
-        comp.Efficiency = efficiency;
-        comp.HeatMoved = heat * efficiency / MathF.Max(dt, 1e-4f);
 
-        // Signed: negative means the gas loses the heat and the waste loop gains it.
-        var exchanged = heat * efficiency;
+        // Heat the machine would like to move this tick: a two-capacity exchange, capped so a big
+        // temperature difference cannot move an unreasonable amount of heat at once.
+        var exchange = gasCapacity * comp.HeatCapacity / (gasCapacity + comp.HeatCapacity);
+        var rate = Math.Clamp(delta * exchange, -comp.MaxHeatRate, comp.MaxHeatRate);
+        var exchanged = rate * efficiency * dt;
 
-        // The compressor's own waste heat only exists while it is working hard, so the machine can
-        // settle on its setpoint instead of always trickling heat into the loop.
-        var motor = cooling && MathF.Abs(delta) >= comp.MotorHeatDeadband ? comp.MotorHeat * dt : 0f;
+        // Never move more heat than either side can actually take: the mixtures clamp at TCMB/Tmax and
+        // an over-sized transfer would silently create or destroy the difference.
+        var headroom = MathF.Min(
+            exchanged > 0f
+                ? gasCapacity * MathF.Max(0f, Atmospherics.Tmax - gas.Temperature)
+                : gasCapacity * MathF.Max(0f, gas.Temperature - Atmospherics.TCMB),
+            exchanged > 0f
+                ? wasteCapacity * MathF.Max(0f, waste.Temperature - Atmospherics.TCMB)
+                : wasteCapacity * MathF.Max(0f, Atmospherics.Tmax - waste.Temperature));
+        exchanged = Math.Clamp(exchanged, -headroom, headroom);
+
+        var heatPerSecond = exchanged / MathF.Max(dt, 1e-4f);
+        var load = GetPowerDraw(comp, heatPerSecond, efficiency);
+
+        // Everything the machine draws ends up as heat, and while cooling it ends up in the loop.
+        var motor = cooling && MathF.Abs(delta) >= comp.MotorHeatDeadband ? load * dt : 0f;
 
         _atmosphere.AddHeat(gas, exchanged);
         _atmosphere.AddHeat(waste, -exchanged + motor);
 
-        SetLoad(ent, GetPowerDraw(comp, comp.HeatMoved, efficiency));
+        comp.Efficiency = efficiency;
+        comp.HeatMoved = heatPerSecond;
+        SetLoad(ent, load);
+    }
+
+    /// <summary>
+    /// Handles the over-temperature waste loop. Returns false when the caller should stop processing.
+    /// </summary>
+    private bool CheckSafeties(Entity<GasHeatPumpComponent> ent)
+    {
+        var comp = ent.Comp;
+
+        if (comp.Safeties)
+        {
+            comp.Enabled = false;
+            Dirty(ent);
+            UpdateAppearance(ent);
+            UpdateUi(ent);
+            _popup.PopupEntity(Loc.GetString("gas-heat-pump-safeties-tripped"), ent, PopupType.MediumCaution);
+            Idle(ent);
+            return false;
+        }
+
+        if (_timing.CurTime < comp.NextDetonationCheck)
+            return false;
+
+        comp.NextDetonationCheck = _timing.CurTime + comp.DetonationCheckInterval;
+        Detonate(ent);
+        return false;
     }
 
     /// <summary>
     /// How well the machine can move heat right now, from 0 to 1. Cooling is the hard direction: the
-    /// hotter the waste loop already is, the less of the heat it will take, and a nearly empty pipe on
-    /// either side strangles the exchange.
+    /// hotter the waste loop already is, the less of the heat it will take. Either direction is
+    /// strangled by a nearly empty pipe, because gas is what carries the heat.
     /// </summary>
     private static float GetEfficiency(GasHeatPumpComponent comp, GasMixture gas, GasMixture waste, bool cooling)
     {
-        if (!cooling)
-            return 1f;
+        var efficiency = 1f;
 
-        // Log10 is already 0 at 1 K of difference, so the penalty never starts negative.
-        var difference = MathF.Max(1f, waste.Temperature - gas.Temperature);
-        var efficiency = Math.Clamp(1f - MathF.Log10(difference) * 0.08f, 0.65f, 1f);
+        if (cooling)
+        {
+            // Log10 is already 0 at 1 K of difference, so the penalty never starts negative.
+            var difference = MathF.Max(1f, waste.Temperature - gas.Temperature);
+            efficiency = Math.Clamp(1f - MathF.Log10(difference) * 0.08f, 0.65f, 1f);
 
-        efficiency *= MathF.Min(MoleEfficiency(comp, gas.TotalMoles), MoleEfficiency(comp, waste.TotalMoles));
+            // Parts decide how far the machine can degrade before it stops caring.
+            efficiency = MathF.Max(efficiency, comp.EfficiencyFloor);
+        }
 
-        return MathF.Max(efficiency, comp.EfficiencyFloor);
+        // The mole penalty applies after the parts floor, so good parts cannot ignore an empty pipe.
+        return efficiency * MathF.Min(MoleEfficiency(comp, gas.TotalMoles), MoleEfficiency(comp, waste.TotalMoles));
     }
 
     /// <summary>
@@ -245,6 +274,15 @@ public sealed class GasHeatPumpSystem : SharedGasHeatPumpSystem
         return load * (1.5f - 0.5f * efficiency);
     }
 
+    /// <summary>
+    /// Draws idle power while the machine is on, and nothing while it is off.
+    /// </summary>
+    private void Idle(Entity<GasHeatPumpComponent> ent)
+    {
+        var running = ent.Comp.Enabled && _power.IsPowered(ent.Owner);
+        SetLoad(ent, running ? ent.Comp.IdlePower : 0f);
+    }
+
     private void SetLoad(Entity<GasHeatPumpComponent> ent, float load)
     {
         if (!TryComp(ent.Owner, out ApcPowerReceiverComponent? receiver))
@@ -263,8 +301,12 @@ public sealed class GasHeatPumpSystem : SharedGasHeatPumpSystem
     /// </remarks>
     private void Detonate(Entity<GasHeatPumpComponent> ent)
     {
-        // 75% at the safe temperature, 100% at a hundred million kelvin.
-        var chance = Math.Clamp(MathF.Log(ent.Comp.WasteTemperature, 6f) * 10f, 0f, 100f) / 100f;
+        var temperature = ent.Comp.WasteTemperature;
+        if (temperature < ent.Comp.SafeTemperature + ent.Comp.DetonationMargin)
+            return;
+
+        // log6(500 000) * 10 is about 73%, and 6^10 is where it reaches 100%.
+        var chance = Math.Clamp(MathF.Log(temperature, 6f) * 10f, 0f, 100f) / 100f;
         if (!_random.Prob(chance))
             return;
 

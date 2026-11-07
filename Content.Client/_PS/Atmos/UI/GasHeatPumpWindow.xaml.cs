@@ -31,6 +31,9 @@ public sealed partial class GasHeatPumpWindow : FancyWindow
     public float MinTemperature { get; set; } = 73.15f;
 
     private float _gasTemperature;
+    private bool _powered = true;
+    private bool _cooling = true;
+    private float _wastePressure;
 
     public GasHeatPumpWindow()
     {
@@ -102,6 +105,16 @@ public sealed partial class GasHeatPumpWindow : FancyWindow
     }
 
     /// <summary>
+    /// Whether the machine has power. An unpowered machine shows a warning instead of pretending it
+    /// is working.
+    /// </summary>
+    public void SetPowered(bool powered)
+    {
+        _powered = powered;
+        RefreshWarning();
+    }
+
+    /// <summary>
     /// Sets the safeties checkbox without raising <see cref="SafetiesChanged"/>.
     /// </summary>
     public void SetSafeties(bool safeties)
@@ -130,6 +143,8 @@ public sealed partial class GasHeatPumpWindow : FancyWindow
         float heatMoved)
     {
         _gasTemperature = gasTemperature;
+        _cooling = cooling;
+        _wastePressure = wastePressure;
 
         ModeLabel.Text = Loc.GetString(cooling
             ? "gas-heat-pump-ui-mode-cooling"
@@ -151,10 +166,28 @@ public sealed partial class GasHeatPumpWindow : FancyWindow
                     ? "gas-heat-pump-ui-moving-out"
                     : "gas-heat-pump-ui-moving-in")));
 
-        // Nothing in the waste loop means the heat has nowhere to go.
-        var noWaste = cooling && wastePressure < 1f;
-        WarningLabel.Visible = noWaste;
-        if (noWaste)
+        RefreshWarning();
+    }
+
+    /// <summary>
+    /// One line of warning, most useful one first: no power, then nothing in the waste loop.
+    /// </summary>
+    private void RefreshWarning()
+    {
+        if (PumpEnabled && !_powered)
+        {
+            WarningLabel.Text = Loc.GetString("gas-heat-pump-ui-no-power");
+            WarningLabel.Visible = true;
+            return;
+        }
+
+        if (_wastePressure < 1f)
+        {
             WarningLabel.Text = Loc.GetString("gas-heat-pump-ui-no-waste");
+            WarningLabel.Visible = true;
+            return;
+        }
+
+        WarningLabel.Visible = false;
     }
 }

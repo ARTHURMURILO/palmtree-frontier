@@ -62,6 +62,8 @@
     noRot: false
   - type: ApcPowerReceiver
     powerLoad: 500
+  - type: WiresPanel
+  - type: WiresVisuals
   - type: ActivatableUI
     key: enum.GasHeatPumpUiKey.Key
   - type: ActivatableUIRequiresAnchor

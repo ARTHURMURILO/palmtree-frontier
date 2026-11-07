@@ -54,7 +54,7 @@ public sealed class HeatPumpTest
                 var pump = entMan.GetComponent<GasHeatPumpComponent>(device);
                 pump.Enabled = true;
                 pump.TargetTemperature = 300f;
-                pump.MotorHeat = 0f;
+                pump.MotorHeatDeadband = 1000f;
                 entMan.GetComponent<ApcPowerReceiverComponent>(device).Powered = true;
 
                 (gas, waste) = GetAir(entMan, device);
@@ -119,7 +119,7 @@ public sealed class HeatPumpTest
                 var pump = entMan.GetComponent<GasHeatPumpComponent>(device);
                 pump.Enabled = true;
                 pump.TargetTemperature = 500f;
-                pump.MotorHeat = 0f;
+                pump.MotorHeatDeadband = 1000f;
                 entMan.GetComponent<ApcPowerReceiverComponent>(device).Powered = true;
 
                 (gas, waste) = GetAir(entMan, device);
@@ -287,7 +287,7 @@ public sealed class HeatPumpTest
             {
                 gas.SetMoles(Gas.Oxygen, 100f);
                 gas.Temperature = 400f;
-                waste.Clear();
+                waste.SetMoles(Gas.Oxygen, 2f);
                 waste.Temperature = 300f;
 
                 Raise(entMan, device);
@@ -297,8 +297,8 @@ public sealed class HeatPumpTest
             await server.WaitAssertion(() =>
             {
                 Assert.That(fullEfficiency, Is.GreaterThan(0.5f));
-                Assert.That(emptyEfficiency, Is.LessThan(fullEfficiency),
-                    "An empty waste loop must slow the machine down.");
+                Assert.That(emptyEfficiency, Is.LessThan(fullEfficiency / 2f),
+                    "A waste loop with almost no gas in it must strangle the machine.");
             });
         }
         finally
@@ -407,6 +407,127 @@ public sealed class HeatPumpTest
             {
                 Assert.That(gas.Temperature, Is.EqualTo(400f).Within(0.01f),
                     "Without a waste loop there is nowhere for the heat to go.");
+            });
+        }
+        finally
+        {
+            await pair.CleanReturnAsync();
+        }
+    }
+
+    /// <summary>
+    /// The safeties have to be reachable: a gas mixture cannot go above `Atmospherics.Tmax`, so a
+    /// threshold above it would never fire.
+    /// </summary>
+    [Test]
+    public async Task HeatPumpSafetiesShutTheMachineDown()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+
+        try
+        {
+            var server = pair.Server;
+            var entMan = server.EntMan;
+            var testMap = await pair.CreateTestMap();
+
+            var coords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
+
+            EntityUid device = default;
+
+            await server.WaitPost(() =>
+            {
+                entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, -1f)));
+                device = entMan.SpawnEntity("GasHeatPump", coords);
+                entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, 1f)));
+            });
+
+            await pair.RunTicksSync(5);
+
+            await server.WaitAssertion(() =>
+            {
+                var pump = entMan.GetComponent<GasHeatPumpComponent>(device);
+                pump.Enabled = true;
+                pump.TargetTemperature = 250f;
+                pump.Safeties = true;
+                entMan.GetComponent<ApcPowerReceiverComponent>(device).Powered = true;
+
+                var (gas, waste) = GetAir(entMan, device);
+                gas.SetMoles(Gas.Oxygen, 100f);
+                gas.Temperature = 300f;
+                waste.SetMoles(Gas.Oxygen, 100f);
+                waste.Temperature = pump.SafeTemperature + 1000f;
+            });
+
+            await server.WaitAssertion(() => Raise(entMan, device));
+
+            await server.WaitAssertion(() =>
+            {
+                var pump = entMan.GetComponent<GasHeatPumpComponent>(device);
+
+                Assert.That(pump.SafeTemperature, Is.LessThan(Atmospherics.Tmax),
+                    "A threshold above Tmax can never be reached.");
+                Assert.That(pump.Enabled, Is.False, "The safeties should switch the machine off.");
+            });
+        }
+        finally
+        {
+            await pair.CleanReturnAsync();
+        }
+    }
+
+    /// <summary>
+    /// A huge temperature difference must not move an unbounded amount of heat per second.
+    /// </summary>
+    [Test]
+    public async Task HeatPumpRespectsItsMaximumHeatRate()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+
+        try
+        {
+            var server = pair.Server;
+            var entMan = server.EntMan;
+            var testMap = await pair.CreateTestMap();
+
+            var coords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
+
+            EntityUid device = default;
+            GasMixture gas = default!;
+
+            await server.WaitPost(() =>
+            {
+                entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, -1f)));
+                device = entMan.SpawnEntity("GasHeatPump", coords);
+                entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, 1f)));
+            });
+
+            await pair.RunTicksSync(5);
+
+            await server.WaitAssertion(() =>
+            {
+                var pump = entMan.GetComponent<GasHeatPumpComponent>(device);
+                pump.Enabled = true;
+                pump.TargetTemperature = 100f;
+                pump.MotorHeatDeadband = 1000f;
+                entMan.GetComponent<ApcPowerReceiverComponent>(device).Powered = true;
+
+                var (gasPort, waste) = GetAir(entMan, device);
+                gas = gasPort;
+                gas.SetMoles(Gas.Oxygen, 100f);
+                gas.Temperature = Atmospherics.T20C;
+                waste.SetMoles(Gas.Oxygen, 100f);
+                waste.Temperature = 300f;
+            });
+
+            await server.WaitAssertion(() => Raise(entMan, device));
+
+            await server.WaitAssertion(() =>
+            {
+                var pump = entMan.GetComponent<GasHeatPumpComponent>(device);
+
+                Assert.That(pump.HeatMoved, Is.Negative, "The machine should be cooling.");
+                Assert.That(MathF.Abs(pump.HeatMoved), Is.LessThanOrEqualTo(pump.MaxHeatRate + 1f),
+                    "The heat rate must be capped.");
             });
         }
         finally

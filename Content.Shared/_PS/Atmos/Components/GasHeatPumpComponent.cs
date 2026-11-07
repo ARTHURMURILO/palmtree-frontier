@@ -85,6 +85,14 @@ public sealed partial class GasHeatPumpComponent : Component
     public float EfficiencyFloor = 0.25f;
 
     /// <summary>
+    /// Ceiling for <see cref="EfficiencyFloor"/>. /tg/station let good parts reach 1.0, which made
+    /// the machine ignore both the waste loop temperature and an empty pipe; capping it keeps the
+    /// machine demanding at every tier.
+    /// </summary>
+    [DataField]
+    public float MaxEfficiencyFloor = 0.9f;
+
+    /// <summary>
     /// Machine part whose rating sets <see cref="HeatCapacity"/> - the bin rating in /tg/station's
     /// formula, where <c>heat_capacity = 5000 * 2^(rating-1)</c>.
     /// </summary>
@@ -111,10 +119,13 @@ public sealed partial class GasHeatPumpComponent : Component
     public float BaseEfficiencyFloor = 0.25f;
 
     /// <summary>
-    /// Waste heat the compressor itself puts into the waste loop, in joules per second.
+    /// Hard ceiling on how much heat the machine can move, in joules per second. Without it a big
+    /// temperature difference would move hundreds of kilowatts per second and take an APC with it;
+    /// 50 kW is about two and a half times what a vanilla freezer can do.
     /// </summary>
     [DataField]
-    public float MotorHeat = 5000f;
+    [GuidebookData]
+    public float MaxHeatRate = 50_000f;
 
     /// <summary>
     /// The compressor stops adding its own waste heat once the gas is this close to the setpoint, so
@@ -127,8 +138,34 @@ public sealed partial class GasHeatPumpComponent : Component
     /// If the waste loop reaches this temperature the machine shuts itself down. With
     /// <see cref="Safeties"/> disabled it detonates instead.
     /// </summary>
+    /// <remarks>
+    /// /tg/station used 500 000 K, but a Space Station 14 gas mixture is clamped at
+    /// <see cref="Atmospherics.Tmax"/> (262 144 K), so anything above that could never be reached.
+    /// </remarks>
     [DataField]
-    public float SafeTemperature = 500_000f;
+    public float SafeTemperature = 200_000f;
+
+    /// <summary>
+    /// How far past <see cref="SafeTemperature"/> the loop has to be before the machine is allowed to
+    /// give up and blow itself apart. Stops a machine that is merely at the limit from detonating.
+    /// </summary>
+    [DataField]
+    public float DetonationMargin = 2000f;
+
+    /// <summary>
+    /// How often the detonation is rolled for, once the safeties are off. /tg/station gated this
+    /// behind a warning delay; without it the roll would happen every atmos tick and the machine
+    /// would be gone within a second.
+    /// </summary>
+    [DataField]
+    public TimeSpan DetonationCheckInterval = TimeSpan.FromSeconds(1);
+
+    /// <summary>
+    /// Earliest time the next detonation roll may happen.
+    /// </summary>
+    [DataField(customTypeSerializer: typeof(TimeOffsetSerializer))]
+    [AutoPausedField]
+    public TimeSpan NextDetonationCheck;
 
     /// <summary>
     /// Whether the thermal safeties are in place. Turning them off is what lets the waste loop run
