@@ -21,9 +21,10 @@ Facing
     a heat pump replaces a freezer in a wall without moving the pipe.
 
 Pipe layers
-    There is only one RSI. The machine body fills its tile, so the 7 px shift the pumps use for
-    pump_alt1/pump_alt2 would push it out of its cell; the three pipe layer prototypes share this
-    sprite and differ only in AtmosPipeLayers.pipeLayer.
+    The body is one file, but the two port-marking layers get their own heat_pump_alt1.rsi /
+    heat_pump_alt2.rsi, cut to the same 7 px offsets the vanilla pipe_alt1/pipe_alt2 sprites use, so
+    the markings follow the pipes on each layer and the placement ghost shows the layer the cursor
+    picked. The body still fills its tile, so it is never shifted.
 
 Usage:
     Tools/gen_heat_pump_sprites.py

@@ -25,10 +25,14 @@
 | Locale | `Resources/Locale/en-US/_PS/atmos-devices.ftl` |
 | Tests | `Content.IntegrationTests/Tests/_PS/Atmos/HeatPumpTest.cs` |
 
-Upstream files touched, all one line each and marked `# Palmtree`: the engineering guidebook category
-(`Resources/Prototypes/Guidebook/engineering.yml`), the `NFEngineeringBoardsStatic` lathe pack and the
-blueprints pack (both under `Resources/Prototypes/_NF/Recipes/Lathes/Packs/`) so the board is actually
-printable and the technology tree test stays green.
+Upstream files touched, each edit marked `# Palmtree` / `// Palmtree`: the engineering guidebook
+category (`Resources/Prototypes/Guidebook/engineering.yml`), the `NFEngineeringBoardsStatic` lathe
+pack and the blueprints pack (both under `Resources/Prototypes/_NF/Recipes/Lathes/Packs/`), the
+`NFAdvancedAtmospherics` recipe list (`Resources/Prototypes/_NF/Research/techtree.yml`), the vanilla
+thermomachine component and its server system, the thermomachine guide and locale file, the shared
+pipe-layer interaction, and the placement mode in `Content.Client/Atmos/AlignAtmosPipeLayers.cs`.
+The hellfire prototypes also gained their `baseHeatCapacity` / `baseMinTemperature` /
+`baseMaxTemperature` overrides in `unary.yml`.
 
 ## The two ports
 
@@ -160,11 +164,14 @@ maximum heat rate and efficiency floor, so a player who installs better parts ca
 
 ## Art
 
-No new art. The body is the vanilla `thermomachine.rsi` freezer/heater states; the port cuffs are the
-vanilla `pipe.rsi` pipe tinted the colours /tg/station used, drawn as a 6 px band at each end so they
-stay readable over the machine body in all four facings. `Tools/gen_heat_pump_sprites.py` builds the
-RSI from those two files, so there is no external dependency to re-run it.
+No new art. The body is the vanilla `thermomachine.rsi` freezer/heater states; the port markings are
+the vanilla `pipe.rsi` pipe tinted the colours /tg/station used, drawn as a 6 px band at each end so
+they stay readable over the machine body in all four facings. `Tools/gen_heat_pump_sprites.py` builds
+the RSIs from those files, so there is no external dependency to re-run it.
 
-The machine does not ship `_alt1`/`_alt2` sprite variants: the body fills the tile, so the 7 px pipe
-layer shift that the pumps use would push it out of its cell. All three pipe layer prototypes share the
-same sprite and differ only in `AtmosPipeLayers.pipeLayer`.
+The body does not get `_alt1`/`_alt2` variants: it fills the tile, so the 7 px shift the pumps use
+would push it out of its cell. The two port-marking layers do get their own files
+(`heat_pump_alt1.rsi` / `heat_pump_alt2.rsi`), cut to the same offsets the vanilla `pipe_alt1` /
+`pipe_alt2` sprites use, so a marking stays on the pipe it marks and the placement ghost shows the
+layer the cursor picked. All three prototypes share the body; only the marking layers and
+`AtmosPipeLayers.pipeLayer` differ.
