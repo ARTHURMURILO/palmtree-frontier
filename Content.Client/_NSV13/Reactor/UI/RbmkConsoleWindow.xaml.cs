@@ -135,17 +135,37 @@ public sealed partial class RbmkConsoleWindow : DefaultWindow
             return;
         }
 
-        StatusLabel.Text = state.Slagged
-            ? Loc.GetString("rbmk-console-status-slagged")
-            : state.Running
-                ? Loc.GetString("rbmk-console-status-running")
-                : Loc.GetString("rbmk-console-status-idle");
-
-        StatusLabel.FontColorOverride = state.Slagged
-            ? Red
-            : state.Running
-                ? Amber
-                : Grey;
+        if (state.Slagged)
+        {
+            StatusLabel.Text = Loc.GetString("rbmk-console-status-slagged");
+            StatusLabel.FontColorOverride = Red;
+        }
+        else if (state.Running)
+        {
+            // "CORE CRITICAL" at 12 % power was a lie the old banner told every running core.
+            // Escalate with the same bands the simulation uses: operating, then critical. A slagged
+            // core is the branch above, so there is no third band to fall into here.
+            if (state.Temperature >= state.TemperatureCritical)
+            {
+                StatusLabel.Text = Loc.GetString("rbmk-console-status-critical");
+                StatusLabel.FontColorOverride = Red;
+            }
+            else if (state.Temperature >= state.TemperatureOperating)
+            {
+                StatusLabel.Text = Loc.GetString("rbmk-console-status-hot");
+                StatusLabel.FontColorOverride = Amber;
+            }
+            else
+            {
+                StatusLabel.Text = Loc.GetString("rbmk-console-status-running");
+                StatusLabel.FontColorOverride = Amber;
+            }
+        }
+        else
+        {
+            StatusLabel.Text = Loc.GetString("rbmk-console-status-idle");
+            StatusLabel.FontColorOverride = Grey;
+        }
 
         UpdateRodsTab(state);
         UpdateStatsTab(state);

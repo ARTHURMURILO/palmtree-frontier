@@ -1,0 +1,8 @@
+# NSV13/Palmtree: the RBMK guidebook page.
+#
+# Kept in a fork-owned file so the upstream engineering tree stays readable; Generators links it
+# from Resources/Prototypes/Guidebook/engineering.yml.
+- type: guideEntry
+  id: Rbmk
+  name: guide-entry-rbmk
+  text: "/ServerInfo/_NSV13/Guidebook/Engineering/Rbmk.xml"
