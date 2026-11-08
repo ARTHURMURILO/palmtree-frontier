@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Content.Server.Atmos.EntitySystems;
 using Content.Server.Construction.Components;
 using Content.Server.NodeContainer;
 using Content.Server.NodeContainer.Nodes;
@@ -9,8 +10,10 @@ using Content.Shared.Atmos;
 using Content.Shared.Atmos.Components;
 using Content.Shared.Construction;
 using Content.Shared.Construction.Components;
+using Content.Shared.DoAfter;
 using Content.Shared.NodeContainer;
 using Content.Shared.Power;
+using Content.Shared._NSV13.Reactor;
 using Robust.Shared.Containers;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
@@ -151,6 +154,7 @@ public sealed class ReactorFlatpackTest
         var server = pair.Server;
         var testMap = await pair.CreateTestMap();
         var entMan = server.ResolveDependency<IEntityManager>();
+        var protoMan = server.ResolveDependency<IPrototypeManager>();
         var mapSys = server.System<SharedMapSystem>();
         var xformSys = server.System<SharedTransformSystem>();
         var tiles = server.ResolveDependency<ITileDefinitionManager>();
@@ -205,9 +209,112 @@ public sealed class ReactorFlatpackTest
             if (!entMan.GetComponent<TransformComponent>(pump).Anchored)
                 xformSys.AnchorEntity(pump);
 
+            var pumpLayers = entMan.GetComponent<AtmosPipeLayersComponent>(pump);
+            server.System<AtmosPipeLayersSystem>().SetPipeLayer((pump, pumpLayers), AtmosPipeLayer.Secondary);
+            Assert.That(pumpLayers.CurrentPipeLayer, Is.EqualTo(AtmosPipeLayer.Secondary),
+                "the pump should be on the secondary layer for this check");
+
             var device = Attempt();
             Assert.That(device.Cancelled, Is.True, "an atmos device must veto the unpack even off the primary layer");
             Assert.That(device.Message, Is.Not.Null);
+
+            entMan.DeleteEntity(pump);
+
+            // The stormdrive is a 3x1 body. Its site check has to cover both end tiles, not just the
+            // centre tile the flatpack itself lands on.
+            var driveProto = protoMan.Index<EntityPrototype>("StormdriveReactorFlatpack");
+            Assert.That(driveProto.TryGetComponent<ReactorFlatpackComponent>(out var driveSite), Is.True);
+            Assert.That(driveSite!.Footprint, Is.EqualTo(new Vector2i(3, 1)));
+
+            var driveFlatpack = entMan.SpawnEntity("StormdriveReactorFlatpack", testMap.GridCoords);
+            var drivePipe = entMan.SpawnEntity("GasPipeStraight",
+                mapSys.GridTileToLocal(testMap.Grid.Owner, testMap.Grid.Comp, center + new Vector2i(1, 0)));
+            if (!entMan.GetComponent<TransformComponent>(drivePipe).Anchored)
+                xformSys.AnchorEntity(drivePipe);
+
+            var driveAttempt = new FlatpackUnpackAttemptEvent(driveFlatpack, EntityUid.Invalid,
+                testMap.Grid.Owner, center);
+            entMan.EventBus.RaiseLocalEvent(driveFlatpack, ref driveAttempt);
+            Assert.That(driveAttempt.Cancelled, Is.True,
+                "primary-layer piping on a stormdrive end tile must veto the unpack");
+
+            // Turning the flatpack turns the 3x1 body with it, so the check has to turn too.
+            entMan.DeleteEntity(drivePipe);
+            xformSys.SetLocalRotation(driveFlatpack, Direction.East.ToAngle());
+            var driveNorthPipe = entMan.SpawnEntity("GasPipeStraight",
+                mapSys.GridTileToLocal(testMap.Grid.Owner, testMap.Grid.Comp, center + new Vector2i(0, 1)));
+            if (!entMan.GetComponent<TransformComponent>(driveNorthPipe).Anchored)
+                xformSys.AnchorEntity(driveNorthPipe);
+
+            var turnedAttempt = new FlatpackUnpackAttemptEvent(driveFlatpack, EntityUid.Invalid,
+                testMap.Grid.Owner, center);
+            entMan.EventBus.RaiseLocalEvent(driveFlatpack, ref turnedAttempt);
+            Assert.That(turnedAttempt.Cancelled, Is.True,
+                "the rotated stormdrive's north end tile must be checked too");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task RbmkFlatpackPackingDeletesHiddenMachineParts()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var mapSys = server.System<SharedMapSystem>();
+        var containerSys = server.System<SharedContainerSystem>();
+        var tiles = server.ResolveDependency<ITileDefinitionManager>();
+
+        EntityUid board = default;
+        EntityUid part = default;
+
+        await server.WaitAssertion(() =>
+        {
+            var plating = tiles["Plating"];
+            for (var x = -2; x <= 2; x++)
+            {
+                for (var y = -2; y <= 2; y++)
+                    mapSys.SetTile(testMap.Grid.Owner, testMap.Grid.Comp, new Vector2i(x, y), new Tile(plating.TileId));
+            }
+
+            var flatpack = entMan.SpawnEntity("RbmkReactorFlatpack", testMap.GridCoords);
+            var reactor = entMan.SpawnEntity("RbmkNuclearReactor", testMap.GridCoords);
+            entMan.EventBus.RaiseLocalEvent(reactor,
+                new FlatpackUnpackedEvent(flatpack, EntityUid.Invalid, reactor), true);
+
+            // Simulate a reactor unpacked before the strip fix, or loaded from an old save: it still
+            // has the board and stock parts MachineComponent created inside it.
+            var containers = entMan.GetComponent<ContainerManagerComponent>(reactor).Containers;
+            board = entMan.SpawnEntity("RbmkReactorMachineCircuitboard", testMap.GridCoords);
+            part = entMan.SpawnEntity("CapacitorStockPart", testMap.GridCoords);
+            Assert.That(containerSys.Insert(board, containers[MachineFrameComponent.BoardContainerName]), Is.True);
+            Assert.That(containerSys.Insert(part, containers[MachineFrameComponent.PartContainerName]), Is.True);
+
+            entMan.DeleteEntity(flatpack);
+
+            var ev = new ReactorDeconstructDoAfterEvent();
+            var args = new DoAfterArgs(entMan, reactor, TimeSpan.FromSeconds(30), ev, reactor, target: reactor);
+            ev.DoAfter = new Content.Shared.DoAfter.DoAfter(0, args, TimeSpan.Zero);
+            entMan.EventBus.RaiseLocalEvent(reactor, ev);
+
+            Assert.That(entMan.IsQueuedForDeletion(reactor), Is.True,
+                "packing the reactor must delete it");
+        });
+
+        await server.WaitRunTicks(1);
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(entMan.EntityExists(board), Is.False,
+                "the hidden reactor board must die with the reactor, not drop on the floor");
+            Assert.That(entMan.EntityExists(part), Is.False,
+                "the hidden stock part must die with the reactor, not drop on the floor");
+
+            var flatpacks = entMan.EntityQuery<MetaDataComponent>()
+                .Count(meta => meta.EntityPrototype?.ID == "RbmkReactorFlatpack");
+            Assert.That(flatpacks, Is.EqualTo(1), "packing should return exactly one flatpack");
         });
 
         await pair.CleanReturnAsync();

@@ -58,12 +58,16 @@ public sealed class ReactorAssemblySystem : EntitySystem
             return;
         }
 
+        // A flatpack item can be rotated before it unfolds, and the spawned machine inherits that
+        // cardinal rotation. The footprint has to turn with it: the stormdrive is 3x1, so a fixed
+        // axis-aligned check would miss the two end tiles after a quarter turn.
+        var rotation = Transform(args.Flatpack).LocalRotation.GetCardinalDir();
         var half = new Vector2i(pack.Footprint.X / 2, pack.Footprint.Y / 2);
         for (var x = -half.X; x <= half.X; x++)
         {
             for (var y = -half.Y; y <= half.Y; y++)
             {
-                var pos = args.Position + new Vector2i(x, y);
+                var pos = args.Position + RotateOffset(new Vector2i(x, y), rotation);
 
                 if (!_map.TryGetTileRef(args.Grid, grid, pos, out var tileRef) || tileRef.Tile.IsEmpty)
                 {
@@ -215,6 +219,22 @@ public sealed class ReactorAssemblySystem : EntitySystem
             if (containers.Containers.TryGetValue(name, out var container))
                 _container.CleanContainer(container);
         }
+    }
+
+    /// <summary>
+    ///     Turns a footprint offset by a cardinal direction, matching the rotation the flatpack
+    ///     hands to the machine it spawns. Angle zero is <see cref="Direction.South"/>, so that
+    ///     direction leaves the offsets alone.
+    /// </summary>
+    private static Vector2i RotateOffset(Vector2i offset, Direction rotation)
+    {
+        return rotation switch
+        {
+            Direction.East => new Vector2i(-offset.Y, offset.X),
+            Direction.North => new Vector2i(-offset.X, -offset.Y),
+            Direction.West => new Vector2i(offset.Y, -offset.X),
+            _ => offset,
+        };
     }
 
     private static List<Vector2i> FootprintTiles(Vector2i center, Vector2i footprint)
