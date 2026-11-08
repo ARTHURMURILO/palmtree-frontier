@@ -13,8 +13,8 @@
   ## Getting one
   The RBMK is sold by cargo as a flatpack, or printed from the engineering tech tree once researched.
   Use a multitool on the flatpack and wait for it to unfold. The site has to be bare plating across
-  the whole 3x3, so pull up finished floor and clear primary-layer pipes and atmos devices first;
-  cables and off-layer pipes are fine. The flatpack lays its own reinforced
+  the whole 3x3, so pull up finished floor and clear primary-layer pipes, atmos devices, crates
+  and tanks first; cables and off-layer pipes are fine. The flatpack lays its own reinforced
   footing, an HV cable across the footprint, and a pipe stub on each of the three ports, so the fitter
   only has to run services to the edge of the reactor. It does not arrive fuelled.
   A cold, shut-down RBMK built from a flatpack can be packed back into its flatpack from the context

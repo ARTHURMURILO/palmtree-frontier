@@ -27,6 +27,10 @@
   # were drawn.
   - type: Sprite
     sprite: _NSV13/Objects/Structures/Power/rbmk.rsi
+    # The 3x3 art is a floor machine, not a wall: crates, items and mobs have to render in front
+    # of it while being pulled or walked across. HighFloorObjects keeps it above the cable/pipe
+    # mesh and puddles but below every object.
+    drawdepth: HighFloorObjects
     layers:
     - state: reactor_off
       map: ["core"]

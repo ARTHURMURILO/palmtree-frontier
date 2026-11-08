@@ -33,6 +33,7 @@ public sealed class ReactorAssemblySystem : EntitySystem
     [Dependency] private readonly ISharedAdminLogManager _adminLogger = default!;
     [Dependency] private readonly SharedContainerSystem _container = default!;
     [Dependency] private readonly SharedDoAfterSystem _doAfter = default!;
+    [Dependency] private readonly EntityLookupSystem _lookup = default!;
     [Dependency] private readonly SharedMapSystem _map = default!;
     [Dependency] private readonly SharedPopupSystem _popup = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
@@ -110,6 +111,14 @@ public sealed class ReactorAssemblySystem : EntitySystem
                     Cancel(ref args, "reactor-flatpack-blocked");
                     return;
                 }
+
+                // A crate, tank or other anchorable object dragged onto the footing is not in the
+                // anchored set, but the reactor would swallow it. Small items and mobs are fine.
+                if (HasDraggableObstacle(tileRef, args.Flatpack))
+                {
+                    Cancel(ref args, "reactor-flatpack-draggable");
+                    return;
+                }
             }
         }
     }
@@ -144,6 +153,7 @@ public sealed class ReactorAssemblySystem : EntitySystem
         var assembly = EnsureComp<ReactorAssemblyComponent>(reactor);
         assembly.DeconstructDelay = pack.DeconstructDelay;
         assembly.ColdLimit = pack.ColdLimit;
+        assembly.Footprint = pack.Footprint;
         if (MetaData(args.Flatpack).EntityPrototype is { } flatpackProto)
             assembly.Flatpack = flatpackProto.ID;
 
@@ -330,6 +340,56 @@ public sealed class ReactorAssemblySystem : EntitySystem
     }
 
     private string? GetBlockReason(Entity<ReactorAssemblyComponent> ent)
+    {
+        return GetCoreBlockReason(ent) ?? GetPackingBlockReason(ent);
+    }
+
+    /// <summary>
+    ///     Whether a crate, tank or other anchorable but unanchored object has been dragged onto
+    ///     the reactor's footing. Small items and mobs are ignored: they can be moved or walked
+    ///     over, and the flatpack itself must not count.
+    /// </summary>
+    private bool HasDraggableObstacle(TileRef tile, EntityUid ignore)
+    {
+        foreach (var other in _lookup.GetEntitiesInTile(tile, LookupFlags.Dynamic | LookupFlags.Sundries))
+        {
+            if (other == ignore || Transform(other).Anchored)
+                continue;
+
+            if (HasComp<AnchorableComponent>(other))
+                return true;
+        }
+
+        return false;
+    }
+
+    private string? GetPackingBlockReason(Entity<ReactorAssemblyComponent> ent)
+    {
+        var xform = Transform(ent);
+        if (xform.GridUid is not { } gridUid || !TryComp<MapGridComponent>(gridUid, out var grid))
+            return null;
+
+        var center = _map.TileIndicesFor(gridUid, grid, xform.Coordinates);
+        var rotation = xform.LocalRotation.GetCardinalDir();
+        var half = new Vector2i(ent.Comp.Footprint.X / 2, ent.Comp.Footprint.Y / 2);
+
+        for (var x = -half.X; x <= half.X; x++)
+        {
+            for (var y = -half.Y; y <= half.Y; y++)
+            {
+                var pos = center + RotateOffset(new Vector2i(x, y), rotation);
+                if (!_map.TryGetTileRef(gridUid, grid, pos, out var tileRef))
+                    continue;
+
+                if (HasDraggableObstacle(tileRef, ent.Owner))
+                    return Loc.GetString("reactor-deconstruct-obstructed");
+            }
+        }
+
+        return null;
+    }
+
+    private string? GetCoreBlockReason(Entity<ReactorAssemblyComponent> ent)
     {
         if (TryComp<RbmkReactorComponent>(ent, out var rbmk))
         {
