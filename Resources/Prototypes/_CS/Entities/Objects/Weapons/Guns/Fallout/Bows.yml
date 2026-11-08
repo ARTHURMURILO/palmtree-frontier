@@ -8,6 +8,9 @@
   name: composite bow
   description: An amalgamation of different materials - wood, animal horn and string - makes it faster to use. Can be stored within bags.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: []
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/CompositeBow.rsi
     layers:

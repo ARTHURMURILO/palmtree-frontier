@@ -4,6 +4,9 @@
   parent: [ ClothingMaskGasExplorer, BaseC3ContrabandNoValue, ContrabandClothing ]
   description: A close-fitting high tech mask designed by Arcadia Industries for spacefaring operators.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: []
   - type: Sprite
     sprite: _NF/Clothing/Mask/arcadia.rsi
   - type: Clothing
@@ -49,7 +52,7 @@
       - HamsterWearable
 
 - type: entity
-  parent: [ BaseC2ContrabandUnredeemable, ClothingMaskGasSecurity ]
+  parent: [ BaseC5ContrabandUnredeemable, ClothingMaskGasSecurity ]
   id: ClothingMaskGasNfsd
   name: NFSD gas mask
   description: A standard issue NFSD gas mask.
@@ -61,7 +64,7 @@
   - type: CatWearable
 
 - type: entity
-  parent: [ BaseC2ContrabandUnredeemable, ClothingMaskGasSwat ]
+  parent: [ BaseC5ContrabandUnredeemable, ClothingMaskGasSwat ]
   id: ClothingMaskGasSheriff
   name: NFSD sheriff gas mask
   description: A gas mask worthy of a sheriff.

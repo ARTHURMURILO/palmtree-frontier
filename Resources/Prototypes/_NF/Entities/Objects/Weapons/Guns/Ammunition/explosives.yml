@@ -42,6 +42,9 @@
   name: GR-44E EMP grenade
   description: A 1.5" EMP warhead designed for GSW rocket launchers. Has tubular shape.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: NFBulletRocketEmp
   - type: Sprite

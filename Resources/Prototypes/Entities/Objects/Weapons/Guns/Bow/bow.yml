@@ -51,6 +51,9 @@
   parent: BaseBow
   name: improvised shortbow
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: []
   - type: Sprite
     layers:
     - state: unwielded
