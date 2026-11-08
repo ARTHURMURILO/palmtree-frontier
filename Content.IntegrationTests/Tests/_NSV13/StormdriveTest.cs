@@ -1,16 +1,23 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+using System.Numerics;
+using Content.IntegrationTests.Pair;
 using Content.Server._NSV13.Reactor.Components;
 using Content.Server._NSV13.Reactor.Systems;
 using Content.Server.NodeContainer.EntitySystems;
 using Content.Server.NodeContainer.Nodes;
+using Content.Server.ParticleAccelerator.Components;
 using Content.Server.Power.Components;
 using Content.Shared._NSV13.Reactor;
 using Content.Shared.Atmos;
 using Content.Shared.NodeContainer;
 using Content.Shared.Radiation.Components;
+using Content.Shared.Singularity.Components;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
+using Robust.Shared.Physics;
+using Robust.Shared.Physics.Components;
+using Robust.Shared.Physics.Systems;
 using Robust.Shared.Prototypes;
 
 namespace Content.IntegrationTests.Tests._NSV13;
@@ -380,5 +387,160 @@ public sealed class StormdriveTest
         });
 
         await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    ///     The particle accelerator is the only ignition source the drive has: an accelerated
+    ///     particle has to physically strike the core, add its heat and call <c>try_start</c>. This
+    ///     pins down the two things that can silently break it, the fixture pair and the event pair,
+    ///     by firing a real <c>ParticlesProjectile</c> at the machine instead of calling the handler.
+    /// </summary>
+    /// <remarks>
+    ///     The projectile is spawned by hand because the three-emitter assembly is orthogonal to this
+    ///     test: <c>ParticleAcceleratorSystem.FireEmitter</c> does exactly this spawn, sets the power
+    ///     state and gives it a linear velocity. If this test fails, no PA in the game can start a
+    ///     drive, which is what the portable emitter report looked like.
+    /// </remarks>
+    [Test]
+    public async Task AcceleratedParticleHitsTheCoreAndIgnitesIt()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+
+        EntityUid drive = default;
+
+        await server.WaitAssertion(() =>
+        {
+            drive = entMan.SpawnEntity("StormdriveReactor", testMap.GridCoords);
+
+            // Machines anchor themselves on map init; only bodge it if this one did not.
+            if (!entMan.GetComponent<TransformComponent>(drive).Anchored)
+                entMan.System<SharedTransformSystem>().AnchorEntity(drive);
+        });
+
+        await pair.RunTicksSync(2);
+
+        await server.WaitAssertion(() =>
+        {
+            var comp = entMan.GetComponent<StormdriveComponent>(drive);
+
+            // Keep the process tick (which zeroes an idle drive's heat) out of the test window.
+            comp.NextProcess = TimeSpan.FromSeconds(30);
+
+            SpawnParticle(entMan, testMap, ParticleAcceleratorPowerState.Level3);
+        });
+
+        await pair.RunTicksSync(30);
+
+        await server.WaitAssertion(() =>
+        {
+            var comp = entMan.GetComponent<StormdriveComponent>(drive);
+
+            Assert.That(comp.Heat, Is.EqualTo(20f).Within(0.01f),
+                "a level-3 particle must hit the core and deliver its heat; a value of 0 means it " +
+                "passed through and the PA cannot start a drive at all");
+            Assert.That(comp.State, Is.EqualTo(StormdriveState.Idle),
+                "pre-heat alone must not start an empty line");
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            var comp = entMan.GetComponent<StormdriveComponent>(drive);
+            var nodes = entMan.GetComponent<NodeContainerComponent>(drive);
+            var fuel = (PipeNode) nodes.Nodes[comp.FuelInputName];
+
+            fuel.Air.Clear();
+            fuel.Air.AdjustMoles(Gas.Plasma, 100f);
+            fuel.Air.Temperature = Atmospherics.T20C;
+
+            SpawnParticle(entMan, testMap, ParticleAcceleratorPowerState.Level3);
+        });
+
+        await pair.RunTicksSync(30);
+
+        await server.WaitAssertion(() =>
+        {
+            var comp = entMan.GetComponent<StormdriveComponent>(drive);
+
+            Assert.That(comp.State, Is.EqualTo(StormdriveState.Running),
+                "a pre-heated drive with a charged line must ignite on the particle strike");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    ///     The handheld particle decelerator fires the same particle projectile through a plain
+    ///     battery provider, so nothing ever assigns a PA power level. It must still heat the core:
+    ///     this is the portable-emitter case that used to add zero heat and look inert.
+    /// </summary>
+    [Test]
+    public async Task PortableEmitterBoltIgnitesTheCore()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+
+        EntityUid drive = default;
+
+        await server.WaitAssertion(() =>
+        {
+            drive = entMan.SpawnEntity("StormdriveReactor", testMap.GridCoords);
+
+            if (!entMan.GetComponent<TransformComponent>(drive).Anchored)
+                entMan.System<SharedTransformSystem>().AnchorEntity(drive);
+        });
+
+        await pair.RunTicksSync(2);
+
+        await server.WaitAssertion(() =>
+        {
+            var comp = entMan.GetComponent<StormdriveComponent>(drive);
+            comp.NextProcess = TimeSpan.FromSeconds(30);
+
+            var nodes = entMan.GetComponent<NodeContainerComponent>(drive);
+            var fuel = (PipeNode) nodes.Nodes[comp.FuelInputName];
+            fuel.Air.Clear();
+            fuel.Air.AdjustMoles(Gas.Plasma, 100f);
+            fuel.Air.Temperature = Atmospherics.T20C;
+
+            // No power state assigned on purpose: this is exactly what the gun's ammo provider
+            // produces.
+            SpawnParticle(entMan, testMap, null, "NFAntiParticlesProjectile");
+        });
+
+        await pair.RunTicksSync(30);
+
+        await server.WaitAssertion(() =>
+        {
+            var comp = entMan.GetComponent<StormdriveComponent>(drive);
+
+            Assert.That(comp.State, Is.EqualTo(StormdriveState.Running),
+                "a portable emitter bolt must carry enough energy to light a fuelled drive");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    private static void SpawnParticle(IEntityManager entMan, TestMapData testMap,
+        ParticleAcceleratorPowerState? state, string prototype = "ParticlesProjectile")
+    {
+        var coords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0f, 3f));
+        var particle = entMan.SpawnEntity(prototype, coords);
+
+        // The collision gate keys off this fixture; a rename would silently disarm the drive.
+        var fixtures = entMan.GetComponent<FixturesComponent>(particle);
+        Assert.That(fixtures.Fixtures, Does.ContainKey("projectile"),
+            $"{prototype} has no fixture named 'projectile': {string.Join(", ", fixtures.Fixtures.Keys)}");
+
+        if (state is { } power)
+            entMan.GetComponent<ParticleProjectileComponent>(particle).State = power;
+
+        var physics = entMan.GetComponent<PhysicsComponent>(particle);
+        entMan.System<SharedPhysicsSystem>().SetBodyStatus(particle, physics, BodyStatus.InAir);
+        entMan.System<SharedPhysicsSystem>().SetLinearVelocity(particle, new Vector2(0f, -20f), body: physics);
     }
 }

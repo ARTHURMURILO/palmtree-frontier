@@ -253,6 +253,19 @@ public sealed class StormdriveSystem : EntitySystem
         if (!TryComp<ParticleProjectileComponent>(args.OtherEntity, out var particle))
             return;
 
+        // A particle has two fixtures: the narrow `projectile` head that deals the damage, and a
+        // 1.5 m `fly-by` trigger that only exists to play the passing sound. Without this gate the
+        // drive reacts to both, so one shot heats it twice and the bolt is absorbed well short of
+        // the art.
+        if (args.OtherFixtureId != "projectile")
+            return;
+
+        // Both fixtures can land in the same tick (and the hard fixture can bounce a burning bolt
+        // back into contact): once one hit is booked the bolt is spent, so it must not heat the
+        // core again while the queued deletion is still pending.
+        if (EntityManager.IsQueuedForDeletion(args.OtherEntity))
+            return;
+
         // The DM original absorbs the projectile: it never passes through the core.
         QueueDel(args.OtherEntity);
 
@@ -270,6 +283,13 @@ public sealed class StormdriveSystem : EntitySystem
     ///     mapped onto degrees here (a level-3 shot is enough on its own to reach
     ///     <see cref="StormdriveComponent.StartThreshold"/>).
     /// </summary>
+    /// <remarks>
+    ///     The handheld particle decelerator fires the same particle projectile through a plain
+    ///     battery provider, so its bolts never pass through <c>FireEmitter</c> and keep the
+    ///     component's default, unpowered state. A bolt from a portable emitter is still a bolt:
+    ///     treat an unset level as a full-power shot instead of dropping it on the floor with zero
+    ///     heat, which is what made the portable emitter look like it did nothing.
+    /// </remarks>
     private static float ParticleHeat(ParticleAcceleratorPowerState state)
     {
         return state switch
@@ -278,7 +298,7 @@ public sealed class StormdriveSystem : EntitySystem
             ParticleAcceleratorPowerState.Level1 => 6f,
             ParticleAcceleratorPowerState.Level2 => 10f,
             ParticleAcceleratorPowerState.Level3 => 20f,
-            _ => 0f,
+            _ => 20f,
         };
     }
 
