@@ -79,7 +79,7 @@ public sealed class StormdriveConsoleBoundUserInterfaceState : BoundUserInterfac
 
     public bool Maintenance;
 
-    /// <summary>Plasma + constricted plasma + tritium currently in the fuel line.</summary>
+    /// <summary>Plasma + tritium currently in the fuel line.</summary>
     public float FuelMix;
 
     /// <summary>Above this the mixture is dangerously rich, matching the console warning bands.</summary>
@@ -90,16 +90,10 @@ public sealed class StormdriveConsoleBoundUserInterfaceState : BoundUserInterfac
     public float Oxygen;
     public float Nitrogen;
     public float Plasma;
-    public float ConstrictedPlasma;
     public float Tritium;
     public float CarbonDioxide;
     public float WaterVapor;
-    public float HyperNoblium;
     public float NitrousOxide;
-    public float Nitryl;
-    public float BZ;
-    public float Stimulum;
-    public float Pluoxium;
     public float Nucleium;
     public float TotalMoles;
 
@@ -123,27 +117,26 @@ public sealed class StormdriveConsoleBoundUserInterfaceState : BoundUserInterfac
 }
 
 /// <summary>
-///     Order of the fuel-line composition rows on the stormdrive console, matching the order in
-///     StormdriveConsole.js so the colours and the graph line up with the original.
+///     Fuel-line composition rows on the stormdrive console.
 /// </summary>
+/// <remarks>
+///     The NSV13 console listed fourteen gases. This fork has eight of them; the rest would sit at
+///     0.0% forever, so they have no row. The rows stay in the original's relative order. The enum
+///     is an index into the client's colour table and into <see cref="StormdriveConsoleBoundUserInterfaceState.GasHistory"/>,
+///     so the three must move together.
+/// </remarks>
 public enum StormdriveConsoleGas
 {
-    ConstrictedPlasma = 0,
-    Plasma = 1,
-    Tritium = 2,
-    Oxygen = 3,
-    Nitrogen = 4,
-    CarbonDioxide = 5,
-    WaterVapour = 6,
-    HyperNoblium = 7,
-    NitrousOxide = 8,
-    Nitryl = 9,
-    BZ = 10,
-    Stimulum = 11,
-    Pluoxium = 12,
-    Nucleium = 13,
+    Plasma = 0,
+    Tritium = 1,
+    Oxygen = 2,
+    Nitrogen = 3,
+    CarbonDioxide = 4,
+    WaterVapour = 5,
+    NitrousOxide = 6,
+    Nucleium = 7,
 
-    Count = 14,
+    Count = 8,
 }
 
 [Serializable, NetSerializable]

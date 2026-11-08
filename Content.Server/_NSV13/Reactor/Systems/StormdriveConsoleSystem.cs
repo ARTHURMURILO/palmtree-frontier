@@ -181,8 +181,9 @@ public sealed class StormdriveConsoleSystem : EntitySystem
         var total = air.TotalMoles;
 
         Span<float> values = stackalloc float[(int) StormdriveConsoleGas.Count];
-        // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
-        // ConstrictedPlasma
+        // Only the gases that exist in this fork get a row. Constricted plasma, hyper-noblium,
+        // nitryl, BZ, stimulum and pluoxium are reactor gases from the `engines-all` branch; there
+        // is no Gas id to sample here, and a row that can only ever read 0.0% is noise.
         if (total > 0f)
         {
             values[(int) StormdriveConsoleGas.Plasma] = air.GetMoles(Gas.Plasma) / total * 100f;
@@ -191,17 +192,7 @@ public sealed class StormdriveConsoleSystem : EntitySystem
             values[(int) StormdriveConsoleGas.Nitrogen] = air.GetMoles(Gas.Nitrogen) / total * 100f;
             values[(int) StormdriveConsoleGas.CarbonDioxide] = air.GetMoles(Gas.CarbonDioxide) / total * 100f;
             values[(int) StormdriveConsoleGas.WaterVapour] = air.GetMoles(Gas.WaterVapor) / total * 100f;
-            // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
-            // HyperNoblium
             values[(int) StormdriveConsoleGas.NitrousOxide] = air.GetMoles(Gas.NitrousOxide) / total * 100f;
-            // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
-            // Nitryl
-            // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
-            // BZ
-            // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
-            // Stimulum
-            // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
-            // Pluoxium
             values[(int) StormdriveConsoleGas.Nucleium] = air.GetMoles(Gas.Nucleium) / total * 100f;
         }
 
@@ -276,28 +267,16 @@ public sealed class StormdriveConsoleSystem : EntitySystem
 
         state.Oxygen = air.GetMoles(Gas.Oxygen);
         state.Plasma = air.GetMoles(Gas.Plasma);
-        // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
-        // ConstrictedPlasma
         state.Tritium = air.GetMoles(Gas.Tritium);
         state.CarbonDioxide = air.GetMoles(Gas.CarbonDioxide);
         state.WaterVapor = air.GetMoles(Gas.WaterVapor);
-        // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
-        // HyperNoblium
         state.Nitrogen = air.GetMoles(Gas.Nitrogen);
         state.NitrousOxide = air.GetMoles(Gas.NitrousOxide);
-        // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
-        // Nitryl
-        // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
-        // BZ
-        // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
-        // Stimulum
-        // BRANCH NOTE (stormdrive branch): reactor gases live on `engines-all`.
-        // Pluoxium
         state.Nucleium = air.GetMoles(Gas.Nucleium);
         state.TotalMoles = air.TotalMoles;
 
-        // fuel_mix is the same three positive contributors the ignition check counts in full.
-        state.FuelMix = state.Plasma + state.ConstrictedPlasma + state.Tritium;
+        // fuel_mix is the same two positive contributors the ignition check counts in full.
+        state.FuelMix = state.Plasma + state.Tritium;
 
         // The warning bands from the DM console: reaction-rate driven while running, fixed otherwise
         // ("Just need to avoid that inital orange").

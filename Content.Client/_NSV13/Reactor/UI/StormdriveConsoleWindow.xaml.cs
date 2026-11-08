@@ -36,23 +36,18 @@ public sealed partial class StormdriveConsoleWindow : DefaultWindow
 
     /// <summary>
     ///     Composition row colours, in <see cref="StormdriveConsoleGas"/> order. Values come straight
-    ///     from StormdriveConsole.js so the graph and the bars agree with the original.
+    ///     from StormdriveConsole.js so the graph and the bars agree with the original; only the rows
+    ///     for gases this fork actually has are kept.
     /// </summary>
     private static readonly Color[] GasColours =
     {
-        Color.FromHex("#6435C9"), // constricted plasma
         Color.FromHex("#A333C8"), // plasma
         Color.FromHex("#E03997"), // tritium
         Color.FromHex("#2185D0"), // oxygen
         Color.FromHex("#FF0000"), // nitrogen
         Color.FromHex("#767676"), // carbon dioxide
         Color.FromHex("#FFFFFF"), // water vapour
-        Color.FromHex("#00B5AD"), // hyper-noblium
         Color.FromHex("#7E90A7"), // nitrous oxide
-        Color.FromHex("#425770"), // nitryl
-        Color.FromHex("#F2711C"), // bz
-        Color.FromHex("#FBD608"), // stimulum
-        Color.FromHex("#B5CC18"), // pluoxium
         Color.FromHex("#A5673F"), // nucleium
     };
 
@@ -421,19 +416,13 @@ public sealed partial class StormdriveConsoleWindow : DefaultWindow
         var total = MathF.Max(state.TotalMoles, 0.0001f);
         var values = new[]
         {
-            state.ConstrictedPlasma,
             state.Plasma,
             state.Tritium,
             state.Oxygen,
             state.Nitrogen,
             state.CarbonDioxide,
             state.WaterVapor,
-            state.HyperNoblium,
             state.NitrousOxide,
-            state.Nitryl,
-            state.BZ,
-            state.Stimulum,
-            state.Pluoxium,
             state.Nucleium,
         };
 
