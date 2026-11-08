@@ -41,7 +41,6 @@ public sealed partial class RbmkConsoleWindow : DefaultWindow
     private static readonly Color Grey = Color.FromHex("#767676");
 
     private static readonly StyleBoxFlat YellowFill = Fill(Yellow);
-    private static readonly StyleBoxFlat WhiteFill = Fill(White);
     private static readonly StyleBoxFlat BlueFill = Fill(Blue);
     private static readonly StyleBoxFlat RedFill = Fill(Red);
     private static readonly StyleBoxFlat GreenFill = Fill(Green);
@@ -196,7 +195,10 @@ public sealed partial class RbmkConsoleWindow : DefaultWindow
         PowerText.Text = Loc.GetString("rbmk-console-power-value", ("value", $"{state.Power:F1}"));
 
         PressureBar.Value = Math.Clamp(state.Pressure, 0f, 2000f);
-        PressureBar.ForegroundStyleBoxOverride = state.Pressure >= state.PressureCritical ? RedFill : WhiteFill;
+        // Not white: the value label sits inside the bar and robust labels are white, so the number
+        // vanished into the filled part. Blue keeps it legible at every fill level; red still marks
+        // the critical band.
+        PressureBar.ForegroundStyleBoxOverride = state.Pressure >= state.PressureCritical ? RedFill : BlueFill;
         PressureText.Text = Loc.GetString("rbmk-console-pressure-value", ("value", $"{state.Pressure:F0}"));
 
         CoolantInBar.Value = Math.Clamp(state.CoolantIn, -273f, 1227f);
