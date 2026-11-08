@@ -25,6 +25,8 @@
   # No `noRot`: the fuel/waste ports turn with the hull, so the art has to turn with them.
   - type: Sprite
     sprite: _NSV13/Objects/Structures/Power/stormdrive.rsi
+    # Same as the RBMK: a floor machine, so dragged crates and items draw in front of it.
+    drawdepth: HighFloorObjects
     layers:
     - state: reactor_off
       map: ["core"]

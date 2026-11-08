@@ -30,6 +30,12 @@ public sealed partial class ReactorAssemblyComponent : Component
     public float ColdLimit = 100f;
 
     /// <summary>
+    ///     Footprint the flatpack deployed over, used to check the site before packing up again.
+    /// </summary>
+    [DataField]
+    public Vector2i Footprint = Vector2i.One;
+
+    /// <summary>
     ///     Entities the flatpack spawned around the reactor (cables, pipe stubs).
     /// </summary>
     [ViewVariables]

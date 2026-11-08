@@ -189,6 +189,12 @@ public sealed class ReactorFlatpackTest
 
             mapSys.SetTile(testMap.Grid.Owner, testMap.Grid.Comp, obstacle, new Tile(plating.TileId));
 
+            // A crate left on the footing is unanchored, but the reactor would swallow it.
+            var crate = entMan.SpawnEntity("CrateGenericSteel",
+                mapSys.GridTileToLocal(testMap.Grid.Owner, testMap.Grid.Comp, obstacle));
+            Assert.That(Attempt().Cancelled, Is.True, "an unanchored crate must veto the unpack");
+            entMan.DeleteEntity(crate);
+
             var pipe = entMan.SpawnEntity("GasPipeStraight",
                 mapSys.GridTileToLocal(testMap.Grid.Owner, testMap.Grid.Comp, obstacle));
             if (!entMan.GetComponent<TransformComponent>(pipe).Anchored)
@@ -293,6 +299,19 @@ public sealed class ReactorFlatpackTest
             Assert.That(containerSys.Insert(part, containers[MachineFrameComponent.PartContainerName]), Is.True);
 
             entMan.DeleteEntity(flatpack);
+
+            var center = mapSys.TileIndicesFor(testMap.Grid.Owner, testMap.Grid.Comp, testMap.GridCoords);
+            var crate = entMan.SpawnEntity("CrateGenericSteel",
+                mapSys.GridTileToLocal(testMap.Grid.Owner, testMap.Grid.Comp, center + new Vector2i(1, 1)));
+
+            var blocked = new ReactorDeconstructDoAfterEvent();
+            var blockedArgs = new DoAfterArgs(entMan, reactor, TimeSpan.FromSeconds(30), blocked, reactor, target: reactor);
+            blocked.DoAfter = new Content.Shared.DoAfter.DoAfter(0, blockedArgs, TimeSpan.Zero);
+            entMan.EventBus.RaiseLocalEvent(reactor, blocked);
+            Assert.That(entMan.IsQueuedForDeletion(reactor), Is.False,
+                "a crate on the reactor's footing must block packing");
+
+            entMan.DeleteEntity(crate);
 
             var ev = new ReactorDeconstructDoAfterEvent();
             var args = new DoAfterArgs(entMan, reactor, TimeSpan.FromSeconds(30), ev, reactor, target: reactor);

@@ -13,8 +13,8 @@
   ## Getting one
   The drive is sold by cargo as a flatpack, or printed from the engineering tech tree once researched.
   Use a multitool on the flatpack and wait for it to unfold. It needs bare plating under its 3x1
-  body: pull up finished floor and clear primary-layer pipes and atmos devices across all three
-  tiles first; cables and off-layer pipes are fine. Unlike the RBMK it brings no footing or
+  body: pull up finished floor and clear primary-layer pipes, atmos devices, crates and tanks
+  across all three tiles first; cables and off-layer pipes are fine. Unlike the RBMK it brings no footing or
   cabling: it drops the drive alone, so run the fuel and waste lines and the HV cable yourself.
   A cold, shut-down drive built from a flatpack can be packed back into its flatpack from the context
   menu; a running or melting drive cannot. The flatpack does not include control rods. They are printed separately, and
