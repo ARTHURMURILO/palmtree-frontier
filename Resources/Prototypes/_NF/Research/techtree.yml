@@ -1339,9 +1339,6 @@
   - NFWeaponParticleDecelerator
   technologyPrerequisites:
   - NFEmitter
-  # Palmtree: the handheld particle emitter is the field ignition tool for the ported reactors,
-  # so it sits after Fission Basics (2, 29) as well as after the station emitter.
-  - NFReactorControlRods
   position: 2, 30
 
 - type: technology
