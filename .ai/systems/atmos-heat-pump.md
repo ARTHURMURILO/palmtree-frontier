@@ -102,6 +102,15 @@ The transfer ceiling itself follows a flatter curve than a doubling (`HeatRateBy
 falls with the rating (`0.15 * 0.7^(rating-1)`), so the ceiling COP runs about 4.3, 6.1, 8.8 and 12.5;
 a fully upgraded machine moves 700 kW and draws about 56 kW at its ceiling.
 
+While the machine is switched on it keeps its *potential* draw on the APC even while it is not
+receiving power. A power receiver counts as powered when what it receives matches what it asked for,
+so a load that drops to zero while unpowered looks satisfied: a grid that is only slightly short
+would power the machine back up, get overloaded, cut it off and repeat, flickering the APC. Holding
+the demand keeps a starved machine off (with its warning and its sprite dark) until the grid can feed
+it or somebody switches it off, which is the only thing that releases the load. The vanilla
+thermomachine solves the same problem by never changing its static load; this one has to, because
+its draw depends on the heat it moves.
+
 ### Safeties
 
 Waste loop above `SafeTemperature` (200 000 K): the machine switches itself off and pops a warning.

@@ -4,6 +4,7 @@ using Content.Server.Atmos.EntitySystems;
 using Content.Server.Atmos.Piping.Components;
 using Content.Server.NodeContainer.Nodes;
 using Content.Server.Power.Components;
+using Content.Server.Power.EntitySystems;
 using Content.Shared._PS.Atmos.Components;
 using Content.Shared.Atmos;
 using Content.Shared.Atmos.Components;
@@ -496,6 +497,7 @@ public sealed class HeatPumpTest
                 var pump = entMan.GetComponent<GasHeatPumpComponent>(device);
                 pump.Enabled = true;
                 pump.TargetTemperature = 250f;
+                entMan.GetComponent<ApcPowerReceiverComponent>(device).Powered = false;
 
                 (gas, waste) = GetAir(entMan, device);
 
@@ -511,6 +513,99 @@ public sealed class HeatPumpTest
             {
                 Assert.That(gas.Temperature, Is.EqualTo(400f).Within(0.01f),
                     "An unpowered heat pump must not move any heat.");
+            });
+        }
+        finally
+        {
+            await pair.CleanReturnAsync();
+        }
+    }
+
+    /// <summary>
+    /// A machine that is switched on but not receiving power has to keep asking the APC for the power
+    /// it would be using. A zero load while unpowered is exactly what the power net reads as "powered"
+    /// (it compares received against requested), so a grid that is only slightly short would turn the
+    /// machine on, get overloaded, cut it off again and repeat forever.
+    /// </summary>
+    [Test]
+    public async Task HeatPumpKeepsAskingForPowerWhileStarved()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+
+        try
+        {
+            var server = pair.Server;
+            var entMan = server.EntMan;
+            var testMap = await pair.CreateTestMap();
+
+            var coords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
+
+            EntityUid device = default;
+
+            await server.WaitPost(() =>
+            {
+                entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, -1f)));
+                device = entMan.SpawnEntity("GasThermoMachineHeatPump", coords);
+                entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, 1f)));
+            });
+
+            await pair.RunTicksSync(5);
+
+            await server.WaitAssertion(() =>
+            {
+                var pump = entMan.GetComponent<GasHeatPumpComponent>(device);
+                var receiver = entMan.GetComponent<ApcPowerReceiverComponent>(device);
+                var powerNet = server.System<PowerNetSystem>();
+
+                var (gas, waste) = GetAir(entMan, device);
+                pump.Enabled = true;
+                pump.TargetTemperature = 300f;
+                pump.MotorHeatDeadband = 1000f;
+                gas.SetMoles(Gas.Oxygen, 100f);
+                gas.Temperature = 500f;
+                waste.SetMoles(Gas.Oxygen, 100f);
+                waste.Temperature = 300f;
+
+                // Switched on but starved: it must keep the potential draw on the APC.
+                receiver.Powered = false;
+                Raise(entMan, device);
+                var starvedLoad = receiver.Load;
+
+                Assert.Multiple(() =>
+                {
+                    Assert.That(starvedLoad, Is.GreaterThan(1000f),
+                        "a switched on machine must keep its load on the APC while it has no power");
+                    Assert.That(powerNet.IsPoweredCalculate(receiver), Is.False,
+                        "wanting power and receiving none must not count as powered");
+                    Assert.That(gas.Temperature, Is.EqualTo(500f).Within(0.01f),
+                        "it must not move heat while unpowered");
+                });
+
+                // Nothing to do is still idle draw, not nothing.
+                gas.Temperature = pump.TargetTemperature;
+                Raise(entMan, device);
+                Assert.That(receiver.Load, Is.EqualTo(pump.IdlePower).Within(0.01f),
+                    "a switched on machine with nothing to do should hold its idle draw");
+
+                // Switched off, it lets go of the APC entirely.
+                pump.Enabled = false;
+                Raise(entMan, device);
+                Assert.That(receiver.Load, Is.Zero,
+                    "a switched off machine should not ask for any power");
+
+                // And the load it held while starved is the load it actually uses once fed.
+                pump.Enabled = true;
+                gas.Temperature = 500f;
+                receiver.Powered = true;
+                Raise(entMan, device);
+
+                Assert.Multiple(() =>
+                {
+                    Assert.That(receiver.Load, Is.EqualTo(starvedLoad).Within(1f),
+                        "the held demand should match what the machine draws when it runs");
+                    Assert.That(gas.Temperature, Is.LessThan(500f),
+                        "with power it should go back to moving heat");
+                });
             });
         }
         finally
