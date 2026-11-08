@@ -470,6 +470,8 @@ public sealed class ReactorHardwareTest
             var fissionUnlocks = fission.RecipeUnlocks.Select(it => (string) it).ToHashSet();
             var basicsPrereqs = basics.TechnologyPrerequisites.Select(it => (string) it).ToHashSet();
             var fissionPrereqs = fission.TechnologyPrerequisites.Select(it => (string) it).ToHashSet();
+            var portableParticle = proto.Index<TechnologyPrototype>("NFParticleDecelerator");
+            var particlePrereqs = portableParticle.TechnologyPrerequisites.Select(it => (string) it).ToHashSet();
 
             Assert.Multiple(() =>
             {
@@ -490,6 +492,9 @@ public sealed class ReactorHardwareTest
                     "Fission Basics must not take a power technology as a prerequisite");
                 Assert.That(fissionPrereqs, Does.Not.Contain("NFAdvancedPowercells"),
                     "Nuclear Fission must not take a power technology as a prerequisite");
+                Assert.That(particlePrereqs, Contains.Item("NFReactorControlRods"),
+                    "Portable Particle Emission must follow Fission Basics, so the handheld emitter " +
+                    "is gated behind the reactors it is meant to ignite");
 
                 var core = proto.Index<EntityPrototype>("StormdriveCore");
                 Assert.That(core.Components, Does.ContainKey("MultiHandedItem"),
