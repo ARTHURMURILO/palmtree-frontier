@@ -18,7 +18,8 @@
   footing, an HV cable across the footprint, and a pipe stub on each of the three ports, so the fitter
   only has to run services to the edge of the reactor. It does not arrive fuelled.
   A cold, shut-down RBMK built from a flatpack can be packed back into its flatpack from the context
-  menu; a running, hot or slagged one cannot. Fuel rods are separate: each one is a 30 uranium, 10 metal print.
+  menu; a running, hot or slagged one cannot. Fuel rods are separate: each one is a 30 uranium, 10 metal
+  print, or order a five-rod crate from cargo.
 
   ## The console
   - [bold]K (neutrons per generation):[/bold] the reactivity the control rods are chasing. 0–3.

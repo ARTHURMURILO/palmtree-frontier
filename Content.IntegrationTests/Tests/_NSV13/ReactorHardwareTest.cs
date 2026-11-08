@@ -21,6 +21,8 @@ using Content.Shared.NodeContainer.NodeGroups;
 using Content.Shared.Maps;
 using Content.Shared.Physics;
 using Content.Shared.Examine;
+using Content.Shared.Storage.EntitySystems;
+using Robust.Shared.Containers;
 using Robust.Shared.Utility;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
@@ -198,6 +200,58 @@ public sealed class ReactorHardwareTest
                 "the shard needs a flatpack to be sellable");
             Assert.That(protoMan.HasIndex<CargoProductPrototype>("EngineSupermatterShard"), Is.True,
                 "the shard should be purchasable through cargo");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    ///     The flatpacks ship without rods, and rods wear out, so both kinds have to be buyable.
+    ///     One crate per type, five rods inside - a full load for either machine.
+    /// </summary>
+    [Test]
+    public async Task ReactorConsumablesAreSoldByCargo()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var protoMan = server.ResolveDependency<IPrototypeManager>();
+
+        await server.WaitAssertion(() =>
+        {
+            (string Product, string Crate, string Rod, int Cost)[] catalogue =
+            [
+                ("EngineReactorControlRods", "CrateReactorControlRods", "ControlRod", 8000),
+                ("EngineRbmkFuelRods", "CrateRbmkFuelRods", "RbmkFuelRodUranium", 10000),
+            ];
+
+            var containers = entMan.System<SharedContainerSystem>();
+
+            foreach (var (productId, crateId, rodId, cost) in catalogue)
+            {
+                Assert.That(protoMan.TryIndex<CargoProductPrototype>(productId, out var product), Is.True,
+                    $"{productId} is missing from the cargo catalogue");
+                Assert.That(product!.Product.Id, Is.EqualTo(crateId),
+                    $"{productId} should sell {crateId}");
+                Assert.That(product.Cost, Is.EqualTo(cost));
+
+                var crate = entMan.SpawnEntity(crateId, testMap.GridCoords);
+
+                Assert.That(containers.TryGetContainer(crate, SharedEntityStorageSystem.ContainerName, out var storage),
+                    Is.True, $"{crateId} is not a crate");
+
+                Assert.That(storage!.ContainedEntities.Count, Is.EqualTo(5),
+                    $"{crateId} should carry exactly five rods");
+
+                foreach (var rod in storage.ContainedEntities)
+                {
+                    Assert.That(entMan.GetComponent<MetaDataComponent>(rod).EntityPrototype?.ID,
+                        Is.EqualTo(rodId), $"{crateId} should contain only {rodId}");
+                }
+
+                entMan.DeleteEntity(crate);
+            }
         });
 
         await pair.CleanReturnAsync();
