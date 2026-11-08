@@ -8,7 +8,10 @@ using Content.Shared.Atmos;
 using Content.Shared.NodeContainer;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
+using Robust.Shared.Maths;
 using Robust.Shared.Prototypes;
+using Robust.UnitTesting;
 
 namespace Content.IntegrationTests.Tests._PS.Atmos;
 
@@ -409,7 +412,7 @@ public sealed class TemperatureDevicesTest
     }
 
     [Test]
-    public async Task HeatExchangerEqualisesWithoutMovingGas()
+    public async Task HeatExchangerPairEqualisesWithoutMovingGas()
     {
         await using var pair = await PoolManager.GetServerClient();
 
@@ -422,28 +425,26 @@ public sealed class TemperatureDevicesTest
             var coords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
 
             EntityUid device = default;
-            GasMixture inletAir = default!;
-            GasMixture outletAir = default!;
+            EntityUid partner = default;
+            GasMixture air = default!;
+            GasMixture partnerAir = default!;
 
             await server.WaitPost(() =>
             {
-                entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, -1f)));
-                device = entMan.SpawnEntity("GasHeatExchanger", coords);
-                entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, 1f)));
+                (device, partner) = SpawnPair(server, coords);
             });
 
             await pair.RunTicksSync(5);
 
             await server.WaitAssertion(() =>
             {
-                var (inlet, outlet) = GetNodes(entMan, device);
-                inletAir = inlet.Air;
-                outletAir = outlet.Air;
+                air = GetNode(entMan, device).Air;
+                partnerAir = GetNode(entMan, partner).Air;
 
-                inletAir.SetMoles(Gas.Oxygen, 100f);
-                inletAir.Temperature = 500f;
-                outletAir.SetMoles(Gas.Oxygen, 100f);
-                outletAir.Temperature = 300f;
+                air.SetMoles(Gas.Oxygen, 100f);
+                air.Temperature = 500f;
+                partnerAir.SetMoles(Gas.Oxygen, 100f);
+                partnerAir.Temperature = 300f;
             });
 
             await server.WaitAssertion(() =>
@@ -453,12 +454,12 @@ public sealed class TemperatureDevicesTest
 
             await server.WaitAssertion(() =>
             {
-                Assert.That(inletAir.Temperature, Is.EqualTo(400f).Within(1f), "The hot side should cool to the equilibrium.");
-                Assert.That(outletAir.Temperature, Is.EqualTo(400f).Within(1f), "The cold side should warm to the equilibrium.");
+                Assert.That(air.Temperature, Is.EqualTo(400f).Within(1f), "The hot side should cool to the equilibrium.");
+                Assert.That(partnerAir.Temperature, Is.EqualTo(400f).Within(1f), "The cold side should warm to the equilibrium.");
 
                 // Equal moles and equal heat capacity, so nothing should have moved.
-                Assert.That(inletAir.TotalMoles, Is.EqualTo(100f).Within(0.01f));
-                Assert.That(outletAir.TotalMoles, Is.EqualTo(100f).Within(0.01f));
+                Assert.That(air.TotalMoles, Is.EqualTo(100f).Within(0.01f));
+                Assert.That(partnerAir.TotalMoles, Is.EqualTo(100f).Within(0.01f));
             });
         }
         finally
@@ -472,7 +473,7 @@ public sealed class TemperatureDevicesTest
     /// below the midpoint.
     /// </summary>
     [Test]
-    public async Task HeatExchangerWeighsByHeatCapacity()
+    public async Task HeatExchangerPairWeighsByHeatCapacity()
     {
         await using var pair = await PoolManager.GetServerClient();
 
@@ -485,28 +486,26 @@ public sealed class TemperatureDevicesTest
             var coords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
 
             EntityUid device = default;
-            GasMixture inletAir = default!;
-            GasMixture outletAir = default!;
+            EntityUid partner = default;
+            GasMixture air = default!;
+            GasMixture partnerAir = default!;
 
             await server.WaitPost(() =>
             {
-                entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, -1f)));
-                device = entMan.SpawnEntity("GasHeatExchanger", coords);
-                entMan.SpawnEntity(PipeProto, coords.Offset(new Vector2(0f, 1f)));
+                (device, partner) = SpawnPair(server, coords);
             });
 
             await pair.RunTicksSync(5);
 
             await server.WaitAssertion(() =>
             {
-                var (inlet, outlet) = GetNodes(entMan, device);
-                inletAir = inlet.Air;
-                outletAir = outlet.Air;
+                air = GetNode(entMan, device).Air;
+                partnerAir = GetNode(entMan, partner).Air;
 
-                inletAir.SetMoles(Gas.Oxygen, 100f);
-                inletAir.Temperature = 500f;
-                outletAir.SetMoles(Gas.Oxygen, 300f);
-                outletAir.Temperature = 200f;
+                air.SetMoles(Gas.Oxygen, 100f);
+                air.Temperature = 500f;
+                partnerAir.SetMoles(Gas.Oxygen, 300f);
+                partnerAir.Temperature = 200f;
             });
 
             await server.WaitAssertion(() =>
@@ -517,10 +516,88 @@ public sealed class TemperatureDevicesTest
             await server.WaitAssertion(() =>
             {
                 // (100*500 + 300*200) / 400 = 275 K.
-                Assert.That(inletAir.Temperature, Is.EqualTo(275f).Within(1f));
-                Assert.That(outletAir.Temperature, Is.EqualTo(275f).Within(1f));
-                Assert.That(inletAir.TotalMoles, Is.EqualTo(100f).Within(0.01f));
-                Assert.That(outletAir.TotalMoles, Is.EqualTo(300f).Within(0.01f));
+                Assert.That(air.Temperature, Is.EqualTo(275f).Within(1f));
+                Assert.That(partnerAir.Temperature, Is.EqualTo(275f).Within(1f));
+                Assert.That(air.TotalMoles, Is.EqualTo(100f).Within(0.01f));
+                Assert.That(partnerAir.TotalMoles, Is.EqualTo(300f).Within(0.01f));
+            });
+        }
+        finally
+        {
+            await pair.CleanReturnAsync();
+        }
+    }
+
+    /// <summary>
+    /// A heat exchanger only works with a second one facing it. A lone device, or two of them
+    /// placed back to back, must not touch the gas at all.
+    /// </summary>
+    [Test]
+    public async Task HeatExchangerDoesNothingWithoutAFacingPartner()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+
+        try
+        {
+            var server = pair.Server;
+            var entMan = server.EntMan;
+            var testMap = await pair.CreateTestMap();
+
+            var loneCoords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
+            var backCoords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(3.5f, 0.5f));
+
+            EntityUid lone = default;
+            EntityUid back = default;
+            EntityUid backPartner = default;
+            GasMixture loneAir = default!;
+            GasMixture backAir = default!;
+            GasMixture backPartnerAir = default!;
+
+            var backPartnerCoords = backCoords.Offset(new Vector2(0f, 1f));
+
+            await server.WaitPost(() =>
+            {
+                EnsureTile(server, loneCoords);
+                EnsureTile(server, backCoords);
+                EnsureTile(server, backPartnerCoords);
+
+                lone = entMan.SpawnEntity("GasHeatExchanger", loneCoords);
+
+                // Two devices with their pipes pointing the same way: their faces do not touch.
+                back = entMan.SpawnEntity("GasHeatExchanger", backCoords);
+                backPartner = entMan.SpawnEntity("GasHeatExchanger", backPartnerCoords);
+            });
+
+            await pair.RunTicksSync(5);
+
+            await server.WaitAssertion(() =>
+            {
+                loneAir = GetNode(entMan, lone).Air;
+                loneAir.SetMoles(Gas.Oxygen, 100f);
+                loneAir.Temperature = 500f;
+
+                backAir = GetNode(entMan, back).Air;
+                backAir.SetMoles(Gas.Oxygen, 100f);
+                backAir.Temperature = 500f;
+
+                backPartnerAir = GetNode(entMan, backPartner).Air;
+                backPartnerAir.SetMoles(Gas.Oxygen, 100f);
+                backPartnerAir.Temperature = 300f;
+            });
+
+            await server.WaitAssertion(() =>
+            {
+                Raise(entMan, lone);
+                Raise(entMan, back);
+            });
+
+            await server.WaitAssertion(() =>
+            {
+                Assert.That(loneAir.Temperature, Is.EqualTo(500f).Within(0.1f),
+                    "A heat exchanger without a partner must leave its pipeline alone.");
+                Assert.That(backAir.Temperature, Is.EqualTo(500f).Within(0.1f),
+                    "Two heat exchangers that are not facing each other must not exchange heat.");
+                Assert.That(backPartnerAir.Temperature, Is.EqualTo(300f).Within(0.1f));
             });
         }
         finally
@@ -590,6 +667,54 @@ public sealed class TemperatureDevicesTest
         var container = entMan.GetComponent<NodeContainerComponent>(device);
 
         return ((PipeNode) container.Nodes["inlet"], (PipeNode) container.Nodes["outlet"]);
+    }
+
+    private static PipeNode GetNode(IEntityManager entMan, EntityUid device)
+    {
+        var container = entMan.GetComponent<NodeContainerComponent>(device);
+
+        return (PipeNode) container.Nodes["pipe"];
+    }
+
+    /// <summary>
+    /// Spawns two heat exchangers with their flat faces touching and anchors both of them.
+    /// </summary>
+    /// <summary>
+    /// The test map only has a single plating tile; put one under everything that has to be
+    /// anchored.
+    /// </summary>
+    private static void EnsureTile(RobustIntegrationTest.ServerIntegrationInstance server, EntityCoordinates coords)
+    {
+        var entMan = server.EntMan;
+        var map = server.System<SharedMapSystem>();
+        var plating = new Tile(server.ResolveDependency<ITileDefinitionManager>()["Plating"].TileId);
+
+        var gridUid = coords.EntityId;
+        var grid = entMan.GetComponent<MapGridComponent>(gridUid);
+        var indices = map.TileIndicesFor(gridUid, grid, coords);
+
+        map.SetTile(gridUid, grid, indices, plating);
+    }
+
+    private static (EntityUid device, EntityUid partner) SpawnPair(
+        RobustIntegrationTest.ServerIntegrationInstance server,
+        EntityCoordinates coords)
+    {
+        var entMan = server.EntMan;
+        var xform = server.System<SharedTransformSystem>();
+
+        var partnerCoords = coords.Offset(new Vector2(0f, 1f));
+        EnsureTile(server, coords);
+        EnsureTile(server, partnerCoords);
+
+        var device = entMan.SpawnEntity("GasHeatExchanger", coords);
+        var partner = entMan.SpawnEntity("GasHeatExchanger", partnerCoords);
+
+        // Turn the partner around: its flat face now looks down at the first device, and the two
+        // pipe stubs point away from each other.
+        xform.SetLocalRotation(partner, Direction.North.ToAngle());
+
+        return (device, partner);
     }
 
     private static void Raise(IEntityManager entMan, EntityUid device)

@@ -214,10 +214,10 @@
 # region Heat exchanger
 
 - type: entity
-  parent: GasBinaryBase
+  parent: GasUnaryBase
   id: GasHeatExchanger
   name: heat exchanger
-  description: Exchanges heat between two connected pipelines. No gas moves through it.
+  description: Exchanges heat with a second heat exchanger placed facing it. No gas moves through it.
   placement:
     mode: AlignAtmosPipeLayers
   components:
@@ -231,7 +231,7 @@
     sprite: _PS/Structures/Piping/Atmospherics/heat_exchanger.rsi
     layers:
     - sprite: Structures/Piping/Atmospherics/pipe.rsi
-      state: pipeStraight
+      state: pipeUnaryConnectors
       map: [ "enum.PipeVisualLayers.Pipe" ]
     - state: he
       map: [ "enum.SubfloorLayers.FirstLayer" ]
@@ -265,7 +265,7 @@
     sprite: _PS/Structures/Piping/Atmospherics/heat_exchanger_alt1.rsi
     layers:
     - sprite: Structures/Piping/Atmospherics/pipe_alt1.rsi
-      state: pipeStraight
+      state: pipeUnaryConnectors
       map: [ "enum.PipeVisualLayers.Pipe" ]
     - state: he
       map: [ "enum.SubfloorLayers.FirstLayer" ]
@@ -281,7 +281,7 @@
     sprite: _PS/Structures/Piping/Atmospherics/heat_exchanger_alt2.rsi
     layers:
     - sprite: Structures/Piping/Atmospherics/pipe_alt2.rsi
-      state: pipeStraight
+      state: pipeUnaryConnectors
       map: [ "enum.PipeVisualLayers.Pipe" ]
     - state: he
       map: [ "enum.SubfloorLayers.FirstLayer" ]

@@ -4,29 +4,24 @@ using Robust.Shared.GameStates;
 namespace Content.Shared._PS.Atmos.Components;
 
 /// <summary>
-/// Palmtree: a binary atmos device that equalises the temperature of the gas on its two connected
-/// pipelines without moving any gas.
+/// Palmtree: one half of a pair of heat exchangers. Two of them have to be placed facing each
+/// other; together they equalise the temperature of the two pipelines they are plumbed into
+/// without moving any gas between them.
 /// Ported from /tg/station's <c>/obj/machinery/atmospherics/components/unary/heat_exchanger</c>.
 /// </summary>
 /// <remarks>
-/// /tg/station uses a pair of unary devices that have to be placed facing each other. This port
-/// folds that pair into a single binary device: the two pipe nodes are simply two pipelines that
-/// are not connected to each other, and heat is exchanged between their mixtures.
+/// The device keeps /tg/station's unary shape: one pipe node on its back and a flat face on the
+/// front. The faces of the two devices have to touch, which puts their pipe nodes back to back so
+/// the two pipelines stay separate.
 /// </remarks>
 [RegisterComponent, NetworkedComponent]
 public sealed partial class GasHeatExchangerComponent : Component
 {
     /// <summary>
-    /// Name of the first pipe node.
+    /// Name of the pipe node on the back of the device.
     /// </summary>
     [DataField]
-    public string InletName = "inlet";
-
-    /// <summary>
-    /// Name of the second pipe node.
-    /// </summary>
-    [DataField]
-    public string OutletName = "outlet";
+    public string PipeNodeName = "pipe";
 
     /// <summary>
     /// Minimum temperature difference (in kelvin) before any heat is exchanged.
