@@ -82,7 +82,7 @@
   - type: Transform
     noRot: false
   - type: ApcPowerReceiver
-    powerLoad: 500
+    powerLoad: 0 # GasHeatPumpSystem sets the idle/running draw once the machine is switched on
   - type: WiresPanel
   - type: WiresVisuals
   - type: StationAiWhitelist
