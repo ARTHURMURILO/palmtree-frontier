@@ -24,7 +24,9 @@
   - ReactorSealant
   - RbmkFuelRodUranium
   - StormdriveCore
-  position: 3, 29
+  # Directly under Portable Particle Emission (2, 30), which takes this node as a prerequisite:
+  # the handheld particle emitter is the field ignition tool for these reactors.
+  position: 2, 29
 
 - type: technology
   id: NFStormdriveMachinery
@@ -40,4 +42,4 @@
   - StormdriveConsoleCircuitboard
   technologyPrerequisites:
   - NFReactorControlRods
-  position: 4, 29
+  position: 3, 29
