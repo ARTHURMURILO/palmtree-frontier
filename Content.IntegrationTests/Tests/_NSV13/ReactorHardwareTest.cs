@@ -488,13 +488,15 @@ public sealed class ReactorHardwareTest
                 Assert.That(fissionUnlocks, Is.SupersetOf(reactors),
                     "Nuclear Fission must unlock both reactors and both consoles");
 
-                Assert.That(basicsPrereqs, Is.Empty,
+                Assert.That(basicsPrereqs, Contains.Item("NFParticleDecelerator"),
+                    "Fission Basics follows Portable Particle Emission: the handheld emitter is " +
+                    "unlocked first, then the reactor branch opens");
+                Assert.That(basicsPrereqs, Does.Not.Contain("NFAdvancedPowercells"),
                     "Fission Basics must not take a power technology as a prerequisite");
                 Assert.That(fissionPrereqs, Does.Not.Contain("NFAdvancedPowercells"),
                     "Nuclear Fission must not take a power technology as a prerequisite");
-                Assert.That(particlePrereqs, Contains.Item("NFReactorControlRods"),
-                    "Portable Particle Emission must follow Fission Basics, so the handheld emitter " +
-                    "is gated behind the reactors it is meant to ignite");
+                Assert.That(particlePrereqs, Does.Not.Contain("NFReactorControlRods"),
+                    "Portable Particle Emission must not be gated behind the reactor branch");
 
                 var core = proto.Index<EntityPrototype>("StormdriveCore");
                 Assert.That(core.Components, Does.ContainKey("MultiHandedItem"),

@@ -24,8 +24,11 @@
   - ReactorSealant
   - RbmkFuelRodUranium
   - StormdriveCore
-  # Directly under Portable Particle Emission (2, 30), which takes this node as a prerequisite:
-  # the handheld particle emitter is the field ignition tool for these reactors.
+  # Particle emission comes first: the handheld particle emitter is the field ignition tool for
+  # these reactors, so the reactor branch follows Portable Particle Emission (2, 30), directly
+  # above this node.
+  technologyPrerequisites:
+  - NFParticleDecelerator
   position: 2, 29
 
 - type: technology
