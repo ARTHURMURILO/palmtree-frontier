@@ -1,5 +1,5 @@
 - type: entity
-  parent: [ BaseItem, BaseC2ContrabandUnredeemable ]
+  parent: [ BaseItem, BaseC3ContrabandUnredeemable ]
   id: NFShockNetGrenade
   name: shock net grenade
   components:
