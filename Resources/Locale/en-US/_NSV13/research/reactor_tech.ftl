@@ -1,2 +1,2 @@
-research-technology-reactor-control-rods = Reactor Control Rods
-research-technology-stormdrive-machinery = Stormdrive Machinery
+research-technology-fission-basics = Fission Basics
+research-technology-nuclear-fission = Nuclear Fission

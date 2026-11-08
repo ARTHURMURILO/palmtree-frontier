@@ -12,6 +12,8 @@ using Content.Shared._NSV13.Reactor;
 using Content.Shared.Atmos;
 using Content.Shared.Construction.Components;
 using Content.Shared.Construction.Prototypes;
+using Content.Shared.Lathe.Prototypes;
+using Content.Shared.Research.Prototypes;
 using Content.Shared._EE.Supermatter.Components;
 using Content.Shared.Movement.Pulling.Components;
 using Content.Shared.NodeContainer;
@@ -417,6 +419,82 @@ public sealed class ReactorHardwareTest
                 Assert.That(layout.Fuel, Is.EqualTo(Direction.East), "client-side fuel face");
                 Assert.That(layout.Waste, Is.EqualTo(Direction.West), "client-side waste face");
             }
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    ///     The reactor prints are engineering work, not mercenary work. They were accidentally filed
+    ///     in the mercenary/NFSD blueprint pack, so the lithograph only offered them under the
+    ///     Mercenary discipline and an engineering techfab had no design to insert.
+    /// </summary>
+    /// <remarks>
+    ///     The split also pins what each node is for: Fission Basics is the consumables and repair
+    ///     kit, Nuclear Fission is the two machines and their consoles. Neither node takes a power
+    ///     technology as a prerequisite; every route to actually running a reactor needs a power net
+    ///     anyway, and the extra edge only stretched a line across the tree.
+    /// </remarks>
+    [Test]
+    public async Task ReactorPrintsAreEngineeringBlueprints()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var proto = server.ResolveDependency<IPrototypeManager>();
+
+        await server.WaitPost(() =>
+        {
+            string[] maintenance =
+            {
+                "ControlRodInferior",
+                "ReactorSealant",
+                "RbmkFuelRodUranium",
+                "StormdriveCore",
+            };
+
+            string[] reactors =
+            {
+                "RbmkReactorFlatpack",
+                "RbmkConsoleCircuitboard",
+                "StormdriveReactorFlatpack",
+                "StormdriveConsoleCircuitboard",
+            };
+
+            var engineering = proto.Index<LatheRecipePackPrototype>("NFBlueprintsEngineering")
+                .Recipes.Select(it => (string) it).ToHashSet();
+            var mercenary = proto.Index<LatheRecipePackPrototype>("NFBlueprintsMercenaryNfsd")
+                .Recipes.Select(it => (string) it).ToHashSet();
+            var basics = proto.Index<TechnologyPrototype>("NFReactorControlRods");
+            var fission = proto.Index<TechnologyPrototype>("NFStormdriveMachinery");
+            var basicsUnlocks = basics.RecipeUnlocks.Select(it => (string) it).ToHashSet();
+            var fissionUnlocks = fission.RecipeUnlocks.Select(it => (string) it).ToHashSet();
+            var basicsPrereqs = basics.TechnologyPrerequisites.Select(it => (string) it).ToHashSet();
+            var fissionPrereqs = fission.TechnologyPrerequisites.Select(it => (string) it).ToHashSet();
+
+            Assert.Multiple(() =>
+            {
+                foreach (var recipe in maintenance.Concat(reactors))
+                {
+                    Assert.That(engineering, Contains.Item(recipe),
+                        $"{recipe} must be printable as an engineering blueprint");
+                    Assert.That(mercenary, Does.Not.Contain(recipe),
+                        $"{recipe} must not be a mercenary blueprint");
+                }
+
+                Assert.That(basicsUnlocks, Is.SupersetOf(maintenance),
+                    "Fission Basics must unlock the consumables and repair kit");
+                Assert.That(fissionUnlocks, Is.SupersetOf(reactors),
+                    "Nuclear Fission must unlock both reactors and both consoles");
+
+                Assert.That(basicsPrereqs, Is.Empty,
+                    "Fission Basics must not take a power technology as a prerequisite");
+                Assert.That(fissionPrereqs, Does.Not.Contain("NFAdvancedPowercells"),
+                    "Nuclear Fission must not take a power technology as a prerequisite");
+
+                var core = proto.Index<EntityPrototype>("StormdriveCore");
+                Assert.That(core.Components, Does.ContainKey("MultiHandedItem"),
+                    "a live reactor core must be carried with both hands");
+            });
         });
 
         await pair.CleanReturnAsync();

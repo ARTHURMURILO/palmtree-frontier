@@ -154,6 +154,16 @@
   # PersonalPropulsion
   - JetpackBlue
   - JetpackCaptain
+  # Fission Basics (Palmtree/NSV13)
+  - ControlRodInferior
+  - ReactorSealant
+  - RbmkFuelRodUranium
+  - StormdriveCore
+  # Nuclear Fission (Palmtree/NSV13)
+  - RbmkReactorFlatpack
+  - RbmkConsoleCircuitboard
+  - StormdriveReactorFlatpack
+  - StormdriveConsoleCircuitboard
 
 # region Medical
 - type: latheRecipePack
@@ -596,16 +606,6 @@
   - CSAmmunitionBox308Rubber
   - CSAmmunitionBox3006Rubber
   - CSAmmunitionBox54RRubber
-  # NFReactorControlRods (Palmtree/NSV13)
-  - ControlRodInferior
-  - ReactorSealant
-  - RbmkReactorFlatpack
-  - RbmkConsoleCircuitboard
-  - RbmkFuelRodUranium
-  # NFStormdriveMachinery (Palmtree/NSV13)
-  - StormdriveReactorFlatpack
-  - StormdriveConsoleCircuitboard
-  - StormdriveCore
 
 # region Engineering & Science
 - type: latheRecipePack

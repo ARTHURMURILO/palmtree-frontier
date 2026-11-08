@@ -4,12 +4,17 @@
 # `Resources/Prototypes/Research/*.yml` files are marked IGNORED on the Frontier), so these nodes join
 # the `NFEngineering` tree with explicit grid positions rather than a separate tree of their own.
 #
-# Mirrors the DM techweb: `reactor_control_rods` was basic engineering, and the stormdrive machinery
-# node required advanced engineering + advanced power. Costs are the fork's scale, not BYOND's 2500.
+# The split is by purpose, not by machine:
+#   * Fission Basics holds the consumables needed to run and repair either reactor.
+#   * Nuclear Fission holds both reactors themselves and their consoles.
+#
+# Neither node lists a power technology as a prerequisite. A reactor is useless without a power net,
+# so every route to actually using one already passes through power generation; the extra edge only
+# drew a line across the tree.
 
 - type: technology
   id: NFReactorControlRods
-  name: research-technology-reactor-control-rods
+  name: research-technology-fission-basics
   entityIcon: ControlRod
   discipline: NFEngineering
   tier: 2
@@ -17,28 +22,22 @@
   recipeUnlocks:
   - ControlRodInferior
   - ReactorSealant
-  - RbmkReactorFlatpack
-  - RbmkConsoleCircuitboard
   - RbmkFuelRodUranium
-  technologyPrerequisites:
-  - NFBasicPowerGeneration
-  # 4, 28 is already NFAdvancedPowerGeneration. Sit one column left of the stormdrive node
-  # instead, diagonally off the basic power generator it requires.
+  - StormdriveCore
   position: 3, 29
 
 - type: technology
   id: NFStormdriveMachinery
-  name: research-technology-stormdrive-machinery
-  entityIcon: StormdriveCore
+  name: research-technology-nuclear-fission
+  entityIcon: StormdriveReactor
   discipline: NFEngineering
   tier: 3
   cost: 15000
   recipeUnlocks:
+  - RbmkReactorFlatpack
+  - RbmkConsoleCircuitboard
   - StormdriveReactorFlatpack
   - StormdriveConsoleCircuitboard
-  - StormdriveCore
   technologyPrerequisites:
   - NFReactorControlRods
-  - NFAdvancedPowercells
-  prerequisiteLineType: Diagonal
   position: 4, 29

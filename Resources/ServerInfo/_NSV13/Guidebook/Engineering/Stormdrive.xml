@@ -119,4 +119,27 @@
 
   A full shutdown below 20 °C resets stability to 100 on the next ignition. That is the clean way out
   of a low-stability spiral.
+
+  ## Repairing a meltdown
+  A melted drive is a wreck, not scrap. It keeps irradiating until it is repaired, but it can be
+  brought back to a factory-fresh state in four steps. Each step takes five seconds, requires you to
+  stay adjacent, and is cancelled if you move or take damage.
+
+  <Box>
+    <GuideEntityEmbed Entity="StormdriveCore" Caption="reactor core"/>
+  </Box>
+
+  - [bold]Clear the pit.[/bold] Shovel the plutonium sludge out. The sludge is dumped on the floor,
+    so suit up for radiation and clean it away before it spreads.
+  - [bold]Reline the pit.[/bold] Use [bold]25 sheets of uranium[/bold] on the drive. Other sheet
+    metals do not count.
+  - [bold]Weld the liner.[/bold] Use a welder on the drive.
+  - [bold]Install a new core.[/bold] Use a [bold]Class IV nuclear storm drive reactor core[/bold].
+    It is a two-handed item: both hands must be free to carry it and to install it. The installation
+    destroys every control rod left in the bay and resets the drive to cold idle, so there is no
+    point pulling the old rods first.
+
+  The core is printed from the [bold]Fission Basics[/bold] research node. Once it is in, mount five
+  fresh control rods and refuel the line before you light the drive again; the repair resets the
+  reaction, not the piping.
 </Document>
