@@ -42,6 +42,9 @@
   name: pollock
   description: A compact and mass-produced combat pistol.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: []
   - type: Sprite
     sprite: _DV/Objects/Weapons/Guns/Pistols/pollock.rsi
   - type: Clothing

@@ -1854,3 +1854,59 @@ Entries:
   time: '2026-11-05T21:23:15.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/6938a69d81af74fafc200f52ed4ba2d6b5517d39
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Added Tier 4 contraband for 100+ damage heavy hardware.
+    - type: Tweak
+      message: >-
+        Tier 5 is now military and law-enforcement hardware; NFSD gear is Tier
+        5.
+    - type: Tweak
+      message: Syndicate, cult, wizard, pirate, and most antag gear are now Tier 5.
+    - type: Tweak
+      message: >-
+        Stun/disabler weapons are Tier 1, civilian guns Tier 2, military-style
+        guns Tier 3, and heavy weapons Tier 4.
+    - type: Tweak
+      message: >-
+        Special ammunition (AP, incendiary, uranium, EMP, overpressure) is Tier
+        3.
+    - type: Tweak
+      message: >-
+        Expedition loot remains legal to keep at Tier 2/3; blueprints follow the
+        tier of the item they produce.
+    - type: Tweak
+      message: >-
+        Captive mobs and creatures now show a Frontier law notice instead of a
+        contraband tier.
+  id: 90126
+  time: '2026-11-06T17:45:29.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/e72651a4b5fc4e637b528daf418661b5489922a6
+- author: xTheLifex
+  changes:
+    - type: Tweak
+      message: >-
+        Security and Command are exempt from contraband restrictions on their
+        issued Tier 3 and Tier 4 weapons.
+  id: 90127
+  time: '2026-11-06T17:48:54.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/0d3ec187eab84e296eb23da3a6bc065f92025511
+- author: xTheLifex
+  changes:
+    - type: Tweak
+      message: Special ammo magazines and speedloaders now match their cartridge tier.
+    - type: Tweak
+      message: >-
+        Security and Command exemptions cover the remaining issued security
+        weapons.
+    - type: Tweak
+      message: >-
+        Low-risk Arcadia clothing, clown shoe mods, throwing stars, and joke
+        mail cannons are lower-tier contraband.
+  id: 90128
+  time: '2026-11-06T18:02:29.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/10f9d27cbf1c42027ba5c757a693358c8f25e4d3

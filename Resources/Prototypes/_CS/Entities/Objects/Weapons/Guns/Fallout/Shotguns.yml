@@ -8,6 +8,9 @@
   name: Saiga12
   description: A 12g Saiga-12 shotgun. Manufactured in Russia, this shotgun is as reliable as they get. 8 shot capacity, decent firerate.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: []
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/Saiga12.rsi
   - type: Clothing
