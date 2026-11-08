@@ -85,11 +85,15 @@ what TG's `combined_energy / combined_heat_capacity` computes.
 
 - The partner is the anchored `GasHeatExchanger` in the tile the device faces (the side opposite its
   `pipe` node), with its own pipe pointing away from the pair and on the same pipe layer.
+- The device can be rotated while anchored (`RotateWhileAnchored`), so a wrongly turned exchanger can
+  be flipped in place with the rotate key instead of being rebuilt.
 - Two devices placed *back to back* (pipes pointing at each other) are rejected: their pipe nodes
   connect instead, which would silently merge the two pipelines. This is the failure mode that made
   the first version of the device look broken when two of them were placed facing each other.
-- The sprite underlay is `pipeUnaryConnectors`, not `pipeStraight`: a pass-through pipe drawn through
-  the machine's flat face was the other reported bug.
+- The sprite underlay is a short `pipeConnector` nub, not `pipeStraight` or `pipeUnaryConnectors`: a
+  long pipe drawn across the tile read as a pipe running through the machine's flat face. The nub
+  lines up with the port the `he` art draws, and the pipe in the neighbouring tile stops at the tile
+  edge.
 - Unpowered, no UI, no gas transfer.
 - Skips when either node resolves to the immutable space mixture (no pipeline attached), when both
   sides are already within `MinimumTemperatureDelta` (0.1 K by default) of each other, or when the

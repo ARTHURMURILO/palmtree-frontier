@@ -29,11 +29,12 @@
 
   ## Heat exchanger
   The heat exchanger brings the gas in two pipelines to the same temperature without moving any gas between them.
-  It only has [color=#a4885c]one pipe connection[/color], so it works in pairs:
-  build two of them and place them [color=#a4885c]flat face to flat face[/color], with the pipe stubs pointing away from each other.
+  It only has [color=#a4885c]one pipe port[/color], so it works in pairs:
+  build two of them and place them [color=#a4885c]flat face to flat face[/color], with the pipe ports pointing away from each other.
   Hook the hot loop up to one of them and the cold loop up to the other.
 
-  A heat exchanger on its own does nothing - its flat face has to touch the flat face of another one.
+  The flat side is the front - the side with the short pipe port is the back, and that is where the loop connects.
+  A heat exchanger on its own, or back to back with another one, does nothing: the flat faces have to touch.
 
   Do not confuse it with the [textlink="radiator" link="Radiators"], which exchanges heat with the air of the tile it sits on.
 
