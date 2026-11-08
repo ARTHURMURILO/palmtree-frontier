@@ -7,6 +7,7 @@ using Content.Shared.Database;
 using Content.Shared.Emag.Systems;
 using Content.Shared.Examine;
 using Content.Shared.Power;
+using Content.Shared.Power.Components;
 using Content.Shared.Power.EntitySystems;
 using Content.Shared.UserInterface;
 using Robust.Shared.Serialization;
@@ -54,6 +55,13 @@ public abstract class SharedGasHeatPumpSystem : EntitySystem
         ent.Comp.Enabled = false;
         Dirty(ent);
         UpdateAppearance(ent);
+
+        // A device that leaves the atmos simulation stops getting atmos ticks, so nothing would
+        // clear the load it left on its APC. It has just been switched off, so let go of the demand.
+        SharedApcPowerReceiverComponent? receiver = null;
+        if (Receiver.ResolveApc(ent.Owner, ref receiver))
+            receiver.Load = 0f;
+
         UserInterfaceSystem.CloseUi(ent.Owner, ent.Comp.UiKey);
     }
 

@@ -186,7 +186,7 @@ public sealed class GasHeatPumpSystem : SharedGasHeatPumpSystem
         comp.WasteTemperature = waste.Temperature;
         comp.WastePressure = waste.Pressure;
 
-        if (!comp.Enabled || !_power.IsPowered(ent.Owner))
+        if (!comp.Enabled)
         {
             Idle(ent);
             return;
@@ -204,9 +204,11 @@ public sealed class GasHeatPumpSystem : SharedGasHeatPumpSystem
             UpdateAppearance(ent);
         }
 
-        // A waste loop this hot means the safeties are the only thing between the machine and a hole in
-        // the ship.
-        if (cooling && comp.WasteTemperature > comp.SafeTemperature && !CheckSafeties(ent))
+        var powered = _power.IsPowered(ent.Owner);
+
+        // A waste loop this hot means the safeties are the only thing between the machine and a hole
+        // in the ship. An unpowered machine is not moving any heat, so it cannot trip them.
+        if (powered && cooling && comp.WasteTemperature > comp.SafeTemperature && !CheckSafeties(ent))
             return;
 
         // Nothing to do when the gas already sits on the setpoint.
@@ -255,6 +257,19 @@ public sealed class GasHeatPumpSystem : SharedGasHeatPumpSystem
 
         var heatPerSecond = exchanged / MathF.Max(dt, 1e-4f);
         var load = GetPowerDraw(comp, heatPerSecond, efficiency);
+
+        // Palmtree: keep asking the APC for the power the machine would be using even while it is
+        // getting none. A load that drops to zero when the machine loses power reads to the power
+        // net as "wants nothing, receives nothing" - that is what it calls powered - so a grid that
+        // is only slightly short would power the machine back up, get overloaded again and cut it
+        // off, forever. Holding the demand instead means a starved machine stays off (and the APC
+        // stays low) until the grid can actually feed it or somebody switches it off.
+        if (!powered)
+        {
+            comp.Efficiency = 0f;
+            SetLoad(ent, load);
+            return;
+        }
 
         // While cooling, the machine's own draw ends up as heat in the waste loop. Heating does not
         // add motor heat, so the term only applies to the cooling branch.
@@ -342,12 +357,13 @@ public sealed class GasHeatPumpSystem : SharedGasHeatPumpSystem
     }
 
     /// <summary>
-    /// Draws idle power while the machine is on, and nothing while it is off.
+    /// Draws idle power while the machine is switched on, and nothing while it is off. The demand is
+    /// reported even while the machine is unpowered; see the note in <see cref="OnAtmosUpdate"/> for
+    /// why a zero load would make the grid flip the machine on and off.
     /// </summary>
     private void Idle(Entity<GasHeatPumpComponent> ent)
     {
-        var running = ent.Comp.Enabled && _power.IsPowered(ent.Owner);
-        SetLoad(ent, running ? ent.Comp.IdlePower : 0f);
+        SetLoad(ent, ent.Comp.Enabled ? ent.Comp.IdlePower : 0f);
     }
 
     private void SetLoad(Entity<GasHeatPumpComponent> ent, float load)
