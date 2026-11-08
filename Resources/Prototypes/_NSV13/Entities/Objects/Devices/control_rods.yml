@@ -90,7 +90,10 @@
     sprite: _NSV13/Objects/Materials/control_rod.rsi
     state: stormdrive_core
   - type: Item
-    size: Huge
+    size: Ginormous
+  # The DM core was WEIGHT_CLASS_GIGANTIC with a two-handed component: a live reactor core is not
+  # something you tuck under one arm. Both hands have to be free to pick it up and install it.
+  - type: MultiHandedItem
   - type: StormdriveCore
   - type: StaticPrice
     price: 5000
