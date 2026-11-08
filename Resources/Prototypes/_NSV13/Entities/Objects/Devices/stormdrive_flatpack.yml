@@ -16,7 +16,9 @@
     entity: StormdriveReactor
     unpackDelay: 10
   - type: ReactorFlatpack
-    footprint: 1,1
+    # The drive's body and fixture are 3x1, so the site checks have to cover the two end tiles
+    # too; a 1x1 footprint would let a pump or primary-layer pipe be buried under the art.
+    footprint: 3,1
     deconstructDelay: 30
     coldLimit: 50
   - type: StaticPrice
