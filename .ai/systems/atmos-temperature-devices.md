@@ -33,10 +33,10 @@ touched, each with a single line or block:
 ## Devices
 
 All four are 1x1, anchored, rotatable `SubFloorHide` entities placed with `AlignAtmosPipeLayers`, the
-same footprint and placement rules as the vanilla pumps and valves. The three binary devices (gate,
-pump, heat exchanger) are directional - `GasBinaryBase` puts the inlet on the north side and the
-outlet on the south - so rotate them so the inlet faces the pipeline the gas should come from. The
-meter is unary and reads the pipe it sits on.
+same footprint and placement rules as the vanilla pumps and valves. The two binary devices (gate and
+pump) are directional - `GasBinaryBase` puts the inlet on the north side and the outlet on the south -
+so rotate them so the inlet faces the pipeline the gas should come from. The heat exchanger and the
+meter are unary and read the pipe they sit on.
 
 ### `GasTemperatureGate` (temperature gate)
 
@@ -78,16 +78,22 @@ clamped to 1, so the pump converges instead of overshooting.
 
 ### `GasHeatExchanger` (heat exchanger)
 
-`/tg/station` `heat_exchanger.dm`. **Design decision:** TG uses a *pair* of unary devices that are
-placed facing each other and find each other through `atmos_init`. That pairing is fragile in SS14
-(rotation, pipe layers, copy/paste, destruction), so the pair is folded into one binary device whose
-inlet and outlet are simply two separate pipelines. Both mixtures are set to the equilibrium
-temperature, which is exactly what TG's `combined_energy / combined_heat_capacity` computes.
+`/tg/station` `heat_exchanger.dm`. A pair of unary devices that have to be placed flat face to flat
+face; each one's pipe points away from its partner, so the pair bridges two separate pipelines
+without ever joining them. Both mixtures are set to the equilibrium temperature, which is exactly
+what TG's `combined_energy / combined_heat_capacity` computes.
 
+- The partner is the anchored `GasHeatExchanger` in the tile the device faces (the side opposite its
+  `pipe` node), with its own pipe pointing away from the pair and on the same pipe layer.
+- Two devices placed *back to back* (pipes pointing at each other) are rejected: their pipe nodes
+  connect instead, which would silently merge the two pipelines. This is the failure mode that made
+  the first version of the device look broken when two of them were placed facing each other.
+- The sprite underlay is `pipeUnaryConnectors`, not `pipeStraight`: a pass-through pipe drawn through
+  the machine's flat face was the other reported bug.
 - Unpowered, no UI, no gas transfer.
-- Skips when both nodes resolve to the same pipeline, when either side is the immutable space
-  mixture (an unconnected node), when the two sides are already within `MinimumTemperatureDelta`
-  (0.1 K by default) of each other, or when the combined heat capacity is negligible.
+- Skips when either node resolves to the immutable space mixture (no pipeline attached), when both
+  sides are already within `MinimumTemperatureDelta` (0.1 K by default) of each other, or when the
+  combined heat capacity is negligible.
 
 ### `GasMeter` (atmos meter)
 
