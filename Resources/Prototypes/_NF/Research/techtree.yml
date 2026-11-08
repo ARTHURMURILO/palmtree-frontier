@@ -1513,6 +1513,8 @@
   cost: 7500
   recipeUnlocks:
   - HellfireFreezerMachineCircuitBoard
+  - TegCirculatorFlatpack # Palmtree
+  - TegCenterFlatpack # Palmtree
   technologyPrerequisites:
   - NFAtmosphericTech
   position: 1, 34

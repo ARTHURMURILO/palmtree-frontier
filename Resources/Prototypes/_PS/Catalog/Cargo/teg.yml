@@ -1,0 +1,12 @@
+# Palmtree: the TEG kit. One crate carries the two circulators and the generator core needed for a
+# complete thermo-electric generator. Researching Advanced Atmospherics unlocks the same flatpacks
+# at an engineering techfab.
+- type: cargoProduct
+  id: EngineTeg
+  icon:
+    sprite: _NF/Objects/Devices/flatpack.rsi
+    state: power_generator
+  product: CrateTeg
+  cost: 10000
+  category: cargoproduct-category-name-engineering
+  group: market

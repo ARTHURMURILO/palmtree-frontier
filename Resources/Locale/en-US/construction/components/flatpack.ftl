@@ -10,3 +10,7 @@ flatpacker-ui-cost-label = Packing Cost
 flatpacker-ui-no-board-label = No board present!
 flatpacker-ui-insert-board = Insert a board to begin.
 flatpacker-ui-pack-button = Pack
+
+pack-into-flatpack-verb = Pack up
+pack-into-flatpack-done = The part folds back into its flatpack.
+pack-into-flatpack-examine = It can be packed back into a flatpack.
