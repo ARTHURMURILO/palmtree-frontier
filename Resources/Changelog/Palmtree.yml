@@ -1910,3 +1910,35 @@ Entries:
   time: '2026-11-06T18:02:29.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/10f9d27cbf1c42027ba5c757a693358c8f25e4d3
+- author: TheLife
+  changes:
+    - type: Add
+      message: >-
+        Added programmable circuit assemblies with removable Lua CPUs, physical modules,
+        power, movement, sensors, radio, device-link signals and an in-game code editor.
+    - type: Add
+      message: >-
+        Added botanical, chemical, medical and gas analyzer modules, four beaker slots, reagent
+        transfer/injection helpers, and autonomous botany/chemistry/medical examples.
+    - type: Add
+      message: >-
+        Added a custom Lua editor with inline syntax colors, line numbers, tab indentation,
+        paste normalization, selection and undo/redo.
+    - type: Add
+      message: Added assembly ownership locking and the admin circuitowner command.
+    - type: Add
+      message: >-
+        Circuit assemblies can scan cleanable decals and analyze floor puddles with a chemical
+        analyzer.
+    - type: Tweak
+      message: >-
+        Assembly pathfinding now brakes and uses a speed-scaled arrival tolerance to stop
+        overshoot loops around small items.
+    - type: Tweak
+      message: Reagent transfers through circuitry are rate-limited like other manipulator actions.
+    - type: Fix
+      message: >-
+        Programmed circuit assemblies now survive Bluespace Dock storage with their CPU programs,
+        installed modules, locks and ownership intact.
+  id: 90129
+  time: '2026-11-09T12:00:00.0000000+00:00'

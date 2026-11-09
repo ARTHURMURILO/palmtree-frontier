@@ -1,0 +1,284 @@
+- type: entity
+  parent: BaseMob
+  id: CircuitAssembly
+  save: true
+  name: programmable assembly
+  description: A bare chassis with sockets for a CPU, power cell and swappable hardware modules. It does nothing until someone gives it a program.
+  components:
+  - type: Sprite
+    sprite: Mobs/Silicon/chassis.rsi
+    state: robot
+    noRot: true
+    drawdepth: Mobs
+  - type: MobState
+    allowedStates:
+    - Alive
+    - Critical
+    - Dead
+  - type: MobThresholds
+    thresholds:
+      0: Alive
+      100: Critical
+      200: Dead
+    showOverlays: false
+    allowRevives: true
+  - type: Damageable
+    damageContainer: Silicon
+  - type: Destructible
+    thresholds:
+    - trigger:
+        !type:DamageTrigger
+        damage: 200
+      behaviors:
+      - !type:PlaySoundBehavior
+        sound:
+          collection: MetalBreak
+      - !type:EmptyContainersBehaviour
+        containers:
+        - cpu
+        - cell
+        - locomotion
+        - left_arm
+        - right_arm
+        - voice
+        - sensor
+        - radio
+        - beaker1
+        - beaker2
+        - beaker3
+        - beaker4
+        - analyzer1
+        - analyzer2
+        - analyzer3
+      - !type:DoActsBehavior
+        acts: [ "Destruction" ]
+  - type: Hands
+    showInHands: false
+    canBeStripped: false
+  - type: Speech
+    speechVerb: Robotic
+    speechSounds: Borg
+    enabled: false
+  - type: ComplexInteraction
+  - type: PowerCellSlot
+    cellSlotId: cell
+  - type: ItemSlots
+    slots:
+      cpu:
+        name: circuit-slot-cpu
+        whitelist:
+          tags: [ CircuitCpu ]
+        insertOnInteract: false
+      cell:
+        name: circuit-slot-cell
+        whitelist:
+          components: [ PowerCell ]
+        insertOnInteract: false
+      locomotion:
+        name: circuit-slot-locomotion
+        whitelist:
+          tags: [ CircuitLocomotion ]
+        insertOnInteract: false
+      left_arm:
+        name: circuit-slot-manipulator
+        whitelist:
+          tags: [ CircuitManipulator ]
+        insertOnInteract: false
+      right_arm:
+        name: circuit-slot-manipulator
+        whitelist:
+          tags: [ CircuitManipulator ]
+        insertOnInteract: false
+      voice:
+        name: circuit-slot-voice
+        whitelist:
+          tags: [ CircuitVoice ]
+        insertOnInteract: false
+      sensor:
+        name: circuit-slot-sensor
+        whitelist:
+          tags: [ CircuitSensor ]
+        insertOnInteract: false
+      radio:
+        name: circuit-slot-radio
+        whitelist:
+          tags: [ CircuitRadio ]
+        insertOnInteract: false
+      beaker1:
+        name: circuit-slot-reagent
+        whitelist:
+          tags: [ GlassBeaker ]
+        insertOnInteract: false
+      beaker2:
+        name: circuit-slot-reagent
+        whitelist:
+          tags: [ GlassBeaker ]
+        insertOnInteract: false
+      beaker3:
+        name: circuit-slot-reagent
+        whitelist:
+          tags: [ GlassBeaker ]
+        insertOnInteract: false
+      beaker4:
+        name: circuit-slot-reagent
+        whitelist:
+          tags: [ GlassBeaker ]
+        insertOnInteract: false
+      analyzer1:
+        name: circuit-slot-analyzer
+        whitelist:
+          tags: [ CircuitAnalyzer ]
+        insertOnInteract: false
+      analyzer2:
+        name: circuit-slot-analyzer
+        whitelist:
+          tags: [ CircuitAnalyzer ]
+        insertOnInteract: false
+      analyzer3:
+        name: circuit-slot-analyzer
+        whitelist:
+          tags: [ CircuitAnalyzer ]
+        insertOnInteract: false
+  - type: ContainerContainer
+    containers:
+      cpu: !type:ContainerSlot
+      cell: !type:ContainerSlot
+      locomotion: !type:ContainerSlot
+      left_arm: !type:ContainerSlot
+      right_arm: !type:ContainerSlot
+      voice: !type:ContainerSlot
+      sensor: !type:ContainerSlot
+      radio: !type:ContainerSlot
+      beaker1: !type:ContainerSlot
+      beaker2: !type:ContainerSlot
+      beaker3: !type:ContainerSlot
+      beaker4: !type:ContainerSlot
+      analyzer1: !type:ContainerSlot
+      analyzer2: !type:ContainerSlot
+      analyzer3: !type:ContainerSlot
+  - type: CircuitAssembly
+    slots:
+      cpu: Cpu
+      cell: Cell
+      locomotion: Locomotion
+      left_arm: Manipulator
+      right_arm: Manipulator
+      voice: Voice
+      sensor: Sensor
+      radio: Radio
+      beaker1: Reagent
+      beaker2: Reagent
+      beaker3: Reagent
+      beaker4: Reagent
+      analyzer1: Analyzer
+      analyzer2: Analyzer
+      analyzer3: Analyzer
+  - type: UserInterface
+    interfaces:
+      enum.CircuitAssemblyUiKey.Key:
+        type: CircuitAssemblyBoundUserInterface
+      enum.CircuitCpuUiKey.Key:
+        type: CircuitCpuBoundUserInterface
+  - type: ActivatableUI
+    key: enum.CircuitAssemblyUiKey.Key
+  - type: Pullable
+
+# Debug/test variant: every slot pre-filled with working hardware.
+- type: entity
+  parent: CircuitAssembly
+  id: CircuitAssemblyFilled
+  suffix: Filled
+  description: A programmable assembly with every module, analyzer and beaker pre-installed for testing.
+  components:
+  - type: ItemSlots
+    slots:
+      cpu:
+        name: circuit-slot-cpu
+        whitelist:
+          tags: [ CircuitCpu ]
+        insertOnInteract: false
+        startingItem: CircuitCpuBasic
+      cell:
+        name: circuit-slot-cell
+        whitelist:
+          components: [ PowerCell ]
+        insertOnInteract: false
+        startingItem: PowerCellMicroreactor
+      locomotion:
+        name: circuit-slot-locomotion
+        whitelist:
+          tags: [ CircuitLocomotion ]
+        insertOnInteract: false
+        startingItem: CircuitWheels
+      left_arm:
+        name: circuit-slot-manipulator
+        whitelist:
+          tags: [ CircuitManipulator ]
+        insertOnInteract: false
+        startingItem: CircuitManipulator
+      right_arm:
+        name: circuit-slot-manipulator
+        whitelist:
+          tags: [ CircuitManipulator ]
+        insertOnInteract: false
+        startingItem: CircuitManipulator
+      voice:
+        name: circuit-slot-voice
+        whitelist:
+          tags: [ CircuitVoice ]
+        insertOnInteract: false
+        startingItem: CircuitSpeaker
+      sensor:
+        name: circuit-slot-sensor
+        whitelist:
+          tags: [ CircuitSensor ]
+        insertOnInteract: false
+        startingItem: CircuitSensor
+      radio:
+        name: circuit-slot-radio
+        whitelist:
+          tags: [ CircuitRadio ]
+        insertOnInteract: false
+        startingItem: CircuitRadio
+      beaker1:
+        name: circuit-slot-reagent
+        whitelist:
+          tags: [ GlassBeaker ]
+        insertOnInteract: false
+        startingItem: Beaker
+      beaker2:
+        name: circuit-slot-reagent
+        whitelist:
+          tags: [ GlassBeaker ]
+        insertOnInteract: false
+        startingItem: Beaker
+      beaker3:
+        name: circuit-slot-reagent
+        whitelist:
+          tags: [ GlassBeaker ]
+        insertOnInteract: false
+        startingItem: Beaker
+      beaker4:
+        name: circuit-slot-reagent
+        whitelist:
+          tags: [ GlassBeaker ]
+        insertOnInteract: false
+        startingItem: Beaker
+      analyzer1:
+        name: circuit-slot-analyzer
+        whitelist:
+          tags: [ CircuitAnalyzer ]
+        insertOnInteract: false
+        startingItem: CircuitBotanicalAnalyzer
+      analyzer2:
+        name: circuit-slot-analyzer
+        whitelist:
+          tags: [ CircuitAnalyzer ]
+        insertOnInteract: false
+        startingItem: CircuitChemicalAnalyzer
+      analyzer3:
+        name: circuit-slot-analyzer
+        whitelist:
+          tags: [ CircuitAnalyzer ]
+        insertOnInteract: false
+        startingItem: CircuitMedicalAnalyzer
