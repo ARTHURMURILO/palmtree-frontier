@@ -3,6 +3,7 @@ using Content.IntegrationTests.Tests.Interaction;
 using Content.Shared.RCD;
 using Content.Shared.RCD.Components;
 using Robust.Client.Placement;
+using Robust.Shared.Enums;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Maths;
 
@@ -28,6 +29,32 @@ public sealed class RcdGhostDirectionTest : InteractionTest
 
             await RunTicks(1);
         }
+    }
+
+    [Test]
+    public async Task SpawnMenuPlacementSurvivesTheGhostUpdate()
+    {
+        var placement = Client.ResolveDependency<IPlacementManager>();
+
+        await Client.WaitPost(() =>
+        {
+            placement.BeginPlacing(new PlacementInformation
+            {
+                EntityType = "WallSolid",
+                PlacementOption = "SnapgridCenter",
+                Range = 2,
+            });
+        });
+
+        Assert.That(placement.IsActive, Is.True, "Starting a spawn-menu placement should activate it.");
+
+        // Sandbox and map-editor placements leave MobUid at EntityUid.Invalid. The RCD ghost
+        // system must not mistake that for a deleted held tool and clear the placement, or the
+        // spawn panel entry deselects on the next frame.
+        await RunTicks(10);
+
+        Assert.That(placement.IsActive, Is.True,
+            "The RCD ghost system must not clear placements that have no owning mob.");
     }
 
     [Test]
