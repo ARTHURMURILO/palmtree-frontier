@@ -1,0 +1,72 @@
+# Palmtree: TEG parts are sold and researched as flatpacks.
+#
+# The flatpacks spawn the "flatpacked" variants below. Those are ordinary TEG parts with one extra
+# component that lets them be packed back into the same flatpack. Map-spawned TEGs use the base
+# TegCenter/TegCirculator prototypes and stay non-packable.
+
+- type: entity
+  parent: BaseNFFlatpack
+  id: TegCirculatorFlatpack
+  name: circulator flatpack
+  description: A flatpack used for constructing a TEG circulator.
+  components:
+  - type: Sprite
+    sprite: _NF/Objects/Devices/flatpack.rsi
+    layers:
+    - state: engineering_gyroscope
+  - type: Flatpack
+    entity: TegCirculatorFlatpacked
+  - type: StaticPrice
+    price: 1000
+  - type: GuideHelp
+    guides:
+    - TEG
+    - Power
+
+- type: entity
+  parent: BaseNFFlatpack
+  id: TegCenterFlatpack
+  name: TEG generator flatpack
+  description: A flatpack used for constructing the generator core of a thermo-electric generator.
+  components:
+  - type: Sprite
+    sprite: _NF/Objects/Devices/flatpack.rsi
+    layers:
+    - state: power_generator
+  - type: Flatpack
+    entity: TegCenterFlatpacked
+  - type: StaticPrice
+    price: 1500
+  - type: GuideHelp
+    guides:
+    - TEG
+    - Power
+
+- type: entity
+  parent: TegCirculator
+  id: TegCirculatorFlatpacked
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: PackableIntoFlatpack
+    flatpack: TegCirculatorFlatpack
+
+- type: entity
+  parent: TegCenter
+  id: TegCenterFlatpacked
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: PackableIntoFlatpack
+    flatpack: TegCenterFlatpack
+
+# Cargo bundle: the two circulators and the generator core needed for one complete TEG.
+- type: entity
+  parent: CrateEngineering
+  id: CrateTeg
+  name: TEG crate
+  description: Two circulator flatpacks and one generator flatpack, enough for a complete thermo-electric generator.
+  components:
+  - type: StorageFill
+    contents:
+    - id: TegCirculatorFlatpack
+      amount: 2
+    - id: TegCenterFlatpack
