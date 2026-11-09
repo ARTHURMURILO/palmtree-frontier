@@ -10,7 +10,7 @@
   components:
   - type: Contraband
     severity: Class2
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/ColtSAA.rsi
   - type: Clothing
@@ -35,7 +35,7 @@
   components:
   - type: Contraband
     severity: Class2
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/Revolver44.rsi
   - type: Clothing
@@ -60,7 +60,7 @@
   components:
   - type: Contraband
     severity: Class2
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/TaurusJudge.rsi
   - type: Clothing
@@ -85,7 +85,7 @@
   components:
   - type: Contraband
     severity: Class2
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/SW45.rsi
   - type: Clothing

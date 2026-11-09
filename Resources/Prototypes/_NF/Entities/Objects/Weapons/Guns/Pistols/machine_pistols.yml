@@ -44,7 +44,7 @@
   components:
   - type: Contraband
     severity: Class2
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _DV/Objects/Weapons/Guns/Pistols/pollock.rsi
   - type: Clothing

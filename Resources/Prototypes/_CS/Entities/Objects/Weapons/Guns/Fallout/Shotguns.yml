@@ -10,7 +10,7 @@
   components:
   - type: Contraband
     severity: Class2
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/Saiga12.rsi
   - type: Clothing

@@ -7,7 +7,7 @@
   components:
   - type: Contraband
     severity: Class2
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: Objects/Weapons/Guns/Pistols/mk58.rsi
   - type: Clothing
@@ -23,7 +23,7 @@
   components:
   - type: Contraband
     severity: Class2
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: Objects/Weapons/Guns/Pistols/N1984.rsi
   - type: Clothing
@@ -55,7 +55,7 @@
   components:
   - type: Contraband
     severity: Class2
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Gun
     soundGunshot:
       path: /Audio/_DV/Weapons/Guns/Gunshots/universal.ogg
