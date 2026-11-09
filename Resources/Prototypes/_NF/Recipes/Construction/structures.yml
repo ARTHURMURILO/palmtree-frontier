@@ -11,6 +11,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: WoodSecretDoorConstruction
@@ -25,6 +26,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: UraniumSecretDoorConstruction
@@ -39,6 +41,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: ShuttleSecretDoorConstruction
@@ -53,6 +56,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: CatwalkHazard
@@ -231,6 +235,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   name: recipes-asteroid-cobble-brick-wall-name
@@ -245,6 +250,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
     
 - type: construction  
   id: UraniumWindowDirectional
@@ -256,6 +262,7 @@
   conditions:
   - !type:EmptyOrWindowValidInTile
   - !type:NoWindowsInTile
+    allowDirectionalWindowPivot: true
   objectType: Structure
   placementMode: SnapgridCenter
 
@@ -269,5 +276,6 @@
   conditions:
   - !type:EmptyOrWindowValidInTile
   - !type:NoWindowsInTile
+    allowDirectionalWindowPivot: true
   objectType: Structure
   placementMode: SnapgridCenter

@@ -139,6 +139,7 @@
   - type: Tag
     tags:
       - Window
+      - DirectionalWindow # Palmtree: edge-mounted, does not fill its tile
   - type: MeleeSound
     soundGroups:
       Brute:
