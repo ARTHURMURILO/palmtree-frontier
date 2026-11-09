@@ -1958,5 +1958,10 @@ Entries:
       message: >-
         Programmed circuit assemblies now survive Bluespace Dock storage with their CPU programs,
         installed modules, locks and ownership intact.
+    - type: Add
+      message: >-
+        Circuit modules can now be fabricated in the exosuit fabricator. New Programmable and
+        Advanced Programmable Circuitry research nodes unlock them, while the chassis remains
+        admin-spawn only during live testing.
   id: 90129
   time: '2026-11-09T12:00:00.0000000+00:00'

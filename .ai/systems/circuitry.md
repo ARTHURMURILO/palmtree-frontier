@@ -14,7 +14,7 @@
   are in, while lathe/construction, research, sound and balance work remain. Phase 5 (hardening) is
   in progress: grid and Bluespace Dock persistence, ownership administration, a Lua kill switch,
   editor coverage, Lua soak/queue tests and a many-assembly stress test are in place.
-- Validation: solution build, YAMLLinter, Content.Tests, and 20 targeted `Circuitry*` integration
+- Validation: solution build, YAMLLinter, Content.Tests, and 21 targeted `Circuitry*` integration
   tests pass (assembly/Lua, hearing, inspect, BUI open, analyzers/dispenser, ChemMaster, security,
   radio, power budget, scan kinds, signals, item/solution autonomy, decals/doors, puddles, events,
   editor Run auto-save, gas analyzer, grid save/load, Bluespace Dock round-trip, many-assembly
@@ -30,8 +30,12 @@
   radio module.
 - Chassis variants: engineering, janitorial, medical, mining, service, peacekeeping and derelict
   assemblies reuse the corresponding SS13/tg borg chassis states from `Mobs/Silicon/chassis.rsi`.
-  They are mechanically identical to `CircuitAssembly`; no construction/lathe chain yet, so they
-  are admin-spawn only for now.
+  They are mechanically identical to `CircuitAssembly`. The empty/filled chassis itself has no
+  lathe recipe and stays admin-spawn only during live testing.
+- Fabrication/research: all physical modules (basic/advanced CPU, wheels, tracks, thruster,
+  manipulator, speaker, sensor, radio, botanical/chemical/medical/gas analyzers) are in the
+  `CircuitryParts` exosuit-fabricator pack. `NFCircuitry` and `NFAdvancedCircuitry` in the NF
+  Engineering tree unlock them; Vim moved to make room and now follows the critter-mech node.
 - Capability recomputation (hands, speech, movement, flight, sensor range, power draw, beaker),
   power gating and idle/action/movement power costs.
 - Power tuning (2026-11): fractional draws. Base idle 0.05, CPU 0.25/0.4, locomotion 0.05/0.1/0.15,
