@@ -320,7 +320,7 @@
   components:
   - type: Contraband
     severity: Class2
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _NF/Clothing/Head/Hats/beret_arcadia.rsi
   - type: Clothing

@@ -158,7 +158,7 @@
   components:
   - type: Contraband
     severity: Class2
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _NF/Clothing/Ears/Headsets/arcadia.rsi
   - type: Clothing
