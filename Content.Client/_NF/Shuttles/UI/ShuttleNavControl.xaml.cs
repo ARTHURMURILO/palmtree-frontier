@@ -197,8 +197,8 @@ public sealed partial class ShuttleNavControl
             return;
 
         _isMouseDown = true;
-        _lastMousePos = args.RelativePosition;
-        TryFireAtPosition(args.RelativePosition);
+        _lastMousePos = args.RelativePixelPosition;
+        TryFireAtPosition(args.RelativePixelPosition);
     }
 
     protected override void FrameUpdate(FrameEventArgs args)
@@ -221,7 +221,7 @@ public sealed partial class ShuttleNavControl
             if (currentTime - _lastFireTime >= FireRateLimit)
             {
                 var mousePos = UserInterfaceManager.MousePositionScaled;
-                var relativePos = mousePos.Position - GlobalPosition;
+                var relativePos = (mousePos.Position - GlobalPosition) * UIScale; // Palmtree: physical pixels
                 if (relativePos != _lastMousePos)
                 {
                     _lastMousePos = relativePos;

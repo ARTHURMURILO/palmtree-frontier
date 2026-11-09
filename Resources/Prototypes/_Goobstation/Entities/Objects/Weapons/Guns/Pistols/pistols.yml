@@ -7,6 +7,9 @@
   name: Anaconda
   description: A heavy pistol capable of supplying itself with the ammo on the way using a built-in fabricator.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: []
   - type: Sprite
     sprite: _Goobstation/Objects/Weapons/Guns/Pistols/anaconda.rsi
     layers:

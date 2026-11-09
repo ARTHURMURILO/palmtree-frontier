@@ -114,11 +114,21 @@ queries).
    Palmtree: layer order follows the direction the sprite is drawn in **on the local client**
    (`world rotation + eye rotation`, see `Content.Client/_PS/Humanoid/DirectionalLayerOrderSystem`).
    Facing south puts exposed genitals above hair and tail layers (unless a jumpsuit/outer garment
-   actually covers them); facing east/west tucks tail markings under the hair layer. Sprite
+   actually covers them); facing east/west tucks tail markings under the hair layer and puts snout
+   and snout-cover markings above it when the character's `SnoutAboveHair` option is enabled
+   (default off keeps them under hair). Sprite
    direction changes raise no event, so the system rebuilds the humanoid sprite when the cardinal
    direction changes. The lobby editor sets <c>HumanoidLayerDirectionComponent</c> on its preview
    dummy so its rotation buttons use the same rules despite rendering through
    <c>SpriteView.OverrideDirection</c>.
+
+   Under-clothing genital layers use stable anchors instead of `jumpsuit`/`outerClothing`
+   (whose indices shift when layers are inserted before them). Bottom organs anchor above `LLeg`
+   and therefore render below `UndergarmentBottom`; breast markings anchor above
+   `UndergarmentBottom` and render below `UndergarmentTop`. The anchor includes the marking's
+   per-sprite offset, so a breast's nipple sprite still renders above the breast sprite and a
+   butt's front/mid sprites stay ordered. A visible relevant undergarment forces this clamp in
+   every direction (south included); without one, south keeps the genitals-over-hair rule.
 
 ## Cum, drip and washing
 

@@ -22,7 +22,7 @@ trait-clumsy-name = Clumsy
 trait-clumsy-desc = You are very clumsy! Certain actions, like shooting, are more difficult.
 
 trait-unclonable-name = Unclonable
-trait-unclonable-desc = Whether due to an administrative oversight or abnormal genetics, your genes aren't sequenced by NT, and you cannot be cloned.
+trait-unclonable-desc = Whether due to an administrative oversight or abnormal genetics, your genes aren't sequenced by SolGov, and you cannot be cloned.
 
 trait-lizard-accent-name = Reptilian accent
 trait-lizard-accent-desc = Be it through continual ekssposssure or otherwissse, you sssound like a reptile.

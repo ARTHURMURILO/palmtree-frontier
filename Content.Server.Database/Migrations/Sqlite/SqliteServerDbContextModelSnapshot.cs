@@ -879,6 +879,10 @@ namespace Content.Server.Database.Migrations.Sqlite
                         .HasColumnType("INTEGER")
                         .HasColumnName("slot");
 
+                    b.Property<bool>("SnoutAboveHair")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("snout_above_hair");
+
                     b.Property<int>("SpawnPriority")
                         .HasColumnType("INTEGER")
                         .HasColumnName("spawn_priority");

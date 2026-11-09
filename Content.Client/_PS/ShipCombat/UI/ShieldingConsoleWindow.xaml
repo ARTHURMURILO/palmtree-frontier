@@ -1,0 +1,119 @@
+<controls:FancyWindow xmlns="https://spacestation14.io"
+                      xmlns:controls="clr-namespace:Content.Client.UserInterface.Controls"
+                      xmlns:ui="clr-namespace:Content.Client.Shuttles.UI"
+                      xmlns:ps="clr-namespace:Content.Client._PS.ShipCombat.UI"
+                      Title="{Loc 'shielding-console-window-title'}"
+                      SetSize="960 640"
+                      MinSize="640 480">
+    <BoxContainer Orientation="Horizontal">
+        <ui:ShuttleNavControl Name="NavRadar"
+                              MouseFilter="Stop"
+                              HorizontalExpand="True"
+                              VerticalExpand="True"
+                              Margin="4"/>
+        <ScrollContainer HScrollEnabled="False"
+                         VerticalExpand="True"
+                         MinWidth="300"
+                         MaxWidth="300"
+                         Margin="5 5 0 5">
+            <BoxContainer Orientation="Vertical"
+                          HorizontalExpand="True"
+                          VerticalAlignment="Top">
+                <controls:StripeBack MinSize="48 48">
+                    <Label Name="ConditionDisplayLabel"
+                           HorizontalAlignment="Center"
+                           VerticalExpand="True"/>
+                </controls:StripeBack>
+                <BoxContainer Orientation="Horizontal" Margin="3">
+                    <Label Text="{Loc 'tactical-console-condition'}"/>
+                    <OptionButton Name="ConditionOption" HorizontalExpand="True"/>
+                </BoxContainer>
+                <BoxContainer Name="ConditionConfirmBox"
+                              Orientation="Vertical"
+                              Margin="3"
+                              Visible="False">
+                    <Label Name="ConditionConfirmLabel" HorizontalAlignment="Center"/>
+                    <BoxContainer Orientation="Horizontal">
+                        <Button Name="ConditionConfirmButton"
+                                Text="{Loc 'tactical-console-confirm'}"
+                                HorizontalExpand="True"
+                                Margin="2"/>
+                        <Button Name="ConditionCancelButton"
+                                Text="{Loc 'tactical-console-cancel'}"
+                                HorizontalExpand="True"
+                                Margin="2"/>
+                    </BoxContainer>
+                </BoxContainer>
+
+                <controls:StripeBack MinSize="48 48">
+                    <Label Text="{Loc 'shielding-console-shields'}"
+                           HorizontalAlignment="Center"
+                           VerticalExpand="True"/>
+                </controls:StripeBack>
+                <GridContainer Columns="3" HorizontalAlignment="Center" Margin="3">
+                    <Control MinSize="44 0"/>
+                    <Button Name="FacingForeButton" Text="^" MinSize="44 28"/>
+                    <Control MinSize="44 0"/>
+                    <Button Name="FacingPortButton" Text="&lt;" MinSize="44 28"/>
+                    <Button Name="FacingAllButton" Text="ALL" MinSize="52 28"/>
+                    <Button Name="FacingStarboardButton" Text="&gt;" MinSize="44 28"/>
+                    <Control MinSize="44 0"/>
+                    <Button Name="FacingAftButton" Text="v" MinSize="44 28"/>
+                    <Control MinSize="44 0"/>
+                </GridContainer>
+                <Label Name="RedistributeCooldownLabel"
+                       HorizontalAlignment="Center"
+                       Margin="3"/>
+                <GridContainer Columns="3" Margin="3">
+                    <Label Text="{Loc 'shielding-console-facing-fore'}"/>
+                    <ProgressBar Name="FacingForeBar" MinValue="0" MaxValue="1" MinSize="80 10" Margin="4 0"/>
+                    <Label Name="FacingForeLabel" HorizontalExpand="True" Align="Right"/>
+                    <Label Text="{Loc 'shielding-console-facing-starboard'}"/>
+                    <ProgressBar Name="FacingStarboardBar" MinValue="0" MaxValue="1" MinSize="80 10" Margin="4 0"/>
+                    <Label Name="FacingStarboardLabel" HorizontalExpand="True" Align="Right"/>
+                    <Label Text="{Loc 'shielding-console-facing-aft'}"/>
+                    <ProgressBar Name="FacingAftBar" MinValue="0" MaxValue="1" MinSize="80 10" Margin="4 0"/>
+                    <Label Name="FacingAftLabel" HorizontalExpand="True" Align="Right"/>
+                    <Label Text="{Loc 'shielding-console-facing-port'}"/>
+                    <ProgressBar Name="FacingPortBar" MinValue="0" MaxValue="1" MinSize="80 10" Margin="4 0"/>
+                    <Label Name="FacingPortLabel" HorizontalExpand="True" Align="Right"/>
+                </GridContainer>
+
+                <controls:StripeBack MinSize="48 48">
+                    <Label Text="{Loc 'shielding-console-power'}"
+                           HorizontalAlignment="Center"
+                           VerticalExpand="True"/>
+                </controls:StripeBack>
+                <BoxContainer Orientation="Horizontal" Margin="3">
+                    <Label Name="ShieldsPoolLabel" Text="{Loc 'shielding-console-pool-shields'}" MinWidth="64"/>
+                    <ps:ThresholdSlider Name="ShieldSlider" HorizontalExpand="True"/>
+                    <Label Name="ShieldValueLabel" MinWidth="34" Align="Right"/>
+                    <Label Name="ShieldAlertLabel" Text="/!\" MinWidth="20" Modulate="#ff3b3b" Visible="False"/>
+                    <CheckBox Name="ShieldLockCheck"/>
+                </BoxContainer>
+                <BoxContainer Orientation="Horizontal" Margin="3">
+                    <Label Name="WeaponsPoolLabel" Text="{Loc 'shielding-console-pool-weapons'}" MinWidth="64"/>
+                    <ps:ThresholdSlider Name="WeaponSlider" HorizontalExpand="True"/>
+                    <Label Name="WeaponValueLabel" MinWidth="34" Align="Right"/>
+                    <Label Name="WeaponAlertLabel" Text="/!\" MinWidth="20" Modulate="#ff3b3b" Visible="False"/>
+                    <CheckBox Name="WeaponLockCheck"/>
+                </BoxContainer>
+                <BoxContainer Orientation="Horizontal" Margin="3">
+                    <Label Name="ThrustersPoolLabel" Text="{Loc 'shielding-console-pool-thrusters'}" MinWidth="64"/>
+                    <ps:ThresholdSlider Name="ThrusterSlider" HorizontalExpand="True"/>
+                    <Label Name="ThrusterValueLabel" MinWidth="34" Align="Right"/>
+                    <Label Name="ThrusterAlertLabel" Text="/!\" MinWidth="20" Modulate="#ff3b3b" Visible="False"/>
+                    <CheckBox Name="ThrusterLockCheck"/>
+                </BoxContainer>
+                <BoxContainer Orientation="Horizontal" Margin="3" HorizontalAlignment="Center">
+                    <Button Name="PresetAttackButton" Text="{Loc 'shielding-console-preset-attack'}" Margin="2"/>
+                    <Button Name="PresetDefenseButton" Text="{Loc 'shielding-console-preset-defense'}" Margin="2"/>
+                    <Button Name="PresetBalancedButton" Text="{Loc 'shielding-console-preset-balanced'}" Margin="2"/>
+                </BoxContainer>
+                <CheckBox Name="SilentCheck"
+                          Text="{Loc 'ship-console-silent'}"
+                          Margin="3"/>
+            </BoxContainer>
+        </ScrollContainer>
+    </BoxContainer>
+</controls:FancyWindow>

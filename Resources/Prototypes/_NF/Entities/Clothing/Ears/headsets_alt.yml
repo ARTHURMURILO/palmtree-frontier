@@ -156,6 +156,9 @@
   name: arcadia over-ear headset
   description: A dashing and attractive headset.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: []
   - type: Sprite
     sprite: _NF/Clothing/Ears/Headsets/arcadia.rsi
   - type: Clothing

@@ -1,39 +1,60 @@
 - type: hitscan
   id: PSXrayLaserCaspian
+  color: "#60d0d8"
   damage:
     types:
       Heat: 25
       Shock: 10
       Radiation: 20
   muzzleFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
     state: muzzle_xray
   travelFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
     state: xray
   impactFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
     state: impact_xray
   maxLength: 30
 
 - type: hitscan
   id: PhaserLethal
+  color: "#ff9a1a"
   damage:
     types:
       Heat: 80
   muzzleFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
-    state: muzzle_xray
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: muzzle_beam_heavy
   travelFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
-    state: xray
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: beam_heavy
   impactFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
-    state: impact_xray
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: impact_beam_heavy
+  maxLength: 30
+
+# Palmtree: hand-modified phaser variant with a purple-pink beam and double damage.
+- type: hitscan
+  id: PhaserLethalLily
+  color: "#ee6bff"
+  damage:
+    types:
+      Heat: 160
+  muzzleFlash:
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: muzzle_beam_heavy
+  travelFlash:
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: beam_heavy
+  impactFlash:
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: impact_beam_heavy
   maxLength: 30
 
 - type: hitscan
   id: HealBeam
+  color: "#42c0d8"
   damage:
     groups:
       Brute: -15
@@ -41,28 +62,127 @@
       Airloss: -20
       Burn: -20
   muzzleFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
     state: muzzle_omni
   travelFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
     state: beam_omni
   impactFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
     state: impact_omni
   maxLength: 30
 
 # Palmtree: hitscan for the prototype pulse rifle ported from Coyote (Floof)
 - type: hitscan
   id: PulseWeak
+  color: "#4793da"
   damage:
     types:
       Heat: 29 # Coyote
   muzzleFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
     state: muzzle_blue
   travelFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
     state: beam_blue
   impactFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
     state: impact_blue
+
+# Palmtree: Nod laser set. The _PS projectile sprites are grayscale, so the hitscan colour tints them red.
+- type: hitscan
+  id: PSHitscanRedLaserRifle
+  color: "#ff1a1a"
+  damage:
+    types:
+      Heat: 80
+  muzzleFlash:
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: muzzle_u_laser
+  travelFlash:
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: u_laser
+  impactFlash:
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: impact_u_laser
+  maxLength: 30
+
+- type: hitscan
+  id: PSHitscanNodLaserTurret
+  color: "#ff1a1a"
+  damage:
+    types:
+      Heat: 20
+  muzzleFlash:
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: muzzle_u_laser
+  travelFlash:
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: u_laser
+  impactFlash:
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: impact_u_laser
+  maxLength: 30
+
+- type: hitscan
+  id: PSHitscanNodShipLaserTurret
+  color: "#ff1a1a"
+  damage:
+    types:
+      Heat: 30
+      Structural: 10
+  muzzleFlash:
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: muzzle_u_laser
+  travelFlash:
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: u_laser
+  impactFlash:
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: impact_u_laser
+  # Plays at the hit entity, so the ship being shot hears the beam land.
+  sound:
+    path: /Audio/Weapons/Guns/Hits/energy_metal1.ogg
+  forceSound: true
+  maxLength: 512
+
+# Palmtree: silenced sniper. Near-invisible x-ray tracer; non-energy so laser reflectors do not bounce it.
+- type: hitscan
+  id: PSHitscanUmagonSniper
+  color: "#bfefff1a"
+  damage:
+    types:
+      Piercing: 200
+  reflective: NonEnergy
+  muzzleFlash:
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: muzzle_xray
+  travelFlash:
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: xray
+  impactFlash:
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: impact_xray
+  maxLength: 60
+
+# Palmtree: Ghost Stalker's railgun. Superheated slug: cellular, structural and heat damage.
+- type: hitscan
+  id: PSHitscanGSRailgun
+  color: "#66ccff"
+  damage:
+    types:
+      Cellular: 50
+      Structural: 500
+      Heat: 150
+      Piercing: 100
+  reflective: NonEnergy
+  muzzleFlash:
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: muzzle_xray
+  travelFlash:
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: xray
+  impactFlash:
+    sprite: _PS/Objects/Weapons/Guns/Projectiles/projectiles.rsi
+    state: impact_xray
+  maxLength: 60

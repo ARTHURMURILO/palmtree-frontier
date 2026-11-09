@@ -234,6 +234,9 @@
   name: space blade
   description: Let it consume.
   components:
+  - type: Contraband
+    severity: Class5
+    allowedDepartments: []
   - type: Sprite
     state: singularity
   - type: SingularityDistortion

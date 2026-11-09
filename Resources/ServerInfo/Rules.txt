@@ -65,10 +65,10 @@
 	• Do not transport any kind of creature or objects with the intent to cause harm/death, or bait into a conflict inside of the frontier.
 
 [color=#a4885c][head=3]9. Security Forces and Station Staff roles are held to a higher standard of roleplay and are strictly non-antagonists.[/head][/color]
-	• Security Forces roleplaying as ‘bad cops’ and intentionally violating space law is forbidden. Space Law is not optional for these roles, and strong knowledge is required before taking a security position.
+	• Security Forces roleplaying as ‘bad cops’ and intentionally violating the Frontier Sector Code is forbidden. The Frontier Sector Code is not optional for these roles, and strong knowledge is required before taking a security position.
 	• Civilian and Security staff are expected to maintain a minimum of competency and performance on their jobs. Security staff must follow NFSD Standard Operating Procedure (see Wiki in the menu for more details).
 	• Assets seized from criminals may only be used to make victims whole and to pay for any fines under the law. Any excess financials received from the sale of criminal assets is to be returned to their original owners, and are not to be plundered or extorted by security forces. This is a strict zero-tolerance policy.
-	• All players that are hired on as crew to the station as security or service staff, or through other direct jobs working for paychecks from the station, are considered non-antags and official Nanotrasen employees. Engaging in any hostile antagonistic activities, or abuse of the equipment provided while working in these roles, is strictly prohibited.
+	• All players that are hired on as crew to the station as security or service staff, or through other direct jobs working for paychecks from the station, are considered non-antags and official representatives of the Frontier Administration. Engaging in any hostile antagonistic activities, or abuse of the equipment provided while working in these roles, is strictly prohibited.
 
 [color=#a4885c][head=3]10. Sector Command roles such as Station Rep and Sheriff are vital to the operation of the sector and are held to a much higher degree of roleplay and role handling.[/head][/color]
 	• Sector Command is expected and [color=#ff0000]required [/color] to maintain pay for their respective staff as a part of their job. Payroll should be a minimum of 10,000 for station crew, 20,000 for Station Rep and Sheriff, and 15,000 for security per hour. Embezzlement of station funds is strictly forbidden.
@@ -77,7 +77,7 @@
 	• You may not tax, lease, rent, or otherwise reserve the free and fair use of station resources and space to the detriment of the public or for personal gain. This includes, but is not limited to: charging docking fees, granting docking extensions, vending access, and moving station resources behind access locked doors to restrict access.
 
 [color=#a4885c][head=3]11. Follow Escalation Guidelines[/head][/color]
-	• Antagonistic ghost roles, and pest ghost roles like mice are always fair game for attack. Don't grief nanotrasen-aligned ghost roles like familiars, drones, or pets without provocation.
+	• Antagonistic ghost roles, and pest ghost roles like mice are always fair game for attack. Don't grief Frontier-aligned ghost roles like familiars, drones, or pets without provocation.
 	• Do not attack another player without a legitimate, explainable roleplay reason that could be applied in a similar, real-life scenario. A fistfight does not suddenly escalate into a gunfight.
 	• If a fight results in someone being critically injured or killed, seek medical help for them.
 	• If at any point combat is disengaged and both parties leave the area, you cannot skip escalation and plunge back into a fight. What’s done is done.
@@ -88,4 +88,4 @@
 	• Pirates/antagonists must ahelp before starting a crew and receive permission to begin antag activity. Spamming ahelp asking to be a pirate or pirating without permission will likely lead to being banned.
 	• Pirate crews may never exceed a total force of four members, including the Captain.
 	• Non-hostile vessels that surrender: cannot be killed, left stranded, completely bankrupt, or otherwise. The safety of non-hostile merchant vessels is to be guaranteed by all parties. All vessels being boarded must first attempt to negotiate before any hostile actions may take place.
-	• Hostile forces that are known, declared, and confirmed, may be considered 'belligerent', boarded non-conventionally, and have their systems disabled in attempts to bring them to justice. All suspects taken alive must be adequately cared for and unharmed according to Space Law.
+	• Hostile forces that are known, declared, and confirmed, may be considered 'belligerent', boarded non-conventionally, and have their systems disabled in attempts to bring them to justice. All suspects taken alive must be adequately cared for and unharmed according to the Frontier Sector Code.

@@ -1,6 +1,6 @@
 # Explosive cable below
 - type: entity
-  parent: [ CableStack, BaseC2ContrabandUnredeemable ] # Frontier: BaseSecurityContraband<BaseC2ContrabandUnredeemable
+  parent: [ CableStack, BaseC3ContrabandUnredeemable ] # Frontier: BaseSecurityContraband<BaseC3ContrabandUnredeemable
   id: CableDetStack
   name: explosive cord
   suffix: Full
