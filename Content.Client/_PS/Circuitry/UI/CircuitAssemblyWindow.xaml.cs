@@ -20,12 +20,9 @@ public sealed partial class CircuitAssemblyWindow : BaseWindow
     public event Action? OnStop;
     public event Action<string>? OnRename;
     public event Action<bool>? OnLock;
-    public event Action<string>? OnTransferOwner;
 
     private string? _lastServerName;
-    private string? _lastServerOwner;
     private bool _nameInitialized;
-    private bool _ownerInitialized;
     private CircuitAssemblyState? _lastState;
 
     public CircuitAssemblyWindow()
@@ -34,7 +31,6 @@ public sealed partial class CircuitAssemblyWindow : BaseWindow
 
         TitleLabel.Text = Loc.GetString("circuit-assembly-ui-title");
         RenameButton.Text = Loc.GetString("circuit-assembly-ui-rename");
-        TransferButton.Text = Loc.GetString("circuit-assembly-ui-transfer-owner");
         RunButton.Text = Loc.GetString("circuit-assembly-ui-run");
         StopButton.Text = Loc.GetString("circuit-assembly-ui-stop");
         ProgramButton.Text = Loc.GetString("circuit-assembly-ui-program");
@@ -42,9 +38,6 @@ public sealed partial class CircuitAssemblyWindow : BaseWindow
 
         RenameButton.OnPressed += _ => SubmitName();
         NameEdit.OnTextEntered += _ => SubmitName();
-        TransferButton.OnPressed += _ => OnTransferOwner?.Invoke(OwnerEdit.Text.Trim());
-        OwnerEdit.OnTextChanged += _ => UpdateOwnerButton();
-        OwnerEdit.OnTextEntered += _ => OnTransferOwner?.Invoke(OwnerEdit.Text.Trim());
         RunButton.OnPressed += _ => OnRun?.Invoke();
         StopButton.OnPressed += _ => OnStop?.Invoke();
         ProgramButton.OnPressed += _ => OnOpenProgram?.Invoke();
@@ -54,12 +47,6 @@ public sealed partial class CircuitAssemblyWindow : BaseWindow
                 OnLock?.Invoke(!_lastState.Locked);
         };
         CloseButton.OnPressed += _ => Close();
-    }
-
-    private void UpdateOwnerButton()
-    {
-        TransferButton.Disabled = _lastState?.Locked != false ||
-                                  string.IsNullOrWhiteSpace(OwnerEdit.Text);
     }
 
     private void SubmitName()
@@ -103,14 +90,6 @@ public sealed partial class CircuitAssemblyWindow : BaseWindow
 
         _lastServerName = state.Name;
 
-        if (!OwnerEdit.HasKeyboardFocus() &&
-            (!_ownerInitialized || state.OwnerName != _lastServerOwner))
-        {
-            OwnerEdit.Text = state.OwnerName ?? string.Empty;
-            _ownerInitialized = true;
-            _lastServerOwner = state.OwnerName;
-        }
-
         var occupied = 0;
         foreach (var slot in state.Slots)
         {
@@ -151,8 +130,6 @@ public sealed partial class CircuitAssemblyWindow : BaseWindow
         LockButton.Disabled = false;
         NameEdit.Editable = canModify;
         RenameButton.Disabled = !canModify;
-        OwnerEdit.Editable = canModify;
-        UpdateOwnerButton();
 
         ErrorLabel.Text = state.Error ?? string.Empty;
         ErrorLabel.Visible = state.Error != null;

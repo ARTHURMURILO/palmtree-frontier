@@ -4,6 +4,8 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using Content.Server._PS.Circuitry.Components;
+using Content.Server._PS.Security;
+using Content.Server.Access.Systems;
 using Content.Server.Atmos.EntitySystems;
 using Content.Server.Botany;
 using Content.Server.Botany.Components;
@@ -24,10 +26,14 @@ using Content.Shared.Access.Components;
 using Content.Shared.Atmos;
 using Content.Shared.Access.Systems;
 using Content.Shared.ActionBlocker;
+using Content.Shared.Chemistry;
 using Content.Shared.Chemistry.Components;
 using Content.Shared.Chemistry.Components.SolutionManager;
 using Content.Shared.Chemistry.EntitySystems;
+using Content.Shared.Chemistry.Reagent;
+using Content.Shared.Containers.ItemSlots;
 using Content.Shared.Construction.Components;
+using Content.Shared.CriminalRecords;
 using Content.Shared.Damage;
 using Content.Shared.Decals;
 using Content.Shared.DeviceLinking;
@@ -48,6 +54,7 @@ using Content.Shared.NodeContainer;
 using Content.Shared.PowerCell;
 using Content.Shared.Radio;
 using Content.Shared.Radio.Components;
+using Content.Shared.Security;
 using Content.Shared.Speech;
 using Content.Shared.Storage;
 using Content.Shared.Toggleable;
@@ -83,6 +90,7 @@ public sealed class CircuitLuaApiSystem : EntitySystem
     private readonly HashSet<EntityUid> _lookupSet = new();
 
     [Dependency] private readonly AccessReaderSystem _access = default!;
+    [Dependency] private readonly AccessSystem _accessSystem = default!;
     [Dependency] private readonly ActionBlockerSystem _actionBlocker = default!;
     [Dependency] private readonly AtmosphereSystem _atmo = default!;
     [Dependency] private readonly BotanySystem _botany = default!;
@@ -95,9 +103,11 @@ public sealed class CircuitLuaApiSystem : EntitySystem
     [Dependency] private readonly ChatSystem _chat = default!;
     [Dependency] private readonly EntityLookupSystem _lookup = default!;
     [Dependency] private readonly GunSystem _gun = default!;
+    [Dependency] private readonly IdCardSystem _idCardSystem = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly InjectorSystem _injector = default!;
     [Dependency] private readonly InventorySystem _inventory = default!;
+    [Dependency] private readonly ItemSlotsSystem _itemSlots = default!;
     [Dependency] private readonly MeleeWeaponSystem _melee = default!;
     [Dependency] private readonly MobStateSystem _mobState = default!;
     [Dependency] private readonly IPrototypeManager _proto = default!;
@@ -105,6 +115,7 @@ public sealed class CircuitLuaApiSystem : EntitySystem
     [Dependency] private readonly SharedInteractionSystem _interaction = default!;
     [Dependency] private readonly SharedSolutionContainerSystem _solutions = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
+    [Dependency] private readonly WantedStatusSystem _wanted = default!;
 
     public void Configure(Script script, Table robot, CircuitLuaRuntime runtime)
     {
@@ -143,6 +154,9 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         robot.Set("entities_on_tile", DynValue.NewCallback((_, args) => EntitiesOnTile(runtime, args), "entities_on_tile"));
         robot.Set("decals", DynValue.NewCallback((_, args) => Decals(runtime, args), "decals"));
         robot.Set("scan_puddles", DynValue.NewCallback((_, args) => Puddles(runtime, args), "scan_puddles"));
+        robot.Set("has_job", DynValue.NewCallback((_, args) => HasJob(runtime, args), "has_job"));
+        robot.Set("has_access", DynValue.NewCallback((_, args) => HasAccess(runtime, args), "has_access"));
+        robot.Set("wanted_status", DynValue.NewCallback((_, args) => WantedStatus(runtime, args), "wanted_status"));
         robot.Set("solution", DynValue.NewCallback((_, args) => Solution(runtime, args), "solution"));
         robot.Set("item_status", DynValue.NewCallback((_, args) => ItemStatus(runtime, args), "item_status"));
         robot.Set("door_status", DynValue.NewCallback((_, args) => DoorStatus(runtime, args), "door_status"));
@@ -176,6 +190,12 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         robot.Set("analyze_chemicals", DynValue.NewCallback((_, args) => AnalyzeChemicals(runtime, args), "analyze_chemicals"));
         robot.Set("analyze_medical", DynValue.NewCallback((_, args) => AnalyzeMedical(runtime, args), "analyze_medical"));
         robot.Set("analyze_gas", DynValue.NewCallback((_, args) => AnalyzeGas(runtime, args), "analyze_gas"));
+        robot.Set("chem_master_status", DynValue.NewCallback((_, args) => ChemMasterStatus(runtime, args), "chem_master_status"));
+        robot.Set("chem_master_set_mode", DynValue.NewCallback((_, args) => ChemMasterSetMode(runtime, args), "chem_master_set_mode"));
+        robot.Set("chem_master_set_pill_type", DynValue.NewCallback((_, args) => ChemMasterSetPillType(runtime, args), "chem_master_set_pill_type"));
+        robot.Set("chem_master_transfer", DynValue.NewCallback((_, args) => ChemMasterTransfer(runtime, args), "chem_master_transfer"));
+        robot.Set("chem_master_create_pills", DynValue.NewCallback((_, args) => ChemMasterCreatePills(runtime, args), "chem_master_create_pills"));
+        robot.Set("chem_master_bottle", DynValue.NewCallback((_, args) => ChemMasterBottle(runtime, args), "chem_master_bottle"));
         robot.Set("dispense", DynValue.NewCallback((_, args) => Dispense(runtime, args), "dispense"));
 
         robot.Set("beakers", DynValue.NewCallback((_, _) => Beakers(runtime), "beakers"));
@@ -472,12 +492,33 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         table.Set("max_health", DynValue.NewNumber(maxHealth));
         table.Set("dead", DynValue.NewBoolean(_mobState.IsDead(target)));
 
-        if (TryGetIdInfo(target, out var idName, out var job))
+        if (_idCardSystem.TryFindIdCard(target, out var idCard))
         {
             var id = NewTable(runtime);
-            id.Set("name", DynValue.NewString(idName ?? Name(target)));
-            if (job != null)
-                id.Set("job", DynValue.NewString(job));
+            id.Set("name", DynValue.NewString(idCard.Comp.FullName ?? Name(target)));
+            id.Set("job", DynValue.NewString(idCard.Comp.LocalizedJobTitle));
+
+            if (idCard.Comp.JobPrototype is { } jobProto)
+                id.Set("job_id", DynValue.NewString(jobProto.Id));
+
+            if (idCard.Comp.JobDepartments.Count > 0)
+            {
+                var departments = NewTable(runtime);
+                var departmentIndex = 1;
+                foreach (var department in idCard.Comp.JobDepartments)
+                    departments.Set(departmentIndex++, DynValue.NewString(department.Id));
+                id.Set("departments", DynValue.NewTable(departments));
+            }
+
+            if (_accessSystem.TryGetTags(idCard.Owner) is { } accessTags)
+            {
+                var access = NewTable(runtime);
+                var accessIndex = 1;
+                foreach (var tag in accessTags)
+                    access.Set(accessIndex++, DynValue.NewString(tag.Id));
+                id.Set("access", DynValue.NewTable(access));
+            }
+
             table.Set("id", DynValue.NewTable(id));
         }
 
@@ -514,6 +555,144 @@ public sealed class CircuitLuaApiSystem : EntitySystem
             table.Set("door", DynValue.NewTable(BuildDoorStatus(runtime, target)));
 
         return DynValue.NewTable(table);
+    }
+
+    private DynValue HasJob(CircuitLuaRuntime runtime, CallbackArguments args)
+    {
+        if (!TryGetString(args, 1, out var job) || string.IsNullOrWhiteSpace(job))
+            return Bool(false, "has_job expects a job id or title");
+
+        if (!TryGetSensorTarget(runtime, args, out var target, out _, out var error))
+            return Bool(false, error);
+
+        if (_idCardSystem.TryFindIdCard(target, out var card))
+        {
+            if (card.Comp.JobPrototype is { } jobProto &&
+                jobProto.Id.Equals(job, StringComparison.OrdinalIgnoreCase))
+            {
+                return Bool(true);
+            }
+
+            if (string.Equals(card.Comp.LocalizedJobTitle, job, StringComparison.OrdinalIgnoreCase))
+                return Bool(true);
+        }
+
+        if (_wanted.TryGetJob(target, out var recordJob) &&
+            recordJob.Id.Equals(job, StringComparison.OrdinalIgnoreCase))
+        {
+            return Bool(true);
+        }
+
+        return Bool(false);
+    }
+
+    private DynValue HasAccess(CircuitLuaRuntime runtime, CallbackArguments args)
+    {
+        if (!TryGetString(args, 1, out var access) || string.IsNullOrWhiteSpace(access))
+            return Bool(false, "has_access expects an access id");
+
+        if (!TryGetSensorTarget(runtime, args, out var target, out _, out var error))
+            return Bool(false, error);
+
+        if (!_idCardSystem.TryFindIdCard(target, out var card))
+            return Bool(false);
+
+        if (_accessSystem.TryGetTags(card.Owner) is { } tags &&
+            tags.Any(tag => tag.Id.Equals(access, StringComparison.OrdinalIgnoreCase)))
+        {
+            return Bool(true);
+        }
+
+        if (TryComp<AccessComponent>(card.Owner, out var accessComponent) &&
+            accessComponent.Groups.Any(group => group.Id.Equals(access, StringComparison.OrdinalIgnoreCase)))
+        {
+            return Bool(true);
+        }
+
+        return Bool(false);
+    }
+
+    private DynValue WantedStatus(CircuitLuaRuntime runtime, CallbackArguments args)
+    {
+        if (!TryGetSensorTarget(runtime, args, out var target, out _, out var error))
+            return Bool(false, error);
+
+        if (!_wanted.TryGetCriminalRecord(target, out var record))
+            return Bool(false, "no criminal record");
+
+        var table = NewTable(runtime);
+        table.Set("status", DynValue.NewString(record.Status.ToString()));
+        table.Set("wanted", DynValue.NewBoolean(record.Status == SecurityStatus.Wanted));
+        if (!string.IsNullOrWhiteSpace(record.Reason))
+            table.Set("reason", DynValue.NewString(record.Reason));
+        if (!string.IsNullOrWhiteSpace(record.InitiatorName))
+            table.Set("initiator", DynValue.NewString(record.InitiatorName));
+
+        var history = NewTable(runtime);
+        var index = 1;
+        foreach (var entry in record.History)
+        {
+            var item = NewTable(runtime);
+            item.Set("crime", DynValue.NewString(entry.Crime));
+            if (!string.IsNullOrWhiteSpace(entry.InitiatorName))
+                item.Set("initiator", DynValue.NewString(entry.InitiatorName));
+            history.Set(index++, DynValue.NewTable(item));
+        }
+
+        table.Set("history", DynValue.NewTable(history));
+        return DynValue.NewTable(table);
+    }
+
+    private bool TryGetSensorTarget(
+        CircuitLuaRuntime runtime,
+        CallbackArguments args,
+        out EntityUid target,
+        out CircuitAssemblyComponent component,
+        out string error)
+    {
+        target = default;
+        component = null!;
+        error = string.Empty;
+
+        if (!TryGetHandle(runtime, args, 0, out target))
+        {
+            error = "invalid entity handle";
+            return false;
+        }
+
+        if (!TryComp<CircuitAssemblyComponent>(runtime.Assembly, out var assemblyComponent))
+        {
+            error = "assembly is missing";
+            return false;
+        }
+
+        component = assemblyComponent;
+
+        if (!component.Capabilities.HasFlag(CircuitCapability.Sensor))
+        {
+            error = "no sensor module";
+            return false;
+        }
+
+        if (!component.Powered)
+        {
+            error = "no power";
+            return false;
+        }
+
+        if (!_interaction.InRangeUnobstructed(runtime.Assembly, target, component.SensorRange))
+        {
+            error = "target is out of sensor range or not visible";
+            return false;
+        }
+
+        if (!_assembly.TryConsumePower(runtime.Assembly, component.ActionPowerCost, component))
+        {
+            error = "no power";
+            return false;
+        }
+
+        return true;
     }
 
     private DynValue CanSee(CircuitLuaRuntime runtime, CallbackArguments args)
@@ -1496,6 +1675,277 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         return DynValue.NewTable(table);
     }
 
+    private DynValue ChemMasterStatus(CircuitLuaRuntime runtime, CallbackArguments args)
+    {
+        if (!TryGetChemMaster(runtime, args, out var target, out var chemMaster, out _, out var error))
+            return Bool(false, error);
+
+        var table = NewTable(runtime);
+        table.Set("name", DynValue.NewString(Name(target)));
+        table.Set("mode", DynValue.NewString(chemMaster.Mode == ChemMasterMode.Transfer ? "transfer" : "discard"));
+        table.Set("sorting", DynValue.NewString(chemMaster.SortingType switch
+        {
+            ChemMasterSortingType.Alphabetical => "alphabetical",
+            ChemMasterSortingType.Quantity => "quantity",
+            ChemMasterSortingType.Latest => "latest",
+            _ => "none",
+        }));
+        table.Set("pill_type", DynValue.NewNumber(chemMaster.PillType));
+        table.Set("pill_dosage_limit", DynValue.NewNumber(chemMaster.PillDosageLimit));
+
+        if (_solutions.TryGetSolution(target, SharedChemMaster.BufferSolutionName, out _, out var buffer))
+        {
+            var bufferTable = BuildSolutionTable(runtime, null, buffer);
+            bufferTable.Set("name", DynValue.NewString(SharedChemMaster.BufferSolutionName));
+            table.Set("buffer", DynValue.NewTable(bufferTable));
+        }
+
+        var input = _itemSlots.GetItemOrNull(target, SharedChemMaster.InputSlotName);
+        if (input is { } inputUid &&
+            TryComp<FitsInDispenserComponent>(inputUid, out var fits) &&
+            _solutions.TryGetSolution(inputUid, fits.Solution, out _, out var inputSolution))
+        {
+            var inputTable = BuildSolutionTable(runtime, null, inputSolution);
+            inputTable.Set("name", DynValue.NewString(Name(inputUid)));
+            table.Set("input", DynValue.NewTable(inputTable));
+        }
+
+        var output = _itemSlots.GetItemOrNull(target, SharedChemMaster.OutputSlotName);
+        if (output is { } outputUid)
+        {
+            table.Set("output_name", DynValue.NewString(Name(outputUid)));
+
+            if (_solutions.TryGetSolution(outputUid, SharedChemMaster.BottleSolutionName, out _, out var outputSolution))
+            {
+                var outputTable = BuildSolutionTable(runtime, null, outputSolution);
+                outputTable.Set("name", DynValue.NewString(Name(outputUid)));
+                table.Set("output", DynValue.NewTable(outputTable));
+            }
+
+            if (TryComp<StorageComponent>(outputUid, out var storage))
+                table.Set("output_items", DynValue.NewNumber(storage.Container.ContainedEntities.Count));
+        }
+
+        return DynValue.NewTable(table);
+    }
+
+    private DynValue ChemMasterSetMode(CircuitLuaRuntime runtime, CallbackArguments args)
+    {
+        if (!TryGetString(args, 1, out var mode))
+            return Bool(false, "chem_master_set_mode expects transfer or discard");
+
+        if (!TryGetChemMaster(runtime, args, out var target, out _, out _, out var error))
+            return Bool(false, error);
+
+        var parsed = mode.ToLowerInvariant() switch
+        {
+            "transfer" => ChemMasterMode.Transfer,
+            "discard" => ChemMasterMode.Discard,
+            _ => (ChemMasterMode?) null,
+        };
+
+        if (parsed is not { } value)
+            return Bool(false, "chem_master_set_mode expects transfer or discard");
+
+        RaiseChemMasterMessage(runtime, target, new ChemMasterSetModeMessage(value));
+        return Bool(true);
+    }
+
+    private DynValue ChemMasterSetPillType(CircuitLuaRuntime runtime, CallbackArguments args)
+    {
+        if (!TryGetNumber(args, 1, out var pillType) ||
+            pillType < 0 || pillType >= SharedChemMaster.PillTypes)
+        {
+            return Bool(false, $"pill type must be between 0 and {SharedChemMaster.PillTypes - 1}");
+        }
+
+        if (!TryGetChemMaster(runtime, args, out var target, out _, out _, out var error))
+            return Bool(false, error);
+
+        RaiseChemMasterMessage(runtime, target, new ChemMasterSetPillTypeMessage((uint) pillType));
+        return Bool(true);
+    }
+
+    private DynValue ChemMasterTransfer(CircuitLuaRuntime runtime, CallbackArguments args)
+    {
+        if (!TryGetString(args, 1, out var reagent))
+            return Bool(false, "chem_master_transfer expects a reagent id");
+
+        if (!TryGetChemMasterAmount(args, 2, out var amount))
+            return Bool(false, "amount must be 1, 5, 10, 15, 20, 25, 30, 50, 100 or all");
+
+        var fromBuffer = args.Count > 3 && args[3].Type == DataType.Boolean && args[3].Boolean;
+
+        if (!_proto.HasIndex<ReagentPrototype>(reagent))
+            return Bool(false, $"unknown reagent '{reagent}'");
+
+        if (!TryGetChemMaster(runtime, args, out var target, out _, out var component, out var error))
+            return Bool(false, error);
+
+        if (_timing.CurTime < runtime.NextTransfer)
+            return Bool(false, "transfer rate limited");
+
+        if (!_assembly.TryConsumePower(runtime.Assembly, component.ActionPowerCost, component))
+            return Bool(false, "no power");
+
+        runtime.NextTransfer = _timing.CurTime + TimeSpan.FromSeconds(0.5);
+        RaiseChemMasterMessage(runtime, target,
+            new ChemMasterReagentAmountButtonMessage(new ReagentId(reagent, null), amount, fromBuffer));
+        return Bool(true);
+    }
+
+    private DynValue ChemMasterCreatePills(CircuitLuaRuntime runtime, CallbackArguments args)
+    {
+        if (!TryGetNumber(args, 1, out var dosage) || !TryGetNumber(args, 2, out var number) ||
+            dosage <= 0 || number <= 0 || dosage > uint.MaxValue || number > uint.MaxValue)
+        {
+            return Bool(false, "chem_master_create_pills expects positive dosage and number");
+        }
+
+        var label = args.Count > 3 && args[3].Type == DataType.String ? args[3].String : string.Empty;
+        if (label.Length > SharedChemMaster.LabelMaxLength)
+            return Bool(false, "label is too long");
+
+        if (!TryGetChemMaster(runtime, args, out var target, out _, out var component, out var error))
+            return Bool(false, error);
+
+        if (dosage > Comp<ChemMasterComponent>(target).PillDosageLimit)
+            return Bool(false, "dosage exceeds the ChemMaster limit");
+
+        var output = _itemSlots.GetItemOrNull(target, SharedChemMaster.OutputSlotName);
+        if (output is not { } outputUid || !TryComp<StorageComponent>(outputUid, out _))
+            return Bool(false, "no pill output container");
+
+        if (!_solutions.TryGetSolution(target, SharedChemMaster.BufferSolutionName, out _, out var buffer) ||
+            buffer.Volume.Float() < dosage * number)
+        {
+            return Bool(false, "buffer does not contain enough reagents");
+        }
+
+        if (_timing.CurTime < runtime.NextAction)
+            return Bool(false, "action rate limited");
+
+        if (!_assembly.TryConsumePower(runtime.Assembly, component.ActionPowerCost, component))
+            return Bool(false, "no power");
+
+        runtime.NextAction = _timing.CurTime + TimeSpan.FromSeconds(0.5);
+        RaiseChemMasterMessage(runtime, target,
+            new ChemMasterCreatePillsMessage((uint) dosage, (uint) number, label));
+        return Bool(true);
+    }
+
+    private DynValue ChemMasterBottle(CircuitLuaRuntime runtime, CallbackArguments args)
+    {
+        if (!TryGetNumber(args, 1, out var dosage) || dosage <= 0 || dosage > uint.MaxValue)
+            return Bool(false, "chem_master_bottle expects a positive dosage");
+
+        var label = args.Count > 2 && args[2].Type == DataType.String ? args[2].String : string.Empty;
+        if (label.Length > SharedChemMaster.LabelMaxLength)
+            return Bool(false, "label is too long");
+
+        if (!TryGetChemMaster(runtime, args, out var target, out _, out var component, out var error))
+            return Bool(false, error);
+
+        var output = _itemSlots.GetItemOrNull(target, SharedChemMaster.OutputSlotName);
+        if (output is not { } outputUid ||
+            !_solutions.TryGetSolution(outputUid, SharedChemMaster.BottleSolutionName, out _, out var bottle) ||
+            bottle.AvailableVolume.Float() < dosage)
+        {
+            return Bool(false, "no bottle output or not enough space");
+        }
+
+        if (!_solutions.TryGetSolution(target, SharedChemMaster.BufferSolutionName, out _, out var buffer) ||
+            buffer.Volume.Float() < dosage)
+        {
+            return Bool(false, "buffer does not contain enough reagents");
+        }
+
+        if (_timing.CurTime < runtime.NextAction)
+            return Bool(false, "action rate limited");
+
+        if (!_assembly.TryConsumePower(runtime.Assembly, component.ActionPowerCost, component))
+            return Bool(false, "no power");
+
+        runtime.NextAction = _timing.CurTime + TimeSpan.FromSeconds(0.5);
+        RaiseChemMasterMessage(runtime, target, new ChemMasterOutputToBottleMessage((uint) dosage, label));
+        return Bool(true);
+    }
+
+    private bool TryGetChemMaster(
+        CircuitLuaRuntime runtime,
+        CallbackArguments args,
+        out EntityUid target,
+        out ChemMasterComponent chemMaster,
+        out CircuitAssemblyComponent assemblyComponent,
+        out string error)
+    {
+        target = default;
+        chemMaster = null!;
+        assemblyComponent = null!;
+        error = string.Empty;
+
+        if (!TryGetHandle(runtime, args, 0, out target))
+        {
+            error = "invalid entity handle";
+            return false;
+        }
+
+        if (!CanManipulate(runtime, target, out assemblyComponent, out error))
+            return false;
+
+        if (!TryComp<ChemMasterComponent>(target, out var foundChemMaster))
+        {
+            error = "target is not a ChemMaster";
+            return false;
+        }
+
+        chemMaster = foundChemMaster;
+        return true;
+    }
+
+    private void RaiseChemMasterMessage<T>(CircuitLuaRuntime runtime, EntityUid target, T message)
+        where T : BoundUserInterfaceMessage
+    {
+        message.Actor = runtime.Assembly;
+        message.UiKey = ChemMasterUiKey.Key;
+        RaiseLocalEvent(target, message);
+    }
+
+    private static bool TryGetChemMasterAmount(CallbackArguments args, int index, out ChemMasterReagentAmount amount)
+    {
+        amount = default;
+        if (index >= args.Count)
+            return false;
+
+        if (args[index].Type == DataType.String &&
+            args[index].String.Equals("all", StringComparison.OrdinalIgnoreCase))
+        {
+            amount = ChemMasterReagentAmount.All;
+            return true;
+        }
+
+        if (args[index].Type != DataType.Number)
+            return false;
+
+        var value = (int) args[index].Number;
+        if (value != args[index].Number)
+            return false;
+
+        foreach (var candidate in Enum.GetValues<ChemMasterReagentAmount>())
+        {
+            if (candidate == ChemMasterReagentAmount.All)
+                continue;
+
+            if ((int) candidate == value)
+            {
+                amount = candidate;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private DynValue AnalyzeMedical(CircuitLuaRuntime runtime, CallbackArguments args)
     {
         if (!TryAnalyzerTarget(runtime, args, CircuitCapability.MedicalAnalyzer, "medical analyzer",
@@ -2289,34 +2739,11 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         name = null;
         job = null;
 
-        if (TryComp<IdCardComponent>(uid, out var ownCard))
-        {
-            name = ownCard.FullName;
-            job = ownCard.LocalizedJobTitle;
-            return true;
-        }
-
-        EntityUid? idCard = null;
-        if (_inventory.TryGetSlotEntity(uid, "id", out var idSlot))
-            idCard = idSlot;
-
-        if (idCard == null && TryComp<HandsComponent>(uid, out var hands))
-        {
-            foreach (var held in _hands.EnumerateHeld((uid, hands)))
-            {
-                if (!HasComp<IdCardComponent>(held))
-                    continue;
-
-                idCard = held;
-                break;
-            }
-        }
-
-        if (idCard is not { } card || !TryComp<IdCardComponent>(card, out var idComp))
+        if (!_idCardSystem.TryFindIdCard(uid, out var idCard))
             return false;
 
-        name = idComp.FullName;
-        job = idComp.LocalizedJobTitle;
+        name = idCard.Comp.FullName;
+        job = idCard.Comp.LocalizedJobTitle;
         return true;
     }
 

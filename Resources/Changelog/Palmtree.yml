@@ -1928,6 +1928,24 @@ Entries:
       message: Added assembly ownership locking and the admin circuitowner command.
     - type: Add
       message: >-
+        Added engineering, janitorial, medical, mining, service, peacekeeping and derelict
+        assembly chassis visuals.
+    - type: Add
+      message: >-
+        Circuit assemblies can check a person's job, access and wanted status, including the
+        wanted reason.
+    - type: Add
+      message: >-
+        Circuit assemblies can automate ChemMaster buffer transfers, pill production and bottle
+        filling.
+    - type: Add
+      message: Added the circuitry.lua.enabled server kill switch for the Lua runtime.
+    - type: Add
+      message: >-
+        Added common GLua-style table/string helpers and type shorthands to circuit Lua scripts,
+        including table.HasValue/Contains, table.Count, table.IsEmpty, string.Split and istable.
+    - type: Add
+      message: >-
         Circuit assemblies can scan cleanable decals and analyze floor puddles with a chemical
         analyzer.
     - type: Tweak

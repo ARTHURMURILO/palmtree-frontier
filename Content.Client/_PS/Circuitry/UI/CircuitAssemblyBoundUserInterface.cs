@@ -19,7 +19,6 @@ public sealed class CircuitAssemblyBoundUserInterface : BoundUserInterface
         _window.OnEject += slotId => SendMessage(new CircuitAssemblyEjectMessage(slotId));
         _window.OnRename += name => SendMessage(new CircuitAssemblyRenameMessage(name));
         _window.OnLock += locked => SendMessage(new CircuitAssemblyLockMessage(locked));
-        _window.OnTransferOwner += owner => SendMessage(new CircuitAssemblyTransferOwnerMessage(owner));
         _window.OnOpenProgram += () => SendMessage(new CircuitAssemblyOpenCpuMessage());
         _window.OnRun += () => SendMessage(new CircuitAssemblyRunMessage());
         _window.OnStop += () => SendMessage(new CircuitAssemblyStopMessage());

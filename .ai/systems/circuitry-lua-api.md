@@ -296,6 +296,50 @@ end
 Only decals marked cleanable are returned. Cleaning itself is a normal tool/action interaction, not
 a Lua API call; use the id with the appropriate mop or cleaning tool.
 
+### Identity, jobs and access
+
+```lua
+local person = robot.nearest_person(4)
+if person then
+    if robot.has_access(person, "Pirate") then
+        log("pirate", robot.inspect(person).name)
+    elseif robot.has_access(person, "Security") then
+        log("nfsd", robot.inspect(person).name)
+    end
+
+    if robot.has_job(person, "Deputy") then
+        log("deputy on site")
+    end
+
+    local wanted = robot.wanted_status(person)
+    if wanted and wanted.wanted then
+        log("wanted", wanted.reason, wanted.initiator)
+    end
+end
+```
+
+`has_job` accepts a job prototype id (for example `Deputy`, `NFSD` jobs such as `Sheriff`, or
+`NFPirate`) or the localized job title. `has_access` checks the ID card's access tags; `Security`
+covers NFSD access, while pirates carry the `Pirate` tag. `wanted_status` reads the same sector
+criminal record as the wanted-list cartridge and returns the reason recorded by security. All three
+require a powered sensor, line of sight and consume one action-power charge. If the target has no
+ID card, `has_job`/`has_access` return plain `false`; sensor/power/range failures return
+`false, reason`.
+
+Wanted status table:
+
+```lua
+{
+    status = "Wanted",
+    wanted = true,
+    reason = "Trespass - Vault",       -- optional
+    initiator = "Deputy Name",         -- optional
+    history = {
+        { crime = "Trespass", initiator = "Deputy Name" },
+    },
+}
+```
+
 ### Puddles and floor spills
 
 `robot.scan_puddles(radius)` requires a powered sensor **and** a chemical analyzer. It scans uncontained
@@ -542,6 +586,60 @@ log("battery", robot.power())
 robot.wait(0.5)
 ```
 
+## GLua-style helpers
+
+The sandbox installs a small, safe subset of Garry's Mod table/string extensions and type
+shorthands. These are not entity APIs; they run entirely in Lua and do not require hardware or
+power.
+
+Global type shorthands:
+
+| Helper | Behavior |
+|---|---|
+| `istable(value)` | `true` when the value is a Lua table. |
+| `isstring(value)` | `true` when the value is a string. |
+| `isnumber(value)` | `true` when the value is a number. |
+| `isbool(value)` | `true` when the value is a boolean. |
+| `isfunction(value)` | `true` when the value is a function/callback. |
+
+| Helper | Behavior |
+|---|---|
+| `table.HasValue(tbl, value)` | `true` if any value in the table equals `value` (O(n)). |
+| `table.Contains(tbl, value)` | Alias of `table.HasValue`, for scripts coming from frameworks that use that name. |
+| `table.IsEmpty(tbl)` | `true` when the table has no keys. |
+| `table.Count(tbl)` | Number of key/value pairs, including non-sequential keys. |
+| `table.GetKeys(tbl)` | New array containing every key. Order is unspecified. |
+| `table.KeyFromValue(tbl, value)` | First key whose value equals `value`, or `nil`. |
+| `table.Random(tbl)` | Random value and its key, or `nil` for an empty table. |
+| `table.Add(target, source)` | Appends `source`'s sequential values to `target` and returns `target`. |
+| `table.RemoveByValue(tbl, value)` | Removes the first sequential match and returns its index, or `false`. |
+| `string.Trim(input [, pattern])` | Removes leading/trailing matches; default pattern is `%s`. |
+| `string.StartsWith(input, prefix)` | Boolean prefix check. |
+| `string.StartWith(input, prefix)` | Deprecated GLua alias of `string.StartsWith`. |
+| `string.EndsWith(input, suffix)` | Boolean suffix check. |
+| `string.Split(input, separator)` | Splits on a plain separator and returns an array of strings. |
+
+```lua
+if istable(robot.scan_mobs(4)) and isstring("NFSD") then
+    log("type checks ok")
+end
+
+local names = table.GetKeys(robot.scan_mobs(4))
+if table.HasValue(names, "Security") or table.Contains(names, "Pirate") then
+    log("hostile or security presence")
+end
+
+local wanted = string.Split("alpha,beta,gamma", ",")
+log("parts", tostring(#wanted), wanted[1], wanted[3])
+
+if string.StartsWith("NFSD", "NF") and string.EndsWith("NFSD", "SD") then
+    log("trimmed", string.Trim("  NFSD  "))
+end
+```
+
+These helpers only cover common table/string convenience functions. They do not add GLua's
+filesystem, networking, entity, hook, or userdata APIs.
+
 ## Status and modules
 
 | Function | Returns | Notes |
@@ -611,7 +709,10 @@ action power, and respect line of sight and sensor range.
 | `robot.scan_structures([radius])` | list or `false, reason` | Same as `scan`, filtered to `kind == "structure"`. Returns installed/anchorable machinery, pipes, vents, scrubbers and constructible machines; walls/windows remain `object`. |
 | `robot.scan_doors([radius])` | list or `false, reason` | Same as `scan`, filtered to `kind == "door"`. |
 | `robot.find(name [, radius])` | handle or `nil, reason` | Case-insensitive substring match on entity name. Returns the nearest match as a bare handle. Returns `nil, reason` when there is no match, no sensor, or no power. Only scans **uncontained** entities. Intentionally bypasses the scan cooldown check but still costs power and sets the next scan time. |
-| `robot.inspect(handle)` | table or `false, reason` | Identity, health, ID, worn equipment, held items and component flags. Requires sensor range and line of sight. |
+| `robot.inspect(handle)` | table or `false, reason` | Identity, health, ID (name, job, job id, departments, access tags), worn equipment, held items and component flags. Requires sensor range and line of sight. |
+| `robot.has_job(handle, job)` | boolean, or `false, reason` | Case-insensitive match against the ID card's job prototype id/localized title, with a sector-record fallback. Requires sensor range and line of sight. |
+| `robot.has_access(handle, access)` | boolean, or `false, reason` | Checks the ID card's access tags/groups. Use tags such as `Security` for NFSD or `Pirate` for pirates. Requires sensor range and line of sight. |
+| `robot.wanted_status(handle)` | table or `false, reason` | Reads the sector criminal record: `status`, `wanted`, `reason`, `initiator` and `history`. Requires sensor range and line of sight. |
 | `robot.can_see(handle)` | boolean | Sensor module and line of sight within sensor range. Does not charge power. |
 | `robot.can_hear(handle)` | boolean | Sensor module; same map and within sensor range. No line-of-sight check. Does not charge power. |
 | `robot.nearest_mob([radius])` | handle or `nil, reason` | Powered sensor required. |
@@ -921,6 +1022,55 @@ function main()
 end
 ```
 
+### ChemMaster
+
+The ChemMaster API drives the real machine UI messages, so buffer limits, pill dosage limits and
+output-container rules stay in `ChemMasterSystem`.
+
+| Function | Requires | Returns |
+|---|---|---|
+| `robot.chem_master_status(handle)` | Manipulator, power, hand range | table or `false, reason` |
+| `robot.chem_master_set_mode(handle, mode)` | Manipulator, power, hand range | `true` or `false, reason` |
+| `robot.chem_master_set_pill_type(handle, type)` | Manipulator, power, hand range; `0..19` | `true` or `false, reason` |
+| `robot.chem_master_transfer(handle, reagent, amount, from_buffer)` | Manipulator, power, hand range | `true` or `false, reason` |
+| `robot.chem_master_create_pills(handle, dosage, number [, label])` | Manipulator, power, pill output container, buffer | `true` or `false, reason` |
+| `robot.chem_master_bottle(handle, dosage [, label])` | Manipulator, power, bottle output container, buffer | `true` or `false, reason` |
+
+- `mode` is `"transfer"` or `"discard"`.
+- `amount` for `chem_master_transfer` must be one of `1, 5, 10, 15, 20, 25, 30, 50, 100` or
+  `"all"`. `from_buffer` is `true` to move buffer -> input beaker, `false` for input -> buffer.
+- `chem_master_create_pills` respects the machine's `pill_dosage_limit` and the output container's
+  storage space. `chem_master_bottle` fills the output bottle's `drink` solution.
+- Status returns the current mode, sorting, pill type/limit, `buffer`, `input`, `output`,
+  `output_name` and `output_items` (pill count).
+
+```lua
+{
+    name = "ChemMaster 4000",
+    mode = "transfer",              -- "transfer" or "discard"
+    sorting = "none",
+    pill_type = 0,
+    pill_dosage_limit = 20,
+    buffer = { volume = 40.0, max_volume = 1000.0, temperature = 293.15, contents = {...} },
+    input = { name = "beaker", volume = 0.0, ... },  -- optional
+    output = { name = "bottle", volume = 10.0, ... }, -- optional
+    output_name = "pill canister",                    -- optional
+    output_items = 2,                                 -- optional, pill count
+}
+```
+
+```lua
+local master = robot.find("chem", 4)
+if master then
+    local status = robot.chem_master_status(master)
+    log("buffer", status.buffer.volume)
+
+    robot.chem_master_transfer(master, "Cryoxadone", 50, false)
+    robot.wait(0.6)
+    robot.chem_master_create_pills(master, 5, 2, "cryo")
+end
+```
+
 ## Analyzers
 
 Analyzer APIs require their matching analyzer module, a sensor module, power, and sensor
@@ -979,7 +1129,13 @@ atmospherics devices. It returns the device's gas mixes plus the local environme
     health = 200.0,
     max_health = 200.0,
     dead = false,
-    id = { name = "ID Name", job = "Job Title" }, -- optional
+    id = {                        -- optional
+        name = "ID Name",
+        job = "Job Title",        -- localized title
+        job_id = "Deputy",        -- job prototype id, if known
+        departments = { "Security" },
+        access = { "Security", "Brig", "Maintenance" },
+    },
     wearing = {                  -- inventory slot -> item name
         head = "Hat",
         outerClothing = "Coat",
@@ -1217,9 +1373,16 @@ without checking the microreactor budget.
 
 Assemblies can be locked by their owner. While locked, only the owner or an admin can insert/eject
 modules, rename the assembly, run/stop programs, save programs, or change encryption keys. The
-assembly panel is view-only for everyone else. The owner can transfer ownership by username after
-unlocking; admins can use `circuitowner <assembly uid> <username|clear>` to transfer or reset
-ownership directly. Ownership transfers lock the assembly and claim the new owner.
+assembly panel is view-only for everyone else. To transfer ownership, the owner unlocks and the new
+owner locks the assembly; admins can use `circuitowner <assembly uid> <username|clear>` to transfer
+or reset ownership directly. A future identification module/component can give the assembly its own
+job/access identity instead of only reading nearby ID cards.
+
+## Server configuration
+
+The server kill switch is `circuitry.lua.enabled` (default `true`). Setting it false rejects new
+starts and stops/clears every running Lua runtime on the next tick. Re-enabling it does not restart
+programs; scripts always require an explicit Run.
 
 ## Limits and budgets
 
@@ -1241,6 +1404,8 @@ ownership directly. Ownership transfers lock the assembly and claim the new owne
 | `radio` rate limit | 1 second |
 | Signal/trigger rate limit | 0.5 seconds |
 | Transfer rate limit | 0.5 seconds |
+| ChemMaster transfer rate limit | 0.5 seconds |
+| ChemMaster pill/bottle rate limit | 0.5 seconds |
 | Speech/radio text length | 1–200 characters |
 | Transfer/dispense amount | 1000 units per call |
 | Decal query radius | Up to sensor range, default 0.75 m |
@@ -1302,18 +1467,560 @@ ownership directly. Ownership transfers lock the assembly and claim the new owne
   checks a carried bucket, syringe, beaker or flashlight. Flashlight `activated` comes from its
   appearance state and is absent for items without toggleable visuals.
 
+## Complete return shapes
+
+This is the exhaustive per-call contract. Earlier sections explain when to use each call; this
+section is the canonical list of what comes back. `handle` means an opaque number, `nil` means Lua
+`nil`, and `false, reason` means two return values.
+
+### Reusable shapes
+
+Entity entry returned by `scan*`:
+
+```lua
+{
+    id = 17,             -- handle
+    name = "Crate",
+    kind = "item",       -- "mob", "item", "structure", "door", "reagent" or "object"
+    distance = 1.2,
+    x = 10.0,            -- local grid position
+    y = 5.0,
+}
+```
+
+Entity entry returned by `entities_on_tile` (no `distance`):
+
+```lua
+{ id = 17, name = "Crate", kind = "item", x = 10.0, y = 5.0 }
+```
+
+Handle entry:
+
+```lua
+{ id = 17, name = "Crowbar" }
+```
+
+Solution table:
+
+```lua
+{
+    slot = 1,            -- optional; 1-4 for beakers, 0 for generic solution/item_status
+    name = "beaker",     -- optional; solution or container name
+    handle = 17,         -- optional; beaker handle
+    volume = 25.0,
+    max_volume = 50.0,
+    temperature = 293.15,
+    contents = {
+        { id = "Water", amount = 25.0 },
+    },
+}
+```
+
+Inspect result:
+
+```lua
+{
+    name = "Entity Name",
+    kind = "mob",
+    species = "Human",           -- optional; humanoid appearance only
+    damage = 0.0,
+    health = 200.0,
+    max_health = 200.0,
+    dead = false,
+    id = {                       -- optional; ID card found on/in the target
+        name = "ID Name",
+        job = "Deputy",          -- localized title
+        job_id = "Deputy",       -- optional; job prototype id
+        departments = { "Security" }, -- optional
+        access = { "Security", "Brig", "Maintenance" }, -- optional
+    },
+    wearing = {                  -- inventory slot -> item name
+        head = "Hat",
+        outerClothing = "Coat",
+    },
+    held = { "Item One", "Item Two" }, -- names, not handles
+    components = {
+        mob = true,
+        item = false,
+        door = false,
+        reagent = false,
+    },
+    door = {                     -- optional; same shape as door_status
+        state = "Closed",
+        bolted = false,
+        powered = true,
+        fire_locked = false,
+        access = true,
+        can_open = true,
+    },
+}
+```
+
+Self result (`robot.self()`):
+
+```lua
+{
+    handle = 0,
+    name = "programmable assembly",
+    x = 10.0,
+    y = 5.0,
+    power = 85.5,
+    max_power = 100.0,
+    powered = true,
+    damage = 0.0,
+    health = 200.0,
+    dead = false,
+    modules = {
+        "cpu", "power", "locomotion", "flight", "manipulator",
+        "voice", "sensor", "radio", "reagent",
+        "botanical_analyzer", "chemical_analyzer", "medical_analyzer",
+    },
+}
+```
+
+Health result (`robot.health()`):
+
+```lua
+{
+    damage = 25.0,
+    health = 175.0,
+    max_health = 200.0,
+    dead = false,
+}
+```
+
+Tile result:
+
+```lua
+{
+    x = 10.0,
+    y = 5.0,
+    entities = {
+        { id = 17, name = "Crate", kind = "item", x = 10.0, y = 5.0 },
+    },
+}
+```
+
+Cleanable decal entry:
+
+```lua
+{
+    decal_id = 12,       -- tile decal id, not an entity handle
+    decal = "Dirt",
+    x = 10.0,
+    y = 5.0,
+    cleanable = true,
+}
+```
+
+Puddle entry:
+
+```lua
+{
+    id = 17,
+    name = "puddle",
+    x = 10.0,
+    y = 5.0,
+    distance = 1.2,
+    solution = "puddle",
+    volume = 10.0,
+    max_volume = 1000.0,
+    temperature = 293.15,
+    contents = {
+        { id = "Vomit", amount = 10.0 },
+    },
+}
+```
+
+Door status:
+
+```lua
+{
+    state = "Closed",
+    bolted = false,
+    powered = true,
+    fire_locked = false,
+    access = true,       -- whether the assembly's carried access passes the door
+    can_open = true,
+}
+```
+
+Item status:
+
+```lua
+{
+    name = "syringe",
+    kind = "item",
+    activated = false,   -- optional; toggleable items only
+    injector = {         -- optional; injectors only
+        mode = "Draw",
+        transfer_amount = 5.0,
+    },
+    solutions = {        -- optional; solution containers only
+        {
+            slot = 0,
+            name = "injector",
+            volume = 10.0,
+            max_volume = 15.0,
+            temperature = 293.15,
+            contents = { { id = "Water", amount = 10.0 } },
+        },
+    },
+}
+```
+
+Radio channel entry:
+
+```lua
+{
+    id = "Security",
+    name = "Security",
+    key = ";",
+    frequency = 1359,
+    default = true,
+}
+```
+
+Wanted status:
+
+```lua
+{
+    status = "Wanted",
+    wanted = true,
+    reason = "Trespass - Vault",       -- optional
+    initiator = "Deputy Name",         -- optional
+    history = {
+        { crime = "Trespass", initiator = "Deputy Name" },
+    },
+}
+```
+
+Event table:
+
+```lua
+{
+    type = "speech",      -- "speech", "radio", "emote", "signal", "damage", ...
+    speaker = 17,         -- optional; source handle when still valid
+    name = "Speaker",      -- optional
+    id_name = "ID Name",  -- optional
+    job = "Engineer",     -- optional
+    message = "...",      -- always present; may be empty for non-speech events
+    channel = "Security", -- optional; radio events
+    port = "Trigger",     -- optional; signal events
+    state = true,         -- optional; signal events
+    emote = "Scream",     -- optional; emote events
+    item = 18,            -- optional; item handle
+    item_name = "Crowbar",-- optional
+    damage = {            -- optional; damage events
+        Blunt = 5.0,
+    },
+    damage_total = 5.0,
+}
+```
+
+Plant/tray analysis:
+
+```lua
+{
+    name = "Hydroponics Tray",
+    is_seed = false,
+    dead = false,
+    health = 100.0,
+    water = 50.0,
+    nutrition = 50.0,
+    toxins = 0.0,
+    pests = 0.0,
+    weeds = 0.0,
+    age = 120.0,
+    harvest_ready = false,
+    mutation_level = 0.0,
+    improper_heat = false,
+    improper_pressure = false,
+    improper_light = false,
+    seed = { -- seed table, below
+        name = "wheat",
+        display_name = "wheat",
+        yield = 3,
+        potency = 1.0,
+        endurance = 1.0,
+        lifespan = 1.0,
+        maturation = 1.0,
+        production = 1.0,
+        growth_stages = 1.0,
+        nutrient_consumption = 1.0,
+        water_consumption = 1.0,
+        ideal_heat = 293.15,
+        heat_tolerance = 10.0,
+        ideal_light = 1.0,
+        light_tolerance = 1.0,
+        toxins_tolerance = 1.0,
+        low_pressure_tolerance = 1.0,
+        high_pressure_tolerance = 1.0,
+        pest_tolerance = 1.0,
+        weed_tolerance = 1.0,
+        weed_high_level_threshold = 1.0,
+        viable = true,
+        seedless = false,
+        chemicals = { "Nutriment" },
+        exude_gases = { "Oxygen" },
+        consume_gases = { "CarbonDioxide" },
+        mutation_prototypes = { "WheatMutation" },
+    },
+}
+```
+
+Seed analysis (`analyze_plant(seed)`):
+
+```lua
+{
+    name = "wheat seeds",
+    is_seed = true,
+    seed = { -- same seed table as above },
+}
+```
+
+Chemical analysis:
+
+```lua
+{
+    name = "beaker",
+    solutions = {
+        {
+            slot = 0,
+            name = "beaker",
+            volume = 25.0,
+            max_volume = 50.0,
+            temperature = 293.15,
+            contents = { { id = "Water", amount = 25.0 } },
+        },
+    },
+}
+```
+
+Medical analysis:
+
+```lua
+{
+    name = "Test Human",
+    species = "Human",   -- optional
+    state = "Alive",     -- "Alive", "Critical" or "Dead"
+    damage = 0.0,
+    health = 200.0,
+    max_health = 200.0,
+    dead = false,
+    damage_types = {     -- optional; damageable targets only
+        Blunt = 0.0,
+        Heat = 0.0,
+    },
+    damage_groups = {    -- optional
+        Brute = 0.0,
+        Burn = 0.0,
+    },
+}
+```
+
+Gas analysis:
+
+```lua
+{
+    name = "canister",
+    environment = { -- gas mix table, below
+        name = "environment",
+        volume = 2500.0,
+        pressure = 101.3,
+        temperature = 293.15,
+        gases = {
+            { id = "Nitrogen", name = "nitrogen", amount = 80.0, color = "#FF0000" },
+        },
+    },
+    mixes = {
+        { -- gas mix table
+            name = "tank",
+            volume = 1000.0,
+            pressure = 250.0,
+            temperature = 310.0,
+            gases = {
+                { id = "Plasma", name = "plasma", amount = 12.0, color = "#FF0000" },
+            },
+        },
+    },
+    device_flipped = false,
+}
+```
+
+ChemMaster status:
+
+```lua
+{
+    name = "ChemMaster 4000",
+    mode = "transfer",              -- "transfer" or "discard"
+    sorting = "none",               -- "none", "alphabetical", "quantity", "latest"
+    pill_type = 0,
+    pill_dosage_limit = 20,
+    buffer = {                      -- solution table without slot
+        name = "buffer",
+        volume = 40.0,
+        max_volume = 1000.0,
+        temperature = 293.15,
+        contents = { { id = "Cryoxadone", amount = 40.0 } },
+    },
+    input = {                       -- optional; current input container
+        name = "beaker",
+        volume = 0.0,
+        max_volume = 50.0,
+        temperature = 293.15,
+        contents = {},
+    },
+    output = {                      -- optional; bottle output solution
+        name = "bottle",
+        volume = 10.0,
+        max_volume = 30.0,
+        temperature = 293.15,
+        contents = { { id = "Cryoxadone", amount = 10.0 } },
+    },
+    output_name = "pill canister",  -- optional; output item name
+    output_items = 2,               -- optional; pill count for storage outputs
+}
+```
+
+### Return structure vocabulary
+
+The per-call table uses these shorthand names. `?` marks an optional field, `...` means another
+element of the same shape, and all positions are local grid coordinates in tiles.
+
+| Shorthand | Exact Lua structure |
+|---|---|
+| `handle` | `number`; opaque and runtime-local. `0` is the assembly itself. |
+| `boolean` | `true` or `false`. |
+| `false, reason` | `false, string`; two return values, not a table. |
+| `nil, reason` | `nil, string`; two return values. |
+| `x, y` | `number, number`. |
+| `power, max_power` | `number, number`. |
+| `elapsed seconds` | `number`. |
+| `entity entry` | `{ id = handle, name = string, kind = string, distance = number, x = number, y = number }` |
+| `entity entry (tile)` | `{ id = handle, name = string, kind = string, x = number, y = number }` |
+| `handle entry` | `{ id = handle, name = string }` |
+| `solution table` | `{ slot? = number, name? = string, handle? = handle, volume = number, max_volume = number, temperature = number, contents = { { id = string, amount = number }, ... } }` |
+| `self table` | `{ handle = 0, name = string, x = number, y = number, power = number, max_power = number, powered = boolean, damage = number, health = number, dead = boolean, modules = { string, ... } }` |
+| `health table` | `{ damage = number, health = number, max_health = number, dead = boolean }` |
+| `inspect table` | `{ name = string, kind = string, species? = string, damage = number, health = number, max_health = number, dead = boolean, id? = { name = string, job = string, job_id? = string, departments? = { string, ... }, access? = { string, ... } }, wearing = { [slot] = string }, held = { string, ... }, components = { mob = boolean, item = boolean, door = boolean, reagent = boolean }, door? = door status table }` |
+| `tile table` | `{ x = number, y = number, entities = { entity entry (tile), ... } }` |
+| `door status table` | `{ state = string, bolted = boolean, powered = boolean, fire_locked = boolean, access = boolean, can_open = boolean }` |
+| `item status table` | `{ name = string, kind = string, activated? = boolean, injector? = { mode = string, transfer_amount = number }, solutions? = { solution table with name, ... } }` |
+| `wanted table` | `{ status = string, wanted = boolean, reason? = string, initiator? = string, history = { { crime = string, initiator? = string }, ... } }` |
+| `event table` | `{ type = string, speaker? = handle, name? = string, id_name? = string, job? = string, message = string, channel? = string, port? = string, state? = boolean, emote? = string, item? = handle, item_name? = string, damage? = { [damageType] = number }, damage_total? = number }`; `message` may be empty for non-speech events. |
+| `plant table` | `{ name = string, is_seed = false, dead = boolean, health = number, water = number, nutrition = number, toxins = number, pests = number, weeds = number, age = number, harvest_ready = boolean, mutation_level = number, improper_heat = boolean, improper_pressure = boolean, improper_light = boolean, seed = seed table }` |
+| `seed table` | `{ name = string, display_name = string, yield = number, potency = number, endurance = number, lifespan = number, maturation = number, production = number, growth_stages = number, nutrient_consumption = number, water_consumption = number, ideal_heat = number, heat_tolerance = number, ideal_light = number, light_tolerance = number, toxins_tolerance = number, low_pressure_tolerance = number, high_pressure_tolerance = number, pest_tolerance = number, weed_tolerance = number, weed_high_level_threshold = number, viable = boolean, seedless = boolean, chemicals = { string, ... }, exude_gases = { string, ... }, consume_gases = { string, ... }, mutation_prototypes = { string, ... } }` |
+| `seed item table` | `{ name = string, is_seed = true, seed = seed table }` |
+| `chemical analysis table` | `{ name = string, solutions = { solution table with name, ... } }` |
+| `medical table` | `{ name = string, species? = string, state = string, damage = number, health = number, max_health = number, dead = boolean, damage_types? = { [damageType] = number }, damage_groups? = { [damageGroup] = number } }` |
+| `gas table` | `{ name = string, environment = gas mix table, mixes = { gas mix table, ... }, device_flipped = boolean }` |
+| `gas mix table` | `{ name = string, volume = number, pressure = number, temperature = number, gases = { { id = string, name = string, amount = number, color = string }, ... } }` |
+| `ChemMaster status table` | `{ name = string, mode = string, sorting = string, pill_type = number, pill_dosage_limit = number, buffer = solution table, input? = solution table, output? = solution table, output_name? = string, output_items? = number }` |
+| `list of entity entries` | `{ entity entry, ... }` |
+| `list of entity entries without distance` | `{ entity entry (tile), ... }` |
+| `list of handle entries` | `{ handle entry, ... }`; used by `robot.held()` |
+| `list of solution tables` | `{ solution table, ... }`; `robot.beakers()` entries add `slot` and `handle` |
+| `list of decal entries` | `{ { decal_id = number, decal = string, x = number, y = number, cleanable = true }, ... }` |
+| `list of puddle entries` | `{ { id = handle, name = string, x = number, y = number, distance = number, solution = string, volume = number, max_volume = number, temperature = number, contents = { { id = string, amount = number }, ... } }, ... }` |
+| `list of radio channel entries` | `{ { id = string, name = string, key = string, frequency = number, default = boolean }, ... }` |
+
+### Per-call return contracts
+
+| Call | Success return | Failure return |
+|---|---|---|
+| `robot.self()` | self table | `nil` if the assembly is missing |
+| `robot.position()` | `x, y` | — |
+| `robot.power()` | `power, max_power` | — |
+| `robot.health()` | health table | — |
+| `robot.has_module(name)` | boolean | `false, reason` for invalid arguments |
+| `robot.log(...)` / `print(...)` | `nil` | — |
+| `robot.wait(seconds)` | elapsed seconds (`number`) | — |
+| `robot.move(dx, dy)` | `true` | `false, reason` |
+| `robot.walk_to(x, y [, range, smooth])` | `true` | `false, reason` |
+| `robot.stop()` | `true` | — |
+| `robot.walk_status()` | `"idle"`, `"moving"`, `"arrived"` or `"no_path"` | — |
+| `robot.scan([radius])` | list of entity entries | `false, reason` |
+| `robot.scan_mobs([radius])` | list of entity entries | `false, reason` |
+| `robot.scan_items([radius])` | list of entity entries | `false, reason` |
+| `robot.scan_structures([radius])` | list of entity entries | `false, reason` |
+| `robot.scan_doors([radius])` | list of entity entries | `false, reason` |
+| `robot.find(name [, radius])` | `handle` | `nil, reason` |
+| `robot.inspect(handle)` | inspect table | `false, reason` |
+| `robot.can_see(handle)` | boolean | — |
+| `robot.can_hear(handle)` | boolean | — |
+| `robot.nearest_mob([radius])` | `handle` | `nil, reason` |
+| `robot.nearest_person([radius])` | `handle` | `nil, reason` |
+| `robot.nearest_item([radius])` | `handle` | `nil, reason` |
+| `robot.nearest_structure([radius])` | `handle` | `nil, reason` |
+| `robot.nearest_door([radius])` | `handle` | `nil, reason` |
+| `robot.distance(handle)` | number; `-1` across maps | — |
+| `robot.position_of(handle)` | `x, y` | `false, reason` |
+| `robot.can_reach(handle)` | boolean | — |
+| `robot.get_tile_relative([dx, dy])` / `robot.tile(...)` | tile table | `false, reason` |
+| `robot.entities_on_tile([dx, dy])` | list of entity entries without `distance` | `false, reason` |
+| `robot.decals([radius])` | list of decal entries | `false, reason` |
+| `robot.scan_puddles([radius])` | list of puddle entries | `false, reason` |
+| `robot.has_job(handle, job)` | boolean | `false, reason` for sensor/power/range; plain `false` for no ID |
+| `robot.has_access(handle, access)` | boolean | `false, reason` for sensor/power/range; plain `false` for no ID |
+| `robot.wanted_status(handle)` | wanted table | `false, reason` |
+| `robot.solution(handle [, name])` | solution table | `false, reason` |
+| `robot.item_status(handle)` | item status table | `false, reason` |
+| `robot.door_status(handle)` | door status table | `false, reason` |
+| `robot.can_open(handle)` | boolean | — |
+| `robot.poll_event()` | event table | `nil` when empty |
+| `robot.wait_event([timeout])` | event table | `nil` on timeout |
+| `robot.say(text)` | `true` | `false, reason` |
+| `robot.radio(text [, channel])` | `true` | `false, reason` |
+| `robot.radio_channels()` | list of radio channel entries | `false, reason` |
+| `robot.pickup(handle)` | `true` | `false, reason` |
+| `robot.drop()` | `true` | `false, reason` |
+| `robot.held()` | list of handle entries | — |
+| `robot.use(handle)` | `true` | `false, reason` |
+| `robot.use_item(handle)` | `true` | `false, reason` |
+| `robot.attack(handle)` | `true` | `false, reason` |
+| `robot.shoot(handle)` | `true` | `false, reason` |
+| `robot.interact(handle)` / `robot.harvest(handle)` | `true` | `false, reason` |
+| `robot.plant(handle)` | `true` | `false, reason` |
+| `robot.water(target, amount [, slot])` | `true` | `false, reason` |
+| `robot.trigger(handle)` | `true` | `false, reason` |
+| `robot.send_signal([state [, port]])` | `true` | `false, reason` |
+| `robot.inject(handle)` | `true` | `false, reason` |
+| `robot.beakers()` | list of solution tables with `slot`/`handle` | — |
+| `robot.reagents([slot])` | solution table | `false, reason` |
+| `robot.transfer_to(target, amount [, slot])` | `true` | `false, reason` |
+| `robot.transfer_from(target, amount [, slot])` | `true` | `false, reason` |
+| `robot.transfer(source, target, amount)` | `true` | `false, reason` |
+| `robot.dispense(dispenser [, selector, amount, slot])` | `true` | `false, reason` |
+| `robot.analyze_plant(handle)` | plant or seed table | `false, reason` |
+| `robot.analyze_chemicals(handle)` | chemical analysis table | `false, reason` |
+| `robot.analyze_medical(handle)` | medical table | `false, reason` |
+| `robot.analyze_gas(handle)` | gas table | `false, reason` |
+| `robot.chem_master_status(handle)` | ChemMaster status table | `false, reason` |
+| `robot.chem_master_set_mode(handle, mode)` | `true` | `false, reason` |
+| `robot.chem_master_set_pill_type(handle, type)` | `true` | `false, reason` |
+| `robot.chem_master_transfer(handle, reagent, amount, from_buffer)` | `true` | `false, reason` |
+| `robot.chem_master_create_pills(handle, dosage, number [, label])` | `true` | `false, reason` |
+| `robot.chem_master_bottle(handle, dosage [, label])` | `true` | `false, reason` |
+
+`false, reason` always means two separate Lua return values, not a table. For calls documented as
+returning a bare boolean, the failure value is just `false`.
+
+
 ## Maintenance
 
 When changing the API:
 
 1. Update the relevant table and any data-shape example in this file.
-2. Update the changelog below.
-3. Keep `.ai/systems/circuitry.md` in sync for architecture/hazards.
-4. Prefer additive changes; renaming or changing a return shape is a breaking API change and should
+2. Add every new bare API name to `LuaCodeEditor.ApiFunctions` in
+   `Content.Client/_PS/Circuitry/UI/LuaCodeEditor.cs` so the in-game editor colors it.
+3. Update the changelog below.
+4. Keep `.ai/systems/circuitry.md` in sync for architecture/hazards.
+5. Prefer additive changes; renaming or changing a return shape is a breaking API change and should
    be called out explicitly.
-5. If a new hardware module or capability is added, update the hardware table and
+6. If a new hardware module or capability is added, update the hardware table and
    `robot.has_module` aliases.
-6. Run the relevant tests:
+7. Run the relevant tests:
    - `dotnet test Content.Tests/Content.Tests.csproj -c Debug --filter "FullyQualifiedName~LuaProgramTest"`
    - `dotnet test Content.IntegrationTests/Content.IntegrationTests.csproj -c Debug --filter "FullyQualifiedName~Circuitry"`
 
@@ -1328,4 +2035,5 @@ When changing the API:
 | 2026-11-07 | Added `position_of`, `item_status`, `solution`, generic `transfer`, syringe filling/injection (`inject`), follow/treatment examples, and device-link signal send/receive (`trigger`, `send_signal`) through the radio module. |
 | 2026-11-07 | Added emote, damage, attacked and projectile perception events; cleanable-decal queries; `scan_doors`, `door_status` and `can_open`; beaker solution handles. |
 | 2026-11-07 | Added the gas analyzer module and `analyze_gas` for pipes, vents, scrubbers, canisters, filters, mixers and local atmosphere readings. |
-| 2026-11-09 | Replaced the engine editor with a custom inline-syntax-colored Lua editor (line numbers, selection, copy/paste, tab indentation, undo/redo). Added ownership transfer UI/admin command, multi-port signal sources, transfer rate limiting, Bluespace Dock/grid persistence coverage, and puddle chemical analysis. |
+| 2026-11-09 | Added GLua-style table/string helpers: `table.HasValue`/`Contains`, `IsEmpty`, `Count`, `GetKeys`, `KeyFromValue`, `Random`, `Add`, `RemoveByValue`; `string.Trim`, `StartsWith`/`StartWith`, `EndsWith`, `Split`; `istable`/`isstring`/`isnumber`/`isbool`/`isfunction`. |
+| 2026-11-09 | Replaced the engine editor with a custom inline-syntax-colored Lua editor (line numbers, selection, copy/paste, tab indentation, undo/redo). Added multi-port signal sources, transfer rate limiting, Bluespace Dock/grid persistence coverage, puddle chemical analysis, ChemMaster automation, job/access/wanted queries, and chassis variants. |

@@ -9,10 +9,6 @@
             <LineEdit Name="NameEdit" HorizontalExpand="True" />
             <Button Name="RenameButton" />
         </BoxContainer>
-        <BoxContainer Orientation="Horizontal">
-            <LineEdit Name="OwnerEdit" HorizontalExpand="True" />
-            <Button Name="TransferButton" />
-        </BoxContainer>
         <Label Name="StatusLabel" />
         <Label Name="PowerLabel" />
         <Label Name="RadioLabel" />

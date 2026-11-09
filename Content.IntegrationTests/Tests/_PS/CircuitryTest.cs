@@ -3,6 +3,7 @@ using System.Numerics;
 using System.Linq;
 using Content.Server._PS.Circuitry.Components;
 using Content.Server._PS.Circuitry.Systems;
+using Content.Shared._PS.CCVar;
 using Content.Shared.Containers.ItemSlots;
 using Content.Shared.Hands.Components;
 using Content.Server.Hands.Systems;
@@ -10,6 +11,7 @@ using Content.Shared.Movement.Components;
 using Content.Shared.Speech;
 using NUnit.Framework;
 using Robust.Server.GameObjects;
+using Robust.Shared.Configuration;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
 
@@ -161,6 +163,66 @@ public sealed class CircuitryTest
         await pair.RunTicksSync(2);
 
         await server.WaitAssertion(() => Assert.That(brain.GetRuntime(assembly), Is.Null));
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task LuaKillSwitchStopsPrograms()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var cfg = server.ResolveDependency<IConfigurationManager>();
+        var map = await pair.CreateTestMap();
+
+        EntityUid assembly = default;
+
+        await server.WaitPost(() =>
+        {
+            assembly = entMan.SpawnEntity("CircuitAssembly", map.GridCoords);
+            var cpu = entMan.SpawnEntity("CircuitCpuBasic", map.GridCoords);
+            var cell = entMan.SpawnEntity("PowerCellSmall", map.GridCoords);
+
+            var slots = entMan.System<ItemSlotsSystem>();
+            Assert.Multiple(() =>
+            {
+                Assert.That(slots.TryInsert(assembly, "cpu", cpu, null), Is.True);
+                Assert.That(slots.TryInsert(assembly, "cell", cell, null), Is.True);
+            });
+
+            entMan.GetComponent<CircuitCpuComponent>(cpu).Source = """
+                function main()
+                    while true do
+                        robot.wait(1)
+                        log("tick")
+                    end
+                end
+                """;
+        });
+
+        await pair.RunTicksSync(2);
+        var brain = entMan.System<LuaBrainSystem>();
+
+        try
+        {
+            await server.WaitPost(() => Assert.That(brain.Start(assembly), Is.True));
+            await pair.RunTicksSync(2);
+            await server.WaitAssertion(() => Assert.That(brain.GetRuntime(assembly), Is.Not.Null));
+
+            await server.WaitAssertion(() => cfg.SetCVar(PSCVars.CircuitryLuaEnabled, false));
+            await pair.RunTicksSync(2);
+
+            await server.WaitAssertion(() =>
+            {
+                Assert.That(brain.GetRuntime(assembly), Is.Null);
+                Assert.That(brain.Start(assembly), Is.False);
+            });
+        }
+        finally
+        {
+            await server.WaitAssertion(() => cfg.SetCVar(PSCVars.CircuitryLuaEnabled, true));
+        }
+
         await pair.CleanReturnAsync();
     }
 }

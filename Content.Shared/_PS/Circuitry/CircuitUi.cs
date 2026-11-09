@@ -94,17 +94,6 @@ public sealed class CircuitAssemblyLockMessage : BoundUserInterfaceMessage
 }
 
 [Serializable, NetSerializable]
-public sealed class CircuitAssemblyTransferOwnerMessage : BoundUserInterfaceMessage
-{
-    public string OwnerName;
-
-    public CircuitAssemblyTransferOwnerMessage(string ownerName)
-    {
-        OwnerName = ownerName;
-    }
-}
-
-[Serializable, NetSerializable]
 public sealed class CircuitAssemblyOpenCpuMessage : BoundUserInterfaceMessage
 {
 }

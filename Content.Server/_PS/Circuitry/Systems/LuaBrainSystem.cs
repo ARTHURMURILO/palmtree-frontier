@@ -2,7 +2,9 @@ using System.Diagnostics;
 using System.Linq;
 using Content.Server._PS.Circuitry.Components;
 using Content.Server._PS.Circuitry.Lua;
+using Content.Shared._PS.CCVar;
 using Content.Shared.Mobs.Systems;
+using Robust.Shared.Configuration;
 using Robust.Shared.Timing;
 using Stopwatch = System.Diagnostics.Stopwatch;
 namespace Content.Server._PS.Circuitry.Systems;
@@ -16,6 +18,7 @@ public sealed class LuaBrainSystem : EntitySystem
     private static readonly TimeSpan MaxTotalLuaTime = TimeSpan.FromMilliseconds(2.5);
 
     [Dependency] private readonly CircuitLuaApiSystem _luaApi = default!;
+    [Dependency] private readonly IConfigurationManager _cfg = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly MobStateSystem _mobState = default!;
     private readonly Dictionary<EntityUid, CircuitLuaRuntime> _runtimes = new();
@@ -38,6 +41,18 @@ public sealed class LuaBrainSystem : EntitySystem
     public override void Update(float frameTime)
     {
         base.Update(frameTime);
+
+        if (!_cfg.GetCVar(PSCVars.CircuitryLuaEnabled))
+        {
+            if (_runtimes.Count == 0)
+                return;
+
+            foreach (var runtime in _runtimes.Values)
+                runtime.Program.Stop();
+
+            _runtimes.Clear();
+            return;
+        }
 
         var watch = Stopwatch.StartNew();
         List<EntityUid>? remove = null;
@@ -71,6 +86,9 @@ public sealed class LuaBrainSystem : EntitySystem
 
     public bool Start(EntityUid assembly)
     {
+        if (!_cfg.GetCVar(PSCVars.CircuitryLuaEnabled))
+            return false;
+
         if (!TryComp<CircuitAssemblyComponent>(assembly, out var component) ||
             component.Cpu is not { } cpuEntity ||
             !component.Powered ||

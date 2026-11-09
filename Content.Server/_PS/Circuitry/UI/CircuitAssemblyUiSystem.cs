@@ -6,7 +6,6 @@ using Content.Shared.Containers.ItemSlots;
 using Content.Shared.Radio.Components;
 using Content.Shared.UserInterface;
 using Robust.Server.GameObjects;
-using Robust.Server.Player;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Timing;
 
@@ -18,7 +17,6 @@ public sealed class CircuitAssemblyUiSystem : EntitySystem
     [Dependency] private readonly CircuitCpuUiSystem _cpuUi = default!;
     [Dependency] private readonly ItemSlotsSystem _itemSlots = default!;
     [Dependency] private readonly LuaBrainSystem _lua = default!;
-    [Dependency] private readonly IPlayerManager _players = default!;
     [Dependency] private readonly MetaDataSystem _metaData = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly UserInterfaceSystem _ui = default!;
@@ -39,7 +37,6 @@ public sealed class CircuitAssemblyUiSystem : EntitySystem
             subs.Event<CircuitAssemblyEjectMessage>(OnEject);
             subs.Event<CircuitAssemblyRenameMessage>(OnRename);
             subs.Event<CircuitAssemblyLockMessage>(OnLock);
-            subs.Event<CircuitAssemblyTransferOwnerMessage>(OnTransferOwner);
             subs.Event<CircuitAssemblyOpenCpuMessage>(OnOpenCpu);
             subs.Event<CircuitAssemblyRunMessage>(OnRun);
             subs.Event<CircuitAssemblyStopMessage>(OnStop);
@@ -102,20 +99,6 @@ public sealed class CircuitAssemblyUiSystem : EntitySystem
     {
         if (_assembly.CanModify(uid, args.Actor, component))
             _cpuUi.OnAssemblyClearLog(uid, component, args);
-    }
-
-    private void OnTransferOwner(EntityUid uid, CircuitAssemblyComponent component, CircuitAssemblyTransferOwnerMessage args)
-    {
-        if (!_assembly.CanModify(uid, args.Actor, component))
-            return;
-
-        if (!_players.TryGetSessionByUsername(args.OwnerName.Trim(), out var session))
-            return;
-
-        component.OwnerUserId = session.UserId.ToString();
-        component.OwnerName = session.Name;
-        component.Locked = true;
-        UpdateUi(uid, component);
     }
 
     private void OnEject(EntityUid uid, CircuitAssemblyComponent component, CircuitAssemblyEjectMessage args)

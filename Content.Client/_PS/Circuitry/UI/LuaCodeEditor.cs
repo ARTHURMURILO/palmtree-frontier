@@ -49,6 +49,28 @@ public sealed class LuaCodeEditor : Control
         "robot", "self", "print", "log", "ipairs", "pairs", "type", "tostring", "tonumber",
         "math", "string", "table",
     };
+    private static readonly HashSet<string> ApiFunctions = new()
+    {
+        // robot.*
+        "self", "position", "power", "health", "has_module", "move", "walk_to", "stop",
+        "walk_status", "scan", "scan_mobs", "scan_items", "scan_structures", "scan_doors",
+        "find", "inspect", "can_see", "can_hear", "nearest_mob", "nearest_person",
+        "nearest_item", "nearest_structure", "nearest_door", "distance", "position_of",
+        "can_reach", "get_tile_relative", "tile", "entities_on_tile", "decals", "scan_puddles",
+        "has_job", "has_access", "wanted_status", "solution", "item_status", "door_status",
+        "can_open", "poll_event", "wait_event", "say", "radio", "radio_channels", "pickup",
+        "drop", "held", "use", "use_item", "attack", "shoot", "interact", "harvest", "plant",
+        "water", "trigger", "send_signal", "inject", "analyze_plant", "analyze_chemicals",
+        "analyze_medical", "analyze_gas", "chem_master_status", "chem_master_set_mode",
+        "chem_master_set_pill_type", "chem_master_transfer", "chem_master_create_pills",
+        "chem_master_bottle", "dispense", "beakers", "reagents", "transfer_to", "transfer_from",
+        "transfer",
+
+        // GLua-style table/string helpers and type shorthands.
+        "HasValue", "Contains", "IsEmpty", "Count", "GetKeys", "KeyFromValue", "Random",
+        "Add", "RemoveByValue", "Trim", "StartsWith", "StartWith", "EndsWith", "Split",
+        "istable", "isstring", "isnumber", "isbool", "isfunction",
+    };
 
     [Dependency] private readonly IResourceCache _cache = default!;
     [Dependency] private readonly IClipboardManager _clipboard = default!;
@@ -765,7 +787,7 @@ public sealed class LuaCodeEditor : Control
                     ? KeywordColor
                     : Builtins.Contains(word)
                         ? BuiltinColor
-                        : NextNonSpace(line, index) == '('
+                        : ApiFunctions.Contains(word) || NextNonSpace(line, index) == '('
                             ? FunctionColor
                             : DefaultColor;
 

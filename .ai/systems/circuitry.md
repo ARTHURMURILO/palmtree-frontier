@@ -10,14 +10,15 @@
 - Branch: `circuitry`.
 - Phase 0 (Lua sandbox spike): **complete**.
 - Phases 1–3 (assembly, Lua brain/API, actions/perception/UI): **implemented, awaiting in-game/UX testing**.
-- Phase 4 (construction/content polish) is not started. Phase 5 (hardening) is in progress: grid and
-  Bluespace Dock persistence, ownership administration, editor coverage, Lua soak/queue tests and a
-  many-assembly stress test are in place; construction/lathe polish and broader balance work remain.
-- Validation: solution build, YAMLLinter, Content.Tests, and 18 targeted `Circuitry*` integration
-  tests pass (assembly/Lua, hearing, inspect, BUI open, analyzers/dispenser, security, radio, power
-  budget, scan kinds, signals, item/solution autonomy, decals/doors, events, editor Run auto-save,
-  gas analyzer, grid save/load, Bluespace Dock round-trip, many-assembly stress). The BUI test
-  covers the installed-CPU editor and a CPU held in hand.
+- Phase 4 (construction/content polish) is partial: chassis sprite variants and ChemMaster support
+  are in, while lathe/construction, research, sound and balance work remain. Phase 5 (hardening) is
+  in progress: grid and Bluespace Dock persistence, ownership administration, a Lua kill switch,
+  editor coverage, Lua soak/queue tests and a many-assembly stress test are in place.
+- Validation: solution build, YAMLLinter, Content.Tests, and 20 targeted `Circuitry*` integration
+  tests pass (assembly/Lua, hearing, inspect, BUI open, analyzers/dispenser, ChemMaster, security,
+  radio, power budget, scan kinds, signals, item/solution autonomy, decals/doors, puddles, events,
+  editor Run auto-save, gas analyzer, grid save/load, Bluespace Dock round-trip, many-assembly
+  stress). The BUI test covers the installed-CPU editor and a CPU held in hand.
 
 ### Implemented Phases 1–3
 
@@ -27,6 +28,10 @@
   beakers and all three analyzers).
 - Part prototypes: basic/advanced CPU, wheels, tracks, thruster, manipulator, speaker, sensor,
   radio module.
+- Chassis variants: engineering, janitorial, medical, mining, service, peacekeeping and derelict
+  assemblies reuse the corresponding SS13/tg borg chassis states from `Mobs/Silicon/chassis.rsi`.
+  They are mechanically identical to `CircuitAssembly`; no construction/lathe chain yet, so they
+  are admin-spawn only for now.
 - Capability recomputation (hands, speech, movement, flight, sensor range, power draw, beaker),
   power gating and idle/action/movement power costs.
 - Power tuning (2026-11): fractional draws. Base idle 0.05, CPU 0.25/0.4, locomotion 0.05/0.1/0.15,
@@ -53,7 +58,9 @@
   installed pipes/vents/scrubbers and `MachineComponent` machines are `structure` (walls/windows
   remain `object`). `position_of` converts a handle into local coordinates for `walk_to`;
   `decals` returns cleanable tile decals; `scan_puddles` uses the chemical analyzer to list floor-spill
-  solutions; `door_status` exposes state/bolted/powered/firelock/access and `can_open`.
+  solutions; `door_status` exposes state/bolted/powered/firelock/access and `can_open`;
+  `has_job`/`has_access` read nearby ID cards and `wanted_status` reads the sector criminal record
+  (status, reason, initiator and history).
 - Item and container introspection: `item_status(handle)` and `solution(handle [, name])` expose
   carried buckets/beakers/syringes, solution contents, injector mode and flashlight `activated`.
   Generic `transfer(source, target, amount)` moves reagents between arbitrary containers; existing
@@ -73,6 +80,9 @@
   restricted SeedData/Label/MobState properties are avoided; use public systems/access-safe fields.
 - Four beaker slots (`beaker1..4`); `robot.beakers()` lists installed beakers and
   `robot.reagents(slot)` / `transfer_to`/`transfer_from(..., slot)` select one by 1-based index.
+- ChemMaster API: `chem_master_status`, `chem_master_set_mode`, `chem_master_set_pill_type`,
+  `chem_master_transfer`, `chem_master_create_pills` and `chem_master_bottle` reuse the existing
+  server messages, so buffer, pill and bottle rules stay in `ChemMasterSystem`.
 - Dispenser helper: `robot.dispense(dispenser, reagent_selector, amount, beaker_slot)` transfers from
   a reagent dispenser's storage directly into an installed beaker. `robot.interact(tray)` harvests;
   `robot.harvest` is an alias; `robot.use_item` plants seeds/uses tools because it raises the normal
@@ -88,9 +98,10 @@
   `CircuitRadioSystem` handles key changes and queues received radio events.
 - Security: `Locked`, `OwnerUserId`, `OwnerName` on the assembly. The first lock claims ownership;
   only the owner or an admin can modify/unlock. All insertion, eject, rename, run/stop, program save
-  and CPU-editor paths enforce this. Non-owners can still view the panel (view-only). The assembly
-  panel accepts an owner username and locks to the new owner on transfer; admins can use
-  `circuitowner <assembly> <username|clear>` to transfer or reset ownership.
+  and CPU-editor paths enforce this. Non-owners can still view the panel (view-only). There is no
+  player-facing ownership transfer field: the owner unlocks, another player locks to claim, and
+  admins can use `circuitowner <assembly> <username|clear>` to transfer or reset ownership. A future
+  ID/access module or component can give the assembly its own identity for doors and records.
 - Program source: basic CPU cap 256 KiB, advanced 512 KiB; server validates UTF-8 byte size and
   rate-limits saves to one per second per CPU. `CircuitCpuState.Source` is nullable and only sent on
   open/save, not on every 0.5 s status refresh, so large programs do not repeatedly cross the
@@ -112,8 +123,10 @@
   a full `BluespaceDockSystem.TrySaveShipFile`/`TryLoadShipFile` round trip with CPU source, modules,
   lock and owner intact.
 - Rate limits: `say` 0.5 s, radio 1 s, signal/trigger 0.5 s, injection 0.5 s, reagent transfer
-  0.5 s, scan 0.25 s, program save 1 s. The `circuitowner` admin command logs administrative
-  ownership changes; player transfers are validated server-side by `CanModify`.
+  0.5 s, ChemMaster transfer 0.5 s, ChemMaster pill/bottle production 0.5 s, scan 0.25 s, program
+  save 1 s. The `circuitowner` admin command logs administrative ownership changes; player
+  transfers are validated server-side by `CanModify`. `circuitry.lua.enabled` is a server CVar kill
+  switch that stops all runtimes on the next tick and rejects new starts.
 - Custom `BaseWindow` subclasses do **not** draw a background by themselves; both circuitry windows
   include a full-size `PanelContainer StyleClasses="AngleRect"` plus `MouseFilter="Stop"`.
 
@@ -126,9 +139,10 @@ the `hand_<slot>` prefix (`hand_left_arm`, `hand_right_arm`) and test pickup aft
 
 Known MVP limits: no construction/lathe chain; no access chip, weapon mount, or `on_tick`
 callbacks. Radio encryption keys are inserted by using them on the chassis; extraction uses the
-module's normal screwdriver interaction after ejecting it. ChemMaster pill/bottle production and the
-ChemMaster buffer workflow still need a dedicated API; generic item use, `dispense` and
-`transfer_to/from` cover beaker/dispenser chemistry. `robot.find` intentionally does not use the scan
+module's normal screwdriver interaction after ejecting it. ChemMaster buffer transfer, pill and
+bottle production are available through the dedicated `chem_master_*` API. Future work: an
+identification module/component that gives the assembly its own job/access identity, rather than
+only reading nearby ID cards. `robot.find` intentionally does not use the scan
 cooldown (it still charges power and sets the next scan time) so a script can scan then immediately
 find. It only sees `LookupFlags.Uncontained` entities: a wrench inside a toolbox, belt, backpack or
 hand is invisible to it; use `robot.held()` for the assembly's own items or inspect the
@@ -165,7 +179,7 @@ recomputes capabilities when contents change.
 
 - `CircuitAssemblyComponent` — slot-role map + runtime capability cache.
 - `CircuitPartComponent` — locomotion/manipulator/voice/sensor stats.
-- `CircuitCpuComponent` — program source, source/instruction/tick limits, aut-run flag.
+- `CircuitCpuComponent` — program source, source/instruction/tick limits, last editor.
 - `CircuitAssemblySystem` — slot insertion/ejection, capability recomputation, hands/speech/movement
   gating, power-slot wiring.
 - `CircuitMovementSystem` — direct movement for `robot.move`; pathfinding through
@@ -191,6 +205,11 @@ recomputes capabilities when contents change.
 - `robot.wait` cannot yield through `pcall`/C-call boundaries. Do not expose the `Coroutine` stdlib.
 - Sandbox: HardSandbox + metatables/error handling; no `io`/`os`/`require`/`load`/`debug`/
   `package`/`collectgarbage`; guarded `string.rep`/`string.format`.
+- GLua-style helpers installed from a trusted chunk: `table.HasValue`/`Contains`, `IsEmpty`,
+  `Count`, `GetKeys`, `KeyFromValue`, `Random`, `Add`, `RemoveByValue`; `string.Trim`,
+  `StartsWith`/`StartWith`, `EndsWith`, `Split`; type shorthands `istable`, `isstring`, `isnumber`,
+  `isbool`, `isfunction`. These are Lua-only convenience helpers, not entity APIs; no GLua
+  filesystem/networking/entity/hook/userdata surface is exposed.
 - Budgets: source cap, `AutoYieldCounter`, per-tick wall-clock budget, no-wait timeout,
   per-resume allocation watchdog.
 

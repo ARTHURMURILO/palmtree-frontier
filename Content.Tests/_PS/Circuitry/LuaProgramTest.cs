@@ -248,6 +248,62 @@ public sealed class LuaProgramTest
     }
 
     [Test]
+    public void GluaTableAndStringUtilitiesWork()
+    {
+        var program = Start(
+            """
+            function main()
+                log("has", tostring(table.HasValue({1, 2, 3}, 2)),
+                    tostring(table.HasValue({1, 2, 3}, 4)),
+                    tostring(table.Contains({1, 2, 3}, 3)))
+                log("empty", tostring(table.IsEmpty({})), tostring(table.IsEmpty({1})),
+                    tostring(table.Count({a = 1, b = 2})))
+                local keys = table.GetKeys({a = 1, b = 2})
+                log("keys", tostring(#keys), tostring(table.KeyFromValue({a = 1, b = 2}, 2)))
+                local value, key = table.Random({10, 20, 30})
+                log("random", tostring(table.HasValue({10, 20, 30}, value)),
+                    tostring(key >= 1 and key <= 3))
+                local list = table.Add({1, 2}, {3, 4})
+                log("add", tostring(#list), tostring(list[3]), tostring(list[4]))
+                local removed = table.RemoveByValue(list, 2)
+                log("remove", tostring(removed), tostring(#list))
+                log("types", tostring(istable({})), tostring(isstring("x")),
+                    tostring(isnumber(1)), tostring(isbool(true)),
+                    tostring(isfunction(print)), tostring(istable("x")))
+                log("trim", string.Trim("  hi  "))
+                log("starts", tostring(string.StartsWith("hello", "he")),
+                    tostring(string.StartWith("hello", "he")),
+                    tostring(string.EndsWith("hello", "lo")))
+                local parts = string.Split("a,b,c", ",")
+                log("split", tostring(#parts), parts[1], parts[3])
+            end
+            """,
+            out var log);
+
+        for (var i = 0;
+             i < 100 && program.State is LuaProgramState.Loading or LuaProgramState.Running or LuaProgramState.Waiting;
+             i++)
+        {
+            program.Update(TimeSpan.Zero);
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(program.State, Is.EqualTo(LuaProgramState.Finished), program.LastError);
+            Assert.That(log, Does.Contain("has\ttrue\tfalse\ttrue"));
+            Assert.That(log, Does.Contain("empty\ttrue\tfalse\t2"));
+            Assert.That(log, Does.Contain("keys\t2\tb"));
+            Assert.That(log, Does.Contain("random\ttrue\ttrue"));
+            Assert.That(log, Does.Contain("add\t4\t3\t4"));
+            Assert.That(log, Does.Contain("remove\t2\t3"));
+            Assert.That(log, Does.Contain("types\ttrue\ttrue\ttrue\ttrue\ttrue\tfalse"));
+            Assert.That(log, Does.Contain("trim\thi"));
+            Assert.That(log, Does.Contain("starts\ttrue\ttrue\ttrue"));
+            Assert.That(log, Does.Contain("split\t3\ta\tc"));
+        });
+    }
+
+    [Test]
     public void PerceptionHookCanProcessSpeech()
     {
         var program = Start(

@@ -50,7 +50,9 @@ public sealed class CircuitryInspectTest
 
             var id = entMan.GetComponent<IdCardComponent>(idCard);
             id.FullName = "Alice";
-            id.LocalizedJobTitle = "Engineer";
+            id.LocalizedJobTitle = "Deputy";
+            id.JobPrototype = "Deputy";
+            entMan.EnsureComponent<AccessComponent>(idCard).Tags.Add("Security");
 
             var inventory = entMan.System<InventorySystem>();
             Assert.Multiple(() =>
@@ -84,8 +86,18 @@ public sealed class CircuitryInspectTest
                         log("no mob")
                         return
                     end
+                    log("job", tostring(robot.has_job(mob, "Deputy")), tostring(robot.has_job(mob, "Pirate")))
+                    log("access", tostring(robot.has_access(mob, "Security")), tostring(robot.has_access(mob, "Pirate")))
+
                     local who = robot.inspect(mob)
-                    log("inspect", who.name, who.id.name, who.id.job, tostring(who.wearing.head))
+                    local hasSecurityTag = false
+                    for _, tag in ipairs(who.id.access) do
+                        if tag == "Security" then
+                            hasSecurityTag = true
+                        end
+                    end
+                    log("inspect", who.name, who.id.name, who.id.job, who.id.job_id,
+                        tostring(hasSecurityTag), tostring(who.wearing.head))
                 end
                 """;
         });
@@ -105,7 +117,9 @@ public sealed class CircuitryInspectTest
             Assert.Multiple(() =>
             {
                 Assert.That(runtime.Program.LastError, Is.Null, log);
-                Assert.That(log, Does.Contain("inspect\tTest Human\tAlice\tEngineer"), log);
+                Assert.That(log, Does.Contain("job\ttrue\tfalse"), log);
+                Assert.That(log, Does.Contain("access\ttrue\tfalse"), log);
+                Assert.That(log, Does.Contain("inspect\tTest Human\tAlice\tDeputy\tDeputy\ttrue"), log);
             });
         });
 

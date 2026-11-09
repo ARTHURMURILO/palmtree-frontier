@@ -795,6 +795,13 @@ so these fail only in CI:
   `AutoYieldCounter`, a source-size cap and a no-wait timeout. `GC.GetAllocatedBytesForCurrentThread`
   is coarse and cannot prevent a single huge allocation, so allocation-heavy stdlib functions
   (`string.rep`, `string.format`, later `table.concat`) are wrapped with size limits.
+- **GLua helpers are a trusted Lua chunk, not a new interop surface.** `LuaSandbox` installs
+  `table.HasValue`/`Contains`, `IsEmpty`, `Count`, `GetKeys`, `KeyFromValue`, `Random`, `Add`,
+  `RemoveByValue`, `string.Trim`/`StartsWith`/`StartWith`/`EndsWith`/`Split`, and type shorthands
+  `istable`/`isstring`/`isnumber`/`isbool`/`isfunction` by loading one internal `LoadString` chunk.
+  Keep helpers pure Lua and avoid adding `table.Copy`/`Merge` or other
+  deep/recursive operations without limits; do not expose GLua filesystem, networking, hook, entity
+  or userdata APIs.
 - **Opaque handles only.** Never expose `EntityUid` or CLR objects as Lua userdata. Perception and
   action APIs receive integer handles resolved through a per-program map, with range/line-of-sight
   checks and a small whitelisted inspection surface (name, job, clothing slots, held items).
@@ -973,6 +980,10 @@ so these fail only in CI:
   `Root?.Window?.TextInputStart()`; `KeyboardFocusExited` calls `TextInputStop()`. If `Editable`
   changes while focused, start or stop text input there too. Missing this makes the editor look
   focused but silently unable to type.
+- **API names are also a highlighter list.** `LuaCodeEditor.ApiFunctions` holds all `robot.*` and
+  GLua-style helper names used for syntax color. When adding/renaming a Lua API, add the bare name
+  there too; call-site detection only colors names immediately followed by `(` and will miss
+  references or spaced forms.
 - **DrawString Y is the top of the line, not the baseline.** `DrawingHandleScreen.DrawString`
   internally adds the font ascent. Passing `lineTop + ascent` shifts all text down by an ascent
   while the caret/selection stay at the line top. Use the line top for both.
@@ -1028,15 +1039,15 @@ so these fail only in CI:
 ## 38. Circuitry ownership administration (2026-11)
 
 - **Ownership is still the first-lock claim.** `TrySetLocked` claims `OwnerUserId`/`OwnerName` when
-  the assembly is first locked. A later owner/admin can change it via the assembly panel transfer
-  field or the `circuitowner` admin command. Transfers set `Locked = true`; clearing via
-  `circuitowner <uid> clear` releases both owner and lock so the next locker claims it.
-- **UI controls cannot be trusted.** The transfer message re-checks `CanModify` and resolves the
-  username against `IPlayerManager`; a non-owner can still send the BUI message manually. Do not
-  remove those checks because the button is disabled client-side.
-- **The transfer field is only enabled while unlocked.** The owner can unlock and then transfer; an
-  admin can use the command regardless. The client doesn't receive per-actor permission bits, so
-  the server remains authoritative for every transfer/rename/lock action.
+  the assembly is first locked. There is deliberately no player-facing transfer field: unlock, and
+  have the new owner lock it. Admins can use `circuitowner <uid> <username|clear>` to transfer or
+  reset ownership; clearing releases both owner and lock so the next locker claims it.
+- **UI controls cannot be trusted.** The rename/lock/eject/run/save messages re-check `CanModify`;
+  a non-owner can still send BUI messages manually. Do not remove those checks because the buttons
+  are disabled client-side.
+- **The client never receives per-actor permission bits.** The server remains authoritative for
+  every rename/lock/eject/run/save action. A future identification module/component should establish
+  the assembly's own job/access identity rather than weakening these checks.
 
 ## 39. Circuitry persistence and Bluespace Dock (2026-11)
 
@@ -1055,3 +1066,30 @@ so these fail only in CI:
 - **Test grids need a tile at the spawn point.** `SharedGridTraversalSystem` detaches an entity from
   a grid when its tile is empty; a bare `CreateGridEntity` grid will reparent the assembly to the
   map and the grid save will contain only the grid. Place a tile (or use `Pair.CreateTestMap`) first.
+
+## 40. Circuitry identity, ChemMaster and kill switch (2026-11)
+
+- **Identity APIs read ID cards, not raw components.** `has_job`, `has_access` and
+  `wanted_status` all require a powered sensor and line of sight, consume action power, and use
+  `IdCardSystem.TryFindIdCard` plus `AccessSystem.TryGetTags`. `has_access("Security")` is the
+  practical NFSD check; pirates carry the `Pirate` access tag. Do not expose `EntityUid` or the full
+  `AccessComponent` to Lua.
+- **Wanted status comes from the sector criminal record.** `WantedStatusSystem.TryGetCriminalRecord`
+  uses the same record key as the wanted-list cartridge. The Lua table exposes status, reason,
+  initiator and history; reason is the authoritative text security entered. Tests set up a sector
+  service host because the record store does not exist on a bare test map.
+- **ChemMaster actions must be raised as concrete BUI message types.** `RaiseChemMasterMessage<T>`
+  sets both `Actor` (the assembly) and `UiKey`, then raises the concrete `ChemMaster*Message` on the
+  machine. Raising through a `BoundUserInterfaceMessage` base reference dispatches only base
+  subscriptions, so the handler never runs. Reusing `ChemMasterSystem` this way keeps buffer, pill
+  dosage, output-container and admin-log rules in one place.
+- **ChemMaster has no public mutator API.** Do not duplicate its private transfer/withdraw logic in
+  the Lua system; send the same messages the UI sends. The Lua layer only validates manipulator,
+  power, range, output container, buffer volume and its own 0.5 s action/transfer cooldowns.
+- **`circuitry.lua.enabled` is the emergency kill switch.** It is checked in both
+  `LuaBrainSystem.Start` and `Update`; disabling it stops and clears all runtimes on the next tick,
+  and re-enabling does not auto-restart them. Keep scripts explicit-start only.
+- **Chassis variants are cosmetic.** Engineering/janitorial/medical/mining/service/peacekeeping/
+  derelict assemblies reuse existing `Mobs/Silicon/chassis.rsi` states; they are mechanically
+  identical and inherit `save: true`. There is no construction path yet, so they are admin-spawn
+  only for live testing.

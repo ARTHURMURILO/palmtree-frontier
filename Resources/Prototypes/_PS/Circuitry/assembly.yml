@@ -183,6 +183,85 @@
     key: enum.CircuitAssemblyUiKey.Key
   - type: Pullable
 
+# Visual chassis variants. They are mechanically identical to CircuitAssembly; only the SS13 borg
+# chassis state differs. Admin-only for now: there are no lathe/construction recipes yet.
+- type: entity
+  parent: CircuitAssembly
+  id: CircuitAssemblyEngineering
+  name: engineering assembly
+  suffix: Engineering
+  description: A programmable assembly using the engineering cyborg chassis.
+  components:
+  - type: Sprite
+    sprite: Mobs/Silicon/chassis.rsi
+    state: engineer
+
+- type: entity
+  parent: CircuitAssembly
+  id: CircuitAssemblyJanitorial
+  name: janitorial assembly
+  suffix: Janitorial
+  description: A programmable assembly using the janitorial cyborg chassis.
+  components:
+  - type: Sprite
+    sprite: Mobs/Silicon/chassis.rsi
+    state: janitor
+
+- type: entity
+  parent: CircuitAssembly
+  id: CircuitAssemblyMedical
+  name: medical assembly
+  suffix: Medical
+  description: A programmable assembly using the medical cyborg chassis.
+  components:
+  - type: Sprite
+    sprite: Mobs/Silicon/chassis.rsi
+    state: medical
+
+- type: entity
+  parent: CircuitAssembly
+  id: CircuitAssemblyMining
+  name: mining assembly
+  suffix: Mining
+  description: A programmable assembly using the mining cyborg chassis.
+  components:
+  - type: Sprite
+    sprite: Mobs/Silicon/chassis.rsi
+    state: miner
+
+- type: entity
+  parent: CircuitAssembly
+  id: CircuitAssemblyService
+  name: service assembly
+  suffix: Service
+  description: A programmable assembly using the service cyborg chassis.
+  components:
+  - type: Sprite
+    sprite: Mobs/Silicon/chassis.rsi
+    state: service
+
+- type: entity
+  parent: CircuitAssembly
+  id: CircuitAssemblyPeace
+  name: peacekeeping assembly
+  suffix: Peacekeeping
+  description: A programmable assembly using the peacekeeping cyborg chassis.
+  components:
+  - type: Sprite
+    sprite: Mobs/Silicon/chassis.rsi
+    state: peace
+
+- type: entity
+  parent: CircuitAssembly
+  id: CircuitAssemblyDerelict
+  name: derelict assembly
+  suffix: Derelict
+  description: A programmable assembly using the derelict cyborg chassis.
+  components:
+  - type: Sprite
+    sprite: Mobs/Silicon/chassis.rsi
+    state: derelict
+
 # Debug/test variant: every slot pre-filled with working hardware.
 - type: entity
   parent: CircuitAssembly
