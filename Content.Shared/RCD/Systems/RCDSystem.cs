@@ -67,6 +67,8 @@ public sealed class RCDSystem : EntitySystem
     private static readonly ProtoId<TagPrototype> CatwalkTag = "Catwalk";
     private static readonly ProtoId<TagPrototype> AirlockTag = "Airlock"; // Palmtree: airlocks and firelocks may share a tile
     private static readonly ProtoId<TagPrototype> UnstackableTag = "Unstackable"; // Palmtree: no stacking atmos pipes/devices
+    private static readonly ProtoId<TagPrototype> WindowTag = "Window";
+    private static readonly ProtoId<TagPrototype> DirectionalWindowTag = "DirectionalWindow"; // Palmtree: only one per edge
     // Palmtree: even the admin RCD must leave these alone.
     private static readonly ProtoId<TagPrototype> RcdUnDeconstructableTag = "RCDUnDeconstructable";
     private static readonly EntProtoId RcdAmmoProto = "RCDAmmo";
@@ -596,6 +598,13 @@ public sealed class RCDSystem : EntitySystem
         var isWindow = prototype.ConstructionRules.Contains(RcdConstructionRule.IsWindow);
         var isCatwalk = prototype.ConstructionRules.Contains(RcdConstructionRule.IsCatwalk);
 
+        // Palmtree: directional windows only cover one edge of their tile. Everything that does not
+        // need the whole tile (pipes, grilles, tables, wallmounts) may share it; walls, airlocks and
+        // full windows still need the tile to themselves.
+        var buildsFullTile = (prototype.CollisionMask & CollisionGroup.FullTileMask) == CollisionGroup.FullTileMask;
+        var buildsWindow = false;
+        var buildsDirectionalWindow = false;
+
         // Palmtree: resolve the prototype that FinalizeRCDOperation will actually spawn. Mirror
         // flips and the RPD's layer variants change the pipe nodes, so the overlap check below must
         // inspect the same entity the placement will build.
@@ -635,6 +644,9 @@ public sealed class RCDSystem : EntitySystem
             // entity of the same kind (the collision check still rejects that).
             buildsAirlock = builtTags != null && _tags.HasTag(builtTags, AirlockTag);
             buildsFirelock = builtProto.HasComponent<FirelockComponent>(EntityManager.ComponentFactory);
+            buildsWindow = builtTags != null && _tags.HasTag(builtTags, WindowTag);
+            buildsDirectionalWindow = builtTags != null && _tags.HasTag(builtTags, DirectionalWindowTag);
+            buildsFullTile = buildsFullTile || buildsWindow;
 
             if (builtProto.TryGetComponent<AtmosPipeLayersComponent>(out var builtLayers, EntityManager.ComponentFactory))
                 builtLayer = builtLayers.CurrentPipeLayer;
@@ -685,6 +697,23 @@ public sealed class RCDSystem : EntitySystem
                 || (buildsFirelock && _tags.HasTag(ent, AirlockTag)))
             {
                 continue;
+            }
+
+            // Palmtree: a directional window is edge furniture, not a full-tile obstacle. A second
+            // directional window is allowed on a different edge, which is how players make pivots.
+            if (_tags.HasTag(ent, DirectionalWindowTag))
+            {
+                if (buildsDirectionalWindow)
+                {
+                    var existingDirection = Transform(ent).LocalRotation.GetCardinalDir();
+                    var buildDirection = direction ?? component.ConstructionDirection;
+                    if (existingDirection != buildDirection)
+                        continue;
+                }
+                else if (!buildsWindow && !buildsFullTile)
+                {
+                    continue;
+                }
             }
 
             // Palmtree: no stacking pipes/devices on the same layer
