@@ -409,6 +409,14 @@
         pipeDirection: North
         pipeLayer: 2
         volume: 50
+  # Palmtree: the manifold is a pipe fixture too. It does not inherit GasPipeBase (it is a
+  # fixed-layer, six-node entity), so it needs the same RPD-only deconstruct whitelist.
+  - type: RCDDeconstructable
+    deconstructable: false
+    rpd: true
+    cost: 1
+    delay: 0
+    fx: EffectRCDConstruct0
   - type: GasPipeManifold
   - type: AtmosMonitoringConsoleDevice
     navMapBlip: GasPipeManifold
