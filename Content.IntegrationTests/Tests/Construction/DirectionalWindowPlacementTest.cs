@@ -4,6 +4,8 @@ using Content.Shared.Atmos;
 using Content.Shared.Atmos.Components;
 using Content.Shared.Construction.EntitySystems;
 using Content.Shared.Construction.Prototypes;
+using Content.Shared.Hands.EntitySystems;
+using Content.Shared.Interaction;
 using Content.Shared.RCD;
 using Content.Shared.RCD.Components;
 using Content.Shared.RCD.Systems;
@@ -216,6 +218,97 @@ public sealed class DirectionalWindowPlacementTest
                     null, user, false, AtmosPipeLayer.Primary, Direction.East),
                 Is.True,
                 "A perpendicular directional window should be allowed by the RCD.");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task TileUnderDirectionalWindowCanBePriedUp()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var mapMan = server.ResolveDependency<IMapManager>();
+        var tileDefMan = server.ResolveDependency<ITileDefinitionManager>();
+        var mapSystem = entMan.System<SharedMapSystem>();
+        var hands = entMan.System<SharedHandsSystem>();
+
+        var grid = default(Entity<MapGridComponent>);
+
+        await server.WaitAssertion(() =>
+        {
+            mapSystem.CreateMap(out var mapId);
+            grid = mapMan.CreateGridEntity(mapId);
+            mapSystem.SetTile(grid.Owner, grid.Comp, Vector2i.Zero, new Tile(tileDefMan["FloorGlass"].TileId));
+            mapSystem.SetTile(grid.Owner, grid.Comp, new Vector2i(0, 1), new Tile(tileDefMan["Plating"].TileId));
+
+            // The window's fixture is on the tile's south edge. The user approaches from the north,
+            // so the window itself is not between them and the tile they are prying.
+            var tileCoords = new EntityCoordinates(grid.Owner, new Vector2(0.5f, 0.5f));
+            entMan.SpawnEntity("WindowDirectional", tileCoords);
+
+            var userCoords = new EntityCoordinates(grid.Owner, new Vector2(0.5f, 1.5f));
+            var user = entMan.SpawnEntity("MobHuman", userCoords);
+            var crowbar = entMan.SpawnEntity("Crowbar", userCoords);
+            Assert.That(hands.TryPickupAnyHand(user, crowbar), Is.True,
+                "Test setup: the user needs to hold the crowbar.");
+
+            var ev = new AfterInteractEvent(user, crowbar, null, tileCoords, true);
+            entMan.EventBus.RaiseLocalEvent(crowbar, ev);
+            Assert.That(ev.Handled, Is.True,
+                "A crowbar should be able to start prying a tile under a directional window.");
+        });
+
+        await server.WaitRunTicks(90);
+
+        await server.WaitAssertion(() =>
+        {
+            var tile = mapSystem.GetTileRef(grid.Owner, grid.Comp, Vector2i.Zero);
+            Assert.That(tile.Tile.TypeId, Is.EqualTo(tileDefMan["Plating"].TileId),
+                "The glass floor under the directional window should have been pried up.");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task WallStillBlocksPryingItsTile()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var mapMan = server.ResolveDependency<IMapManager>();
+        var tileDefMan = server.ResolveDependency<ITileDefinitionManager>();
+        var mapSystem = entMan.System<SharedMapSystem>();
+        var hands = entMan.System<SharedHandsSystem>();
+
+        await server.WaitAssertion(() =>
+        {
+            mapSystem.CreateMap(out var mapId);
+            var grid = mapMan.CreateGridEntity(mapId);
+            mapSystem.SetTile(grid.Owner, grid.Comp, Vector2i.Zero, new Tile(tileDefMan["FloorGlass"].TileId));
+            mapSystem.SetTile(grid.Owner, grid.Comp, new Vector2i(0, 1), new Tile(tileDefMan["Plating"].TileId));
+
+            var tileCoords = new EntityCoordinates(grid.Owner, new Vector2(0.5f, 0.5f));
+            entMan.SpawnEntity("WallSolid", tileCoords);
+
+            var userCoords = new EntityCoordinates(grid.Owner, new Vector2(0.5f, 1.5f));
+            var user = entMan.SpawnEntity("MobHuman", userCoords);
+            var crowbar = entMan.SpawnEntity("Crowbar", userCoords);
+            Assert.That(hands.TryPickupAnyHand(user, crowbar), Is.True,
+                "Test setup: the user needs to hold the crowbar.");
+
+            var ev = new AfterInteractEvent(user, crowbar, null, tileCoords, true);
+            entMan.EventBus.RaiseLocalEvent(crowbar, ev);
+            Assert.That(ev.Handled, Is.False,
+                "A wall should still stop the player from prying the tile it stands on.");
+
+            var tile = mapSystem.GetTileRef(grid.Owner, grid.Comp, Vector2i.Zero);
+            Assert.That(tile.Tile.TypeId, Is.EqualTo(tileDefMan["FloorGlass"].TileId),
+                "The glass floor under a wall should not be pried up.");
         });
 
         await pair.CleanReturnAsync();
