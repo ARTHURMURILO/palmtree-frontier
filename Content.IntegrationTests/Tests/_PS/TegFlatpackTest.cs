@@ -1,9 +1,11 @@
 using System;
 using System.Linq;
-using Content.Server.Construction.Components;
+using Content.Server.Cargo.Components;
+using Content.Server._PS.Construction.Components;
+using Content.Shared.Cargo.Components;
 using Content.Shared.Cargo.Prototypes;
-using Content.Shared.Construction;
 using Content.Shared.Construction.Components;
+using Content.Shared._PS.Construction;
 using Content.Shared.DoAfter;
 using Content.Shared.Prototypes;
 using Content.Shared.Research.Prototypes;
@@ -13,7 +15,7 @@ using Robust.Shared.GameObjects;
 using Robust.Shared.Maths;
 using Robust.Shared.Prototypes;
 
-namespace Content.IntegrationTests.Tests.Power;
+namespace Content.IntegrationTests.Tests._PS;
 
 /// <summary>
 ///     Guards the TEG flatpack acquisition and pack-up loop: the two flatpacks have to point at
@@ -118,6 +120,16 @@ public sealed class TegFlatpackTest
             Assert.That(center.Materials.Single(m => m.Key.Id == "Steel").Value, Is.EqualTo(2000));
             Assert.That(center.Materials.Single(m => m.Key.Id == "Glass").Value, Is.EqualTo(1000));
             Assert.That(center.Materials.Single(m => m.Key.Id == "Plastic").Value, Is.EqualTo(500));
+
+            // The recipes are cheap; the flatpacks must not be a lathe-to-cargo money printer.
+            foreach (var flatpackId in new[] { "TegCirculatorFlatpack", "TegCenterFlatpack" })
+            {
+                var flatpack = protoMan.Index<EntityPrototype>(flatpackId);
+                Assert.That(flatpack.HasComponent<CargoSellBlacklistComponent>(), Is.True,
+                    $"{flatpackId} must not be sellable");
+                Assert.That(flatpack.TryGetComponent<StaticPriceComponent>(out var price), Is.True);
+                Assert.That(price!.Price, Is.Zero, $"{flatpackId} must not carry a sell price");
+            }
         });
 
         await pair.CleanReturnAsync();

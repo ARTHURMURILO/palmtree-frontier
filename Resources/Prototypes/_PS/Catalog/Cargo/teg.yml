@@ -1,6 +1,9 @@
+# SPDX-FileCopyrightText: 2026 Palmtree Frontier contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 # Palmtree: the TEG kit. One crate carries the two circulators and the generator core needed for a
-# complete thermo-electric generator. Researching Advanced Atmospherics unlocks the same flatpacks
-# at an engineering techfab.
+# complete thermo-electric generator. Researching Advanced Atmospherics unlocks the same flatpacks;
+# print a blueprint at a blueprint lithograph and use it at an engineering techfab.
 - type: cargoProduct
   id: EngineTeg
   icon:
