@@ -89,7 +89,10 @@ public sealed class RCDConstructionGhostSystem : EntitySystem
         // If the tool that owned the placer was deleted while its placer was active, the permission
         // keeps a dead entity and the check below would return forever, leaving the old ghost (and
         // its direction) stuck. Clear it so the next held tool can start a fresh placer.
-        if (placerEntity is { } placer && !EntityManager.EntityExists(placer))
+        // EntityUid.Invalid is not a dead tool: the sandbox/map-editor spawn panel deliberately
+        // leaves MobUid unset because no mob owns the placement. Clearing that would deselect the
+        // spawn panel entry on the next frame (the green flash).
+        if (placerEntity is { } placer && placer != EntityUid.Invalid && !EntityManager.EntityExists(placer))
         {
             _placementManager.Clear();
             placerEntity = null;
