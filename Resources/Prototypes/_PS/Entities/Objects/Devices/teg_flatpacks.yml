@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Palmtree Frontier contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 # Palmtree: TEG parts are sold and researched as flatpacks.
 #
 # The flatpacks spawn the "flatpacked" variants below. Those are ordinary TEG parts with one extra
@@ -7,7 +10,7 @@
 - type: entity
   parent: BaseNFFlatpack
   id: TegCirculatorFlatpack
-  name: circulator flatpack
+  name: TEG circulator flatpack
   description: A flatpack used for constructing a TEG circulator.
   components:
   - type: Sprite
@@ -16,8 +19,10 @@
     - state: engineering_gyroscope
   - type: Flatpack
     entity: TegCirculatorFlatpacked
+  # Palmtree: cheap to print, so block the lathe-to-cargo printer.
   - type: StaticPrice
-    price: 1000
+    price: 0
+  - type: CargoSellBlacklist
   - type: GuideHelp
     guides:
     - TEG
@@ -35,8 +40,10 @@
     - state: power_generator
   - type: Flatpack
     entity: TegCenterFlatpacked
+  # Palmtree: cheap to print, so block the lathe-to-cargo printer.
   - type: StaticPrice
-    price: 1500
+    price: 0
+  - type: CargoSellBlacklist
   - type: GuideHelp
     guides:
     - TEG

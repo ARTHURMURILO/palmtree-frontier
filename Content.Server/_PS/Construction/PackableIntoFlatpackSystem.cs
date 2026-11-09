@@ -1,6 +1,7 @@
-using Content.Server.Construction.Components;
+using Content.Server.Atmos.Piping.EntitySystems;
+using Content.Server._PS.Construction.Components;
 using Content.Shared.Administration.Logs;
-using Content.Shared.Construction;
+using Content.Shared._PS.Construction;
 using Content.Shared.Database;
 using Content.Shared.DoAfter;
 using Content.Shared.Examine;
@@ -8,7 +9,7 @@ using Content.Shared.Popups;
 using Content.Shared.Verbs;
 using Robust.Shared.GameObjects;
 
-namespace Content.Server.Construction;
+namespace Content.Server._PS.Construction;
 
 /// <summary>
 ///     Gives a deployed machine a context-menu action that packs it back into its flatpack after a
@@ -17,6 +18,7 @@ namespace Content.Server.Construction;
 public sealed class PackableIntoFlatpackSystem : EntitySystem
 {
     [Dependency] private readonly ISharedAdminLogManager _adminLogger = default!;
+    [Dependency] private readonly AtmosUnsafeUnanchorSystem _atmosUnsafeUnanchor = default!;
     [Dependency] private readonly SharedDoAfterSystem _doAfter = default!;
     [Dependency] private readonly SharedPopupSystem _popup = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
@@ -69,6 +71,11 @@ public sealed class PackableIntoFlatpackSystem : EntitySystem
             return;
 
         args.Handled = true;
+
+        // A packed machine is deleted, so empty its pipe nodes into the tile first. This is the
+        // same leak the atmos-unsafe unanchor path performs; without it a charged circulator
+        // would silently delete its pipe gas with the part.
+        _atmosUnsafeUnanchor.LeakGas(ent.Owner);
 
         var xform = Transform(ent.Owner);
         var flatpack = Spawn(ent.Comp.Flatpack, xform.Coordinates);

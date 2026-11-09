@@ -1,6 +1,6 @@
 using Robust.Shared.Prototypes;
 
-namespace Content.Server.Construction.Components;
+namespace Content.Server._PS.Construction.Components;
 
 /// <summary>
 ///     Lets a deployed machine be packed back into the flatpack it came from.
