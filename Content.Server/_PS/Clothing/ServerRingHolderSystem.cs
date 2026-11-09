@@ -34,7 +34,14 @@ public sealed class ServerRingHolderSystem : EntitySystem
 
         for (var i = 0; i < ent.Comp.MaxRings; i++)
         {
-            _itemSlots.AddItemSlot(ent.Owner, RingHolderComponent.GetSlotId(i), new ItemSlot(ent.Comp.RingSlot), itemSlots);
+            var slotId = RingHolderComponent.GetSlotId(i);
+
+            // The first slot is declared on ClothingHandsBase so spawning a glove does not add
+            // components during init. Extra slots configured through MaxRings are still created here.
+            if (_itemSlots.TryGetSlot(ent.Owner, slotId, out _, itemSlots))
+                continue;
+
+            _itemSlots.AddItemSlot(ent.Owner, slotId, new ItemSlot(ent.Comp.RingSlot), itemSlots);
         }
     }
 

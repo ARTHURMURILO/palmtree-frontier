@@ -81,7 +81,7 @@
   components:
   - type: Contraband
     severity: Class2
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Blueprint
     providedRecipes:
     - MineralScannerEmpty
@@ -137,7 +137,7 @@
   components:
   - type: Contraband
     severity: Class2
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Blueprint
     providedRecipes:
     - NFEnergyPickaxe
@@ -151,7 +151,7 @@
   components:
   - type: Contraband
     severity: Class2
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Blueprint
     providedRecipes:
     - OreBagOfHolding
@@ -165,7 +165,7 @@
   components:
   - type: Contraband
     severity: Class2
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Blueprint
     providedRecipes:
     - ConstructionBagOfHolding
@@ -179,7 +179,7 @@
   components:
   - type: Contraband
     severity: Class2
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Blueprint
     providedRecipes:
     - MiningDrill
@@ -193,7 +193,7 @@
   components:
   - type: Contraband
     severity: Class2
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Blueprint
     providedRecipes:
     - MiningDrillDiamond

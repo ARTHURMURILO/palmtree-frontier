@@ -145,7 +145,7 @@
   components:
   - type: Contraband
     severity: Class2
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _NF/Clothing/OuterClothing/Coats/arcadia_trench.rsi
   - type: Clothing
@@ -168,7 +168,7 @@
   components:
   - type: Contraband
     severity: Class2
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Armor # Open = less armor
     modifiers:
       coefficients:

@@ -38,6 +38,21 @@
       ejectSound: null
       swap: false
       ejectOnBreak: true
+  # Palmtree: keep the base ring slot declarative so spawning a glove does not
+  # add components during init (PrototypeSaveTest).
+  - type: ItemSlots
+    slots:
+      ring0:
+        whitelist:
+          tags:
+          - Ring
+        insertSound: null
+        ejectSound: null
+        swap: false
+        ejectOnBreak: true
+  - type: ContainerContainer
+    containers:
+      ring0: !type:ContainerSlot
 
 - type: entity
   abstract: true
