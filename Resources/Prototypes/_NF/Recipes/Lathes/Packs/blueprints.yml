@@ -62,6 +62,20 @@
   - NFPouchAtmospherics
   # BasicRobotics
   - ProximitySensor
+  # ProgrammableCircuitry
+  - CircuitCpuBasic
+  - CircuitCpuAdvanced
+  - CircuitWheels
+  - CircuitTracks
+  - CircuitThruster
+  - CircuitManipulator
+  - CircuitSpeaker
+  - CircuitSensor
+  - CircuitRadio
+  - CircuitBotanicalAnalyzer
+  - CircuitChemicalAnalyzer
+  - CircuitMedicalAnalyzer
+  - CircuitGasAnalyzer
     # SalvageEquipment
   - ClothingMaskWeldingGas
   # SpaceScanning

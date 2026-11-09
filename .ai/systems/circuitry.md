@@ -34,8 +34,10 @@
   lathe recipe and stays admin-spawn only during live testing.
 - Fabrication/research: all physical modules (basic/advanced CPU, wheels, tracks, thruster,
   manipulator, speaker, sensor, radio, botanical/chemical/medical/gas analyzers) are in the
-  `CircuitryParts` exosuit-fabricator pack. `NFCircuitry` and `NFAdvancedCircuitry` in the NF
-  Engineering tree unlock them; Vim moved to make room and now follows the critter-mech node.
+  `CircuitryParts` exosuit-fabricator pack and also listed in `NFBlueprintsEngineering` so the
+  research unlocks pass the tech-tree blueprint consistency test. `NFCircuitry` and
+  `NFAdvancedCircuitry` in the NF Engineering tree unlock them; Vim moved to make room and now
+  follows the critter-mech node.
 - Capability recomputation (hands, speech, movement, flight, sensor range, power draw, beaker),
   power gating and idle/action/movement power costs.
 - Power tuning (2026-11): fractional draws. Base idle 0.05, CPU 0.25/0.4, locomotion 0.05/0.1/0.15,
