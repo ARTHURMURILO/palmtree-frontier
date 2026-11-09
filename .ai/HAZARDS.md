@@ -577,6 +577,17 @@ so these fail only in CI:
   `RCDConstructionGhostFlipEvent` only when the RCD is in the sender's active hand. When a mode
   without a `mirrorPrototype:` is selected the fallback is the normal prototype, and the flip flag
   survives the switch (toggling again on a mirror mode re-applies it).
+- **The placement direction survives a tool swap; a fresh RCD/RPD's `ConstructionDirection` does
+  not.** `PlacementManager.Direction` is engine state and is not reset by `BeginPlacing`, but every
+  new `RCDComponent` starts at its default `South`. `RCDConstructionGhostSystem` must therefore send
+  `RCDConstructionGhostRotationEvent` when the held tool changes as well as when the direction
+  changes. Sending only on a direction change made a freshly equipped RPD show the previous tool's
+  ghost orientation while the server spawned the pipe in its own default orientation — the
+  "ghost points one way, pipe lands the other" playtest bug. Also clear the placer when its
+  `MobUid` was deleted: the non-RCD guard otherwise returns forever on a dead entity and the next
+  held tool never gets a fresh placer. The integration test `RcdGhostDirectionTest` deletes one RPD
+  while it owns the placer, equips a second at the retained east-facing placement, and asserts both
+  the server component and the spawned pipe face east.
 - **`InstantConstruction` skips the do-after delay, not the do-after**: it forces delay 0 and the
   `EffectRCDConstruct0` fx, but validity/charge checks still run every tick (and it zeroes the
   delay on deconstruct operations too).
