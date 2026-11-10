@@ -1965,3 +1965,68 @@ Entries:
         admin-spawn only during live testing.
   id: 90129
   time: '2026-11-09T12:00:00.0000000+00:00'
+- author: ARTHURMURILO
+  changes:
+    - type: Fix
+      message: Fixed glove prototype serialization and Tier 2 contraband display tests.
+    - type: Fix
+      message: >-
+        Fixed label workflows failing with Resource not accessible by
+        integration.
+  id: 90130
+  time: '2026-11-09T20:18:06.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/b7231425751aac0cb6b2d98745316de54a9bd508
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        Fixed scarves and other neck-slot clothing rendering under breasts when
+        facing south.
+  id: 90131
+  time: '2026-11-10T00:19:15.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/8691861e211afb2c7472dde79ed99682eaa47526
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: >-
+        Added a Layer preference (Below, Default, Above) to the interaction
+        panel.
+    - type: Fix
+      message: >-
+        Stale character draw depths now resynchronize automatically instead of
+        sticking above or below other mobs.
+  id: 90132
+  time: '2026-11-10T00:19:27.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/8003358f6206274893ce4b091ecdc0d2b9806707
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        Crawling characters now lie facing the direction they move left or
+        right.
+  id: 90133
+  time: '2026-11-10T00:19:38.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/92c42c69e60bf96879c123e50f962dfee3a3c67a
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: >-
+        Ported the bluespace miner. It passively mines basic ores into a linked
+        ore silo, with rate, amount and ore weights editable through View
+        Variables.
+  id: 90134
+  time: '2026-11-10T00:47:45.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/70597f35bf031b41beee8ef88db7ed6abe2667f1
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: Added the Tunes of Anarchy record to salvage wreck loot.
+  id: 90135
+  time: '2026-11-10T01:14:48.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/71dca5450af24f89e3df3351f36dfc4d2d8fcf84
