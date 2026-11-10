@@ -1,0 +1,18 @@
+# Palmtree: machine board for the bluespace miner.
+- type: entity
+  id: PSBluespaceMinerCircuitboard
+  parent: BaseMachineCircuitboard
+  name: bluespace miner machine board
+  description: A machine printed circuit board for a bluespace miner.
+  components:
+  - type: Sprite
+    state: bluespacearray
+  - type: MachineBoard
+    prototype: PSBluespaceMiner
+    requirements:
+      MatterBin: 2
+      Manipulator: 2
+      Capacitor: 1
+    stackRequirements:
+      Glass: 1
+      Bluespace: 1

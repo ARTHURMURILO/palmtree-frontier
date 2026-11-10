@@ -8,6 +8,7 @@ using Content.Shared.DoAfter;
 using Content.Shared.Interaction;
 using Content.Shared.Movement.Pulling.Components;
 using Content.Shared.Movement.Pulling.Systems;
+using Content.Shared.Physics;
 using Content.Shared.Popups;
 using Content.Shared.Tools.Components;
 using Robust.Shared.Map;
@@ -36,6 +37,8 @@ public sealed partial class AnchorableSystem : EntitySystem
     private EntityQuery<PhysicsComponent> _physicsQuery;
 
     public readonly ProtoId<TagPrototype> Unstackable = "Unstackable";
+
+    private static readonly ProtoId<TagPrototype> DirectionalWindowTag = "DirectionalWindow";
 
     public override void Initialize()
     {
@@ -300,6 +303,17 @@ public sealed partial class AnchorableSystem : EntitySystem
     }
 
     /// <summary>
+    /// Returns true if the anchoring body occupies the whole tile or a full-height edge, rather than
+    /// sharing a tile with a directional window.
+    /// </summary>
+    private static bool NeedsWholeTile(int collisionMask)
+    {
+        var fullTileMask = (int) CollisionGroup.FullTileMask;
+        return (collisionMask & fullTileMask) == fullTileMask
+               || (collisionMask & (int) CollisionGroup.HighImpassable) != 0;
+    }
+
+    /// <summary>
     /// Returns true if no hard anchored entities match the collision layer or mask specified.
     /// </summary>
     /// <param name="grid"></param>
@@ -312,6 +326,15 @@ public sealed partial class AnchorableSystem : EntitySystem
             if (!_physicsQuery.TryGetComponent(ent, out var body) ||
                 !body.CanCollide ||
                 !body.Hard)
+            {
+                continue;
+            }
+
+            // A directional window only covers one edge of the tile, so low-profile anchorables
+            // (machines, tables, furniture) can share its tile. Full-tile or full-height
+            // assemblies (airlocks, windoors, windows) still need the whole tile.
+            if (_tagSystem.HasTag(ent.Value, DirectionalWindowTag) &&
+                !NeedsWholeTile(collisionMask))
             {
                 continue;
             }

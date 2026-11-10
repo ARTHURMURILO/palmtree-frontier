@@ -1,0 +1,147 @@
+# Palmtree: the heat pump.
+#
+# A two-port thermomachine: the gas port is driven towards the target temperature and the heat is
+# pushed into, or taken out of, the waste port. The vanilla freezer and heater keep working exactly as
+# they always have and stay researchable; this is the sidegrade that has to obey thermodynamics.
+#
+# Ported from /tg/station's binary thermomachine (PR #57831, 2021-2022).
+
+- type: entity
+  parent: [ BaseMachinePowered, ConstructibleMachine ]
+  id: GasThermoMachineHeatPump
+  name: heat pump
+  description: Moves heat between two pipe networks instead of making it. Needs a waste loop to dump the heat into.
+  placement:
+    mode: AlignAtmosPipeLayers
+  components:
+  - type: Sprite
+    sprite: _PS/Structures/Piping/Atmospherics/heat_pump.rsi
+    # The body stays upright and the port markings turn around it, which is what the vanilla
+    # thermomachine does: cardinal snapping keeps the body's one-direction states facing south,
+    # while the four-directional port layers pick the frame for the direction the machine faces.
+    snapCardinals: true
+    # Needed so that the port layers can opt out of the snapping below; without it the client
+    # asserts when it measures the sprite (see AtmosSpriteBoundsTest).
+    granularLayersRendering: true
+    layers:
+    - state: freezerOff
+      map: [ "enum.PowerDeviceVisualLayers.Powered" ]
+    # WiresPanel owns the visibility of this layer; the state itself never changes.
+    - state: freezerPanelOpen
+      map: [ "enum.WiresVisualLayers.MaintenancePanel" ]
+    # The two port markings: green is the gas port, red is the waste port. They are the layers
+    # that have to follow the rotation, so they render with the sprite's rotation and not the
+    # snapped one. They also own their pipe layer's art; see AtmosPipeLayers below.
+    - state: portWaste
+      map: [ "portWaste" ]
+      renderingStrategy: Default
+    - state: portGas
+      map: [ "portGas" ]
+      renderingStrategy: Default
+  - type: Appearance
+  - type: GenericVisualizer
+    visuals:
+      enum.GasHeatPumpVisuals.State:
+        enum.PowerDeviceVisualLayers.Powered:
+          OffCooling: { state: freezerOff }
+          OnCooling: { state: freezerOn }
+          OffHeating: { state: heaterOff }
+          OnHeating: { state: heaterOn }
+  - type: AtmosPipeLayers
+    # A multitool changes the layer; the screwdriver is left to the maintenance panel.
+    tool: Pulsing
+    alternativePrototypes:
+      Primary: GasThermoMachineHeatPump
+      Secondary: GasThermoMachineHeatPumpAlt1
+      Tertiary: GasThermoMachineHeatPumpAlt2
+    # Each layer draws its pipes a few pixels off centre, so the port markings have their own file
+    # per layer and move with the pipe they sit on.
+    spriteLayersRsiPaths:
+      portWaste:
+        Primary: _PS/Structures/Piping/Atmospherics/heat_pump.rsi
+        Secondary: _PS/Structures/Piping/Atmospherics/heat_pump_alt1.rsi
+        Tertiary: _PS/Structures/Piping/Atmospherics/heat_pump_alt2.rsi
+      portGas:
+        Primary: _PS/Structures/Piping/Atmospherics/heat_pump.rsi
+        Secondary: _PS/Structures/Piping/Atmospherics/heat_pump_alt1.rsi
+        Tertiary: _PS/Structures/Piping/Atmospherics/heat_pump_alt2.rsi
+  - type: NodeContainer
+    nodes:
+      # The gas port sits where a freezer's port does, so a heat pump drops into an existing wall.
+      gas:
+        !type:PipeNode
+        nodeGroupID: Pipe
+        pipeDirection: South
+      waste:
+        !type:PipeNode
+        nodeGroupID: Pipe
+        pipeDirection: North
+  - type: GasHeatPump
+  - type: AtmosDevice
+  - type: Rotatable
+  - type: Transform
+    noRot: false
+  - type: ApcPowerReceiver
+    powerLoad: 0 # GasHeatPumpSystem sets the idle/running draw once the machine is switched on
+  - type: WiresPanel
+  - type: WiresVisuals
+  - type: StationAiWhitelist
+  - type: PipeRestrictOverlap
+  - type: ActivatableUI
+    key: enum.GasHeatPumpUiKey.Key
+  - type: ActivatableUIRequiresAnchor
+  - type: UserInterface
+    interfaces:
+      enum.GasHeatPumpUiKey.Key:
+        type: GasHeatPumpBoundUserInterface
+  - type: Machine
+    board: HeatPumpMachineCircuitBoard
+  - type: AtmosMonitoringConsoleDevice
+    navMapBlip: Thermoregulator
+  - type: GuideHelp
+    guides:
+    - HeatPump
+
+- type: entity
+  parent: [ GasPipeLayerAlt1, GasThermoMachineHeatPump ]
+  id: GasThermoMachineHeatPumpAlt1
+  categories: [ HideSpawnMenu ]
+  components:
+  # The markings are taken from this layer's file, so the placement ghost shifts them the same way
+  # the pipes on that layer are drawn and you can see which layer you are about to place on.
+  - type: Sprite
+    layers:
+    - state: freezerOff
+      map: [ "enum.PowerDeviceVisualLayers.Powered" ]
+    - state: freezerPanelOpen
+      map: [ "enum.WiresVisualLayers.MaintenancePanel" ]
+    - state: portWaste
+      map: [ "portWaste" ]
+      renderingStrategy: Default
+      sprite: _PS/Structures/Piping/Atmospherics/heat_pump_alt1.rsi
+    - state: portGas
+      map: [ "portGas" ]
+      renderingStrategy: Default
+      sprite: _PS/Structures/Piping/Atmospherics/heat_pump_alt1.rsi
+
+- type: entity
+  parent: [ GasPipeLayerAlt2, GasThermoMachineHeatPump ]
+  id: GasThermoMachineHeatPumpAlt2
+  categories: [ HideSpawnMenu ]
+  components:
+  # The markings are taken from this layer's file, so the placement ghost shifts them the same way
+  # the pipes on that layer are drawn and you can see which layer you are about to place on.
+  - type: Sprite
+    layers:
+    - state: freezerOff
+      map: [ "enum.PowerDeviceVisualLayers.Powered" ]
+    - state: freezerPanelOpen
+      map: [ "enum.WiresVisualLayers.MaintenancePanel" ]
+    - state: portWaste
+      map: [ "portWaste" ]
+      renderingStrategy: Default
+      sprite: _PS/Structures/Piping/Atmospherics/heat_pump_alt2.rsi
+    - state: portGas
+      map: [ "portGas" ]
+      renderingStrategy: Default
+      sprite: _PS/Structures/Piping/Atmospherics/heat_pump_alt2.rsi

@@ -237,3 +237,11 @@
   id: AtmosMonitoringComputerCircuitboard
   parent: BaseCircuitboardRecipe
   result: AtmosMonitoringComputerCircuitboard
+
+# Palmtree: the supermatter monitoring console. Its board existed in _EE but had no way to be
+# produced or bought, so the console could not actually be built. Unlocked by Atmospheric Damage
+# Control alongside the other monitoring boards.
+- type: latheRecipe
+  id: SupermatterComputerCircuitboard
+  parent: BaseCircuitboardRecipe
+  result: SupermatterComputerCircuitboard

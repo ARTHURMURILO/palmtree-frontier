@@ -59,6 +59,9 @@
   name: EMP grenade cartridge
   parent: BaseMagazineGrenade
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     # proto: GrenadeEMP # Frontier
 

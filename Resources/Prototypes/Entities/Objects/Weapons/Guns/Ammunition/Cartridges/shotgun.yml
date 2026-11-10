@@ -2,7 +2,7 @@
   categories: [ HideSpawnMenu ] # Frontier
   id: BaseShellShotgun
   name: shell (.50)
-  parent: [ BaseCartridge, BaseC1Contraband ] # Frontier: added BaseC1Contraband
+  parent: [ BaseCartridge, BaseC2Contraband ] # Frontier: added BaseC2Contraband
   abstract: true
   components:
   - type: Tag
@@ -96,6 +96,9 @@
   name: shell (.50 incendiary)
   parent: BaseShellShotgun # Frontier: remove BaseSecurityContraband
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     layers:
       - state: incendiary
@@ -179,6 +182,9 @@
   name: uranium shotgun shell
   parent: BaseShellShotgun # Frontier: remove BaseSecurityContraband
   components:
+    - type: Contraband
+      severity: Class3General
+      allowedDepartments: [ Security, Command ]
     - type: Sprite
       layers:
         - state: depleted-uranium

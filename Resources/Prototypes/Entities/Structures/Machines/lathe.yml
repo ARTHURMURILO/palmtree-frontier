@@ -377,6 +377,7 @@
     - BorgModules
     - MechParts
     - MechEquipment
+    - CircuitryParts # Palmtree
   - type: EmagLatheRecipes # Frontier begin
     emagStaticPacks:
       - NFBorgChipEmag # Frontier end

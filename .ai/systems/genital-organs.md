@@ -129,6 +129,8 @@ queries).
    per-sprite offset, so a breast's nipple sprite still renders above the breast sprite and a
    butt's front/mid sprites stay ordered. A visible relevant undergarment forces this clamp in
    every direction (south included); without one, south keeps the genitals-over-hair rule.
+   The client also moves the neck clothing layer above the genital group when facing south, so
+   scarves cover breasts.
 
 ## Cum, drip and washing
 
@@ -136,15 +138,15 @@ queries).
 |---|---|---|
 | Reagent | `Resources/Prototypes/_PS/Reagents/semen.yml` | `Semen`, white, viscous; no longer used for puddles/overlays (kept for future fluid work) |
 | Drip | `Content.Shared/_PS/Organs/DrippingCumComponent.cs`, `Content.Server/_PS/Organs/DrippingCumSystem.cs` | stores units; 10 u/s into **droplet** decals (`SemenDrip1..5` only), 10u per drip, pausing while a jumpsuit is worn |
-| Ejaculation decals | `DrippingCumSystem.SpawnCumDecals` | drops `SemenPuddle1..4` scaled by `SemenVolume`; each climax adds a new decal (never replaces) |
+| Ejaculation decals | `DrippingCumSystem.SpawnCumDecals` | drops `SemenPuddle1..4` scaled by the released volume; one decal per 50u, capped at 3 per climax (never replaces existing decals) |
 | Decal sprites/prototypes | `Resources/Textures/_PS/Effects/decals/semen.rsi` (ported from SPLURT `effects.dmi`), `Resources/Prototypes/_PS/Decals/semen.yml` | cleanable with space cleaner; no reagent puddles |
 | Washing | — | decals are removed by space cleaner (`CleanDecalsReaction`) or by the Palmtree roomba's decal-scrubbing HTN operators (`Content.Server/_PS/Roomba`); the character overlay feature was removed |
 
-- Internal climaxes (`cumTarget: vagina`/`anus`) store the penis organ's `SemenVolume` in the
-  partner's drip reservoir; `vagina` and `anus` both drip (receiver with no jumpsuit). Drips only
-  ever place the small droplet decals (`SemenDrip1..5`); the full cum decals are reserved for actual
-  ejaculation. The receiver gets a private popup ("trickle" or "pool, held back by your clothes"
-  while a jumpsuit is worn).
+- Internal climaxes (`cumTarget: vagina`/`anus`) store the whole penis organ's `SemenVolume` in the
+  partner's drip reservoir at once; `vagina` and `anus` both drip (receiver with no jumpsuit). Drips
+  only ever place the small droplet decals (`SemenDrip1..5`); the full cum decals are reserved for
+  actual ejaculation. The receiver gets a private popup ("trickle" or "pool, held back by your
+  clothes" while a jumpsuit is worn).
 - **Drip activity gate (Palmtree):** a filled mob does not drip on its own. The drip **starts**
   when the mob first **moves** (its position changed since the last check) or performs an interaction
   (`DrippingCumSystem.NotifyActivity`, called for both participants by `TryPerform`). That starter is
@@ -157,20 +159,16 @@ queries).
   falls in (the stored coordinate is the decal's bottom-left corner).
 - **Receive capacity (Palmtree):** the reservoir holds at most
   `DrippingCumComponent.MaxCapacity = 1000` units; anything past that is lost.
-- **Womb overflow (Palmtree):** when a pulse is delivered into a vagina whose reservoir already
-  holds more than `DrippingCumSystem.WombOverflowThreshold = 60` units, a full cum decal is also
-  dropped on the floor to represent the overflow. The 30u is still added - overflow costs the
-  receiver nothing. Only the `vagina` cum target overflows (the anus does not).
-- **Multi-pulse climax:** `EmitClimax` splits the stored volume into 30u pulses, capped at 10 per
-  climax (`InteractionPanelSystem.ClimaxPulseVolume`/`MaxClimaxPulses`), so 30u = one pulse and the
-  300u maximum = ten. The first pulse fires immediately; the rest run from the server `Update` loop
-  every 0.6s (1s for female climaxes). Each pulse emits its share of the fluid, its decal/drip, the
-  interaction's cum message and a moan. While a sequence is active the actor cannot start another
-  climax and climaxing participants gain no lust (fail-safe).
-- **Female climax:** vagina-only characters use the `FemPuddle1..4` decals (SPLURT fem sprites,
-  random per pulse, no volume scaling). The pulse count comes from the same "Fluid per climax"
-  setting (`GenitalOrganSystem.GetFluidVolume` falls back to the vagina organ), and the pulses are
-  1 second apart.
+- **Climax overflow (Palmtree):** a single climax releases the whole "Fluid per climax" amount at
+  once (maximum 500u); there is no multi-pulse sequence. Internal endings store the full amount in
+  the partner; when the release is above 50u, one floor decal per 50u is also spawned (capped at 3)
+  at the receiver's feet. Overflow never costs the receiver any stored fluid.
+- **Single release:** `EmitClimax` emits the whole volume in one go, with the interaction's cum
+  message and one moan. Exterior endings always leave at least one decal (same one-per-50u count,
+  capped at 3).
+- **Female climax:** vagina-only characters use random `FemPuddle1..4` decals, one per 50u of the
+  "Fluid per climax" setting (`GenitalOrganSystem.GetFluidVolume` falls back to the vagina organ),
+  capped at 3.
 - Receiver-side acts (`Ride`, `TakeAnal`) route the **target's** climax through the same cum target,
   so the penis owner finishing fills the actor.
 - Exterior climaxes (handjob, breastfuck, frotting, **Cum on them**, manual Climax with no recent

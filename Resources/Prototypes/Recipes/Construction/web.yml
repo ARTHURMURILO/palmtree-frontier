@@ -13,6 +13,7 @@
     - SpiderCraft
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: TableWeb
@@ -87,3 +88,4 @@
     - SpiderCraft
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true

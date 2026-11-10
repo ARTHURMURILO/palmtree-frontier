@@ -85,6 +85,19 @@ public sealed class RCDConstructionGhostSystem : EntitySystem
 
         // Get current placer data
         var placerEntity = _placementManager.CurrentPermission?.MobUid;
+
+        // If the tool that owned the placer was deleted while its placer was active, the permission
+        // keeps a dead entity and the check below would return forever, leaving the old ghost (and
+        // its direction) stuck. Clear it so the next held tool can start a fresh placer.
+        // EntityUid.Invalid is not a dead tool: the sandbox/map-editor spawn panel deliberately
+        // leaves MobUid unset because no mob owns the placement. Clearing that would deselect the
+        // spawn panel entry on the next frame (the green flash).
+        if (placerEntity is { } placer && placer != EntityUid.Invalid && !EntityManager.EntityExists(placer))
+        {
+            _placementManager.Clear();
+            placerEntity = null;
+        }
+
         var placerIsRCD = HasComp<RCDComponent>(placerEntity);
 
         // Exit if erasing or the current placer is not an RCD (build mode is active)
@@ -107,10 +120,16 @@ public sealed class RCDConstructionGhostSystem : EntitySystem
         }
         var prototype = _protoManager.Index(rcd.ProtoId);
 
-        // Update the direction the RCD prototype based on the placer direction
-        if (_placementDirection != _placementManager.Direction)
+        // Update the direction the RCD prototype based on the placer direction. The placement
+        // manager keeps its direction when the placer is recreated, but every RCD/RPD starts with
+        // its own default ConstructionDirection on the server. Send the current direction whenever
+        // the held tool changes too, so a fresh RPD does not spawn pipes in the previous tool's
+        // orientation while the ghost shows the retained one.
+        var placementDirection = _placementManager.Direction;
+
+        if (_placementDirection != placementDirection || heldEntity != placerEntity)
         {
-            _placementDirection = _placementManager.Direction;
+            _placementDirection = placementDirection;
             RaiseNetworkEvent(new RCDConstructionGhostRotationEvent(GetNetEntity(heldEntity.Value), _placementDirection));
         }
 

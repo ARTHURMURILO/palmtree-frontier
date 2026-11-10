@@ -99,11 +99,15 @@ public sealed class ForceDockCommand : IConsoleCommand
         // Every store check except the docking, ship-category and "nothing living aboard" rules:
         // force-dock kicks the occupants out instead of refusing the ship.
         if (dock.FindStoreBlocker(ship.Grid, requireDocked: false, stationGrid: null, allowOrganics: true,
-                requireAllowedGroup: false) is { } blocker)
+                requireAllowedGroup: false, allowDangerousEngines: true) is { } blocker)
         {
             shell.WriteError(Loc.GetString(blocker));
             return;
         }
+
+        // Palmtree: an admin force-dock is allowed to clean dangerous engine state out of the
+        // grid instead of refusing the ship. Normal console storage is refused by the dock.
+        var purged = dock.PurgeDangerousShipEntities(ship.Grid);
 
         // Get everyone off first so the console can say how many were moved. TryStoreShip evacuates
         // again, which is a no-op by then.
@@ -124,6 +128,9 @@ public sealed class ForceDockCommand : IConsoleCommand
 
         if (evacuated > 0)
             shell.WriteLine($"Moved {evacuated} living thing(s) (or ghosts/corpses) off {ship.Name} before storing it.");
+
+        if (purged > 0)
+            shell.WriteLine($"Deleted {purged} supermatter/singularity/tesla entit{(purged == 1 ? "y" : "ies")} from {ship.Name} before storing it.");
 
         if (skipped > 0)
         {

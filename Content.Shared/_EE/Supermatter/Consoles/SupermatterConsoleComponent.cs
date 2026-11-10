@@ -1,0 +1,140 @@
+// SPDX-FileCopyrightText: 2025 VMSolidus <evilexecutive@gmail.com>
+// SPDX-FileCopyrightText: 2025 corresp0nd <46357632+corresp0nd@users.noreply.github.com>
+// SPDX-FileCopyrightText: 2025 taydeo <td12233a@gmail.com>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later AND MIT
+
+using Content.Shared._EE.Supermatter.Consoles;
+using Content.Shared.Atmos;
+using Robust.Shared.GameStates;
+using Robust.Shared.Serialization;
+using Robust.Shared.Utility;
+
+namespace Content.Shared._EE.Supermatter.Components;
+
+[RegisterComponent, NetworkedComponent, AutoGenerateComponentState]
+[Access(typeof(SharedSupermatterConsoleSystem))]
+public sealed partial class SupermatterConsoleComponent : Component
+{
+    /// <summary>
+    /// The current entity of interest (selected via the console UI)
+    /// </summary>
+    [ViewVariables, AutoNetworkedField]
+    public NetEntity? FocusSupermatter;
+}
+
+[Serializable, NetSerializable]
+public struct SupermatterFocusData(
+    NetEntity netEntity,
+    GasMixture gasStorage,
+    float integrity,
+    float heatHealing,
+    float power,
+    float powerLoss,
+    float teslaCoils,
+    float lightningRange,
+    float lightningTransmission,
+    float radiation,
+    float temperatureLimit,
+    float heatModifier,
+    float gasHeatModifier,
+    float absorptionRatio)
+{
+    /// <summary>
+    /// Focus entity
+    /// </summary>
+    public NetEntity NetEntity = netEntity;
+
+    public GasMixture GasStorage = gasStorage;
+
+    public float Integrity = integrity;
+
+    public float HeatHealing = heatHealing;
+
+    public float Power = power;
+
+    public float PowerLoss = powerLoss;
+
+    public float TeslaCoils = teslaCoils;
+
+    public float LightningRange = lightningRange;
+
+    public float LightningTransmission = lightningTransmission;
+
+    public float Radiation = radiation;
+
+    public float TemperatureLimit = temperatureLimit;
+
+    public float HeatModifier = heatModifier;
+
+    public float GasHeatModifier = gasHeatModifier;
+
+    public float AbsorptionRatio = absorptionRatio;
+}
+
+[Serializable, NetSerializable]
+public sealed class SupermatterConsoleBoundInterfaceState(
+    SupermatterConsoleEntry[] supermatters,
+    SupermatterFocusData? focusData,
+    bool selfInspection = false) : BoundUserInterfaceState
+{
+    /// <summary>
+    /// A list of all supermatters
+    /// </summary>
+    public SupermatterConsoleEntry[] Supermatters = supermatters;
+
+    /// <summary>
+    /// Data for the UI focus (if applicable)
+    /// </summary>
+    public SupermatterFocusData? FocusData = focusData;
+
+    /// <summary>
+    /// Palmtree: true when the window belongs to a crystal inspecting itself.
+    /// </summary>
+    public bool SelfInspection = selfInspection;
+}
+
+[Serializable, NetSerializable]
+public struct SupermatterConsoleEntry(NetEntity entity, string entityName, SupermatterStatusType status, SpriteSpecifier icon)
+{
+    /// <summary>
+    /// The entity in question
+    /// </summary>
+    public NetEntity NetEntity = entity;
+
+    /// <summary>
+    /// Name of the entity
+    /// </summary>
+    public string EntityName = entityName;
+
+    /// <summary>
+    /// Current warning level
+    /// </summary>
+    public SupermatterStatusType EntityStatus = status;
+
+    /// <summary>
+    /// Palmtree: the icon this crystal uses in the console list.
+    /// </summary>
+    public SpriteSpecifier Icon = icon;
+}
+
+[Serializable, NetSerializable]
+public sealed class SupermatterConsoleFocusChangeMessage(NetEntity? focusSupermatter) : BoundUserInterfaceMessage
+{
+    public NetEntity? FocusSupermatter = focusSupermatter;
+}
+
+[NetSerializable, Serializable]
+public enum SupermatterConsoleVisuals
+{
+    ComputerLayerScreen
+}
+
+/// <summary>
+/// UI key associated with the supermatter monitoring console
+/// </summary>
+[Serializable, NetSerializable]
+public enum SupermatterConsoleUiKey
+{
+    Key
+}

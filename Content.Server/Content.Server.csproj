@@ -15,6 +15,8 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="JetBrains.Annotations" PrivateAssets="All" />
+    <!-- Palmtree: Lua-based circuitry CPU runtime. -->
+    <PackageReference Include="MoonSharp" />
     <PackageReference Include="NetCord" />
   </ItemGroup>
   <ItemGroup>

@@ -29,6 +29,9 @@
   description: |-
     An immortal classic. A civilian grade shotgun.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: Objects/Weapons/Guns/Shotguns/db_shotgun.rsi
   - type: Clothing
@@ -52,6 +55,9 @@
   description: |-
     A premium semi-automatic shotgun, featuring an upgraded tube capacity.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: Objects/Weapons/Guns/Shotguns/enforcer.rsi
   - type: Clothing
@@ -70,6 +76,9 @@
   description: |-
     An old yet faithful design, and a favorite among irregular forces on many worlds.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _NF/Objects/Weapons/Guns/Shotguns/pump.rsi
   - type: Clothing
@@ -90,6 +99,9 @@
   description: |-
     Groovy!
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _DV/Objects/Weapons/Guns/Shotguns/sawn.rsi
   - type: Clothing
@@ -112,6 +124,9 @@
   id: NFWeaponShotgunSawnEmpty
   parent: NFWeaponShotgunSawn
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: null
   - type: Construction
@@ -125,6 +140,9 @@
   description: |-
     Looks unreliable, but legal.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: Objects/Weapons/Guns/Shotguns/hm_pistol.rsi
   - type: Clothing
@@ -143,6 +161,9 @@
   parent: NFWeaponShotgunHandmade
   suffix: Frontier, Empty
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: null
   - type: Construction
@@ -177,6 +198,9 @@
   description: |-
     A shitty, but legal, hand-made shotgun. It can only hold one round in the chamber.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: Objects/Weapons/Guns/Shotguns/improvised_shotgun.rsi
   - type: Clothing
@@ -200,6 +224,9 @@
   parent: NFWeaponShotgunSawn
   suffix: Less-lethal
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFShellShotgunBeanbag
 
@@ -208,6 +235,9 @@
   parent: NFWeaponShotgunKammerer
   suffix: Less-lethal
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFShellShotgunBeanbag
 
@@ -216,5 +246,8 @@
   parent: NFWeaponShotgunEnforcer
   suffix: Less-lethal
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFShellShotgunBeanbag

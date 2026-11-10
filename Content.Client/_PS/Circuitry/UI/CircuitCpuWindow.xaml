@@ -1,0 +1,41 @@
+<controls:CircuitCpuWindow xmlns="https://spacestation14.io"
+    xmlns:controls="clr-namespace:Content.Client._PS.Circuitry.UI"
+    xmlns:gfx="clr-namespace:Robust.Client.Graphics;assembly=Robust.Client"
+    MouseFilter="Stop"
+    SetSize="760 680" MinSize="560 460">
+    <PanelContainer StyleClasses="AngleRect" HorizontalExpand="True" VerticalExpand="True" />
+    <BoxContainer Orientation="Vertical" Margin="8">
+        <Label Name="TitleLabel" StyleClasses="LabelHeading" />
+        <Label Name="AssemblyLabel" HorizontalExpand="True" />
+        <Label Name="StatusLabel" />
+        <Label Name="ProgramInfoLabel" StyleClasses="LabelSecondaryColor" />
+        <Label Name="ErrorLabel" StyleClasses="LabelSecondaryColor" />
+        <PanelContainer Name="EditorPanel" VerticalExpand="True" HorizontalExpand="True" MinHeight="300">
+            <PanelContainer.PanelOverride>
+                <gfx:StyleBoxFlat BackgroundColor="#14141B"
+                    BorderColor="#2B2B33"
+                    BorderThickness="1"
+                    ContentMarginLeftOverride="4"
+                    ContentMarginTopOverride="4"
+                    ContentMarginRightOverride="4"
+                    ContentMarginBottomOverride="4" />
+            </PanelContainer.PanelOverride>
+            <controls:LuaCodeEditor Name="CodeEditor"
+                VerticalExpand="True"
+                HorizontalExpand="True"
+                MinHeight="300" />
+        </PanelContainer>
+        <BoxContainer Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Name="SaveButton" />
+            <Button Name="RevertButton" />
+            <Button Name="RunButton" />
+            <Button Name="StopButton" />
+            <Button Name="ClearLogButton" />
+            <Button Name="CloseButton" />
+        </BoxContainer>
+        <Label Name="ConsoleTitle" />
+        <ScrollContainer Name="ConsoleScroll" MinHeight="110" MaxHeight="170">
+            <Label Name="ConsoleLabel" />
+        </ScrollContainer>
+    </BoxContainer>
+</controls:CircuitCpuWindow>

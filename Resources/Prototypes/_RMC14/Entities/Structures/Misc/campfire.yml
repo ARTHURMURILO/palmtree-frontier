@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Ported from Goob Station (_RMC14/Entities/Structures/Misc/campfire.yml).
+# Palmtree: ParallaxStargaze is Goob-only, so it was dropped.
+
+- type: entity
+  id: RMCCampfire
+  parent: Bonfire
+  name: campfire
+  description: A useful tool to turn fellow spessmen into lifelong friends. Pull up a chair!
+  components:
+  - type: Construction
+    graph: RMCCampfire
+    node: campfire
+  - type: Sprite
+    noRot: true
+    sprite: _RMC14/Structures/campfire.rsi
+    layers:
+      - state: campfire
+      - state: burning
