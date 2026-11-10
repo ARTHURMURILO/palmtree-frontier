@@ -2030,3 +2030,12 @@ Entries:
   time: '2026-11-10T01:14:48.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/71dca5450af24f89e3df3351f36dfc4d2d8fcf84
+- author: ARTHURMURILO
+  changes:
+    - type: Add
+      message: >-
+        Added the temperature gate, temperature pump, heat exchanger and atmos
+        meter.
+  id: 90136
+  time: '2026-11-10T01:28:45.0000000+00:00'
+  url: https://github.com/xTheLifex/palmtree-frontier/pull/6
