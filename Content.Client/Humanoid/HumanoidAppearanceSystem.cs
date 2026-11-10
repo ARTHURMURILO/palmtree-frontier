@@ -16,6 +16,7 @@ using Robust.Client.Graphics;
 using Robust.Shared.Configuration;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Graphics.RSI;
+using Robust.Shared.Maths;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Utility;
 
@@ -84,53 +85,25 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
     }
 
     /// <summary>
-    /// Palmtree: neck-slot clothing should cover genitals when facing south. Move the neck layer
-    /// above the genital marking group in that direction, and back below the head group otherwise.
+    /// Palmtree: whether the sprite is drawn from a side view (including diagonals), used for
+    /// layer swaps that only apply to side-facing characters.
     /// </summary>
-    public void UpdateNeckLayerOrder(EntityUid uid, SpriteComponent sprite, RsiDirection? direction = null)
+    public bool IsSideFacing(EntityUid uid)
     {
-        if (!_sprite.LayerMapTryGet((uid, sprite), "neck", out var neckIndex, false))
-            return;
+        if (TryComp<HumanoidLayerDirectionComponent>(uid, out var directionOverride))
+            return directionOverride.Direction is RsiDirection.East or RsiDirection.West;
 
-        var screenDirection = direction ?? GetScreenDirection(uid);
+        if (!TryComp<TransformComponent>(uid, out var xform))
+            return false;
 
-        SpriteComponent.Layer? neckLayer;
-        if (screenDirection == RsiDirection.South)
-        {
-            if (!_sprite.LayerMapTryGet((uid, sprite), "mask", out var maskIndex, false)
-                || neckIndex == maskIndex - 1
-                || !_sprite.TryGetLayer((uid, sprite), neckIndex, out neckLayer, false))
-            {
-                return;
-            }
-
-            _sprite.RemoveLayer((uid, sprite), neckIndex);
-
-            // The mask layer shifts down when the neck layer is removed from before it.
-            var newIndex = _sprite.LayerMapTryGet((uid, sprite), "mask", out maskIndex, false)
-                ? _sprite.AddLayer((uid, sprite), neckLayer, maskIndex)
-                : _sprite.AddLayer((uid, sprite), neckLayer);
-
-            _sprite.LayerMapSet((uid, sprite), "neck", newIndex);
-            return;
-        }
-
-        if (!_sprite.LayerMapTryGet((uid, sprite), HumanoidVisualLayers.FacialHair, out var facialHairIndex, false)
-            || neckIndex == facialHairIndex - 1
-            || !_sprite.TryGetLayer((uid, sprite), neckIndex, out neckLayer, false))
-        {
-            return;
-        }
-
-        _sprite.RemoveLayer((uid, sprite), neckIndex);
-
-        var restoredIndex = _sprite.LayerMapTryGet((uid, sprite), HumanoidVisualLayers.FacialHair, out facialHairIndex, false)
-            ? _sprite.AddLayer((uid, sprite), neckLayer, facialHairIndex)
-            : _sprite.AddLayer((uid, sprite), neckLayer);
-
-        _sprite.LayerMapSet((uid, sprite), "neck", restoredIndex);
+        var angle = _transform.GetWorldRotation(xform) + _eyeManager.CurrentEye.Rotation;
+        return angle.GetDir() is Direction.East
+            or Direction.West
+            or Direction.NorthEast
+            or Direction.SouthEast
+            or Direction.NorthWest
+            or Direction.SouthWest;
     }
-
 
     /// <summary>
     /// Palmtree: whether the mob currently wears a garment on a slot that is drawn over genitals.
@@ -197,8 +170,6 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
 
         var humanoidAppearance = entity.Comp1;
         var sprite = entity.Comp2;
-
-        UpdateNeckLayerOrder(entity.Owner, sprite);
 
         sprite[_sprite.LayerMapReserve((entity.Owner, sprite), HumanoidVisualLayers.Eyes)].Color = humanoidAppearance.EyeColor;
 
@@ -572,6 +543,7 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
         var sprite = entity.Comp2;
         var markingOffset = offset ?? Vector2.Zero;
         var screenDirection = GetScreenDirection(entity.Owner); // Palmtree: direction-aware layers
+        var isSideFacing = IsSideFacing(entity.Owner); // Palmtree: includes diagonals
 
         // Palmtree: NSFW age gate. Genital sprites (organ render markings and the legacy genital
         // marking art) are never drawn for players who have not enabled NSFW content.
@@ -675,7 +647,7 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
             // Hair is a marking layer, so insert the tail before the current hair layer instead of
             // moving the base layer itself. The per-sprite index keeps multi-sprite tails ordered.
             if (layerSlot is HumanoidVisualLayers.Tail or HumanoidVisualLayers.TailExtras
-                && screenDirection is RsiDirection.East or RsiDirection.West
+                && isSideFacing
                 && _sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.Hair, out var hairLayer, false))
             {
                 targLayerAdj = hairLayer + layerOrder;
@@ -686,7 +658,7 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
             // after the hair base layer) stay behind them.
             if (humanoid.SnoutAboveHair
                 && layerSlot is HumanoidVisualLayers.Snout or HumanoidVisualLayers.SnoutCover
-                && screenDirection is RsiDirection.East or RsiDirection.West
+                && isSideFacing
                 && _sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.HeadSide, out var headSideLayer, false))
             {
                 targLayerAdj = headSideLayer + layerOrder;
@@ -696,17 +668,33 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
             // unless the organ uses the "Never hidden" visibility rule.
             if (layerSlot == HumanoidVisualLayers.Genital)
             {
+                var hasCoveringClothing = HasCoveringClothing(entity.Owner);
+                var hasUndergarment = HasVisibleUndergarment(humanoid,
+                    renderUnderTopUndergarment
+                        ? MarkingCategories.UndergarmentTop
+                        : MarkingCategories.UndergarmentBottom);
+                var placeBreastsUnderNeck = renderUnderTopUndergarment
+                                           && !hasCoveringClothing
+                                           && !hasUndergarment;
+
                 if (renderOverClothing)
                 {
                     if (_sprite.LayerMapTryGet((entity.Owner, sprite), "outerClothing", out var overLayer, false))
                         targLayerAdj = Math.Max(targLayerAdj, overLayer + 1);
                 }
+                else if (placeBreastsUnderNeck
+                         && _sprite.LayerMapTryGet((entity.Owner, sprite), "neck", out var neckLayer, false))
+                {
+                    // Uncovered breasts: keep them below the neck clothing layer so scarves/cloaks
+                    // cover the breasts while hair and the head remain above the cloak. Do not add
+                    // layerOrder here: inserting each sprite before the current neck index keeps
+                    // the neck layer above all breast sprites.
+                    if (neckLayer < targLayerAdj)
+                        targLayerAdj = neckLayer;
+                }
                 else if (screenDirection != RsiDirection.South
-                         || HasCoveringClothing(entity.Owner)
-                         || HasVisibleUndergarment(humanoid,
-                             renderUnderTopUndergarment
-                                 ? MarkingCategories.UndergarmentTop
-                                 : MarkingCategories.UndergarmentBottom))
+                         || hasCoveringClothing
+                         || hasUndergarment)
                 {
                     // Anchor under-clothing insertions to stable layers. Anchoring to the clothing
                     // layers themselves shifts their indices as we insert before them, which would

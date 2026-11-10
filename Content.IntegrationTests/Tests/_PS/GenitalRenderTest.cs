@@ -262,6 +262,22 @@ public sealed class GenitalRenderTest
                 Assert.That(buttLayer, Is.LessThan(underwearLayer),
                     "bottom organs must render under back undergarments");
 
+                Assert.That(spriteSystem.LayerMapTryGet(
+                    (mob.Value, sprite),
+                    "neck",
+                    out var eastNeckLayer,
+                    false), Is.True, "the neck layer must exist in the side view");
+                Assert.That(spriteSystem.LayerMapTryGet(
+                    (mob.Value, sprite),
+                    HumanoidVisualLayers.Hair,
+                    out var eastHairLayer,
+                    false), Is.True, "the hair layer must exist in the side view");
+
+                Assert.That(eastNeckLayer, Is.GreaterThan(breastLayer),
+                    "neck clothing must render above breasts in every direction");
+                Assert.That(eastNeckLayer, Is.LessThan(eastHairLayer),
+                    "hair must stay above neck clothing in every direction");
+
                 direction.Direction = RsiDirection.South;
                 appearance.RefreshSprite(mob.Value);
 
@@ -292,6 +308,14 @@ public sealed class GenitalRenderTest
 
                 Assert.That(neckLayer, Is.GreaterThan(southBreastLayer),
                     "neck clothing must render above breasts facing south");
+
+                Assert.That(spriteSystem.LayerMapTryGet(
+                    (mob.Value, sprite),
+                    HumanoidVisualLayers.Hair,
+                    out var hairLayer,
+                    false), Is.True, "the hair layer must exist");
+                Assert.That(neckLayer, Is.LessThan(hairLayer),
+                    "hair must stay above neck clothing in every direction");
             }
             finally
             {

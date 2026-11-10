@@ -19,7 +19,7 @@ public sealed class DirectionalLayerOrderSystem : EntitySystem
 {
     [Dependency] private readonly HumanoidAppearanceSystem _appearance = default!;
 
-    private readonly Dictionary<EntityUid, RsiDirection> _lastDirection = new();
+    private readonly Dictionary<EntityUid, (RsiDirection Direction, bool SideFacing)> _lastDirection = new();
 
     public override void Initialize()
     {
@@ -38,15 +38,18 @@ public sealed class DirectionalLayerOrderSystem : EntitySystem
         base.FrameUpdate(frameTime);
 
         var query = EntityQueryEnumerator<HumanoidAppearanceComponent, SpriteComponent>();
-        while (query.MoveNext(out var uid, out var humanoid, out var sprite))
+        while (query.MoveNext(out var uid, out var humanoid, out _))
         {
             var direction = _appearance.GetScreenDirection(uid);
-            _appearance.UpdateNeckLayerOrder(uid, sprite, direction);
+            var sideFacing = _appearance.IsSideFacing(uid);
 
-            if (_lastDirection.TryGetValue(uid, out var last) && last == direction)
+            if (_lastDirection.TryGetValue(uid, out var last)
+                && last == (direction, sideFacing))
+            {
                 continue;
+            }
 
-            _lastDirection[uid] = direction;
+            _lastDirection[uid] = (direction, sideFacing);
 
             // Without direction-sensitive markings the direction has no effect on layer order.
             if (!NeedsDirectionalOrder(humanoid))
