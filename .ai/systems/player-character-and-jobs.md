@@ -31,11 +31,12 @@ species roster in this repo.
 
 ## Prone / crawling rotation
 
-`Content.Server/_PS/Standing/ProneRotationSystem.cs` flips downed/crawling humanoids so their head
-points toward horizontal movement. It updates `RotationVisualsComponent.HorizontalRotation`
-(270° = head right/east, 90° = head left/west; north/south keeps the last side) on `DownedEvent`,
-`MoveEvent` and `UnbuckledEvent`. Buckled mobs are skipped so bed strap rotation still owns the
-angle, and the client `RotationVisualizerSystem` now also reacts to `AfterAutoHandleStateEvent`
+`Content.Server/_PS/Standing/ProneRotationSystem.cs` chooses the lying direction when a humanoid
+is knocked down: facing east uses 270° (head right), facing west uses 90° (head left), and
+north/south use the default side lie. The angle is set on `DownedEvent` and is **not** updated while
+prone, so crawling cannot flip the body; standing up clears the state and the next knockdown picks
+the new facing. Buckled mobs are skipped so bed strap rotation still owns the angle. The client
+`RotationVisualizerSystem` also reacts to `AfterAutoHandleStateEvent`
 (`RotationVisualsComponent` is generated with `raiseAfterAutoHandleState`) so networked horizontal
 angle changes animate immediately.
 

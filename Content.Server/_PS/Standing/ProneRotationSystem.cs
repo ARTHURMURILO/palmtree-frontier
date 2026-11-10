@@ -8,10 +8,10 @@ using Robust.Shared.Maths;
 namespace Content.Server._PS.Standing;
 
 /// <summary>
-/// Palmtree: flips downed/crawling humanoids so they lie with their head toward the direction they
-/// are moving. Standing sprites are upright; this only drives the horizontal rotation used while
-/// prone. North/south movement keeps the last left/right lie, and buckled mobs are left to the bed
-/// strap rotation.
+/// Palmtree: sets a downed/crawling humanoid's lying direction from the direction they were facing
+/// when they fell. The angle is not updated while prone, so it cannot flip while crawling; standing
+/// up clears the lock (the next knockdown picks the new direction). Buckled mobs keep the bed/strap
+/// angle.
 /// </summary>
 public sealed class ProneRotationSystem : EntitySystem
 {
@@ -23,27 +23,9 @@ public sealed class ProneRotationSystem : EntitySystem
         base.Initialize();
 
         SubscribeLocalEvent<StandingStateComponent, DownedEvent>(OnDowned);
-        SubscribeLocalEvent<StandingStateComponent, MoveEvent>(OnMove);
-        SubscribeLocalEvent<BuckleComponent, UnbuckledEvent>(OnUnbuckled);
     }
 
     private void OnDowned(Entity<StandingStateComponent> ent, ref DownedEvent args)
-    {
-        UpdateProneRotation(ent);
-    }
-
-    private void OnMove(Entity<StandingStateComponent> ent, ref MoveEvent args)
-    {
-        UpdateProneRotation(ent);
-    }
-
-    private void OnUnbuckled(Entity<BuckleComponent> ent, ref UnbuckledEvent args)
-    {
-        if (TryComp<StandingStateComponent>(ent.Owner, out var standing))
-            UpdateProneRotation((ent.Owner, standing));
-    }
-
-    private void UpdateProneRotation(Entity<StandingStateComponent> ent)
     {
         if (ent.Comp.Standing || !HasComp<HumanoidAppearanceComponent>(ent.Owner))
             return;
@@ -56,32 +38,12 @@ public sealed class ProneRotationSystem : EntitySystem
             return;
 
         var direction = _transform.GetWorldRotation(ent.Owner).GetDir();
-        Angle target;
-        switch (direction)
+        var target = direction switch
         {
-            case Direction.East:
-            case Direction.NorthEast:
-            case Direction.SouthEast:
-                // 90 degrees is the existing head-left lie; 270 mirrors it to the right.
-                target = Angle.FromDegrees(270);
-                break;
-            case Direction.West:
-            case Direction.NorthWest:
-            case Direction.SouthWest:
-                target = Angle.FromDegrees(90);
-                break;
-            default:
-                // Moving north/south keeps the last left/right lie. Repair a bed/other angle so the
-                // mob cannot remain rotated in a direction that is not a valid prone side.
-                if (visuals.HorizontalRotation.Equals(Angle.FromDegrees(90))
-                    || visuals.HorizontalRotation.Equals(Angle.FromDegrees(270)))
-                {
-                    return;
-                }
-
-                target = visuals.DefaultRotation;
-                break;
-        }
+            Direction.East or Direction.NorthEast or Direction.SouthEast => Angle.FromDegrees(270),
+            Direction.West or Direction.NorthWest or Direction.SouthWest => Angle.FromDegrees(90),
+            _ => visuals.DefaultRotation,
+        };
 
         _rotation.SetHorizontalAngle((ent.Owner, visuals), target);
     }
