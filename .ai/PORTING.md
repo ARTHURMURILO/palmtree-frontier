@@ -1099,3 +1099,29 @@ feeding produce into it for every recipe.
   `Resources/Prototypes/Entities/Structures/Machines/lathe.yml`; all limits live in the
   component defaults.
 - **Validation**: full solution build; rebuilt `Content.YAMLLinter` (`No errors found`).
+
+## 33. 2026-11 Bluespace miner (SPLURT/Skyrat BYOND)
+
+The SPLURT `modular_skyrat/modules/bluespace_miner` machine is ported as a passive ore generator
+that feeds the Frontier ore silo instead of spawning sheets on the floor.
+
+- **Source**: SPLURT/Skyrat `modular_skyrat/modules/bluespace_miner/code/bluespace_miner.dm`
+  (also mirrored as `modular_nova/modules/bluespace_miner`; sprite credit Jake Park). The atmos
+  temperature/pressure checks, CO2/tritium exhaust, proximity lockout, emag bananium and part
+  upgrades were deliberately dropped — the machine is a straightforward silo feeder here.
+- **Prototypes**: `Resources/Prototypes/_PS/Entities/Structures/Machines/bluespace_miner.yml`
+  (`PSBluespaceMiner`) and
+  `Resources/Prototypes/_PS/Entities/Objects/Devices/Circuitboards/Machine/bluespace_miner.yml`
+  (`PSBluespaceMinerCircuitboard`). No research node or lathe recipe yet, so it is admin-spawn
+  only; the board is constructible if an admin spawns it.
+- **Code**: `Content.Server/_PS/Materials/BluespaceMinerSystem.cs` +
+  `Content.Server/_PS/Materials/Components/BluespaceMinerComponent.cs`. The miner carries
+  `OreSiloClient` + `MaterialStorage`, so it appears in the silo UI like a lathe. Production goes
+  to the linked silo when it can transmit, otherwise to the machine's local 5,000-unit buffer.
+- **Tuning**: `SecondsPerCycle`, `AmountPerCycle`, `OreWeights` and `Enabled` are
+  `[ViewVariables(VVAccess.ReadWrite)]`. Defaults only include the basic ores (`RawIron`,
+  `RawQuartz`, `Coal`, `RawSilver`, `RawGold`, `RawSalt`); rare ores are not in the table.
+- **Assets**: `Resources/Textures/_PS/Structures/Machines/bluespace_miner.rsi`, converted from the
+  source `.dmi` (all eight states, `miner_on` animation preserved).
+- **Validation**: full solution build; rebuilt `Content.YAMLLinter` (`No errors found`);
+  `BluespaceMinerTest` passes; headless client verifies IL and preloads the new RSI with no errors.
