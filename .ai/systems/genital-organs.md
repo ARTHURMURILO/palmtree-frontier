@@ -138,7 +138,7 @@ queries).
 |---|---|---|
 | Reagent | `Resources/Prototypes/_PS/Reagents/semen.yml` | `Semen`, white, viscous; no longer used for puddles/overlays (kept for future fluid work) |
 | Drip | `Content.Shared/_PS/Organs/DrippingCumComponent.cs`, `Content.Server/_PS/Organs/DrippingCumSystem.cs` | stores units; 10 u/s into **droplet** decals (`SemenDrip1..5` only), 10u per drip, pausing while a jumpsuit is worn |
-| Ejaculation decals | `DrippingCumSystem.SpawnCumDecals` | drops `SemenPuddle1..4` scaled by the released volume; one decal per 50u, capped at 3 per climax (never replaces existing decals) |
+| Ejaculation decals | `DrippingCumSystem.SpawnCumDecals` | drops `SemenPuddle1..4` scaled by the released volume; one decal per climax (male internal overflow above 50u adds one); never replaces existing decals |
 | Decal sprites/prototypes | `Resources/Textures/_PS/Effects/decals/semen.rsi` (ported from SPLURT `effects.dmi`), `Resources/Prototypes/_PS/Decals/semen.yml` | cleanable with space cleaner; no reagent puddles |
 | Washing | — | decals are removed by space cleaner (`CleanDecalsReaction`) or by the Palmtree roomba's decal-scrubbing HTN operators (`Content.Server/_PS/Roomba`); the character overlay feature was removed |
 
@@ -160,15 +160,14 @@ queries).
 - **Receive capacity (Palmtree):** the reservoir holds at most
   `DrippingCumComponent.MaxCapacity = 1000` units; anything past that is lost.
 - **Climax overflow (Palmtree):** a single climax releases the whole "Fluid per climax" amount at
-  once (maximum 500u); there is no multi-pulse sequence. Internal endings store the full amount in
-  the partner; when the release is above 50u, one floor decal per 50u is also spawned (capped at 3)
-  at the receiver's feet. Overflow never costs the receiver any stored fluid.
+  once (maximum 500u); there is no multi-pulse sequence. Internal male endings store the full amount
+  in the partner; only releases above 50u spill a single floor decal at the receiver's feet.
+  Overflow never costs the receiver any stored fluid.
 - **Single release:** `EmitClimax` emits the whole volume in one go, with the interaction's cum
-  message and one moan. Exterior endings always leave at least one decal (same one-per-50u count,
-  capped at 3).
-- **Female climax:** vagina-only characters use random `FemPuddle1..4` decals, one per 50u of the
-  "Fluid per climax" setting (`GenitalOrganSystem.GetFluidVolume` falls back to the vagina organ),
-  capped at 3.
+  message and one moan. Exterior endings leave a single decal.
+- **Female climax:** vagina-only characters use a single random `FemPuddle1..4` decal per climax;
+  the volume comes from the "Fluid per climax" setting (`GenitalOrganSystem.GetFluidVolume` falls
+  back to the vagina organ).
 - Receiver-side acts (`Ride`, `TakeAnal`) route the **target's** climax through the same cum target,
   so the penis owner finishing fills the actor.
 - Exterior climaxes (handjob, breastfuck, frotting, **Cum on them**, manual Climax with no recent

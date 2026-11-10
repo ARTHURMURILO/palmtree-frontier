@@ -484,29 +484,29 @@ public sealed class InteractionPanelTest
                 .Any(d => d.Decal.Id.StartsWith("SemenPuddle")), Is.False,
                 "A 50u release must not spill.");
 
-            // 100u spills 2 decals (one per 50u).
+            // 100u spills a single overflow decal.
             penis.SemenVolume = 100;
             userState.LastInteractionTime = TimeSpan.MinValue;
             interactions.SetLust(user, userState, userState.LustTolerance * 3 + 1);
             Assert.That(interactions.TryPerform(user, target, fuck), Is.True);
             Assert.That(drip.GetSemen(target), Is.EqualTo(150), "The whole 100u release is stored at once.");
             Assert.That(decals.GetDecalsInRange(grid, targetXform.LocalPosition, 2f)
-                .Count(d => d.Decal.Id.StartsWith("SemenPuddle")), Is.EqualTo(2),
-                "A 100u release spills two decals.");
+                .Count(d => d.Decal.Id.StartsWith("SemenPuddle")), Is.EqualTo(1),
+                "A 100u release spills one decal.");
 
             // Clear the floor so the next release can be counted on its own.
             foreach (var (index, _) in decals.GetDecalsInRange(grid, targetXform.LocalPosition, 2f).ToList())
                 decals.RemoveDecal(grid, index);
 
-            // 500u spills three decals (the cap).
+            // 500u still spills a single decal.
             penis.SemenVolume = 500;
             userState.LastInteractionTime = TimeSpan.MinValue;
             interactions.SetLust(user, userState, userState.LustTolerance * 3 + 1);
             Assert.That(interactions.TryPerform(user, target, fuck), Is.True);
             Assert.That(drip.GetSemen(target), Is.EqualTo(650), "The whole 500u release is stored at once.");
             Assert.That(decals.GetDecalsInRange(grid, targetXform.LocalPosition, 2f)
-                .Count(d => d.Decal.Id.StartsWith("SemenPuddle")), Is.EqualTo(3),
-                "The per-climax spill is capped at three decals.");
+                .Count(d => d.Decal.Id.StartsWith("SemenPuddle")), Is.EqualTo(1),
+                "Every climax spills at most one decal.");
 
             // The receive capacity is 1000u; anything past that is wasted.
             drip.AddSemen(target, 1000);
