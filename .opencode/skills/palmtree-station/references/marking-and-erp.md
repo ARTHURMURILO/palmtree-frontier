@@ -69,8 +69,8 @@ sanitized to `_`). Old strings remain valid and default to self-toggleable. Chan
     `UndergarmentBottom` and breasts below `UndergarmentTop` (even facing south when the relevant
     undergarment is visible), while on the client the order is direction-aware (south-facing
     uncovered genitals over hair/tails, east/west tails under hair, east/west snouts over hair
-    when `SnoutAboveHair` is enabled) and `DirectionalLayerOrderSystem` rebuilds on cardinal
-    changes.
+    when `SnoutAboveHair` is enabled, neck clothing above genitals facing south) and
+    `DirectionalLayerOrderSystem` rebuilds on cardinal changes.
   - `Base*` categories add to `HiddenBaseLayers`; `UpdateLayersAgain` hides them.
 - `RemoveMarking` removes both base and `-glow` layers.
 

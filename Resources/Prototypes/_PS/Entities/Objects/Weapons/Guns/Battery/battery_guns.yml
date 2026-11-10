@@ -4,6 +4,9 @@
   id: NFWeaponEnergyPistolLaserSvalinnCaspian
   description: Although it's usual model is a cheap and mass produced pistol, this one appears to be a unique special edition that fixes many of the issues of the original, while also increasing the efficiency of the weapon.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Gun
     fireRate: 4
     selectedMode: SemiAuto
@@ -20,7 +23,7 @@
 
 - type: entity
   id: NFWeaponEnergyPistolN1984Pulse
-  parent: [NFBaseWeaponEnergyPistolHitScanPulse, BaseWeaponPowerCellSmall, BaseC2ContrabandUnredeemable]
+  parent: [NFBaseWeaponEnergyPistolHitScanPulse, BaseWeaponPowerCellSmall, BaseC5ContrabandUnredeemable]
   name: Pulse N1984
   description: |-
     A pulse variant of the N1984 usually employed by officers.
@@ -52,7 +55,7 @@
 
 - type: entity
   name: phaser
-  parent: [NFWeaponEnergyPistolLaserSvalinn, BaseC3Contraband]
+  parent: [NFWeaponEnergyPistolLaserSvalinn, BaseC2ContrabandUnredeemable]
   id: NFWeaponEnergyPistolLaserPhaser
   description: A PHASed Energy Rectification is Starfleet's primary directed-energy weapon, utilizing rapid nadion particles to stun, kill, or vaporize targets, or to cut through materials.
   components:
@@ -71,6 +74,24 @@
     price: 0
 
 - type: entity
+  name: phaser
+  parent: NFWeaponEnergyPistolLaserPhaser
+  id: PSWeaponEnergyPistolLaserPhaserLily
+  suffix: Lily
+  description: A PHASed Energy Rectification that has been hand-modified, most likely by a scientist with far too much time on their hands. The beam is a distinctive purple-pink instead of the usual orange, and judging by the color it must be a really cute pink fox girl with some great assets to spare.
+  components:
+  - type: Contraband
+    severity: Class4
+    allowedDepartments: [ Security, Command ]
+  - type: Gun
+    soundGunshot:
+      collection: Phaser
+      params:
+        pitch: 1.15
+  - type: HitscanBatteryAmmoProvider
+    proto: PhaserLethalLily
+
+- type: entity
   id: PSWeaponEnergyHealgun
   parent: [NFBaseWeaponEnergyRifleHitScan, NFBaseWeaponFrameEnergyRifleNanotrasen, BaseC3Contraband]
   name: medical gun
@@ -78,6 +99,9 @@
   description: |-
     This experimental weapon is capable of recovering patients. Effective, albeit slowly.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Medical, Command ]
   - type: Sprite
     sprite: Objects/Weapons/Guns/Battery/pulse_rifle.rsi
   - type: Clothing

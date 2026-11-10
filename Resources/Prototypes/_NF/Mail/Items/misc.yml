@@ -276,6 +276,9 @@
   id: WeaponVulpCannon
   description: With a widened barrel, this friend launcher can huck your little buddies further than you ever could.
   components:
+  - type: Contraband
+    severity: Class1
+    allowedDepartments: []
   - type: Storage
     maxItemSize: Ginormous
     grid:
@@ -293,6 +296,9 @@
   id: WeaponPlushieCannon
   description: Embossed on the barrel are the words "FRONT TOWARD FRIEND".
   components:
+  - type: Contraband
+    severity: Class1
+    allowedDepartments: []
   - type: Sprite
     sprite: _NF/Objects/Weapons/Guns/Launchers/plushie_cannon.rsi
   - type: Storage

@@ -1,6 +1,8 @@
 using Content.Shared.Atmos;
+using Content.Shared.Construction.Prototypes; // Palmtree
 using Content.Shared.Guidebook;
 using Robust.Shared.GameStates;
+using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype; // Palmtree
 
 namespace Content.Shared.Atmos.Piping.Unary.Components
 {
@@ -17,6 +19,19 @@ namespace Content.Shared.Atmos.Piping.Unary.Components
         [DataField]
         [GuidebookData]
         public float HeatCapacity = 5000;
+
+        /// <summary>
+        ///     Palmtree: <see cref="HeatCapacity"/> with stock parts. The machine's heat capacity is
+        ///     also what it draws, so better parts move more heat and cost proportionally more to run.
+        /// </summary>
+        [DataField]
+        public float BaseHeatCapacity = 5000;
+
+        /// <summary>
+        ///     Palmtree: the machine part whose rating scales <see cref="HeatCapacity"/>.
+        /// </summary>
+        [DataField(customTypeSerializer: typeof(PrototypeIdSerializer<MachinePartPrototype>))]
+        public string MachinePartHeatCapacity = "MatterBin";
 
         [DataField, AutoNetworkedField]
         public float TargetTemperature = Atmospherics.T20C;
@@ -57,6 +72,39 @@ namespace Content.Shared.Atmos.Piping.Unary.Components
         [DataField, AutoNetworkedField]
 		[GuidebookData]
         public float MaxTemperature = 593.15f;
+
+        /// <summary>
+        ///     Palmtree: <see cref="MinTemperature"/> with stock parts. Better capacitors widen the
+        ///     range the machine can be set to, which is what the hellfire machines override.
+        /// </summary>
+        [DataField]
+        public float BaseMinTemperature = 73.15f;
+
+        /// <summary>
+        ///     Palmtree: <see cref="MaxTemperature"/> with stock parts.
+        /// </summary>
+        [DataField]
+        public float BaseMaxTemperature = 593.15f;
+
+        /// <summary>
+        ///     Palmtree: how many kelvin colder each capacitor rating above stock lets the target be
+        ///     set to.
+        /// </summary>
+        [DataField]
+        public float MinTemperaturePerRating = 15f;
+
+        /// <summary>
+        ///     Palmtree: how many kelvin hotter each capacitor rating above stock lets the target be
+        ///     set to.
+        /// </summary>
+        [DataField]
+        public float MaxTemperaturePerRating = 200f;
+
+        /// <summary>
+        ///     Palmtree: the machine part whose rating widens the temperature range.
+        /// </summary>
+        [DataField(customTypeSerializer: typeof(PrototypeIdSerializer<MachinePartPrototype>))]
+        public string MachinePartTemperature = "Capacitor";
 
         /// <summary>
         /// Last amount of energy added/removed from the attached pipe network

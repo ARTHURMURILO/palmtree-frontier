@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2025 Goob Station contributors
+# SPDX-FileCopyrightText: 2025 Palmtree Frontier contributors
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+- type: cargoProduct
+  id: EngineSupermatterShard
+  icon:
+    sprite: _PS/Supermatter/supermatter_small.rsi
+    state: shard
+  product: SupermatterSmallFlatpack
+  cost: 20000
+  category: cargoproduct-category-name-engineering
+  group: market

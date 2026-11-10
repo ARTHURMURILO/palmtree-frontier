@@ -9,6 +9,17 @@ public sealed class EmoteAttemptEvent(EntityUid uid) : CancellableEntityEventArg
 }
 
 /// <summary>
+/// Broadcast after an emote has successfully been performed. Unlike <see cref="EmoteEvent"/>,
+/// which is directed at the emoting entity, this event carries its source and is visible to
+/// global listeners such as sensor/perception systems.
+/// </summary>
+public sealed class EmotePerformedEvent(EntityUid source, EmotePrototype emote) : EntityEventArgs
+{
+    public readonly EntityUid Source = source;
+    public readonly EmotePrototype Emote = emote;
+}
+
+/// <summary>
 /// An event raised just before an emote is performed, providing systems with an opportunity to cancel the emote's performance.
 /// </summary>
 [ByRefEvent]

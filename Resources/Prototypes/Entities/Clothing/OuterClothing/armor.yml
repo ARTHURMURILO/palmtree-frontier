@@ -417,7 +417,7 @@
     sprite: Clothing/OuterClothing/Armor/magusred.rsi
 
 - type: entity
-  parent: [ ClothingOuterBaseLarge, BaseC3Contraband, AllowSuitStorageClothing ] # Frontier: BaseMajorContraband<BaseC3Contraband
+  parent: [ ClothingOuterBaseLarge, BaseC5ContrabandUnredeemable, AllowSuitStorageClothing ] # Frontier: BaseMajorContraband<BaseC5ContrabandUnredeemable
   id: ClothingOuterArmorChangeling
   name: chitinous armor
   description: Inflates the changeling's body into an all-consuming chitinous mass of armor.

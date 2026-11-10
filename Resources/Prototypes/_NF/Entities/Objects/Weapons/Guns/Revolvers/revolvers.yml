@@ -33,6 +33,9 @@
   description: |-
     A rare, civilian grade custom-built revolver. Use when there is no time for Voight-Kampff test.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: Objects/Weapons/Guns/Revolvers/deckard.rsi
     layers:
@@ -109,6 +112,9 @@
   description: |-
     A compact and concealable self defence snub revolver.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _DV/Objects/Weapons/Guns/Revolvers/fitz.rsi
   - type: Clothing
@@ -121,6 +127,9 @@
   description: |-
     Delivers blessings in bullet form.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _DV/Objects/Weapons/Guns/Revolvers/faith.rsi
   - type: Clothing
@@ -137,6 +146,9 @@
   description: |-
     Luck always beats skill, ya weasel.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _DV/Objects/Weapons/Guns/Revolvers/lucky.rsi
   - type: Clothing
@@ -150,6 +162,9 @@
   description: |-
     The civilian grade Argenti Type 35 revolver. Manufactured by Silver Industries. While the design with expanded cylinder is quite ancient, the right gunslinger will know how to utilise it well.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     scale: 0.75, 0.75
     sprite: _NF/Objects/Weapons/Guns/Revolvers/argenti.rsi
@@ -164,5 +179,8 @@
   parent: NFWeaponRevolverArgenti
   suffix: Frontier, Less-lethal
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: RevolverAmmoProvider
     proto: NFCartridgePistol35Rubber

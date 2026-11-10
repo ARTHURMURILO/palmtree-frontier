@@ -21,6 +21,11 @@ interaction-lust-gain = Custom lust gain
 interaction-lust-gain-input-tooltip = Type the exact lust gain percentage (0-300), or use the slider.
 interaction-moaning = Custom moaning chance
 interaction-moaning-input-tooltip = Type the exact moaning chance percentage (0-100), or use the slider.
+interaction-layer-mode = Layer:
+interaction-layer-mode-tooltip = Draw your character below, at, or above the default character layer.
+interaction-layer-below = Below
+interaction-layer-default = Default
+interaction-layer-above = Above
 
 interaction-no-interactions = No interactions available.
 interaction-no-matching = No matching results.
