@@ -188,8 +188,8 @@
     key: enum.CircuitAssemblyUiKey.Key
   - type: Pullable
 
-# Visual chassis variants. They are mechanically identical to CircuitAssembly; only the SS13 borg
-# chassis state differs. Admin-only for now: there are no lathe/construction recipes yet.
+# Visual chassis variants. They are mechanically identical to CircuitAssembly; only the chassis
+# sprite differs. Admin-only for now: there are no lathe/construction recipes yet.
 - type: entity
   parent: CircuitAssembly
   id: CircuitAssemblyEngineering
@@ -266,6 +266,74 @@
   - type: Sprite
     sprite: Mobs/Silicon/chassis.rsi
     state: derelict
+
+# Walkable integrated-electronics drone chassis sprites. These are the finished, closed
+# cases from electronic_setups.dmi; the stationary boxes and gun chassis are intentionally omitted.
+- type: entity
+  parent: CircuitAssembly
+  id: CircuitAssemblyDrone
+  name: electronic drone assembly
+  suffix: Drone
+  description: A programmable assembly using the original integrated-electronics drone chassis.
+  components:
+  - type: Sprite
+    sprite: _PS/Mobs/Silicon/circuit_assemblies.rsi
+    state: setup_drone
+
+- type: entity
+  parent: CircuitAssembly
+  id: CircuitAssemblyDroneArms
+  name: armed drone assembly
+  suffix: Drone Arms
+  description: A programmable assembly using the original armed integrated-electronics drone chassis.
+  components:
+  - type: Sprite
+    sprite: _PS/Mobs/Silicon/circuit_assemblies.rsi
+    state: setup_drone_arms
+
+- type: entity
+  parent: CircuitAssembly
+  id: CircuitAssemblyDroneSecbot
+  name: secbot drone assembly
+  suffix: Drone Secbot
+  description: A programmable assembly using the original Securitron-style drone chassis.
+  components:
+  - type: Sprite
+    sprite: _PS/Mobs/Silicon/circuit_assemblies.rsi
+    state: setup_drone_secbot
+
+- type: entity
+  parent: CircuitAssembly
+  id: CircuitAssemblyDroneMedbot
+  name: medbot drone assembly
+  suffix: Drone Medbot
+  description: A programmable assembly using the original Medibot-style drone chassis.
+  components:
+  - type: Sprite
+    sprite: _PS/Mobs/Silicon/circuit_assemblies.rsi
+    state: setup_drone_medbot
+
+- type: entity
+  parent: CircuitAssembly
+  id: CircuitAssemblyDroneGenbot
+  name: generic drone assembly
+  suffix: Drone Generic
+  description: A programmable assembly using the original generic-bot drone chassis.
+  components:
+  - type: Sprite
+    sprite: _PS/Mobs/Silicon/circuit_assemblies.rsi
+    state: setup_drone_genbot
+
+- type: entity
+  parent: CircuitAssembly
+  id: CircuitAssemblyDroneAndroid
+  name: android drone assembly
+  suffix: Drone Android
+  description: A programmable assembly using the original humanoid drone chassis.
+  components:
+  - type: Sprite
+    sprite: _PS/Mobs/Silicon/circuit_assemblies.rsi
+    state: setup_drone_android
 
 # Debug/test variant: every slot pre-filled with working hardware.
 - type: entity

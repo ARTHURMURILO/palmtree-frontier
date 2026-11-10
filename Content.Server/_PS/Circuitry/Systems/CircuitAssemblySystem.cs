@@ -120,6 +120,18 @@ public sealed class CircuitAssemblySystem : EntitySystem
         args.PushMarkup(Loc.GetString("circuit-assembly-examine",
             ("modules", modules),
             ("power", component.Powered ? Loc.GetString("circuit-state-powered") : Loc.GetString("circuit-state-unpowered"))));
+
+        if (TryComp<HandsComponent>(uid, out var hands))
+        {
+            var held = _hands.EnumerateHeld((uid, hands))
+                .Select(item => MetaData(item).EntityName)
+                .ToList();
+
+            args.PushMarkup(Loc.GetString("circuit-assembly-examine-held",
+                ("items", held.Count == 0
+                    ? Loc.GetString("circuit-assembly-examine-nothing")
+                    : string.Join(", ", held))));
+        }
     }
 
     private void OnInteractUsing(EntityUid uid, CircuitAssemblyComponent component, InteractUsingEvent args)
