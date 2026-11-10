@@ -371,6 +371,8 @@
   - type: GasThermoMachine
     minTemperature: 23.15
     heatCapacity: 40000
+    baseHeatCapacity: 40000 # Palmtree: parts scale from here, not from the stock 5000
+    baseMinTemperature: 23.15 # Palmtree: same, for the upgraded temperature range
     energyLeakPercentage: 0.15
   - type: Machine
     board: HellfireFreezerMachineCircuitBoard
@@ -386,6 +388,8 @@
   - type: GasThermoMachine
     maxTemperature: 1193.15
     heatCapacity: 40000
+    baseHeatCapacity: 40000 # Palmtree: parts scale from here, not from the stock 5000
+    baseMaxTemperature: 1193.15 # Palmtree: same, for the upgraded temperature range
     energyLeakPercentage: 0.15
   - type: Machine
     board: HellfireHeaterMachineCircuitBoard

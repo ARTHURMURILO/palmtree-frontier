@@ -1,0 +1,301 @@
+# Palmtree: admin-only meme mobs. All of them are visible in the (admin-only) spawn menu,
+# carry `suffix: Admeme`, and are not referenced by spawners, loot tables or vendors.
+# Prototype-only; no C# systems are added here.
+
+# A space carp that "attacks" with a healing beam. It is very aggressive about it.
+- type: entity
+  parent: MobCarp
+  id: MobCarpMedic
+  name: medicarp
+  suffix: Admeme
+  description: A space carp with a medical degree and a very aggressive bedside manner.
+  components:
+    - type: HTN
+      rootTask:
+        task: SimpleRangedHostileCompound
+      blackboard:
+        NavSmash: !type:Bool
+          true
+    - type: Gun
+      showExamineText: false
+      fireRate: 0.8
+      useKey: false
+      selectedMode: SemiAuto
+      availableModes:
+        - SemiAuto
+      soundGunshot: /Audio/_PS/Weapons/healer.ogg
+    - type: HitscanBatteryAmmoProvider
+      proto: HealBeam
+      fireCost: 50
+    - type: Battery
+      maxCharge: 1000
+      startingCharge: 1000
+    - type: BatterySelfRecharger
+      autoRecharge: true
+      autoRechargeRate: 100
+    # It is here to help, not to bite.
+    - type: MeleeWeapon
+      damage:
+        types:
+          Blunt: 0
+          Slash: 0
+
+# A roomba with a bomb. It cleans up the mess, then makes one.
+- type: entity
+  parent: MobRoomba
+  id: MobRoombaDoomba
+  name: doomba
+  suffix: Admeme
+  description: A roomba with a bomb strapped to it. It cleans up the mess, then makes one.
+  components:
+    - type: Explosive
+      explosionType: Default
+      totalIntensity: 100
+      intensitySlope: 5
+      maxIntensity: 15
+      canCreateVacuum: false
+    - type: ExplodeOnTrigger
+    - type: TriggerOnProximity
+      triggerSpeed: 0
+      shape:
+        !type:PhysShapeCircle
+          radius: 1.5
+      repeating: false
+      requiresAnchored: false
+      whitelist:
+        components:
+          - Actor
+    - type: DeleteOnTrigger
+
+# The right to bear arms, exercised.
+- type: entity
+  parent: MobBearSpace
+  id: MobBearArms
+  name: bear arms
+  suffix: Admeme
+  description: A space bear exercising its right to bear arms.
+  components:
+    - type: HTN
+      rootTask:
+        task: SimpleRangedHostileCompound
+      blackboard:
+        NavSmash: !type:Bool
+          true
+    - type: CombatMode
+    - type: Gun
+      showExamineText: false
+      fireRate: 1
+      useKey: false
+      selectedMode: SemiAuto
+      availableModes:
+        - SemiAuto
+      soundGunshot: /Audio/Weapons/Guns/Gunshots/shotgun.ogg
+    - type: BallisticAmmoProvider
+      proto: NFShellShotgunBuckshot
+      capacity: 50
+
+# The honkbot had enough.
+- type: entity
+  parent: MobHonkBot
+  id: MobHonkglock
+  name: Honkglock
+  suffix: Admeme
+  description: The honkbot had enough
+  components:
+    - type: NpcFactionMember
+      factions:
+        - SimpleHostile
+    - type: HTN
+      rootTask:
+        task: SimpleRangedHostileCompound
+      blackboard:
+        NavSmash: !type:Bool
+          true
+    - type: CombatMode
+    - type: Gun
+      showExamineText: false
+      fireRate: 2
+      useKey: false
+      selectedMode: SemiAuto
+      availableModes:
+        - SemiAuto
+      minAngle: 2
+      maxAngle: 10
+      angleIncrease: 3
+      angleDecay: 5
+      soundGunshot: /Audio/Weapons/Guns/Gunshots/pistol.ogg
+    - type: BallisticAmmoProvider
+      proto: NFCartridgeRifle25
+      capacity: 500
+
+# A carp that has decided it is campus security.
+- type: entity
+  parent: MobCarp
+  id: MobCarpSecuritarp
+  name: securitarp
+  suffix: Admeme
+  description: A space carp that has decided it is campus security. It will tase you, then forget why.
+  components:
+    - type: HTN
+      rootTask:
+        task: SimpleRangedHostileCompound
+      blackboard:
+        NavSmash: !type:Bool
+          true
+    - type: Gun
+      showExamineText: false
+      fireRate: 1.5
+      useKey: false
+      selectedMode: SemiAuto
+      availableModes:
+        - SemiAuto
+      soundGunshot: /Audio/Weapons/Guns/Gunshots/taser.ogg
+    - type: BasicEntityAmmoProvider
+      proto: BulletDisablerSmg
+      capacity: 2
+      count: 2
+    - type: RechargeBasicEntityAmmo
+      rechargeCooldown: 2
+      rechargeSound: null
+    # It is here to arrest you, not to eat you.
+    - type: MeleeWeapon
+      damage:
+        types:
+          Blunt: 0
+          Slash: 0
+
+# A carp that fires bees. Nature is healing.
+- type: entity
+  parent: MobCarp
+  id: MobCarpenterBee
+  name: carpenter bee
+  suffix: Admeme
+  description: A space carp that fires bees. Nature is healing.
+  components:
+    - type: HTN
+      rootTask:
+        task: SimpleRangedHostileCompound
+      blackboard:
+        NavSmash: !type:Bool
+          true
+    - type: Gun
+      showExamineText: false
+      fireRate: 2
+      useKey: false
+      selectedMode: SemiAuto
+      availableModes:
+        - SemiAuto
+      soundGunshot: /Audio/Ambience/Objects/buzzing.ogg
+      projectileSpeed: 20
+    - type: BasicEntityAmmoProvider
+      proto: PSBulletBee
+      capacity: 3
+      count: 3
+    - type: RechargeBasicEntityAmmo
+      rechargeCooldown: 1.5
+      rechargeSound: null
+    - type: MeleeWeapon
+      damage:
+        types:
+          Blunt: 0
+          Slash: 0
+
+# A carp you only see when it moves.
+- type: entity
+  parent: MobCarp
+  id: MobCarpPhantom
+  name: phantom carp
+  suffix: Admeme
+  description: A space carp that phases out of sight. You only notice it when it is already too late.
+  components:
+    - type: Stealth
+      enabledOnDeath: false
+      maxVisibility: 1.2
+    - type: StealthOnMove
+      passiveVisibilityRate: -0.25
+      movementVisibilityRate: 0.25
+    - type: MovementSpeedModifier
+      baseWalkSpeed: 3
+      baseSprintSpeed: 5
+    - type: MeleeWeapon
+      damage:
+        types:
+          Slash: 10
+
+# A carp that ate a dragon's lung.
+- type: entity
+  parent: MobCarp
+  id: MobCarpPyro
+  name: pyro carp
+  suffix: Admeme
+  description: A space carp that ate a dragon's lung. Do not stand in front of it.
+  components:
+    - type: HTN
+      rootTask:
+        task: SimpleRangedHostileCompound
+      blackboard:
+        NavSmash: !type:Bool
+          true
+    - type: Gun
+      showExamineText: false
+      fireRate: 0.5
+      useKey: false
+      selectedMode: SemiAuto
+      availableModes:
+        - SemiAuto
+      soundGunshot: /Audio/Animals/space_dragon_roar.ogg
+      projectileSpeed: 5
+    - type: BasicEntityAmmoProvider
+      proto: ProjectileDragonsBreath
+      capacity: 1
+      count: 1
+    - type: RechargeBasicEntityAmmo
+      rechargeCooldown: 5
+      rechargeSound: null
+    - type: MeleeWeapon
+      damage:
+        types:
+          Blunt: 0
+          Slash: 0
+
+# A disco ball with fins.
+- type: entity
+  parent: MobCarpRainbow
+  id: MobCarpParty
+  name: party carp
+  suffix: Admeme
+  description: A space carp with a disco ball, a laser light show, and absolutely no sense of self-preservation.
+  components:
+    - type: AmbientSound
+      range: 8
+      volume: -10
+      sound:
+        path: /Audio/Lobby/thunderdome.ogg
+    - type: HTN
+      rootTask:
+        task: SimpleRangedHostileCompound
+      blackboard:
+        NavSmash: !type:Bool
+          true
+    - type: Gun
+      showExamineText: false
+      fireRate: 1
+      useKey: false
+      selectedMode: SemiAuto
+      availableModes:
+        - SemiAuto
+      soundGunshot: /Audio/Weapons/Guns/Gunshots/laser_clown.ogg
+      projectileSpeed: 20
+    - type: BasicEntityAmmoProvider
+      proto: PSPartyLaserSpread
+      capacity: 1
+      count: 1
+    - type: RechargeBasicEntityAmmo
+      rechargeCooldown: 1.5
+      rechargeSound: null
+    # The lasers are for the light show, not for damage.
+    - type: MeleeWeapon
+      damage:
+        types:
+          Blunt: 0
+          Slash: 0

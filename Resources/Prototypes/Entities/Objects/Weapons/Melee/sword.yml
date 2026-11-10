@@ -25,7 +25,7 @@
 #Shortswords
 - type: entity
   name: cutlass
-  parent: [ BaseSword, BaseC1Contraband ] # Frontier: BaseMajorContraband<BaseC1Contraband
+  parent: [ BaseSword, BaseC2Contraband ] # Frontier: BaseMajorContraband<BaseC2Contraband
   id: Cutlass
   description: A wickedly curved blade, often seen in the hands of space pirates.
   components:
@@ -50,7 +50,7 @@
 
 - type: entity
   name: machete
-  parent: [ BaseSword, BaseC1Contraband ] # Frontier: BaseMajorContraband<BaseC1Contraband
+  parent: [ BaseSword, BaseC2Contraband ] # Frontier: BaseMajorContraband<BaseC2Contraband
   id: Machete
   description: A large, vicious looking blade.
   components:
@@ -76,7 +76,7 @@
 #Longswords
 - type: entity
   name: captain's sabre
-  parent: [ BaseSword, BaseC1Contraband ] # Frontier: BaseCommandContraband<BaseC1Contraband
+  parent: [ BaseSword, BaseC2Contraband ] # Frontier: BaseCommandContraband<BaseC2Contraband
   id: CaptainSabre
   description: A ceremonial weapon belonging to the captain of the station.
   components:
@@ -115,7 +115,7 @@
 
 - type: entity
   name: katana
-  parent: [ BaseSword, BaseC1Contraband ] # Frontier: BaseMajorContraband<BaseC1Contraband
+  parent: [ BaseSword, BaseC2Contraband ] # Frontier: BaseMajorContraband<BaseC2Contraband
   id: Katana
   description: Ancient craftwork made with not so ancient plasteel.
   components:
@@ -146,7 +146,7 @@
 
 - type: entity
   name: energy katana
-  parent: [ BaseC3Contraband, Katana ] #Frontier: Added C3 contraband tag
+  parent: [ BaseC5ContrabandUnredeemable, Katana ] #Frontier: Added C3 contraband tag
   id: EnergyKatana
   description: A katana infused with strong energy.
   components:
@@ -181,7 +181,7 @@
 #Greatswords
 - type: entity
   name: claymore
-  parent: [ BaseSword, BaseC1Contraband ] # Frontier: BaseMajorContraband<BaseC1Contraband
+  parent: [ BaseSword, BaseC2Contraband ] # Frontier: BaseMajorContraband<BaseC2Contraband
   id: Claymore
   description: An ancient war blade.
   components:
@@ -214,6 +214,9 @@
   id: Throngler
   description: If Security dares take it from you, just remind them that they are indeed mortal.
   components:
+    - type: Contraband
+      severity: Class5
+      allowedDepartments: []
     - type: Sprite
       sprite: Objects/Weapons/Melee/Throngler2.rsi
     - type: MeleeWeapon

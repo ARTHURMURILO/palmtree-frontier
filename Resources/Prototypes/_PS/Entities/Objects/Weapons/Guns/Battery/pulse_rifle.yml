@@ -3,7 +3,7 @@
 
 - type: entity
   name: prototype pulse rifle
-  parent: [ BaseC3Contraband, NFBaseWeaponEnergyRifleHitScanPulse, NFBaseWeaponFrameEnergyRifleNanotrasen ]
+  parent: [ BaseC5ContrabandUnredeemable, NFBaseWeaponEnergyRifleHitScanPulse, NFBaseWeaponFrameEnergyRifleNanotrasen ]
   id: WeaponPrototypePulseRifle
   description: Some nutjob built this pulse rifle in their spess garage. It's quite power hungry. And why is it a lever action?!
   components:

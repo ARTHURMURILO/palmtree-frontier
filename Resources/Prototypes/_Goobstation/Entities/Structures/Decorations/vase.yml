@@ -1,0 +1,122 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Ported from Goob Station (_Goobstation/Entities/Structures/Decorations/vase.yml).
+# Palmtree: names added per flower variety so the construction menu reads well.
+
+- type: entity
+  id: VaseBase
+  parent: [DrinkBaseMaterialGlass, DrinkBase]
+  name: vase
+  description: It's a vase. It holds flowers.
+  abstract: true
+  components:
+  - type: Anchorable
+  - type: SolutionContainerManager
+    solutions:
+      drink:
+        maxVol: 30
+        reagents:
+        - ReagentId: Water
+          Quantity: 30
+  - type: Sprite
+    sprite: _Goobstation/Structures/Decoration/vase.rsi
+    state: vase-0
+
+- type: entity
+  id: VasePlant0
+  parent: VaseBase
+  name: empty vase
+  description: It's a vase. It holds flowers. This one is empty.
+  components:
+  - type: Construction
+    graph: Vase
+    node: vaseEmpty
+  - type: Sprite
+    state: vase-0
+
+- type: entity
+  id: VasePlant1
+  parent: VaseBase
+  name: vase of chrysanthemums
+  components:
+  - type: Construction
+    graph: Vase
+    node: vaseChrysanthemums
+  - type: Sprite
+    state: vase-1
+
+- type: entity
+  id: VasePlant2
+  parent: VaseBase
+  name: vase of tulips
+  components:
+  - type: Construction
+    graph: Vase
+    node: vaseTulips
+  - type: Sprite
+    state: vase-2
+
+- type: entity
+  id: VasePlant3
+  parent: VaseBase
+  name: vase of daisies
+  components:
+  - type: Construction
+    graph: Vase
+    node: vaseDaisies
+  - type: Sprite
+    state: vase-3
+
+- type: entity
+  id: VasePlant4
+  parent: VaseBase
+  name: vase of white daisies
+  components:
+  - type: Construction
+    graph: Vase
+    node: vaseWhiteDaisies
+  - type: Sprite
+    state: vase-4
+
+- type: entity
+  id: VasePlant5
+  parent: VaseBase
+  name: vase of roses
+  components:
+  - type: Construction
+    graph: Vase
+    node: vaseRoses
+  - type: Sprite
+    state: vase-5
+
+- type: entity
+  id: VasePlant6
+  parent: VaseBase
+  name: vase of lilies
+  components:
+  - type: Construction
+    graph: Vase
+    node: vaseLilies
+  - type: Sprite
+    state: vase-6
+
+- type: entity
+  id: VasePlant7
+  parent: VaseBase
+  name: vase of marigolds
+  components:
+  - type: Construction
+    graph: Vase
+    node: vaseMarigolds
+  - type: Sprite
+    state: vase-7
+
+- type: entity
+  id: VasePlant8
+  parent: VaseBase
+  name: vase of violets
+  components:
+  - type: Construction
+    graph: Vase
+    node: vaseViolets
+  - type: Sprite
+    state: vase-8

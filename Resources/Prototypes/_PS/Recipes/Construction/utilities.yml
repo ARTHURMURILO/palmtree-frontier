@@ -1,0 +1,188 @@
+- type: construction
+  id: GasTemperatureGate
+  graph: GasTemperature
+  startNode: start
+  targetNode: temperaturegate
+  category: construction-category-utilities
+  placementMode: AlignAtmosPipeLayers
+  canBuildInImpassable: false
+  conditions:
+  - !type:NoUnstackableInTile
+  alternativePrototypes:
+  - GasTemperatureGate
+  - GasTemperatureGateAlt1
+  - GasTemperatureGateAlt2
+
+- type: construction
+  hide: true
+  id: GasTemperatureGateAlt1
+  graph: GasTemperature
+  startNode: start
+  targetNode: temperaturegateAlt1
+  category: construction-category-utilities
+  placementMode: AlignAtmosPipeLayers
+  canBuildInImpassable: false
+  conditions:
+  - !type:NoUnstackableInTile
+  alternativePrototypes:
+  - GasTemperatureGate
+  - GasTemperatureGateAlt1
+  - GasTemperatureGateAlt2
+
+- type: construction
+  hide: true
+  id: GasTemperatureGateAlt2
+  graph: GasTemperature
+  startNode: start
+  targetNode: temperaturegateAlt2
+  category: construction-category-utilities
+  placementMode: AlignAtmosPipeLayers
+  canBuildInImpassable: false
+  conditions:
+  - !type:NoUnstackableInTile
+  alternativePrototypes:
+  - GasTemperatureGate
+  - GasTemperatureGateAlt1
+  - GasTemperatureGateAlt2
+
+- type: construction
+  id: GasTemperaturePump
+  graph: GasTemperature
+  startNode: start
+  targetNode: temperaturepump
+  category: construction-category-utilities
+  placementMode: AlignAtmosPipeLayers
+  canBuildInImpassable: false
+  conditions:
+  - !type:NoUnstackableInTile
+  alternativePrototypes:
+  - GasTemperaturePump
+  - GasTemperaturePumpAlt1
+  - GasTemperaturePumpAlt2
+
+- type: construction
+  hide: true
+  id: GasTemperaturePumpAlt1
+  graph: GasTemperature
+  startNode: start
+  targetNode: temperaturepumpAlt1
+  category: construction-category-utilities
+  placementMode: AlignAtmosPipeLayers
+  canBuildInImpassable: false
+  conditions:
+  - !type:NoUnstackableInTile
+  alternativePrototypes:
+  - GasTemperaturePump
+  - GasTemperaturePumpAlt1
+  - GasTemperaturePumpAlt2
+
+- type: construction
+  hide: true
+  id: GasTemperaturePumpAlt2
+  graph: GasTemperature
+  startNode: start
+  targetNode: temperaturepumpAlt2
+  category: construction-category-utilities
+  placementMode: AlignAtmosPipeLayers
+  canBuildInImpassable: false
+  conditions:
+  - !type:NoUnstackableInTile
+  alternativePrototypes:
+  - GasTemperaturePump
+  - GasTemperaturePumpAlt1
+  - GasTemperaturePumpAlt2
+
+- type: construction
+  id: GasHeatExchanger
+  graph: GasTemperature
+  startNode: start
+  targetNode: heatexchanger
+  category: construction-category-utilities
+  placementMode: AlignAtmosPipeLayers
+  canBuildInImpassable: false
+  conditions:
+  - !type:NoUnstackableInTile
+  alternativePrototypes:
+  - GasHeatExchanger
+  - GasHeatExchangerAlt1
+  - GasHeatExchangerAlt2
+
+- type: construction
+  hide: true
+  id: GasHeatExchangerAlt1
+  graph: GasTemperature
+  startNode: start
+  targetNode: heatexchangerAlt1
+  category: construction-category-utilities
+  placementMode: AlignAtmosPipeLayers
+  canBuildInImpassable: false
+  conditions:
+  - !type:NoUnstackableInTile
+  alternativePrototypes:
+  - GasHeatExchanger
+  - GasHeatExchangerAlt1
+  - GasHeatExchangerAlt2
+
+- type: construction
+  hide: true
+  id: GasHeatExchangerAlt2
+  graph: GasTemperature
+  startNode: start
+  targetNode: heatexchangerAlt2
+  category: construction-category-utilities
+  placementMode: AlignAtmosPipeLayers
+  canBuildInImpassable: false
+  conditions:
+  - !type:NoUnstackableInTile
+  alternativePrototypes:
+  - GasHeatExchanger
+  - GasHeatExchangerAlt1
+  - GasHeatExchangerAlt2
+
+- type: construction
+  id: GasMeter
+  graph: GasTemperature
+  startNode: start
+  targetNode: meter
+  category: construction-category-utilities
+  placementMode: AlignAtmosPipeLayers
+  canBuildInImpassable: false
+  conditions:
+  - !type:NoUnstackableInTile
+  alternativePrototypes:
+  - GasMeter
+  - GasMeterAlt1
+  - GasMeterAlt2
+
+- type: construction
+  hide: true
+  id: GasMeterAlt1
+  graph: GasTemperature
+  startNode: start
+  targetNode: meterAlt1
+  category: construction-category-utilities
+  placementMode: AlignAtmosPipeLayers
+  canBuildInImpassable: false
+  conditions:
+  - !type:NoUnstackableInTile
+  alternativePrototypes:
+  - GasMeter
+  - GasMeterAlt1
+  - GasMeterAlt2
+
+- type: construction
+  hide: true
+  id: GasMeterAlt2
+  graph: GasTemperature
+  startNode: start
+  targetNode: meterAlt2
+  category: construction-category-utilities
+  placementMode: AlignAtmosPipeLayers
+  canBuildInImpassable: false
+  conditions:
+  - !type:NoUnstackableInTile
+  alternativePrototypes:
+  - GasMeter
+  - GasMeterAlt1
+  - GasMeterAlt2
+

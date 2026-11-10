@@ -4,6 +4,9 @@
   name: China-Lake EMP bundle
   description: "An old China-Lake grenade launcher bundled with 8 rounds of EMP."
   components:
+  - type: Contraband
+    severity: Class5
+    allowedDepartments: []
   - type: StorageFill
     contents:
       - id: NFWeaponLauncherChinaLakeEmp

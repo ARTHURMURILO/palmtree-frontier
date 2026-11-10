@@ -29,7 +29,7 @@
   abstract: true
   components:
   - type: Contraband
-    severity: Class2
+    severity: Class2Restricted
     # Security and heads only (finally, shotgun traffic controller)
     allowedDepartments: [ Security, Command ]
 
@@ -108,7 +108,7 @@
   abstract: true
   components:
   - type: Contraband
-    severity: Class3Cult
+    severity: Class5
 
 - type: entity
   parent: BaseC3CultContrabandUnredeemable
@@ -132,7 +132,7 @@
   abstract: true
   components:
   - type: Contraband
-    severity: Class3Pirate
+    severity: Class5
     turnInValues: *noFUCs
 
 - type: entity
@@ -150,7 +150,7 @@
   abstract: true
   components:
   - type: Contraband
-    severity: Class3Syndicate
+    severity: Class5
 
 - type: entity
   parent: BaseC3SyndicateContrabandUnredeemable
@@ -174,7 +174,7 @@
   abstract: true
   components:
   - type: Contraband
-    severity: Class3Wizard
+    severity: Class5
 
 - type: entity
   parent: BaseC3ContrabandUnredeemable
@@ -182,8 +182,46 @@
   abstract: true
   components:
   - type: Contraband
-    severity: Class3Wizard
+    severity: Class5
     turnInValues: *oneFUC
+# endregion
+
+# region Class 4
+# Severe heavy hardware: 100+ damage, advanced weapons, heavy combat gear.
+- type: entity
+  id: BaseC4Contraband
+  abstract: true
+  components:
+  - type: Contraband
+    severity: Class4
+    allowedDepartments: []
+    turnInValues: *noFUCs
+
+- type: entity
+  parent: BaseC4Contraband
+  id: BaseC4ContrabandUnredeemable
+  abstract: true
+# endregion
+
+# region Class 5
+# Strictly military and law-enforcement hardware. NFSD/Security may carry it as issued equipment;
+# civilians can never be permitted to possess it.
+- type: entity
+  parent: BaseC3Contraband
+  id: BaseC5Contraband
+  abstract: true
+  components:
+  - type: Contraband
+    severity: Class5
+    allowedDepartments: [ Security ]
+
+- type: entity
+  parent: BaseC5Contraband
+  id: BaseC5ContrabandUnredeemable
+  abstract: true
+  components:
+  - type: Contraband
+    turnInValues: *noFUCs
 # endregion
 
 # region Class 3 Mobs
@@ -193,8 +231,9 @@
   abstract: true
   components:
   - type: Contraband
-    severity: Class3MobHuman
+    severity: FrontierLawNotice
     hideCarryStatus: true
+    turnInValues: *noFUCs
 
 - type: entity
   parent: BaseC3Contraband
@@ -202,8 +241,9 @@
   abstract: true
   components:
   - type: Contraband
-    severity: Class3MobCreature
+    severity: FrontierLawNotice
     hideCarryStatus: true
+    turnInValues: *noFUCs
 
 - type: entity
   parent: BaseC3MobCreature
@@ -219,8 +259,9 @@
   abstract: true
   components:
   - type: Contraband
-    severity: Class3MobConstruct
+    severity: FrontierLawNotice
     hideCarryStatus: true
+    turnInValues: *noFUCs
 # endregion
 
 # region Miscellaneous

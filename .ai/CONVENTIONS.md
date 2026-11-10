@@ -28,6 +28,9 @@
   so history is preserved.
 - Core-file patches are minimal, annotated with a comment (`// Palmtree: ...`) and should not
   reorder existing code unless the feature requires it.
+- **Image generation rule:** never generate new image assets unless the user explicitly asked for
+  image generation, and double-confirm even then. Modifying or porting existing images is fine; when
+  a request is ambiguous, ask whether it means generating new art or reusing/porting existing art.
 - Marking prototypes are data; marking behavior changes go through `MarkingManager`/renderer, never
   through per-prototype C#.
 - ERP content is explicit and adult, but code should stay neutral: there is no per-toggle consent

@@ -1,0 +1,44 @@
+# Palmtree: admin-only laser carp - a space carp that fires hitscan laser beams instead of biting.
+# Ranged HTN stops as soon as it has line of sight and shoots; the melee attack is blanked so it
+# cannot kill by chasing. No HideSpawnMenu category, so it is visible in the (admin-only) spawn menu.
+- type: entity
+  parent: MobCarp
+  id: MobCarpLaser
+  name: laser carp
+  suffix: Admeme
+  description: It's a space carp. This one appears to have a laser strapped to it.
+  components:
+    - type: HTN
+      rootTask:
+        task: SimpleRangedHostileCompound
+      blackboard:
+        NavSmash: !type:Bool
+          true
+    - type: Gun
+      showExamineText: false
+      fireRate: 1
+      useKey: false
+      selectedMode: SemiAuto
+      availableModes:
+        - SemiAuto
+      minAngle: 2
+      maxAngle: 8
+      angleIncrease: 2
+      angleDecay: 4
+      soundGunshot: /Audio/Weapons/Guns/Gunshots/laser_cannon.ogg
+    # Hitscan laser beam (instant beam, not a travelling projectile).
+    - type: HitscanBatteryAmmoProvider
+      proto: NFRedLightLaser
+      fireCost: 25
+    - type: Battery
+      maxCharge: 1000
+      startingCharge: 1000
+    - type: BatterySelfRecharger
+      autoRecharge: true
+      autoRechargeRate: 100
+    # No bite: this carp only deals damage with its laser.
+    - type: MeleeWeapon
+      damage:
+        types:
+          Blunt: 0
+          Slash: 0

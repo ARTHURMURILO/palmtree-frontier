@@ -10,6 +10,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: ReinforcedGirder
@@ -23,6 +24,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: ClockworkGirder
@@ -36,6 +38,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: Wall
@@ -49,6 +52,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 # Frontier
 - type: construction
@@ -64,6 +68,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 # End Frontier
 
 - type: construction
@@ -78,6 +83,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 # Frontier
 - type: construction
@@ -93,6 +99,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 # End Frontier
 
 - type: construction
@@ -107,6 +114,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: WoodWall
@@ -120,6 +128,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: UraniumWall
@@ -133,6 +142,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: SilverWall
@@ -146,6 +156,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: PlasticWall
@@ -159,6 +170,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: PlasmaWall
@@ -172,6 +184,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: GoldWall
@@ -185,6 +198,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: ShuttleWall
@@ -198,6 +212,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: DiagonalShuttleWall
@@ -212,6 +227,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: ClownWall
@@ -225,6 +241,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: MeatWall
@@ -238,6 +255,7 @@
   canBuildInImpassable: false
   conditions:
   - !type:TileNotBlocked
+    blockDirectionalWindows: true
 
 - type: construction
   id: Cardwall
@@ -247,6 +265,7 @@
   category: construction-category-structures
   conditions:
   - !type:TileNotBlocked
+    blockDirectionalWindows: true
     failIfSpace: false
   objectType: Structure
   placementMode: SnapgridCenter
@@ -480,6 +499,7 @@
   conditions:
     - !type:EmptyOrWindowValidInTile
     - !type:NoWindowsInTile
+      allowDirectionalWindowPivot: true
   objectType: Structure
   placementMode: SnapgridCenter
 
@@ -493,6 +513,7 @@
   conditions:
     - !type:EmptyOrWindowValidInTile
     - !type:NoWindowsInTile
+      allowDirectionalWindowPivot: true
   objectType: Structure
   placementMode: SnapgridCenter
 
@@ -506,6 +527,7 @@
   conditions:
     - !type:EmptyOrWindowValidInTile
     - !type:NoWindowsInTile
+      allowDirectionalWindowPivot: true
   objectType: Structure
   placementMode: SnapgridCenter
 
@@ -519,6 +541,7 @@
   conditions:
     - !type:EmptyOrWindowValidInTile
     - !type:NoWindowsInTile
+      allowDirectionalWindowPivot: true
   objectType: Structure
   placementMode: SnapgridCenter
 
@@ -532,6 +555,7 @@
   conditions:
     - !type:EmptyOrWindowValidInTile
     - !type:NoWindowsInTile
+      allowDirectionalWindowPivot: true
   objectType: Structure
   placementMode: SnapgridCenter
 
@@ -603,6 +627,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: FirelockGlass
@@ -616,6 +641,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: FirelockEdge
@@ -629,6 +655,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: Turnstile
@@ -641,6 +668,7 @@
   canBuildInImpassable: false
   conditions:
   - !type:TileNotBlocked
+    blockDirectionalWindows: true
 
 - type: construction
   id: Shutters
@@ -731,6 +759,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: BarricadeDirectional
@@ -744,6 +773,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: Railing
@@ -988,6 +1018,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: AirlockGlass
@@ -1000,6 +1031,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: PinionAirlock
@@ -1013,6 +1045,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: PinionAirlockGlass
@@ -1026,6 +1059,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: AirlockShuttle
@@ -1039,6 +1073,7 @@
   canBuildInImpassable: false
   conditions:
   - !type:TileNotBlocked
+    blockDirectionalWindows: true
 
 - type: construction
   id: AirlockGlassShuttle
@@ -1053,6 +1088,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: Windoor
@@ -1065,6 +1101,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: SecureWindoor
@@ -1077,6 +1114,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: ClockworkWindoor
@@ -1089,6 +1127,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 #lighting
 - type: construction
@@ -1183,6 +1222,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: WoodDoor
@@ -1195,6 +1235,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: PlasmaDoor
@@ -1207,6 +1248,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: GoldDoor
@@ -1219,6 +1261,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: SilverDoor
@@ -1231,6 +1274,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: PaperDoor
@@ -1313,6 +1357,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: BananiumAltar
@@ -1340,6 +1385,7 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true
 
 - type: construction
   id: FungalSoil
@@ -1365,3 +1411,4 @@
   canBuildInImpassable: false
   conditions:
     - !type:TileNotBlocked
+      blockDirectionalWindows: true

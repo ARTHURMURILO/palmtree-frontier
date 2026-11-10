@@ -484,6 +484,104 @@ public sealed class BluespaceDockSaveTest
     }
 
     /// <summary>
+    /// Older saves can contain container references to entities that were already missing when the
+    /// file was written; the engine deserializes those as <c>EntityUid.Invalid</c>. Loading must
+    /// prune them instead of producing a live grid whose container walks throw (the 2026-11-09
+    /// bluespace dock crash).
+    /// </summary>
+    [Test]
+    public async Task ShipFilesWithInvalidContainerReferencesLoadClean()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var res = server.ResolveDependency<IResourceManager>();
+        var containers = server.System<ContainerSystem>();
+
+        EntityUid loadedGrid = default;
+        MapId loadedMap = default;
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var grid = testMap.Grid.Owner;
+
+            // A toolbox holding one item, so the file has a container with real contents.
+            var toolbox = entMan.SpawnEntity("ToolboxMechanicalFilled", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            var duck = entMan.SpawnEntity("ToyRubberDuck", new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            Assert.That(containers.TryGetContainer(toolbox, StorageComponent.ContainerId, out var storage), Is.True,
+                "sanity: the toolbox has storage");
+            Assert.That(containers.Insert(duck, storage!), Is.True, "sanity: the duck fits in the toolbox");
+
+            var file = BluespaceDockSystem.GetShipFilePath("invalid-container-refs");
+            Assert.That(dock.TrySaveShipFile(grid, file, out var saveError), Is.True, saveError);
+
+            var path = new ResPath($"{BluespaceDockSystem.ShipDirectory}/{file}");
+            string text;
+            using (var reader = res.UserData.OpenText(path))
+            {
+                text = reader.ReadToEnd();
+            }
+
+            // Add a dangling entry to the first container in the file, exactly as an old save did.
+            var marker = "          ents:\n";
+            var index = text.IndexOf(marker, System.StringComparison.Ordinal);
+            Assert.That(index, Is.GreaterThanOrEqualTo(0), "sanity: the saved file has a container");
+            text = text.Insert(index + marker.Length, "          - invalid\n");
+
+            // Dangling references also appear outside containers (Action.entIcon, for example),
+            // and each one logs a deserializer error if it is not pruned as well.
+            var componentMarker = "    - type: MetaData\n";
+            var componentIndex = text.IndexOf(componentMarker, System.StringComparison.Ordinal);
+            Assert.That(componentIndex, Is.GreaterThanOrEqualTo(0), "sanity: the saved file has components");
+            text = text.Insert(componentIndex, "    - type: Action\n      entIcon: invalid\n");
+
+            using (var writer = res.UserData.OpenWriteText(path))
+            {
+                writer.Write(text);
+            }
+
+            Assert.That(dock.TryLoadShipFile(file, out var loaded), Is.True,
+                "A ship file with an invalid container reference must still load.");
+            loadedGrid = loaded!.Value;
+            loadedMap = entMan.GetComponent<TransformComponent>(loadedGrid).MapID;
+
+            // Walking the loaded grid must not throw on a dangling reference.
+            var entities = new HashSet<EntityUid>();
+            Assert.DoesNotThrow(() => dock.GetEntitiesOnGrid(loadedGrid, entities),
+                "Walking a loaded grid must ignore dangling references.");
+            Assert.That(entities, Does.Not.Contain(EntityUid.Invalid));
+
+            // The sanitized copy must not leave EntityUid.Invalid behind in any container or storage.
+            var containerQuery = entMan.EntityQueryEnumerator<ContainerManagerComponent>();
+            while (containerQuery.MoveNext(out var owner, out var manager))
+            {
+                foreach (var container in manager.Containers.Values)
+                {
+                    Assert.That(container.ContainedEntities.Any(uid => !uid.IsValid()), Is.False,
+                        $"{entMan.ToPrettyString(owner)} container {container.ID} kept an invalid entity reference");
+                }
+            }
+
+            var storageQuery = entMan.EntityQueryEnumerator<StorageComponent>();
+            while (storageQuery.MoveNext(out var owner, out var loadedStorage))
+            {
+                Assert.That(loadedStorage.StoredItems.Keys.Any(uid => !uid.IsValid()), Is.False,
+                    $"{entMan.ToPrettyString(owner)} storage kept an invalid entity reference");
+            }
+
+            dock.DeleteShipFile(file);
+        });
+
+        await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));
+        await server.WaitRunTicks(2);
+        await server.WaitAssertion(() => server.System<SharedMapSystem>().DeleteMap(loadedMap));
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
     /// Action cooldowns are absolute round times (<see cref="UseDelayInfo.EndTime"/> is compared to
     /// <c>IGameTiming.CurTime</c>), and the clock restarts every round. A ship stored late in a round
     /// used to come back with every use-delayed entity - buttons, switches, toolbelts, guns - still

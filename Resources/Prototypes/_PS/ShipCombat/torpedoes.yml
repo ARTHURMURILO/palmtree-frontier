@@ -142,7 +142,7 @@
     price: 2000
 
 - type: entity
-  parent: ShipTorpedoLauncher
+  parent: [ ShipTorpedoLauncher, BaseC5Contraband ]
   id: ShipTorpedoLauncherPhoton
   name: photon torpedo launcher
   description: "Fires upgraded photon torpedoes: faster, harder hitting and with delayed steering that ramps up to full turn rate."

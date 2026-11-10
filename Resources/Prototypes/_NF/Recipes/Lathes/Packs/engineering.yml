@@ -49,6 +49,7 @@
   - GasRecyclerMachineCircuitboard
   - PortableScrubberMachineCircuitBoard
   - ThermomachineFreezerMachineCircuitBoard
+  - HeatPumpMachineCircuitBoard # Palmtree
   - CondenserMachineCircuitBoard
 
 - type: latheRecipePack
@@ -104,6 +105,7 @@
   - AlertsComputerCircuitboard
   - PowerComputerCircuitboard
   - AtmosMonitoringComputerCircuitboard
+  - SupermatterComputerCircuitboard # Palmtree
   - SolarAssemblyFlatpack
 
 - type: latheRecipePack
