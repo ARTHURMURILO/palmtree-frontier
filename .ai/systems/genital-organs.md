@@ -129,6 +129,8 @@ queries).
    per-sprite offset, so a breast's nipple sprite still renders above the breast sprite and a
    butt's front/mid sprites stay ordered. A visible relevant undergarment forces this clamp in
    every direction (south included); without one, south keeps the genitals-over-hair rule.
+   The client also moves the neck clothing layer above the genital group when facing south, so
+   scarves cover breasts.
 
 ## Cum, drip and washing
 
