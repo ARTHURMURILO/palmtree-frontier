@@ -18,6 +18,7 @@ using Content.Server.Decals;
 using Content.Server.DeviceLinking.Systems;
 using Content.Server.Hands.Systems;
 using Content.Server.NodeContainer.Nodes;
+using Content.Server.Pointing.EntitySystems;
 using Content.Server.Power.Components;
 using Content.Server.Radio.EntitySystems;
 using Content.Server.Weapons.Melee;
@@ -32,6 +33,7 @@ using Content.Shared.Chemistry.Components;
 using Content.Shared.Chemistry.Components.SolutionManager;
 using Content.Shared.Chemistry.EntitySystems;
 using Content.Shared.Chemistry.Reagent;
+using Content.Shared.CombatMode;
 using Content.Shared.Containers.ItemSlots;
 using Content.Shared.Construction.Components;
 using Content.Shared.CriminalRecords;
@@ -179,6 +181,175 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         end
         """;
 
+    /// <summary>
+    /// GLua-style event hooks. The queue is still polled by the existing C# runtime; this layer
+    /// dispatches queued events to Lua callbacks whenever the script yields or calls poll_event.
+    /// </summary>
+    private const string HookSource = """
+        return function(robot)
+        do
+            local rawWait = robot.wait
+            local rawPoll = robot.poll_event
+            local hooks = {}
+            local pending = {}
+            local dispatching = false
+            local maxPending = 64
+
+            local function runList(list, event)
+                if not list then
+                    return
+                end
+
+                local index = 1
+                while index <= #list do
+                    local entry = list[index]
+                    if entry then
+                        entry.fn(event)
+                    end
+                    index = index + 1
+                end
+            end
+
+            local function runHooks(event)
+                runList(hooks[event.type], event)
+                runList(hooks["*"], event)
+            end
+
+            local function dispatch(event)
+                if not event or dispatching then
+                    return false
+                end
+
+                dispatching = true
+                local ok, err = pcall(runHooks, event)
+                dispatching = false
+
+                if not ok then
+                    error(err, 0)
+                end
+
+                return true
+            end
+
+            local function queue(event)
+                pending[#pending + 1] = event
+                if #pending > maxPending then
+                    table.remove(pending, 1)
+                end
+            end
+
+            local function pump()
+                while true do
+                    local event = rawPoll()
+                    if not event then
+                        break
+                    end
+
+                    dispatch(event)
+                    queue(event)
+                end
+            end
+
+            robot.wait = function(seconds)
+                local elapsed = rawWait(seconds)
+                if not dispatching then
+                    pump()
+                end
+                return elapsed
+            end
+
+            robot.poll_event = function()
+                if #pending > 0 then
+                    local event = table.remove(pending, 1)
+                    if event then
+                        return event
+                    end
+                end
+
+                event = rawPoll()
+                if event then
+                    dispatch(event)
+                end
+
+                return event
+            end
+
+            hook = {}
+
+            function hook.Add(event, name, callback)
+                if type(event) ~= "string" or type(name) ~= "string" or type(callback) ~= "function" then
+                    return false
+                end
+
+                local list = hooks[event]
+                if not list then
+                    list = {}
+                    hooks[event] = list
+                end
+
+                for index = 1, #list do
+                    if list[index].name == name then
+                        list[index].fn = callback
+                        return true
+                    end
+                end
+
+                list[#list + 1] = { name = name, fn = callback }
+                return true
+            end
+
+            function hook.Remove(event, name)
+                local list = hooks[event]
+                if not list then
+                    return false
+                end
+
+                for index = #list, 1, -1 do
+                    if list[index].name == name then
+                        table.remove(list, index)
+                        return true
+                    end
+                end
+
+                return false
+            end
+
+            function hook.Has(event, name)
+                local list = hooks[event]
+                if not list then
+                    return false
+                end
+
+                for index = 1, #list do
+                    if list[index].name == name then
+                        return true
+                    end
+                end
+
+                return false
+            end
+
+            function hook.Run(event, payload)
+                if type(event) ~= "string" then
+                    return false
+                end
+
+                if payload == nil then
+                    payload = { type = event }
+                elseif type(payload) ~= "table" then
+                    return false
+                elseif payload.type == nil then
+                    payload.type = event
+                end
+
+                return dispatch(payload)
+            end
+
+            hook.Call = hook.Run
+        end
+        end
+        """;
+
     private readonly HashSet<EntityUid> _lookupSet = new();
 
     private const float DefaultPowerTransferRange = 2f;
@@ -192,6 +363,7 @@ public sealed class CircuitLuaApiSystem : EntitySystem
     [Dependency] private readonly BotanySystem _botany = default!;
     [Dependency] private readonly CircuitAssemblySystem _assembly = default!;
     [Dependency] private readonly CircuitMovementSystem _movement = default!;
+    [Dependency] private readonly SharedCombatModeSystem _combatMode = default!;
     [Dependency] private readonly DecalSystem _decals = default!;
     [Dependency] private readonly DeviceLinkSystem _deviceLink = default!;
     [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
@@ -207,6 +379,7 @@ public sealed class CircuitLuaApiSystem : EntitySystem
     [Dependency] private readonly MeleeWeaponSystem _melee = default!;
     [Dependency] private readonly MobStateSystem _mobState = default!;
     [Dependency] private readonly IPrototypeManager _proto = default!;
+    [Dependency] private readonly PointingSystem _pointing = default!;
     [Dependency] private readonly RadioSystem _radio = default!;
     [Dependency] private readonly SharedInteractionSystem _interaction = default!;
     [Dependency] private readonly SharedSolutionContainerSystem _solutions = default!;
@@ -302,6 +475,7 @@ public sealed class CircuitLuaApiSystem : EntitySystem
 
         robot.Set("attack", DynValue.NewCallback((_, args) => Attack(runtime, args), "attack"));
         robot.Set("shoot", DynValue.NewCallback((_, args) => Shoot(runtime, args), "shoot"));
+        robot.Set("point", DynValue.NewCallback((_, args) => Point(runtime, args), "point"));
 
         var interactCallback = DynValue.NewCallback((_, args) => Interact(runtime, args), "interact_async");
         RegisterAction("interact", "interact_async", interactCallback);
@@ -335,6 +509,11 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         robot.Set("transfer_to", DynValue.NewCallback((_, args) => Transfer(runtime, args, true), "transfer_to"));
         robot.Set("transfer_from", DynValue.NewCallback((_, args) => Transfer(runtime, args, false), "transfer_from"));
         robot.Set("transfer", DynValue.NewCallback((_, args) => TransferBetween(runtime, args), "transfer"));
+
+        // Install last so hooks can wrap the completed robot table and the wait_event/action shims.
+        var hookBuilder = script.LoadString(HookSource, null, "circuit-hooks");
+        var hookFactory = script.Call(hookBuilder);
+        script.Call(hookFactory, DynValue.NewTable(robot));
     }
 
     private DynValue BuildSelf(CircuitLuaRuntime runtime)
@@ -2686,10 +2865,49 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         if (!_melee.TryGetWeapon(runtime.Assembly, out var weaponUid, out var melee))
             return Bool(false, "no melee weapon");
 
+        EnsureComp<CombatModeComponent>(runtime.Assembly);
+        _combatMode.SetInCombatMode(runtime.Assembly, true);
+
+        if (melee.NextAttack > _timing.CurTime)
+            return Bool(false, "attack cooldown");
+
         if (!_assembly.TryConsumePower(runtime.Assembly, component.ActionPowerCost, component))
             return Bool(false, "no power");
 
-        return Bool(_melee.AttemptLightAttack(runtime.Assembly, weaponUid, melee, target));
+        return _melee.AttemptLightAttack(runtime.Assembly, weaponUid, melee, target)
+            ? Bool(true)
+            : Bool(false, "attack failed");
+    }
+
+    private DynValue Point(CircuitLuaRuntime runtime, CallbackArguments args)
+    {
+        if (!TryGetHandle(runtime, args, 0, out var target))
+            return Bool(false, "invalid entity handle");
+
+        if (!TryComp<CircuitAssemblyComponent>(runtime.Assembly, out var component))
+            return Bool(false, "assembly is missing");
+
+        if (!component.Capabilities.HasFlag(CircuitCapability.Manipulator))
+            return Bool(false, "no manipulator module");
+
+        if (!component.Powered)
+            return Bool(false, "no power");
+
+        if (_timing.CurTime < runtime.NextAction)
+            return Bool(false, "action rate limited");
+
+        if (!_interaction.InRangeUnobstructed(runtime.Assembly, target, 15f))
+            return Bool(false, "target is out of range or not visible");
+
+        if (!_assembly.TryConsumePower(runtime.Assembly, component.ActionPowerCost, component))
+            return Bool(false, "no power");
+
+        runtime.NextAction = _timing.CurTime + TimeSpan.FromSeconds(0.5);
+
+        if (!_pointing.TryPoint(runtime.Assembly, Transform(target).Coordinates, target))
+            return Bool(false, "cannot point at that");
+
+        return Bool(true);
     }
 
     private DynValue Shoot(CircuitLuaRuntime runtime, CallbackArguments args)

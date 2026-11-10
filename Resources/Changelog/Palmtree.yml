@@ -1942,6 +1942,17 @@ Entries:
       message: >-
         Circuit assemblies can inspect battery charge and transfer power: charge held or nearby
         batteries and energy guns, or draw power from nearby APCs and batteries.
+    - type: Add
+      message: >-
+        Added GLua-style hook.Add, hook.Remove, hook.Has, hook.Run and hook.Call event hooks for
+        circuit Lua programs.
+    - type: Add
+      message: >-
+        Circuit assemblies with manipulators can now point at targets with robot.point.
+    - type: Fix
+      message: >-
+        Circuit melee attack now enables combat mode automatically and reports attack cooldown
+        failures instead of returning false with no reason.
     - type: Fix
       message: >-
         Circuit shoot no longer incorrectly requires the target to be within the manipulator's

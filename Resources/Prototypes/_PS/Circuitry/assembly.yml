@@ -65,6 +65,8 @@
     speechSounds: Borg
     enabled: false
   - type: ComplexInteraction
+  - type: CombatMode
+    toggleMouseRotator: false
   - type: PowerCellSlot
     cellSlotId: cell
   - type: ItemSlots
