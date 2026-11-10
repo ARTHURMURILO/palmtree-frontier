@@ -2,6 +2,7 @@ using Content.Shared.Maps;
 using Content.Shared.Tag;
 using JetBrains.Annotations;
 using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
 using Robust.Shared.Prototypes;
 
 namespace Content.Shared.Construction.Conditions
@@ -26,13 +27,21 @@ namespace Content.Shared.Construction.Conditions
             var sysMan = entManager.EntitySysManager;
             var tagSystem = sysMan.GetEntitySystem<TagSystem>();
             var turfSystem = sysMan.GetEntitySystem<TurfSystem>();
+            var mapSystem = sysMan.GetEntitySystem<SharedMapSystem>();
 
-            // A point lookup misses a directional window's edge fixture. Query the whole tile
-            // instead, or a second window can be built straight through the first one.
-            var entities = new HashSet<EntityUid>();
-            turfSystem.GetEntitiesInTile(location, entities, LookupFlags.Static | LookupFlags.Dynamic);
+            // Ask the grid which entities are anchored in this exact tile. A broadphase tile lookup
+            // also returns windows from the neighbouring tiles, because a directional window's
+            // fixture sits right on the tile border, and that made a free edge look occupied.
+            if (!turfSystem.TryGetTileRef(location, out var tileRef) ||
+                tileRef is not { } tile ||
+                !entManager.TryGetComponent(tile.GridUid, out MapGridComponent? grid))
+            {
+                return true;
+            }
 
-            foreach (var entity in entities)
+            var indices = tile.GridIndices;
+
+            foreach (var entity in mapSystem.GetAnchoredEntities(tile.GridUid, grid, indices))
             {
                 if (!tagSystem.HasTag(entity, WindowTag))
                     continue;
