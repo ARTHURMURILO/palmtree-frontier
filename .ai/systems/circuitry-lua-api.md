@@ -125,6 +125,38 @@ local self = robot.self()
 log(self.name, self.power, self.max_power, self.powered)
 ```
 
+### Power transfer
+
+```lua
+-- Charge a held or nearby battery, power cell or energy gun.
+local gun = robot.find("energy submachine gun")
+if gun then
+    log("before", robot.battery(gun).charge)
+    robot.charge(gun, 100)
+end
+
+-- Draw from the nearest APC, battery, SMES or other power cell.
+if robot.charge_from(100) then
+    log("charged from nearby power")
+end
+```
+
+| Function | Requires | Returns |
+|---|---|---|
+| `robot.battery(handle)` | Target has a battery or a slotted power cell | `{charge, max, percent}` or `false, reason` |
+| `robot.charge(handle, amount)` | Assembly power cell, target within transfer range and line of sight | `true` or `false, reason` |
+| `robot.charge_from(amount [, radius])` | Assembly power cell, nearby APC/battery/power cell | `true` or `false, reason` |
+
+- Amounts are in battery charge units (joules). `charge` transfers only as much as the target is
+  missing and the assembly can supply.
+- `charge` works on a battery, power cell, battery-powered gun/item, APC or SMES. It can target an
+  item in the assembly's manipulator hand or a nearby item/entity.
+- `charge_from` searches within `radius` (default `2`, maximum `4` tiles), nearest first, and draws
+  from APCs, SMES units, batteries and battery-powered items. It stops when the requested amount is
+  transferred or the assembly's cell is full.
+- Both directions are rate-limited to one transfer per `0.5` seconds.
+- `battery(handle)` is a read-only snapshot. `robot.power()` remains the assembly's own cell charge.
+
 ### Movement and pathfinding
 
 ```lua
@@ -386,8 +418,7 @@ end
 ```lua
 local wrench = robot.find("wrench")
 if wrench then
-    local x, y = robot.position_of(wrench)
-    if robot.walk_to(x, y, 1.0) then
+    if robot.walk_to(wrench) then
         if robot.can_reach(wrench) then
             robot.pickup(wrench)
         end
@@ -624,6 +655,9 @@ filesystem, networking, entity, hook, or userdata APIs.
 | `robot.self()` | table or `nil` | `handle`, `name`, `x`, `y`, `power`, `max_power`, `powered`, `damage`, `health`, `dead`, `modules`. Does not include `max_health`. |
 | `robot.position()` | `x, y` | Assembly position in its current map/grid space. |
 | `robot.power()` | `current, max` | Power cell charge. Returns `0, 0` if there is no cell. |
+| `robot.battery(handle)` | `table` | `{charge, max, percent}` for a battery, power cell, APC, SMES or battery-powered item. |
+| `robot.charge(handle, amount)` | `true` | `false, reason` |
+| `robot.charge_from(amount [, radius])` | `true` | `false, reason` |
 | `robot.health()` | table | `damage`, `health`, `max_health`, `dead`. |
 | `robot.item_status(handle)` | table | Name/kind, `activated` for toggleable items, `injector` mode/transfer amount, and every solution container. |
 | `robot.solution(handle [, name])` | solution table or `false, reason` | Reads a bucket, beaker, syringe or other container. Auto-selects injector/refillable/drainable or a single solution. |
@@ -652,17 +686,21 @@ filesystem, networking, entity, hook, or userdata APIs.
 | Function | Requires | Returns |
 |---|---|---|
 | `robot.move(dx, dy)` | Locomotion, power | `true` or `false, reason` |
-| `robot.walk_to(x, y [, range [, smooth]])` | Locomotion, power | `true` on arrival, or `false, reason`; yields the script while walking |
-| `robot.walk_to_async(x, y [, range [, smooth]])` | Locomotion, power | `true` once the path starts, or `false, reason` |
+| `robot.walk_to(x, y [, range [, smooth]])` / `robot.walk_to(handle)` | Locomotion, power | `true` on arrival, or `false, reason`; yields the script while walking |
+| `robot.walk_to_async(x, y [, range [, smooth]])` / `robot.walk_to_async(handle)` | Locomotion, power | `true` once the path starts, or `false, reason` |
 | `robot.stop()` | — | `true` |
 | `robot.walk_status()` | — | `"idle"`, `"moving"`, `"arrived"` or `"no_path"` |
 
 - `move` takes a direction/vector; it is normalized. `(0, 0)` stops movement.
-- `walk_to` uses pathfinding. The target is in local grid/map coordinates. `range` defaults to
-  `0.5`, and values below `0.5` are raised to `0.5` to avoid overshoot loops around small targets.
-  With `smooth = true` (the default), the arrival tolerance scales with current walk speed up to
-  `1.25` tiles and the steering system brakes to roughly 15% of walk speed near the target. Pass
-  `smooth = false` for the old fixed-tolerance behavior.
+- `walk_to` uses pathfinding. The target is either local grid/map `x, y` coordinates or a single
+  entity handle. A handle resolves to the entity's current position; the entity must be on the same
+  grid. Use the handle form to follow a target directly:
+  `robot.walk_to(lily)`. The handle form is one argument; for a custom range, resolve
+  `position_of(handle)` and pass the coordinates instead.
+- `range` defaults to `0.5`, and values below `0.5` are raised to `0.5` to avoid overshoot loops
+  around small targets. With `smooth = true` (the default), the arrival tolerance scales with
+  current walk speed up to `1.25` tiles and the steering system brakes to roughly 15% of walk speed
+  near the target. Pass `smooth = false` for the old fixed-tolerance behavior.
 - `walk_to` is **synchronous from the script's point of view**: it starts the path, yields through
   `robot.wait`, and returns `true` when the robot arrives, `false, "no path"` if no route exists,
   or `false, "walk timed out"` after 60 seconds. It does not block the server tick. You do not need
@@ -980,7 +1018,7 @@ synchronous wrappers; normal scripts should use the high-level functions.
 - `harvest` is an alias for `interact`.
 - `attack` uses the active hand's melee weapon.
 - `shoot` uses the active hand's gun. The target check uses at least 20 metres of line of sight, or
-  the sensor range if larger.
+  the sensor range if larger; the target does **not** need to be within manipulator hand range.
 
 ## Chemistry and botany
 
@@ -1405,6 +1443,8 @@ programs; scripts always require an explicit Run.
 | Sensor query budget | 4 per second, burst of 4 (`scan`, `find`, `nearest_*`, `scan_puddles`) |
 | `say` rate limit | 0.5 seconds |
 | `radio` rate limit | 1 second |
+| Power transfer rate limit | 0.5 seconds |
+| Power transfer range | 2 tiles by default, 4 maximum |
 | Signal/trigger rate limit | 0.5 seconds |
 | Transfer rate limit | 0.5 seconds |
 | ChemMaster transfer rate limit | 0.5 seconds |
@@ -1460,7 +1500,8 @@ programs; scripts always require an explicit Run.
   `false, reason` when the sensor is missing, unpowered, or the tile is out of range.
 - **`walk_to` does not open or unlock doors.** There is no automatic path-blocker event. Use
   `scan_doors` + `door_status` and check `can_open`, `bolted`, `access` and `state`; `walk_to`
-  returns `false, "no path"` when the destination cannot be reached.
+  returns `false, "no path"` when the destination cannot be reached. Open the door, then issue
+  `walk_to` again: a new command clears the previous `NoPath` state and retries pathfinding.
 - **`walk_to` waits; `walk_to_async` does not.** A script that wants to do other work while moving
   must use `walk_to_async`; a script that just wants to go somewhere should use `walk_to` and drop
   the old `walk_status` loop.
@@ -1907,6 +1948,7 @@ element of the same shape, and all positions are local grid coordinates in tiles
 | `nil, reason` | `nil, string`; two return values. |
 | `x, y` | `number, number`. |
 | `power, max_power` | `number, number`. |
+| `battery table` | `{ charge = number, max = number, percent = number }`. |
 | `elapsed seconds` | `number`. |
 | `entity entry` | `{ id = handle, name = string, kind = string, distance = number, x = number, y = number }` |
 | `entity entry (tile)` | `{ id = handle, name = string, kind = string, x = number, y = number }` |
@@ -1943,13 +1985,16 @@ element of the same shape, and all positions are local grid coordinates in tiles
 | `robot.self()` | self table | `nil` if the assembly is missing |
 | `robot.position()` | `x, y` | — |
 | `robot.power()` | `power, max_power` | — |
+| `robot.battery(handle)` | battery table | `false, reason` |
+| `robot.charge(handle, amount)` | `true` | `false, reason` |
+| `robot.charge_from(amount [, radius])` | `true` | `false, reason` |
 | `robot.health()` | health table | — |
 | `robot.has_module(name)` | boolean | `false, reason` for invalid arguments |
 | `robot.log(...)` / `print(...)` | `nil` | — |
 | `robot.wait(seconds)` | elapsed seconds (`number`) | — |
 | `robot.move(dx, dy)` | `true` | `false, reason` |
-| `robot.walk_to(x, y [, range, smooth])` | `true` on arrival | `false, reason` |
-| `robot.walk_to_async(x, y [, range, smooth])` | `true` once the path starts | `false, reason` |
+| `robot.walk_to(x, y [, range, smooth])` / `robot.walk_to(handle)` | `true` on arrival | `false, reason` |
+| `robot.walk_to_async(x, y [, range, smooth])` / `robot.walk_to_async(handle)` | `true` once the path starts | `false, reason` |
 | `robot.stop()` | `true` | — |
 | `robot.walk_status()` | `"idle"`, `"moving"`, `"arrived"` or `"no_path"` | — |
 | `robot.scan([radius])` | list of entity entries | `false, reason` |
@@ -2054,4 +2099,7 @@ When changing the API:
 | 2026-11-09 | Replaced the engine editor with a custom inline-syntax-colored Lua editor (line numbers, selection, copy/paste, tab indentation, undo/redo). Added multi-port signal sources, transfer rate limiting, Bluespace Dock/grid persistence coverage, puddle chemical analysis, ChemMaster automation, job/access/wanted queries, and chassis variants. |
 | 2026-11-10 | Standard sensor range is now 16 tiles. `find`/`nearest_*` search the full range instead of only the 16 nearest entities. Sensor lookups share a 4-per-second token bucket, and `walk_to` rate-limits/retargets path starts so tight follow loops cannot spam pathfinding or trip the allocation watchdog. |
 | 2026-11-10 | Multi-result scans now cap at 200 results instead of 16. The scanner raycasts nearest-first only until the cap is filled, so the larger result set does not multiply line-of-sight checks. |
+| 2026-11-10 | Added battery inspection and power transfer APIs: `battery`, `charge`, and `charge_from`. Assemblies can draw from nearby APCs/batteries and charge held or nearby cells/guns. |
+| 2026-11-10 | Fixed `shoot` incorrectly requiring the target to be within manipulator hand range; ranged attacks now use sight range. |
+| 2026-11-10 | `walk_to` and `walk_to_async` now accept a single entity handle as an alternative to `x, y`, so scripts can walk directly to `find`/`nearest_*` results. |
 | 2026-11-10 | Lua-facing actions are synchronous by default. `walk_to` yields until arrival/no-path/timeout and `walk_to_async` is the fire-and-forget variant. `use`, `use_item`, `interact`/`harvest`, `plant`, `trigger` and `inject` wait for their do-after and expose `_async` variants; instant actions are unchanged. |
