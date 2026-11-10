@@ -65,6 +65,7 @@
   - GasCanisters
   - Thermomachines
   - GasCondensing
+  - TemperatureDevices # Palmtree
 
 - type: guideEntry
   id: Pipes
