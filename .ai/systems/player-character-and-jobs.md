@@ -29,6 +29,16 @@ species roster in this repo.
 4. Mind attaches to the mob (`MindSystem`); job roles/objectives attach to the mind.
 5. Disconnect/cryo persists the profile; mob is deleted or stored.
 
+## Prone / crawling rotation
+
+`Content.Server/_PS/Standing/ProneRotationSystem.cs` flips downed/crawling humanoids so their head
+points toward horizontal movement. It updates `RotationVisualsComponent.HorizontalRotation`
+(270° = head right/east, 90° = head left/west; north/south keeps the last side) on `DownedEvent`,
+`MoveEvent` and `UnbuckledEvent`. Buckled mobs are skipped so bed strap rotation still owns the
+angle, and the client `RotationVisualizerSystem` now also reacts to `AfterAutoHandleStateEvent`
+(`RotationVisualsComponent` is generated with `raiseAfterAutoHandleState`) so networked horizontal
+angle changes animate immediately.
+
 ## Species roster (this repo)
 
 | Species | Source | Notes |
