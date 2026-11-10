@@ -1,0 +1,30 @@
+<controls:CircuitAssemblyWindow xmlns="https://spacestation14.io"
+    xmlns:controls="clr-namespace:Content.Client._PS.Circuitry.UI"
+    MouseFilter="Stop"
+    SetSize="480 430" MinSize="380 320">
+    <PanelContainer StyleClasses="AngleRect" HorizontalExpand="True" VerticalExpand="True" />
+    <BoxContainer Orientation="Vertical" Margin="8">
+        <Label Name="TitleLabel" StyleClasses="LabelHeading" />
+        <BoxContainer Orientation="Horizontal">
+            <LineEdit Name="NameEdit" HorizontalExpand="True" />
+            <Button Name="RenameButton" />
+        </BoxContainer>
+        <Label Name="StatusLabel" />
+        <Label Name="PowerLabel" />
+        <Label Name="RadioLabel" />
+        <Label Name="CpuLabel" />
+        <Label Name="RunningLabel" />
+        <Label Name="LockLabel" />
+        <Label Name="ErrorLabel" StyleClasses="LabelSecondaryColor" />
+        <ScrollContainer VerticalExpand="True" MinHeight="150">
+            <BoxContainer Name="SlotList" Orientation="Vertical" />
+        </ScrollContainer>
+        <BoxContainer Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Name="RunButton" />
+            <Button Name="StopButton" />
+            <Button Name="ProgramButton" />
+            <Button Name="LockButton" />
+            <Button Name="CloseButton" />
+        </BoxContainer>
+    </BoxContainer>
+</controls:CircuitAssemblyWindow>
