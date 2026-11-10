@@ -130,6 +130,8 @@
   # AdvancedAtmospherics
   - HellfireFreezerMachineCircuitBoard
   - HeatPumpMachineCircuitBoard # Palmtree
+  - TegCirculatorFlatpack # Palmtree
+  - TegCenterFlatpack # Palmtree
   - PortableScrubberMachineCircuitBoard
   - HolofanProjector
   - AlertsComputerCircuitboard

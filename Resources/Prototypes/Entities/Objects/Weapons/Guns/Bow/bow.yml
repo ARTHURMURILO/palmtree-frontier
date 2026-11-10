@@ -53,7 +53,7 @@
   components:
   - type: Contraband
     severity: Class2
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     layers:
     - state: unwielded

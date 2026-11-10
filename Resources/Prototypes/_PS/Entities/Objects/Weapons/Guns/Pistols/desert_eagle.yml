@@ -12,7 +12,7 @@
   components:
   - type: Contraband
     severity: Class2
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _PS/Objects/Weapons/Guns/Pistols/desert_eagle.rsi
   - type: Clothing

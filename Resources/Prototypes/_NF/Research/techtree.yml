@@ -1552,6 +1552,8 @@
   recipeUnlocks:
   - HellfireFreezerMachineCircuitBoard
   - HeatPumpMachineCircuitBoard # Palmtree
+  - TegCirculatorFlatpack # Palmtree
+  - TegCenterFlatpack # Palmtree
   technologyPrerequisites:
   - NFAtmosphericTech
   position: 1, 34

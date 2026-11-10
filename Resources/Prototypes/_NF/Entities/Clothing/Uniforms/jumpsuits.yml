@@ -6,7 +6,7 @@
   components:
   - type: Contraband
     severity: Class2
-    allowedDepartments: []
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _NF/Clothing/Uniforms/Jumpsuit/arcadia.rsi
   - type: Clothing
