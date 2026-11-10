@@ -577,6 +577,19 @@ so these fail only in CI:
   `RCDConstructionGhostFlipEvent` only when the RCD is in the sender's active hand. When a mode
   without a `mirrorPrototype:` is selected the fallback is the normal prototype, and the flip flag
   survives the switch (toggling again on a mirror mode re-applies it).
+- **The placement direction survives a tool swap; a fresh RCD/RPD's `ConstructionDirection` does
+  not.** `PlacementManager.Direction` is engine state and is not reset by `BeginPlacing`, but every
+  new `RCDComponent` starts at its default `South`. `RCDConstructionGhostSystem` must therefore send
+  `RCDConstructionGhostRotationEvent` when the held tool changes as well as when the direction
+  changes. Sending only on a direction change made a freshly equipped RPD show the previous tool's
+  ghost orientation while the server spawned the pipe in its own default orientation — the
+  "ghost points one way, pipe lands the other" playtest bug. Also clear the placer when a nonzero
+  `MobUid` was deleted: the non-RCD guard otherwise returns forever on a dead entity and the next
+  held tool never gets a fresh placer. Do **not** treat `EntityUid.Invalid` as dead — sandbox and
+  map-editor placements deliberately leave `MobUid` unset, and clearing those every frame makes an
+  entity-spawn-panel entry flash green and deselect immediately.
+  `RcdGhostDirectionTest.SpawnMenuPlacementSurvivesTheGhostUpdate` covers that case; the
+  `ReplacingTheRpdSyncsTheRetainedPlacementDirection` test covers the deleted-tool case.
 - **`InstantConstruction` skips the do-after delay, not the do-after**: it forces delay 0 and the
   `EffectRCDConstruct0` fx, but validity/charge checks still run every tick (and it zeroes the
   delay on deconstruct operations too).
@@ -599,20 +612,23 @@ so these fail only in CI:
   two-sided on purpose: the appearance datum (`PipeColorVisuals.Color`) drives the sprite, while
   `RCDPipeColorAppliedEvent` → `AtmosPipeColorSystem.SetColor` updates `AtmosPipeColorComponent` for
   the atmos monitoring console and the spray painter. Appearance alone leaves those two out of sync.
-- **`LastKnownEyeRotation` is server-only working state: do not network or `Dirty()` it.** The
-  placement mode forwards the local eye rotation (not networked) so the server can resolve the
-  layer. The field is `[ViewVariables]`-only, deliberately not an `[AutoNetworkedField]`: dirtying
-  on every change would network the component each time the player turns, and no client code reads
-  it (the client recomputes the layer in `AlignRPDAtmosPipeLayers`).
+- **The RPD layer is client-authoritative: `RPDLayerEvent` carries it, `LastKnownPipeLayer` stores
+  it.** `AlignRPDAtmosPipeLayers` knows the raw cursor offset; `RCDSystem.OnAfterInteract` only
+  receives a click location that is snapped to the tile centre. Recomputing the layer from that
+  location always picked primary, so the server silently disagreed with the green/red ghost (the
+  playtest symptom: ghost green, "primary atmos layer" popup). The client sends `RPDLayerEvent`
+  whenever its layer changes, the server stores it in `RCDComponent.LastKnownPipeLayer` (server-only
+  working state, never dirtied), and copies it into the do-after event for finalization. Do not
+  reintroduce a server-side offset calculation.
 - **`MapGridComponent.TileSize` is a `ushort`, so `tileSize / 2` is integer division and equals 0.**
   `1 / 2 == 0`, so `CurrentTile.X + tileSize / 2` lands on the tile **corner**, not its centre. Every
   placer in the engine writes `float tileSize = mapGrid.TileSize; //convert from ushort to float`
   for exactly this reason (`AlignTileAny`, `AlignTileDense`, `AlignTileEmpty`, `AlignRCDConstruction`,
   `AlignAtmosPipeLayers`). Writing `var tileSize = ...` compiles fine, passes every static check, and
   then silently misplaces everything by half a tile at runtime — this shipped once and had to be
-  found by playtesting. It bites twice in the RPD: the ghost snaps to the corner, *and*
-  `RCDSystem.OnAfterInteract` measures the layer deadzone from the corner, so almost every click
-  reads as "off centre" and the tool silently prefers the secondary/tertiary layer. Check any new
+  found by playtesting. It still bites the RPD ghost: `AlignRPDAtmosPipeLayers` must measure the
+  layer deadzone from the true tile centre. The server no longer recomputes the layer from the
+  click location (it uses `RPDLayerEvent`), so this is now a client-only calculation. Check any new
   `tileSize` with `grep -n "tileSize = mapGrid.TileSize"`.
 - **Coyote's `- new Vector2(0.5f, 0.5f)` bias in the layer diff was a workaround for the above**, not
   a deliberate offset: with the integer-division bug the "centre" was the corner, and subtracting
@@ -646,11 +662,11 @@ so these fail only in CI:
   another player's placement in between and silently build on the wrong layer. It is carried as
   `RCDDoAfterEvent.Layer` and passed into `FinalizeRCDOperation`. The same applies to anything else
   resolved per-click that is consumed at finalization (direction already worked this way).
-- **Client and server deadzone maths must use the same tile centre.** `AlignRPDAtmosPipeLayers`
-  measures the cursor offset from the *true* tile centre (`CurrentTile + tileSize / 2`), not from
-  the placement point that includes `PlacementOffset` — the server does not know the admin offset,
-  so using it made the ghost and the built pipe disagree when the `ps.placement.offset_*` CVars
-  were set.
+- **Do not derive the RPD layer from the server click location.** The click is snapped to the tile
+  centre, so the old "offset from centre" calculation in `OnAfterInteract` always returned primary.
+  The client sends `RPDLayerEvent` (raw cursor + eye rotation + grid rotation) and the server only
+  stores it. The placement ghost and the built pipe now agree even with the `ps.placement.offset_*`
+  CVars set.
 - **`Unstackable` is for devices only; pipes use node-aware overlap.** `GasPipeSansLayers` must
   *not* carry the tag: `NoUnstackableInTile` (construction) is layer-agnostic, so tagging pipes
   blocks every vent/pump built on the pipe that feeds it. `RCDSystem.IsConstructionLocationValid`
@@ -658,11 +674,40 @@ so these fail only in CI:
   and additionally raises `RCDAtmosOverlapAttemptEvent` for any prototype with a `NodeContainer`.
   `PipeRestrictOverlapSystem` handles it on the server: it resolves the mirror/RPD-layer prototype,
   then compares `PipeNode.OriginalPipeDirection` rotated by the placement angle against the
-  anchored nodes' directions and layers. The client has no node data (Nodes is `serverOnly`), so
-  its event is a no-op and the server repeats the check in the do-after attempt. Pipes have no
-  fixtures, which is why the collision check cannot catch them — the node check is what prevents
-  the RCD from spawning an overlapping pipe that `PipeRestrictOverlapSystem` would immediately
-  unanchor.
+  anchored nodes' directions and layers. The client has no node data (`Nodes` is `serverOnly`, on
+  entities *and* prototypes), so it uses the networked
+  `AtmosPipeNodeDirectionsComponent` for anchored entities and caches the prototype's nodes through
+  `AtmosPipeNodeInfoRequestEvent` / `AtmosPipeNodeInfoResponseEvent`; both sides then share the same
+  comparison. Pipes have no fixtures, which is why the collision check cannot catch them — the node
+  check is what prevents the RCD from spawning an overlapping pipe that
+  `PipeRestrictOverlapSystem` would immediately unanchor.
+- **Two pipe segments on one layer z-fight, so they are rejected as a pair.** `RCDSystem` checks
+  the `AtmosPipeSegment` tag (on the five plain pipe shapes, manifold and broken pipe) before the
+  node check. Devices are exempt because their sprites sit on a different draw depth, and the node
+  check decides whether they fit. The tag is networked, so the client's placement ghost turns red
+  for a stacked pipe even though the client cannot read the server-only
+  `NodeContainerComponent.Nodes` used by the direction check. When adding the tag to a shape,
+  include `Pipe` in the same `Tag` block: a child `Tag` component replaces the inherited tag list
+  rather than extending it.
+- **Component-specific `ComponentStartup` subscriptions are single-handler.** The directed event bus
+  stores one subscription per (component, event) pair, so a second
+  `SubscribeLocalEvent<NodeContainerComponent, ComponentStartup>` throws
+  `Duplicate Subscriptions` during system initialization. `NodeContainerSystem` owns that pair; add
+  a broadcast hook instead (`NodeContainerStartedEvent` was added for the pipe-node summary).
+- **The pipe-node summary must not be created on uninitialized maps.**
+  `PrototypeSaveTest.UninitializedSaveTest` spawns every map-savable prototype on an uninitialized
+  map and fails if spawning adds components, so `AtmosPipeNodeInfoSystem` skips `Refresh` unless
+  `SharedMapSystem.IsInitialized(transform.MapID)` and fills the summary from a
+  `NodeContainerComponent/MapInitEvent` hook when the map is initialized. Do **not** move the hook
+  to `MapInitEvent` alone: live ship saves skip `MapInitEvent` for `mapInit: true` entities, and
+  their map is initialized before the entities start, so the `NodeContainerStartedEvent` path is
+  what supplies the summary there.
+- **RPD compressed matter is not 1:1.** `RCDAmmoSystem` treats one cartridge charge as two tool
+  charges when `RCDComponent.IsRpd` is set. It consumes only the cartridge charges needed for the
+  missing tool charges, and rounds the consumption up when the multiplier does not divide evenly,
+  so a partially filled tool can leave a partial cartridge behind. The RCD stays 1:1; don't apply
+  the multiplier in the deconstruction refund path without deciding whether recovered matter
+  should also be worth double.
 - **`RCDComponent.SpeedMultiplier` divides delays, so >1 is faster.** It is applied in
   `OnAfterInteract` to prototype and per-entity deconstruct delays; a non-positive value is ignored
   (var-edit safety) and `InstantConstruction` still forces 0.
@@ -777,324 +822,3 @@ so these fail only in CI:
   `StripStationReferences`/`UndockShuttle` must go through `RestoreStoreFailure` (station refs, deed,
   docking to the *grid it was docked to*). A stripped ship has no station member/bound components, so
   its station-bound machinery and power look "soft-broken" until it is restored.
-
-## 29. Circuitry Lua runtime (2026-11)
-
-- **MoonSharp is server-only.** `Content.Server` references it; `Content.Shared` and
-  `Content.Client` must never reference MoonSharp types or the package. The client sandbox
-  type-checker will reject shared/client Lua interop, and shipping the interpreter to clients is
-  unnecessary. BUI state carries strings/enums only.
-- **Never call `Script.DoString` on player source.** Load it with `Script.LoadString` and run the
-  returned chunk as a coroutine with `AutoYieldCounter` set. The chunk defines globals (`main`);
-  the scheduler extracts `main` only after the chunk finishes.
-- **MoonSharp yield semantics are split.** `AutoYieldCounter` preemption returns a
-  `DataType.YieldRequest` with `Forced = true` and leaves `Coroutine.State == ForceSuspended`.
-  An explicit yield (our `robot.wait`) returns the yielded value directly (usually
-  `DataType.Number`) and leaves the coroutine `Suspended`. A completed coroutine is `Dead`.
-  Scheduler logic must check `Coroutine.State`, not only `result.Type`; a `YieldRequest`-only
-  check silently treats `robot.wait` as completion.
-- **`robot.wait` cannot yield across a `pcall`/C-call boundary.** MoonSharp throws a runtime error
-  for `pcall(function() robot.wait(...) end)`. Document this to script authors; do not enable the
-  `Coroutine` standard library.
-- **Budgets are mandatory.** Every program gets a per-resume allocation watchdog, a tick budget,
-  `AutoYieldCounter`, a source-size cap and a no-wait timeout. `GC.GetAllocatedBytesForCurrentThread`
-  is coarse and cannot prevent a single huge allocation, so allocation-heavy stdlib functions
-  (`string.rep`, `string.format`, later `table.concat`) are wrapped with size limits.
-- **GLua helpers are a trusted Lua chunk, not a new interop surface.** `LuaSandbox` installs
-  `table.HasValue`/`Contains`, `IsEmpty`, `Count`, `GetKeys`, `KeyFromValue`, `Random`, `Add`,
-  `RemoveByValue`, `string.Trim`/`StartsWith`/`StartWith`/`EndsWith`/`Split`, and type shorthands
-  `istable`/`isstring`/`isnumber`/`isbool`/`isfunction` by loading one internal `LoadString` chunk.
-  Keep helpers pure Lua and avoid adding `table.Copy`/`Merge` or other
-  deep/recursive operations without limits; do not expose GLua filesystem, networking, hook, entity
-  or userdata APIs.
-- **Opaque handles only.** Never expose `EntityUid` or CLR objects as Lua userdata. Perception and
-  action APIs receive integer handles resolved through a per-program map, with range/line-of-sight
-  checks and a small whitelisted inspection surface (name, job, clothing slots, held items).
-- **`EntitySpokeEvent` is server-side.** Hearing must subscribe to it on the server and range-filter
-  locally; the client never sees the event. Speech events should carry the speaker's opaque handle
-  and a small identity snapshot (`name`, ID name, job), not a live entity reference.
-- **Hand IDs are container IDs.** `HandsSystem.AddHand` reuses/creates a container named after the
-  hand. Never use an item-slot ID as a hand ID: a hand named `left_arm` collides with the
-  manipulator slot `left_arm`, so the hand "holds" the installed module and `TryPickupAnyHand`
-  fails while `EnumerateHeld` reports one item. The circuitry assembly uses `hand_<slot>`
-  (`hand_left_arm`); the integration test asserts pickup succeeds after installing an arm.
-- **Do not open a BUI on an item inside an item slot.** `SharedUserInterfaceSystem.TryOpenUi` runs
-  the normal interaction range/access check; a CPU inside the chassis fails `UiRangeCheck` with a
-  `DebugAssertException`. The installed CPU editor is therefore served by the **chassis** under
-  `CircuitCpuUiKey`; the CPU item keeps its own UI only for when it is held in hand. When two BUIs
-  share a component, remember `Subs.BuiEvents` subscribes `BoundUIOpenedEvent` per key, and Robust
-  rejects duplicate component/event subscriptions. Register the open event once and branch on
-  `args.UiKey`.
-- **A `BaseWindow` subclass needs an explicit background.** The base control only provides drag,
-  resize and close plumbing; custom windows must add a full-size `PanelContainer
-  StyleClasses="AngleRect"` (and usually `MouseFilter="Stop"`) or their labels/buttons float over
-  the game with no frame.
-
-## 30. Circuitry security, source uploads and analyzers (2026-11)
-
-- **Assembly locks are server-authoritative.** `Locked` + `OwnerUserId`/`OwnerName` live on
-  `CircuitAssemblyComponent`. The first lock claims the current session; only that user id or an
-  admin may insert/eject modules, rename, run/stop or save programs. The UI is view-only while
-  locked, but a malicious client can still send BUI messages; every handler must re-check
-  `CircuitAssemblySystem.CanModify` (and `TrySetLocked` for the lock action). Do not rely on the
-  client's disabled buttons.
-- **Large program transport.** Basic CPU source cap is 256 KiB and advanced is 512 KiB. The source
-  field in `CircuitCpuState` is nullable: send it only on open/save, never in the 0.5 s status
-  refresh. Save handlers validate UTF-8 byte count and rate-limit to one save per second per CPU.
-  Lidgren fragments the BUI message; the cap is the server safety boundary. Do not add an
-  unbounded source field to a replicated component.
-- **Analyzer access restrictions.** `SeedData`, `LabelComponent` and `MobStateComponent` have
-  `[Access]` restrictions. Use access-safe fields/systems; for mob state use
-  `MobStateSystem.IsAlive/IsCritical/IsDead`, not `MobStateComponent.CurrentState` directly. Avoid
-  reading `LabelComponent.CurrentLabel` unless the system has the required access.
-- **Beaker slots are fixed indices.** `beaker1..4` are four separate item slots; the assembly cache
-  is a four-entry list. Lua indices are 1-based and must be validated by `TryGetBeaker`. Do not
-  assume one beaker or that slot iteration order is stable.
-
-## 31. Circuitry radio modules (2026-11)
-
-- **Encryption keys are the only channel authority.** `CircuitRadio` holds an
-  `EncryptionKeyHolderComponent`; `robot.radio` must resolve the requested channel against
-  `keys.Channels` and never accept an arbitrary prototype id. `robot.radio_channels()` must also
-  read from the key holder, not from a hard-coded list. The module ships with a common key so it
-  works out of the box, but swapping keys must immediately change the usable channel set.
-- **Refresh the passive listener on key changes.** Inserting/removing a key fires
-  `EncryptionChannelsChangedEvent` on the module, not on the chassis. `CircuitRadioSystem` handles
-  that event and calls `CircuitAssemblySystem.RefreshRadio`; do not assume `Recompute` runs. The
-  assembly's `ActiveRadioComponent` is the receive subscription used by `RadioSystem`.
-- **Pass the module as the radio source.** `RadioSystem.SendRadioMessage` checks
-  `TelecomExemptComponent` on the radio source to decide whether a telecom server is required.
-  `CircuitRadio` is `TelecomExempt`; passing the assembly instead would make common-channel traffic
-  depend on a powered telecom server. The explicit `frequency: channel.Frequency` also keeps the
-  receiver frequency check consistent.
-- **Skip self-received radio traffic.** The assembly also has `ActiveRadioComponent`; `RadioSystem`
-  raises `RadioReceiveEvent` on every listening radio, including the sender. `CircuitRadioSystem`
-  ignores events whose `MessageSource` is the assembly (or whose channel is no longer in the keys)
-  to avoid feedback loops. Do not add `RadioSpeakerComponent` to the chassis.
-- **Keys are inserted through the chassis.** Using an encryption key on the assembly forwards the
-  `InteractUsingEvent` to the radio module because the module is inside an item slot. The lock check
-  must happen before forwarding. Key extraction uses the module's normal screwdriver interaction;
-  eject the module first if needed. Do not bypass the item-slot containment rules by inserting keys
-  directly into a hidden container.
-- **Radio receive text is the transmitted text.** Programs get `args.Message` (clean text), not the
-  range-degraded chat rendering. `RadioSystem` still applies channel range/frequency/server checks
-  before raising the event. If degradation should affect robot logic later, mangle explicitly and
-  document the behavior change.
-
-## 32. Circuitry power tuning and find visibility (2026-11)
-
-- **Power draws are fractional on purpose.** A fully loaded assembly must idle far below the
-  microreactor's 12 charge/sec self-recharge. Current values: base 0.05, CPU 0.25/0.4, locomotion
-  0.05/0.1/0.15, manipulator 0.05, speaker 0.02, sensor 0.05, radio 0.05, analyzers 0.05; movement
-  0.02–0.06 per metre; actions 0.02–0.1. Raising any module back to whole units will drain a full
-  microreactor while idle. `CircuitryPowerTest` asserts the fully loaded idle draw stays under 2/s
-  and action/movement costs stay at or below 0.1.
-- **`robot.find` only searches uncontained entities.** `ScanEntities` uses
-  `LookupFlags.Uncontained`; items in toolboxes, belts, backpacks, lockers, or hands are excluded.
-  A wrench next to the robot but inside a container is not findable; `robot.held()` covers the
-  assembly's own hands, `robot.inspect(person)` shows a person's held names, or target the
-  container. `find` and all `nearest_*` helpers return a bare handle on success, or `nil, reason`
-  for no sensor, no power or no match, so scripts can distinguish power loss from an absent item.
-  Keep multi-result APIs (`scan*`, tile lists, `held`) as tables; their entity entries expose the
-  handle in `.id` rather than replacing the table with a bare handle list.
-- **Idle draw is per second, not per tick.** `CircuitPowerSystem` charges `IdlePowerDraw` once per
-  second; movement debt accumulates per metre and actions charge once per call. Do not multiply
-  these values by tick rate when tuning.
-
-- **`CircuitAssemblyFilled` is the debug variant.** It uses `ItemSlots.startingItem` for every
-  slot, not `ContainerFill`, so the chassis sees the modules through `ItemSlotsSystem` and
-  recomputes capabilities normally. Keep it in sync with the base `CircuitAssembly` slot list if
-  slots are added/renamed; `CircuitryPowerTest` spawns it and asserts every capability is present.
-
-## 33. Circuitry scan kinds (2026-11)
-
-- **Do not trust `ItemComponent` to mean "loose item".** Gas pipes, vents, scrubbers, cables,
-  disposals and constructible machines often inherit `BaseItem` and keep `ItemComponent` so they
-  can be built, but they are installed structures. `CircuitLuaApiSystem.GetKind` classifies an
-  item as `structure` when it is anchored or has `AnchorableComponent`, and classifies
-  `MachineComponent` entities as `structure` even without `ItemComponent`. Walls/windows stay
-  `object` so structure scans do not return every wall. `scan_items` only returns unanchored,
-  non-anchorable items; `scan_structures` / `nearest_structure` cover installed machinery and
-  pipework.
-- **Scan calls share the 0.25 s cooldown.** Calling `scan_items` then `scan_structures`
-  immediately in the same Lua tick returns `false, "scan cooldown"` for the second call; put a
-  `robot.wait(0.3)` between category scans. `nearest_*` bypasses the cooldown like `find`.
-- **Single-result lookups return handles directly.** `find` and `nearest_*` produce the opaque
-  integer handle; do not wrap them in a table lookup. Multi-result lookups stay tables, with
-  `.id` on each entity entry. `inspect` stays a metadata snapshot and returns item names in
-  `wearing`/`held`; use `held()` for the assembly's own handles.
-- **Test fixtures on a map may not be anchored by default.** `SpawnEntity("GasPipeStraight", ...)`
-  in an integration test can have `Transform.Anchored == false` even though the prototype asks for
-  anchoring, depending on the parent coordinates. The anchorable check is what makes the
-  classification robust; keep it.
-
-## 34. Circuitry autonomy perception and device-link signals (2026-11)
-
-- **Emotes are directed events.** `EmoteEvent` is raised on the emoting entity, so a global
-  `SubscribeLocalEvent<EmoteEvent>` cannot know the source. `ChatSystem.TryInvokeEmoteEvent` now
-  also broadcasts `EmotePerformedEvent` (shared `Content.Shared.Emoting`) carrying the source and
-  emote prototype; `CircuitHearingSystem` listens to that. Do not subscribe to `EmoteEvent`
-  globally and expect a source.
-- **Device-link ports live on the chassis, not the radio item.** `CircuitAssemblySystem.RefreshRadio`
-  uses `DeviceLinkSystem.EnsureSinkPorts(assembly, "Trigger", "On", "Off")` and
-  `EnsureSourcePorts(assembly, "Pressed", "On", "Off")` whenever a radio module is installed. The
-  sink/source components are removed when the radio module is removed. A remote signaller links
-  `Pressed` -> `Trigger`; the assembly's `Pressed` source can link to a device sink. `robot.send_signal`
-  fires the selected source port; `robot.trigger` raises use-in-hand on the active held item (for a
-  remote signaller or flashlight). Signal/trigger actions are rate-limited to 0.5 s.
-- **Signal and radio are separate paths.** Radio chat uses encryption keys and `RadioReceiveEvent`;
-  device-link signals use `Trigger`/`Pressed` and `SignalReceivedEvent`. A radio module with no keys
-  can still receive device-link signals, but cannot transmit radio chat. `CircuitRadioSystem`
-  queues signals as `type = "signal"` with `port` and `state`.
-- **Damage/attacked/projectile events are directed at the assembly.** Subscribe on
-  `CircuitAssemblyComponent, DamageChangedEvent/AttackedEvent/ProjectileHitEvent`. Do not queue
-  healing (`DamageIncreased` false). `DamageChangedEvent.DamageDelta` and
-  `ProjectileHitEvent.Damage` become Lua `damage` tables; `AttackedEvent` carries the weapon handle
-  in the event's `item` field.
-- **Decals are grid tile data, not entities.** `robot.decals` uses
-  `DecalSystem.GetDecalsInRange(gridId, localPosition, radius, d => d.Cleanable)`, so the assembly
-  must be on a grid with a `DecalGridComponent`; only cleanable decals are returned. Decal IDs are
-  `uint`, not entity handles.
-- **Door access is separate from pathfinding.** `walk_to` does not plan around locked/bolted doors
-  and will not open them. `door_status` reads `DoorVisuals.State` via appearance, `DoorBoltComponent`
-  bolts, `AirlockComponent.Powered`, `FirelockComponent.IsLocked`, and `AccessReaderSystem.IsAllowed`
-  for the assembly; use `scan_doors`/`can_open` and `walk_status() == "no_path"` to decide whether to
-  reroute or interact. Do not read `DoorComponent.State` directly (system access restricted).
-- **Item solutions and injectors need special handling.** `item_status`/`solution` auto-select
-  `InjectorComponent.SolutionName`, refillable, drainable, or a single solution; `transfer` uses the
-  same selection for both sides. `TryTransferSolution` mutates the source solution, so call
-  `UpdateChemicals` on it after a generic transfer. `inject` sets the injector to Inject mode and
-  raises `AfterInteractEvent`, because `use_item` raises only `InteractUsingEvent` and never reaches
-  `InjectorSystem`. Injection is a do-after; scripts should wait. Both `inject` and the transfer
-  APIs are rate-limited to 0.5 s (`NextAction`/`NextTransfer`); do not share `NextAction` with
-  transfers or a script that transfers then injects in the same tick will lose the injection.
-
-## 35. Circuitry editor UI (2026-11)
-
-- **Run must save the current editor contents first.** `CircuitCpuRunMessage` carries an optional
-  source string; `CircuitCpuUiSystem.OnAssemblyRun`/`OnRun` validate and store it before
-  `LuaBrainSystem.Start`. Do not revert to a parameterless Run that starts the last saved source;
-  users edit and press Run without pressing Save. The editor integration test covers this.
-- **The code editor is a custom content control.** `LuaCodeEditor` owns rendering (inline token
-  colors and line numbers), input, selection, clipboard, undo/redo and scroll state. It is not the
-  engine `TextEdit`; do not reintroduce `TextEdit`-specific APIs (`TextRope`, `InsertAtCursor`,
-  `StyleClasses="monospace"`). Tab inserts four spaces via `TextTabComplete`; paste normalizes
-  tabs/newlines in the control itself.
-- **Text input must be started/stopped with keyboard focus.** Unlike keybinds (Tab still works),
-  printable characters only arrive as `TextEntered` after `KeyboardFocusEntered` calls
-  `Root?.Window?.TextInputStart()`; `KeyboardFocusExited` calls `TextInputStop()`. If `Editable`
-  changes while focused, start or stop text input there too. Missing this makes the editor look
-  focused but silently unable to type.
-- **API names are also a highlighter list.** `LuaCodeEditor.ApiFunctions` holds all `robot.*` and
-  GLua-style helper names used for syntax color. When adding/renaming a Lua API, add the bare name
-  there too; call-site detection only colors names immediately followed by `(` and will miss
-  references or spaced forms.
-- **DrawString Y is the top of the line, not the baseline.** `DrawingHandleScreen.DrawString`
-  internally adds the font ascent. Passing `lineTop + ascent` shifts all text down by an ascent
-  while the caret/selection stay at the line top. Use the line top for both.
-- **Use real glyph advances for caret, selection and hit-testing.** Sum
-  `Font.TryGetCharMetrics(rune, UIScale).Advance` (and use `DrawString`'s returned width for token
-  advances) instead of multiplying by one fixed character width. The fixed-width shortcut is fine
-  only for a perfectly uniform metrics path and visibly drifts as soon as glyph metrics differ.
-- **The editor intentionally has no tooltip.** The "Tab inserts four spaces" hint is not attached to
-  the control; a hover tooltip sits over the code and obscures typing. Do not re-add it.
-- **Dirty tracking belongs to the client.** `CircuitCpuState.Source` is nullable and only sent on
-  open/save/run; periodic 0.5 s refreshes must not overwrite user edits. The window compares the
-  editor text against `_lastServerSource`, disables Save/Revert while clean, and Revert restores the
-  last server source. Do not make Save depend only on the button state on the server.
-- **Save/Run shortcuts live on the editor.** `CircuitEditorSave` (Ctrl+S) and
-  `EngineKeyFunctions.MultilineTextSubmit` (Ctrl+Enter) raise `SaveRequested`/`RunRequested`;
-  the window routes them through the same disabled-state checks as the buttons. Do not call the
-  network messages directly from the editor.
-
-## 36. Client IL sandbox (2026-11)
-
-- **Do not use `System.StringComparer` in `Content.Client`.** The client content sandbox does not
-  whitelist it; `new HashSet<string>(StringComparer.Ordinal)` fails the IL typecheck with
-  `Sandbox violation: Access to type not allowed: [System.Runtime]System.StringComparer`. Use the
-  default `HashSet<string>` comparer (string equality is ordinal) or avoid the comparer entirely.
-- **Run the client IL typecheck after any `Content.Client` change.** A normal `dotnet build
-  Content.Client` does not perform the content sandbox typecheck. Run the headless client and look
-  for `Content.Client: Verified IL` / no `Sandbox violation` lines; the process may still exit 134
-  on OpenGL after typechecking in this environment.
-- **Editor Tab and paste are handled inside `LuaCodeEditor`.** `TextTabComplete` inserts four
-  spaces; paste reads the clipboard itself and normalizes tabs/newlines. Keep both respecting
-  `Editable`. Do not move this back to the window or reintroduce `TextEdit` APIs.
-
-## 37. Circuitry gas analyzer (2026-11)
-
-- **Gas readings come from two paths.** `analyze_gas` raises `GasAnalyzerScanEvent` on the target;
-  devices such as canisters, filters, mixers and vents use that override. Otherwise it walks the
-  target's `NodeContainerComponent` and reads `PipeNode.Air` (scaled by `pipeNode.Volume`). The
-  local `AtmosphereSystem.GetContainingMixture(target, true)` is always returned as `environment`.
-- **Gas entries carry both ids and display names.** Use `gas.id` for logic and `gas.name` only for
-  presentation. Only gases above 0.01 mol are included; pressure/temperature/volume are zero when
-  there is no mixture.
-- **The analyzer requires the gas analyzer module, sensor, power and sensor range/LOS.** It shares
-  `TryAnalyzerTarget` with the botanical/chemical/medical analyzers and consumes action power.
-- **Do not read private gas-analyzer UI state.** `GasAnalyzerSystem` owns the handheld analyzer UI;
-  the circuitry API builds its own tables from the same underlying events/mixtures. Adding new
-  atmos device support should subscribe that device to `GasAnalyzerScanEvent` or expose its pipe
-  nodes, not reach into the UI system.
-- **Puddles are entities, not decals.** `robot.scan_puddles()` filters uncontained `PuddleComponent`
-  entities and reads the solution named by `PuddleComponent.SolutionName` (`puddle`). It requires
-  both the chemical analyzer and a powered sensor, consumes one action-power charge and shares the
-  0.25 s scan cooldown. Cleanable tile stains still use `robot.decals()`; do not mix the two paths.
-
-## 38. Circuitry ownership administration (2026-11)
-
-- **Ownership is still the first-lock claim.** `TrySetLocked` claims `OwnerUserId`/`OwnerName` when
-  the assembly is first locked. There is deliberately no player-facing transfer field: unlock, and
-  have the new owner lock it. Admins can use `circuitowner <uid> <username|clear>` to transfer or
-  reset ownership; clearing releases both owner and lock so the next locker claims it.
-- **UI controls cannot be trusted.** The rename/lock/eject/run/save messages re-check `CanModify`;
-  a non-owner can still send BUI messages manually. Do not remove those checks because the buttons
-  are disabled client-side.
-- **The client never receives per-actor permission bits.** The server remains authoritative for
-  every rename/lock/eject/run/save action. A future identification module/component should establish
-  the assembly's own job/access identity rather than weakening these checks.
-
-## 39. Circuitry persistence and Bluespace Dock (2026-11)
-
-- **The assembly inherits `BaseMob`, which is `save: false`.** `CircuitAssembly` explicitly sets
-  `save: true`; without it the grid serializer silently drops the whole assembly from ship files
-  even though the save succeeds. Keep that override when changing the parent.
-- **Saved live entities carry `mapInit: true`, so the map loader skips `MapInitEvent`.** Derived
-  slot caches (`Cpu`, `Cell`, modules, hands, capabilities, power draw) are runtime-only; do not
-  serialize them. `CircuitAssemblySystem.OnStartup` rebuilds them via `Recompute` when the component
-  starts, which covers both plain `TryLoadGrid` and Bluespace Dock retrieval. Do not remove that
-  subscription or replace it with a MapInit-only path.
-- **Bluespace Dock uses the same `TrySaveGrid`/`TryLoadGrid` path** through
-  `BluespaceDockSystem.TrySaveShipFile`/`TryLoadShipFile`, with `IncludeNullspace` and a fallback
-  that skips unserializable entities. The dock test (`CircuitryPersistenceTest`) asserts source,
-  installed modules, lock and owner after a full ship-file round trip.
-- **Test grids need a tile at the spawn point.** `SharedGridTraversalSystem` detaches an entity from
-  a grid when its tile is empty; a bare `CreateGridEntity` grid will reparent the assembly to the
-  map and the grid save will contain only the grid. Place a tile (or use `Pair.CreateTestMap`) first.
-
-## 40. Circuitry identity, ChemMaster and kill switch (2026-11)
-
-- **Identity APIs read ID cards, not raw components.** `has_job`, `has_access` and
-  `wanted_status` all require a powered sensor and line of sight, consume action power, and use
-  `IdCardSystem.TryFindIdCard` plus `AccessSystem.TryGetTags`. `has_access("Security")` is the
-  practical NFSD check; pirates carry the `Pirate` access tag. Do not expose `EntityUid` or the full
-  `AccessComponent` to Lua.
-- **Wanted status comes from the sector criminal record.** `WantedStatusSystem.TryGetCriminalRecord`
-  uses the same record key as the wanted-list cartridge. The Lua table exposes status, reason,
-  initiator and history; reason is the authoritative text security entered. Tests set up a sector
-  service host because the record store does not exist on a bare test map.
-- **ChemMaster actions must be raised as concrete BUI message types.** `RaiseChemMasterMessage<T>`
-  sets both `Actor` (the assembly) and `UiKey`, then raises the concrete `ChemMaster*Message` on the
-  machine. Raising through a `BoundUserInterfaceMessage` base reference dispatches only base
-  subscriptions, so the handler never runs. Reusing `ChemMasterSystem` this way keeps buffer, pill
-  dosage, output-container and admin-log rules in one place.
-- **ChemMaster has no public mutator API.** Do not duplicate its private transfer/withdraw logic in
-  the Lua system; send the same messages the UI sends. The Lua layer only validates manipulator,
-  power, range, output container, buffer volume and its own 0.5 s action/transfer cooldowns.
-- **`circuitry.lua.enabled` is the emergency kill switch.** It is checked in both
-  `LuaBrainSystem.Start` and `Update`; disabling it stops and clears all runtimes on the next tick,
-  and re-enabling does not auto-restart them. Keep scripts explicit-start only.
-- **Chassis variants are cosmetic.** Engineering/janitorial/medical/mining/service/peacekeeping/
-  derelict assemblies reuse existing `Mobs/Silicon/chassis.rsi` states; they are mechanically
-  identical and inherit `save: true`. There is no construction path yet, so they are admin-spawn
-  only for live testing.

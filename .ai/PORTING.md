@@ -840,13 +840,34 @@ Follow-up on the RCD/RPD after the second pass:
   device-on-pipe placement. Instead the RCD/RPD raises `RCDAtmosOverlapAttemptEvent`, and the
   server's `PipeRestrictOverlapSystem` compares the placement's resolved prototype nodes (mirror
   flip + RPD layer variant included) with the anchored nodes on the tile: only a same-layer,
-  same-direction overlap is vetoed. `Unstackable` remains on the devices themselves (vents, pumps,
-  sensors, manifold), so a second device on the same layer is still rejected. Pipes have no
-  fixtures, which is why the old collision check let duplicates through (the overlap popup came
-  from `PipeRestrictOverlapSystem` after the spawn).
+  same-direction overlap is vetoed. The layer itself comes from `RPDLayerEvent`, because the
+  server's click location is snapped to the tile centre; `RCDComponent.LastKnownPipeLayer` is
+  server-only working state and the resolved value rides in `RCDDoAfterEvent.Layer`. `Unstackable` remains on the devices themselves (vents, pumps,
+  sensors), so a second device on the same layer is still rejected.
+- **Pipe segments never share a layer.** The `AtmosPipeSegment` tag (`_PS/tags.yml`) marks the five
+  plain pipe shapes, the manifold and the broken pipe. Two segments on one layer have the same
+  sprite draw depth and z-fight even when their node directions do not overlap, so
+  `IsConstructionLocationValid` rejects that pair outright. Devices are exempt: their sprites use
+  a different draw depth, and the node check decides whether they fit. The tag is networked, so
+  the client's placement ghost also shows the stack as invalid; the client still cannot read the
+  server-only `PipeNode` data used for direction conflicts.
 - Test: `Content.IntegrationTests/Tests/_PS/RcdAtmosStackingTest.cs` (pipe-on-pipe same layer
   blocked, empty tile allowed, another layer allowed, valid vent-on-pipe allowed, conflicting
-  vent node blocked, non-conflicting pipe orientation allowed, second device blocked).
+  vent node blocked, second device blocked).
+- **Client ghost parity (2026-11)**: the placement ghost used to stay green for a node conflict
+  because `NodeContainerComponent.Nodes` is `serverOnly`. The server now maintains a networked
+  `AtmosPipeNodeDirectionsComponent` (one `PipeDirection` mask per atmos layer) on entities with
+  pipe nodes, refreshed by the broadcast `NodeContainerStartedEvent`, by `MapInitEvent` (summaries
+  are only created once the map is initialized) and by `AtmosPipeLayerChangedEvent`. The client
+  caches each ghost prototype's node directions through
+  `AtmosPipeNodeInfoRequestEvent` / `AtmosPipeNodeInfoResponseEvent` (the prototype's `Nodes` are
+  server-only too), then runs the same layer/direction comparison in
+  `AtmosPipeNodeOverlapClientSystem`. Test: `RcdAtmosGhostTest`.
+- **RPD compressed matter (2026-11)**: `RCDAmmoSystem` gives the RPD two tool charges per
+  compressed-matter charge, so one standard 30-charge cartridge fills its 60-charge tank instead of
+  half-filling it. The RCD stays 1:1. Only as much of the cartridge as the missing charges need is
+  consumed (a half-full RPD uses 15 of the 30, leaving 15). Test: `RcdBehaviorTest`
+  (`OneCompressedMatterCartridgeFillsTheTool`, `RpdUsesOnlyAsMuchMatterAsTheMissingCharges`).
 
 ## 25. 2026-10 Salto expedition ship (Coyote `_CS`)
 
@@ -1104,29 +1125,3 @@ feeding produce into it for every recipe.
   `Resources/Prototypes/Entities/Structures/Machines/lathe.yml`; all limits live in the
   component defaults.
 - **Validation**: full solution build; rebuilt `Content.YAMLLinter` (`No errors found`).
-
-## 33. 2026-11 Bluespace miner (SPLURT/Skyrat BYOND)
-
-The SPLURT `modular_skyrat/modules/bluespace_miner` machine is ported as a passive ore generator
-that feeds the Frontier ore silo instead of spawning sheets on the floor.
-
-- **Source**: SPLURT/Skyrat `modular_skyrat/modules/bluespace_miner/code/bluespace_miner.dm`
-  (also mirrored as `modular_nova/modules/bluespace_miner`; sprite credit Jake Park). The atmos
-  temperature/pressure checks, CO2/tritium exhaust, proximity lockout, emag bananium and part
-  upgrades were deliberately dropped — the machine is a straightforward silo feeder here.
-- **Prototypes**: `Resources/Prototypes/_PS/Entities/Structures/Machines/bluespace_miner.yml`
-  (`PSBluespaceMiner`) and
-  `Resources/Prototypes/_PS/Entities/Objects/Devices/Circuitboards/Machine/bluespace_miner.yml`
-  (`PSBluespaceMinerCircuitboard`). No research node or lathe recipe yet, so it is admin-spawn
-  only; the board is constructible if an admin spawns it.
-- **Code**: `Content.Server/_PS/Materials/BluespaceMinerSystem.cs` +
-  `Content.Server/_PS/Materials/Components/BluespaceMinerComponent.cs`. The miner carries
-  `OreSiloClient` + `MaterialStorage`, so it appears in the silo UI like a lathe. Production goes
-  to the linked silo when it can transmit, otherwise to the machine's local 5,000-unit buffer.
-- **Tuning**: `SecondsPerCycle`, `AmountPerCycle`, `OreWeights` and `Enabled` are
-  `[ViewVariables(VVAccess.ReadWrite)]`. Defaults only include the basic ores (`RawIron`,
-  `RawQuartz`, `Coal`, `RawSilver`, `RawGold`, `RawSalt`); rare ores are not in the table.
-- **Assets**: `Resources/Textures/_PS/Structures/Machines/bluespace_miner.rsi`, converted from the
-  source `.dmi` (all eight states, `miner_on` animation preserved).
-- **Validation**: full solution build; rebuilt `Content.YAMLLinter` (`No errors found`);
-  `BluespaceMinerTest` passes; headless client verifies IL and preloads the new RSI with no errors.

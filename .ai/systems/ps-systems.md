@@ -1033,8 +1033,12 @@ Small features that did not get their own section yet:
   `.../_PS/RCD/rcd.yml`, textures under `Resources/Textures/_PS/...`, locale
   `Resources/Locale/en-US/_PS/rcd.ftl`. A follow-up pass added diagonal solid/shuttle wall modes
   and mining walls, a per-tool `speedMultiplier` (the RCD ships at 2x), and node-aware per-layer
-  anti-stacking (a vent/pump may share a tile with the pipe that feeds it; only same-layer
-  direction conflicts are rejected). Details:
+  anti-stacking (a vent/pump may share a tile with the pipe that feeds it; pipe segments cannot
+  share a layer because their sprites z-fight, and remaining direction conflicts are rejected;
+  the placement ghost previews those through a networked pipe-node summary plus a cached
+  ghost-prototype lookup). The RPD also treats one
+  compressed-matter charge as two tool charges, so one 30-charge cartridge fills its 60-charge
+  tank; the RCD keeps the normal 1:1, 30-charge behaviour. Details:
   `.ai/PORTING.md` §24-24b; traps: `.ai/HAZARDS.md` §26. The RPD deconstruct whitelist (`rpd: true`)
   is wired on `GasPipeBase` plus the air alarm, air sensor and gas pipe sensor, so the RPD removes
   what it builds while the RCD stays off atmos entities.
@@ -1059,34 +1063,12 @@ Copyrighted jukebox tracks live outside the git history. `Resources/Prototypes/_
 local `attributions.yml` in the audio folder records the YouTube source of every file.
 
 - Track definitions: `Resources/Prototypes/_PS/Jukebox/Standard.yml`; the record prototypes
-  (`PalmtreeRecord`, shown as "Palm Record", `StarjunkRecord` and `TunesOfAnarchyRecord`) are
+  (`PalmtreeRecord`, shown as "Palm Record", and `StarjunkRecord`) are
   `Resources/Prototypes/_PS/Jukebox/records.yml`.
 - `Content.Server/_PS/Audio/JukeboxLocalTracksSystem.cs` injects `PalmtreeRecord` into every
-  jukebox on map init and adds `StarjunkRecord` and `TunesOfAnarchyRecord` to the
-  `NFJukeboxRecordSpawner` dungeon loot pool, but only when the local prototypes are present, so
-  clean checkouts and CI never reference missing audio.
+  jukebox on map init and adds `StarjunkRecord` to the `NFJukeboxRecordSpawner` dungeon loot pool,
+  but only when the local prototypes are present, so clean checkouts and CI never reference missing
+  audio.
 - Audio is downloaded with `dlx`, converted with `convertall` and re-encoded to mono Vorbis
   (`-ac 1`), matching the other jukebox folders.
 
-## Bluespace miner (2026-11)
-
-Passive ore generator ported from the SPLURT/Skyrat `modular_skyrat/modules/bluespace_miner`
-module and adapted to Frontier's ore silo network.
-
-- **Prototype**: `Resources/Prototypes/_PS/Entities/Structures/Machines/bluespace_miner.yml`
-  (`PSBluespaceMiner`) and its machine board
-  `Resources/Prototypes/_PS/Entities/Objects/Devices/Circuitboards/Machine/bluespace_miner.yml`
-  (`PSBluespaceMinerCircuitboard`). Admin-spawn only for now; no research/recipe wiring.
-- **Code**: `Content.Server/_PS/Materials/BluespaceMinerSystem.cs` and
-  `Content.Server/_PS/Materials/Components/BluespaceMinerComponent.cs`.
-- **Behavior**: while powered and with its wires panel closed, every `SecondsPerCycle` (default
-  6 s) it picks one ore from `OreWeights` and adds `AmountPerCycle` material units (default 100 =
-  one ore) to the linked `OreSilo` (`OreSiloClient`). If no silo is linked, or the silo cannot
-  receive, the ore is buffered in the machine's own `MaterialStorage` (5,000 units) and transfers
-  to the silo when linked through the silo UI. All four values are `ViewVariables(ReadWrite)`.
-- **Ores**: the defaults only contain `RawIron`, `RawQuartz`, `Coal`, `RawSilver`, `RawGold` and
-  `RawSalt`. Rare ores are deliberately absent; an admin can add them through VV if needed.
-- **Sprite**: `Resources/Textures/_PS/Structures/Machines/bluespace_miner.rsi` (SPLURT/Nova
-  module, credited to Jake Park; CC-BY-SA-3.0).
-- **Tests**: `Content.IntegrationTests/Tests/_PS/BluespaceMinerTest.cs` links a powered miner to a
-  silo and asserts that only basic ore reaches the silo.

@@ -1,3 +1,4 @@
+using Content.Shared.Atmos.Components;
 using Robust.Shared.Map;
 using Robust.Shared.Maths;
 using Robust.Shared.Prototypes;
@@ -39,14 +40,15 @@ public sealed class RCDColorChangeMessage(NetEntity netEntity, string key) : Bou
 }
 
 /// <summary>
-/// Sent by the RPD placement mode whenever the local eye rotation changes, because
-/// eye rotation is not networked and the server needs it to resolve the pipe layer.
+/// Sent by the RPD placement mode whenever the layer under the cursor changes. The server's click
+/// location is snapped to the tile centre, so it cannot reproduce the client's cursor offset and
+/// must be told the layer explicitly.
 /// </summary>
 [Serializable, NetSerializable]
-public sealed class RPDEyeRotationEvent(NetEntity netEntity, float? eyeRotation) : EntityEventArgs
+public sealed class RPDLayerEvent(NetEntity netEntity, AtmosPipeLayer layer) : EntityEventArgs
 {
     public readonly NetEntity NetEntity = netEntity;
-    public readonly float? EyeRotation = eyeRotation;
+    public readonly AtmosPipeLayer Layer = layer;
 }
 
 // Palmtree: lets the server veto an RCD/RPD placement that would overlap an existing pipe node.
@@ -54,9 +56,11 @@ public sealed class RPDEyeRotationEvent(NetEntity netEntity, float? eyeRotation)
 // validation cannot compare directions on its own.
 /// <summary>
 /// Raised by the RCD/RPD before building an entity that carries pipe nodes (pipes, pumps, vents,
-/// sensors, ...). A server-side handler cancels it when the new entity's pipe nodes would overlap
-/// an existing pipe's nodes on the same atmos layer, so that legitimate overlaps - a vent on a
-/// pipe, or the same pipe on another layer - still go through.
+/// sensors, ...). The server's <c>PipeRestrictOverlapSystem</c> cancels it when the new entity's
+/// pipe nodes would overlap an existing pipe's nodes on the same atmos layer, so that legitimate
+/// overlaps - a vent on a pipe, or the same pipe on another layer - still go through. The client's
+/// <c>AtmosPipeNodeOverlapClientSystem</c> answers the same event from networked node summaries so
+/// the placement ghost turns red too.
 /// </summary>
 [ByRefEvent]
 public record struct RCDAtmosOverlapAttemptEvent(
