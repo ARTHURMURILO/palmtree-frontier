@@ -32,6 +32,7 @@ public sealed class CircuitLuaRuntime
     public double SensorQueryTokens = MaxSensorQueryTokens;
     public TimeSpan LastSensorQuery;
     public TimeSpan NextWalk;
+    public TimeSpan NextPowerTransfer;
     public TimeSpan NextChat;
     public TimeSpan NextRadio;
     public TimeSpan NextSignal;
