@@ -24,12 +24,21 @@ public sealed class CircuitSlotState
 }
 
 [Serializable, NetSerializable]
+public sealed class CircuitHandState
+{
+    public string HandId = string.Empty;
+    public string Label = string.Empty;
+    public string? ItemName;
+}
+
+[Serializable, NetSerializable]
 public sealed class CircuitAssemblyState : BoundUserInterfaceState
 {
     public string Name = string.Empty;
     public bool Locked;
     public string? OwnerName;
     public List<CircuitSlotState> Slots = new();
+    public List<CircuitHandState> HeldItems = new();
     public float Power;
     public float MaxPower;
     public bool Powered;
@@ -68,6 +77,17 @@ public sealed class CircuitAssemblyEjectMessage : BoundUserInterfaceMessage
     public CircuitAssemblyEjectMessage(string slotId)
     {
         SlotId = slotId;
+    }
+}
+
+[Serializable, NetSerializable]
+public sealed class CircuitAssemblyTakeHeldMessage : BoundUserInterfaceMessage
+{
+    public string HandId;
+
+    public CircuitAssemblyTakeHeldMessage(string handId)
+    {
+        HandId = handId;
     }
 }
 

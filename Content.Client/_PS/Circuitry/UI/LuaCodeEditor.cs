@@ -53,6 +53,7 @@ public sealed class LuaCodeEditor : Control
     {
         // robot.*
         "self", "position", "power", "health", "has_module", "move", "walk_to", "walk_to_async",
+        "battery", "charge", "charge_from",
         "stop",
         "walk_status", "scan", "scan_mobs", "scan_items", "scan_structures", "scan_doors",
         "find", "inspect", "can_see", "can_hear", "nearest_mob", "nearest_person",
