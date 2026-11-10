@@ -4,6 +4,9 @@
   parent: [ NFClothingBeltStorageBase, BaseC3ContrabandNoValue, ContrabandClothing ]
   description: Webbing created by Arcadia Industries. Seems very capable of fitting many items.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _NF/Clothing/Belt/arcadia_webbing.rsi
   - type: Clothing
@@ -15,6 +18,9 @@
   parent: [ NFClothingBeltStorageBase, BaseC3ContrabandNoValue, ContrabandClothing ]
   description: A belt created by Arcadia Industries. Seems very capable of fitting many items.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _NF/Clothing/Belt/arcadia_belt.rsi
   - type: Clothing
@@ -74,7 +80,7 @@
     sprite: _NF/Clothing/Belt/pilot.rsi
 
 - type: entity
-  parent: [ BaseC2ContrabandUnredeemable, ClothingBeltAssault ]
+  parent: [ BaseC5ContrabandUnredeemable, ClothingBeltAssault ]
   id: ClothingBeltNfsd
   name: NFSD belt
   description: A tactical assault belt.
@@ -85,7 +91,7 @@
     sprite: _NF/Clothing/Belt/nfsd_belt.rsi
 
 - type: entity
-  parent: [ BaseC2ContrabandUnredeemable, ClothingBeltSecurityWebbing ]
+  parent: [ BaseC5ContrabandUnredeemable, ClothingBeltSecurityWebbing ]
   id: ClothingBeltNfsdWebbing
   name: NFSD webbing
   description: A tactical assault webbing.

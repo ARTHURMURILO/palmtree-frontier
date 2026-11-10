@@ -4,6 +4,9 @@
   parent: [ NFClothingDuffel, BaseC3ContrabandNoValue, ContrabandClothing ]
   description: A duffelbag produced by Arcadia Industries
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _NF/Clothing/Back/Duffels/arcadia.rsi
 

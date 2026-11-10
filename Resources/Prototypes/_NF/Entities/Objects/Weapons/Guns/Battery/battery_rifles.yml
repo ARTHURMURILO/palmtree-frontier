@@ -29,7 +29,7 @@
 #region Pulse
 - type: entity
   id: NFWeaponEnergyRiflePulse
-  parent: [ BaseC2ContrabandUnredeemable, NFBaseWeaponEnergyRifleHitScanPulse, NFBaseWeaponFrameEnergyRifleNanotrasen ]
+  parent: [ BaseC5ContrabandUnredeemable, NFBaseWeaponEnergyRifleHitScanPulse, NFBaseWeaponFrameEnergyRifleNanotrasen ]
   name: pulse rifle
   description: |-
     A weapon that is almost as infamous as its users. On the handle is a label that says 'for authorized use only.'
@@ -45,11 +45,14 @@
 #region Other
 - type: entity
   name: emp emitter
-  parent: [BaseC2ContrabandUnredeemable, NFBaseWeaponEnergyRifleEmp, NFBaseWeaponFrameEnergyRifleNanotrasen ]
+  parent: [BaseC3Contraband, NFBaseWeaponEnergyRifleEmp, NFBaseWeaponFrameEnergyRifleNanotrasen ]
   id: WeaponEmpEmitter
   description: |-
     Releases electromagnetic pulses that disrupt or damage many electronic devices or drain power cells, has a slow self charging nuclear powered battery.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _NF/Objects/Weapons/Guns/Battery/emp.rsi
     layers:
@@ -79,10 +82,13 @@
 
 - type: entity
   name: portable particle decelerator
-  parent: [BaseC2ContrabandEngineeringUnredeemable, NFBaseWeaponEnergyRifleParticle, BaseWeaponBattery ]
+  parent: [BaseC3Contraband, NFBaseWeaponEnergyRifleParticle, BaseWeaponBattery ]
   id: NFWeaponParticleDecelerator
   description: A portable particle decelerator capable of decomposing a tesla or singularity.
   components:
+    - type: Contraband
+      severity: Class3General
+      allowedDepartments: [ Engineering, Command ]
     - type: Item
       size: Ginormous # No launcher encumbrance, this thing's an oddball.
     - type: MultiHandedItem

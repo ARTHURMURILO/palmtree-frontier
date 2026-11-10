@@ -99,6 +99,10 @@
   placement:
     mode: AlignAtmosPipeLayers
   components:
+  - type: Tag
+    tags:
+    - Pipe
+    - AtmosPipeSegment # Palmtree: two segments on one layer z-fight
   - type: NodeContainer
     nodes:
       pipe:
@@ -134,6 +138,10 @@
   placement:
     mode: AlignAtmosPipeLayers
   components:
+  - type: Tag
+    tags:
+    - Pipe
+    - AtmosPipeSegment # Palmtree: two segments on one layer z-fight
   - type: NodeContainer
     nodes:
       pipe:
@@ -177,6 +185,10 @@
   placement:
     mode: AlignAtmosPipeLayers
   components:
+  - type: Tag
+    tags:
+    - Pipe
+    - AtmosPipeSegment # Palmtree: two segments on one layer z-fight
   - type: NodeContainer
     nodes:
       pipe:
@@ -227,6 +239,10 @@
     mode: AlignAtmosPipeLayers
   suffix: TJunction
   components:
+  - type: Tag
+    tags:
+    - Pipe
+    - AtmosPipeSegment # Palmtree: two segments on one layer z-fight
   - type: NodeContainer
     nodes:
       pipe:
@@ -270,6 +286,10 @@
   placement:
     mode: AlignAtmosPipeLayers
   components:
+  - type: Tag
+    tags:
+    - Pipe
+    - AtmosPipeSegment # Palmtree: two segments on one layer z-fight
   - type: Transform
     noRot: true
   - type: NodeContainer
@@ -314,6 +334,10 @@
   name: broken pipe
   description: It used to hold gas.
   components:
+  - type: Tag
+    tags:
+    - Pipe
+    - AtmosPipeSegment # Palmtree: two segments on one layer z-fight
   - type: Sprite
     sprite: Structures/Piping/Atmospherics/pipe.rsi
     drawdepth: ThinPipe
@@ -424,4 +448,6 @@
   - type: AtmosDevice
   - type: Tag
     tags:
+    - Pipe
     - Unstackable
+    - AtmosPipeSegment # Palmtree: two segments on one layer z-fight

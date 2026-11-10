@@ -161,7 +161,7 @@
     - Engineering
 
 - type: entity
-  parent: [DoorRemoteDefault, BaseC2ContrabandUnredeemable] # Frontier: BaseCommandContraband<BaseC2ContrabandUnredeemable
+  parent: [DoorRemoteDefault, BaseC3ContrabandUnredeemable] # Frontier: BaseCommandContraband<BaseC3ContrabandUnredeemable
   id: DoorRemoteAll
   name: super door remote
   suffix: Admeme

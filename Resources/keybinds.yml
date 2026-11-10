@@ -649,3 +649,17 @@ binds:
   key: X
   mod1: Shift
 # endregion Frontier
+# region Palmtree circuitry editor
+- function: CircuitEditorUndo
+  type: State
+  key: Z
+  mod1: Control
+- function: CircuitEditorRedo
+  type: State
+  key: Y
+  mod1: Control
+- function: CircuitEditorSave
+  type: State
+  key: S
+  mod1: Control
+# endregion Palmtree circuitry editor

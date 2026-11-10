@@ -1,6 +1,6 @@
 - type: entity
   name: NFSD energy sword
-  parent: [BaseC2ContrabandUnredeemable, EnergySword]
+  parent: [BaseC5ContrabandUnredeemable, EnergySword]
   id: EnergySwordNfsd
   description: An NFSD energy sword, your righteous beam of light in the dark.
   components:
@@ -36,7 +36,7 @@
 
 - type: entity
   id: NFEnergyPickaxe
-  parent: [EnergySword, BaseC1Contraband] # Has a reflect chance
+  parent: [EnergySword, BaseC2Contraband] # Has a reflect chance
   name: holopickaxe
   description: A holographic mining tool with blades comprised of hard light. Doesn't pack the same punch as an energy weapon, but more compact than most mining tools when turned off.
   components:

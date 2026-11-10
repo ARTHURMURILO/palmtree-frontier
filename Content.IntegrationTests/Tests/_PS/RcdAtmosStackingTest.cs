@@ -1,9 +1,12 @@
+using System.Collections.Generic;
 using System.Numerics;
+using System.Reflection;
 using Content.Shared.Atmos.Components;
 using Content.Shared.Construction.EntitySystems;
 using Content.Shared.RCD;
 using Content.Shared.RCD.Components;
 using Content.Shared.RCD.Systems;
+using Content.Shared.Tag;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
@@ -13,9 +16,10 @@ using Robust.Shared.Prototypes;
 namespace Content.IntegrationTests.Tests._PS;
 
 /// <summary>
-/// Palmtree: the RPD refuses to stack conflicting pipe nodes on a tile, while still allowing the
-/// legitimate overlaps atmos construction depends on (a vent or pump on the pipe that feeds it,
-/// and the same pipe on a different atmos layer).
+/// Palmtree: the RPD refuses to stack two plain pipe segments on one layer (their sprites share a
+/// draw depth and z-fight) and refuses conflicting pipe nodes, while still allowing the legitimate
+/// overlaps atmos construction depends on (a vent or pump on the pipe that feeds it, and the same
+/// pipe on a different atmos layer).
 /// </summary>
 [TestFixture]
 public sealed class RcdAtmosStackingTest
@@ -160,7 +164,7 @@ public sealed class RcdAtmosStackingTest
     }
 
     [Test]
-    public async Task RpdAllowsNonConflictingPipesOnSameLayer()
+    public async Task RpdBlocksAnyPipeSegmentOnSameLayer()
     {
         await using var pair = await PoolManager.GetServerClient();
         var server = pair.Server;
@@ -191,14 +195,54 @@ public sealed class RcdAtmosStackingTest
             {
                 Assert.That(
                     rcdSystem.IsRCDOperationStillValid(rpd, rcd, grid.Owner, grid.Comp, tile, new Vector2i(0, 0), null, user, false, direction: Direction.East),
-                    Is.True,
-                    "An east-west pipe does not share a node with the north-south pipe already there.");
+                    Is.False,
+                    "Even a non-conflicting pipe segment must not share a layer; the two sprites z-fight.");
 
                 Assert.That(
                     rcdSystem.IsRCDOperationStillValid(rpd, rcd, grid.Owner, grid.Comp, tile, new Vector2i(0, 0), null, user, false, direction: Direction.South),
                     Is.False,
                     "A second north-south pipe on the same layer conflicts with the existing one.");
             });
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task ClientPrototypesCarryPipeSegmentTag()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var client = pair.Client;
+        var segmentTag = new ProtoId<TagPrototype>("AtmosPipeSegment");
+
+        await client.WaitAssertion(() =>
+        {
+            var protoManager = client.ResolveDependency<IPrototypeManager>();
+            var componentFactory = client.ResolveDependency<IComponentFactory>();
+
+            foreach (var id in new[]
+                     {
+                         "GasPipeHalf", "GasPipeStraight", "GasPipeBend", "GasPipeTJunction",
+                         "GasPipeFourway", "GasPipeManifold", "GasPipeBroken", "GasPipeStraightAlt1",
+                     })
+            {
+                var proto = protoManager.Index<EntityPrototype>(id);
+
+                Assert.That(
+                    proto.TryGetComponent<TagComponent>(out var tagComp, componentFactory),
+                    Is.True,
+                    $"{id} has no TagComponent on the client.");
+
+                // TagComponent.Tags is access-restricted to TagSystem, and the test client does not
+                // register TagSystem, so read the field directly for this prototype check.
+                var tagsField = typeof(TagComponent).GetField("Tags", BindingFlags.Public | BindingFlags.Instance);
+                var protoTags = (HashSet<ProtoId<TagPrototype>>) tagsField!.GetValue(tagComp)!;
+
+                Assert.That(
+                    protoTags.Contains(segmentTag),
+                    Is.True,
+                    $"{id} is missing AtmosPipeSegment on the client.");
+            }
         });
 
         await pair.CleanReturnAsync();

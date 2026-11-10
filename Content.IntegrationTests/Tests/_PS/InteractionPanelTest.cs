@@ -131,6 +131,13 @@ public sealed class InteractionPanelTest
             Assert.That(interactions.TryPerform(user, target, fuck), Is.True);
             Assert.That(server.System<DrippingCumSystem>().GetSemen(target), Is.GreaterThan(0));
 
+            // Layer preference round-trips through the panel state.
+            var panelComp = entMan.GetComponent<InteractionPanelComponent>(user);
+            panelComp.LayerMode = CharacterLayerMode.Above;
+            Assert.That(interactions.BuildState(user, interactions.EnsureState(user)).LayerMode,
+                Is.EqualTo(CharacterLayerMode.Above));
+            panelComp.LayerMode = CharacterLayerMode.Default;
+
             // Bound UI state and messages must be NetSerializable; serialize them to catch
             // missing attributes/fields at test time instead of at runtime.
             var serializer = server.ResolveDependency<IRobustSerializer>();
@@ -148,6 +155,7 @@ public sealed class InteractionPanelTest
             Serialize(serializer, new InteractionSetSoundsMessage(false));
             Serialize(serializer, new InteractionSetArousalMultiplierMessage(true, 150));
             Serialize(serializer, new InteractionSetMoaningMultiplierMessage(true, 50));
+            Serialize(serializer, new InteractionSetLayerModeMessage(CharacterLayerMode.Above));
 
             entMan.DeleteEntity(user);
             entMan.DeleteEntity(target);
@@ -445,6 +453,7 @@ public sealed class InteractionPanelTest
             var proto = server.ResolveDependency<IPrototypeManager>();
             var appearance = server.System<SharedHumanoidAppearanceSystem>();
             var interactions = server.System<InteractionPanelSystem>();
+            var organs = server.System<GenitalOrganSystem>();
             var drip = server.System<DrippingCumSystem>();
             var decals = server.System<DecalSystem>();
 
@@ -463,27 +472,41 @@ public sealed class InteractionPanelTest
             var grid = testMap.Grid.Owner;
             var fuck = proto.Index<InteractionPrototype>("Fuck");
             var userState = interactions.EnsureState(user);
+            var targetXform = entMan.GetComponent<TransformComponent>(target);
+            Assert.That(organs.TryGetOrgan(user, GenitalType.Penis, out _, out var penis), Is.True);
 
-            // Below the 60u overflow threshold: the 30u pulse is stored and nothing is left behind.
-            drip.AddSemen(target, 30);
-            Assert.That(drip.GetSemen(target), Is.EqualTo(30));
-
+            // 50u is fully contained: the whole amount is stored at once, with no floor decals.
+            penis.SemenVolume = 50;
             interactions.SetLust(user, userState, userState.LustTolerance * 3 + 1);
             Assert.That(interactions.TryPerform(user, target, fuck), Is.True);
-            Assert.That(drip.GetSemen(target), Is.EqualTo(60), "The 30u pulse is always stored.");
-            Assert.That(decals.GetDecalsInRange(grid, entMan.GetComponent<TransformComponent>(target).LocalPosition, 2f)
+            Assert.That(drip.GetSemen(target), Is.EqualTo(50), "The whole release is stored at once.");
+            Assert.That(decals.GetDecalsInRange(grid, targetXform.LocalPosition, 2f)
                 .Any(d => d.Decal.Id.StartsWith("SemenPuddle")), Is.False,
-                "A womb at or below the overflow threshold must not leave overflow decals.");
+                "A 50u release must not spill.");
 
-            // Above the threshold: the same pulse overflows onto the floor and is still stored.
-            drip.AddSemen(target, 40); // 60 -> 100
+            // 100u spills 2 decals (one per 50u).
+            penis.SemenVolume = 100;
             userState.LastInteractionTime = TimeSpan.MinValue;
             interactions.SetLust(user, userState, userState.LustTolerance * 3 + 1);
             Assert.That(interactions.TryPerform(user, target, fuck), Is.True);
-            Assert.That(drip.GetSemen(target), Is.EqualTo(130), "Overflow never costs the receiver their semen.");
-            Assert.That(decals.GetDecalsInRange(grid, entMan.GetComponent<TransformComponent>(target).LocalPosition, 2f)
-                .Any(d => d.Decal.Id.StartsWith("SemenPuddle")), Is.True,
-                "An over-full womb must leave an overflow decal on the floor.");
+            Assert.That(drip.GetSemen(target), Is.EqualTo(150), "The whole 100u release is stored at once.");
+            Assert.That(decals.GetDecalsInRange(grid, targetXform.LocalPosition, 2f)
+                .Count(d => d.Decal.Id.StartsWith("SemenPuddle")), Is.EqualTo(2),
+                "A 100u release spills two decals.");
+
+            // Clear the floor so the next release can be counted on its own.
+            foreach (var (index, _) in decals.GetDecalsInRange(grid, targetXform.LocalPosition, 2f).ToList())
+                decals.RemoveDecal(grid, index);
+
+            // 500u spills three decals (the cap).
+            penis.SemenVolume = 500;
+            userState.LastInteractionTime = TimeSpan.MinValue;
+            interactions.SetLust(user, userState, userState.LustTolerance * 3 + 1);
+            Assert.That(interactions.TryPerform(user, target, fuck), Is.True);
+            Assert.That(drip.GetSemen(target), Is.EqualTo(650), "The whole 500u release is stored at once.");
+            Assert.That(decals.GetDecalsInRange(grid, targetXform.LocalPosition, 2f)
+                .Count(d => d.Decal.Id.StartsWith("SemenPuddle")), Is.EqualTo(3),
+                "The per-climax spill is capped at three decals.");
 
             // The receive capacity is 1000u; anything past that is wasted.
             drip.AddSemen(target, 1000);
