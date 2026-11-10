@@ -515,6 +515,7 @@ public sealed class CircuitAssemblySystem : EntitySystem
             return;
 
         component.WalkMode = CircuitWalkMode.Idle;
+        component.WalkArrived = false;
         component.MoveDirection = Vector2.Zero;
         component.WalkTarget = null;
         component.LastMovePosition = Transform(uid).LocalPosition;

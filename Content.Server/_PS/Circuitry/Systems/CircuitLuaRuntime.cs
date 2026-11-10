@@ -11,6 +11,14 @@ public sealed class CircuitLuaRuntime
     public const int MaxHandles = 256;
     public const int MaxQueuedEvents = 16;
 
+    /// <summary>
+    /// Sensor lookups are rate-limited by a small token bucket instead of a hard cooldown so a
+    /// script can do a scan followed by one or two finds without waiting, while a tight loop still
+    /// cannot rescan thousands of times per tick.
+    /// </summary>
+    public const int MaxSensorQueryTokens = 4;
+    public const double SensorQueriesPerSecond = 4;
+
     public EntityUid Assembly;
     public EntityUid Cpu;
     public LuaProgram Program = null!;
@@ -21,7 +29,9 @@ public sealed class CircuitLuaRuntime
     public readonly Queue<CircuitEvent> Events = new();
 
     public int NextHandle = 1;
-    public TimeSpan NextScan;
+    public double SensorQueryTokens = MaxSensorQueryTokens;
+    public TimeSpan LastSensorQuery;
+    public TimeSpan NextWalk;
     public TimeSpan NextChat;
     public TimeSpan NextRadio;
     public TimeSpan NextSignal;

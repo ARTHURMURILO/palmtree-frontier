@@ -129,10 +129,8 @@ log(self.name, self.power, self.max_power, self.powered)
 
 ```lua
 local ok, reason = robot.walk_to(10, 4)
-if ok then
-    while robot.walk_status() == "moving" do
-        robot.wait(0.2)
-    end
+if not ok then
+    log("could not walk there:", reason)
 end
 ```
 
@@ -281,7 +279,7 @@ destination.
 
 ### Cleanable decals
 
-`robot.decals(radius)` returns cleanable decals within the sensor radius (default `0.75` m). The
+`robot.decals(radius)` returns cleanable decals within the sensor radius (default `0.75` tiles). The
 `decal_id` is the tile decal identifier, not an entity handle.
 
 ```lua
@@ -343,8 +341,8 @@ Wanted status table:
 ### Puddles and floor spills
 
 `robot.scan_puddles(radius)` requires a powered sensor **and** a chemical analyzer. It scans uncontained
-floor puddles (default radius `1` m) and returns their solution volume, temperature and contents.
-It shares the normal `scan()`/`find()` 0.25 s cooldown.
+floor puddles (default radius `1` tile) and returns their solution volume, temperature and contents.
+It shares the normal sensor-query budget.
 
 ```lua
 local puddles = robot.scan_puddles(2)
@@ -390,10 +388,6 @@ local wrench = robot.find("wrench")
 if wrench then
     local x, y = robot.position_of(wrench)
     if robot.walk_to(x, y, 1.0) then
-        while robot.walk_status() == "moving" do
-            robot.wait(0.2)
-        end
-
         if robot.can_reach(wrench) then
             robot.pickup(wrench)
         end
@@ -420,10 +414,6 @@ function fetchAndReturn(itemName)
         return false, "no path to item"
     end
 
-    while robot.walk_status() == "moving" do
-        robot.wait(0.2)
-    end
-
     if not robot.can_reach(item) then
         return false, "item is out of pickup range"
     end
@@ -434,10 +424,6 @@ function fetchAndReturn(itemName)
 
     if not robot.walk_to(homeX, homeY, 0.5) then
         return false, "no path home"
-    end
-
-    while robot.walk_status() == "moving" do
-        robot.wait(0.2)
     end
 
     robot.drop()
@@ -461,9 +447,6 @@ if target then
 
         if robot.distance(target) > 2 then
             robot.walk_to(x, y, 1)
-            while robot.walk_status() == "moving" do
-                robot.wait(0.2)
-            end
         end
 
         robot.wait(0.5)
@@ -497,9 +480,6 @@ end
 if best then
     local x, y = robot.position_of(best)
     robot.walk_to(x, y, 1.2)
-    while robot.walk_status() == "moving" do
-        robot.wait(0.2)
-    end
 
     local syringe = robot.find("syringe")
     if syringe then
@@ -523,9 +503,6 @@ local rock = robot.find("rock")
 if rock then
     local x, y = robot.position_of(rock)
     robot.walk_to(x, y, 1)
-    while robot.walk_status() == "moving" do
-        robot.wait(0.2)
-    end
 
     while robot.can_reach(rock) do
         robot.attack(rock)
@@ -675,7 +652,8 @@ filesystem, networking, entity, hook, or userdata APIs.
 | Function | Requires | Returns |
 |---|---|---|
 | `robot.move(dx, dy)` | Locomotion, power | `true` or `false, reason` |
-| `robot.walk_to(x, y [, range [, smooth]])` | Locomotion, power | `true` or `false, reason` |
+| `robot.walk_to(x, y [, range [, smooth]])` | Locomotion, power | `true` on arrival, or `false, reason`; yields the script while walking |
+| `robot.walk_to_async(x, y [, range [, smooth]])` | Locomotion, power | `true` once the path starts, or `false, reason` |
 | `robot.stop()` | — | `true` |
 | `robot.walk_status()` | — | `"idle"`, `"moving"`, `"arrived"` or `"no_path"` |
 
@@ -684,31 +662,40 @@ filesystem, networking, entity, hook, or userdata APIs.
   `0.5`, and values below `0.5` are raised to `0.5` to avoid overshoot loops around small targets.
   With `smooth = true` (the default), the arrival tolerance scales with current walk speed up to
   `1.25` tiles and the steering system brakes to roughly 15% of walk speed near the target. Pass
-  `smooth = false` for the old fixed-tolerance behavior. `walk_status` reports `arrived` once
-  within the effective tolerance and stops the path.
-- Direct movement cancels an in-progress path.
-- `walk_status` is the simplest way to wait for arrival:
+  `smooth = false` for the old fixed-tolerance behavior.
+- `walk_to` is **synchronous from the script's point of view**: it starts the path, yields through
+  `robot.wait`, and returns `true` when the robot arrives, `false, "no path"` if no route exists,
+  or `false, "walk timed out"` after 60 seconds. It does not block the server tick. You do not need
+  a `walk_status` loop around it.
+- `walk_to_async` is the fire-and-forget version: it returns as soon as the path starts. Use
+  `walk_status()` to follow it:
 
 ```lua
-robot.walk_to(10, 4)
+robot.walk_to_async(10, 4)
 while robot.walk_status() == "moving" do
     robot.wait(0.2)
 end
 ```
+- A successful path start is rate-limited to one every 0.25 s. Calls while already pathing to a
+  target within 0.75 tiles of the new one are treated as a no-op and keep the existing path. This
+  prevents a tight follow loop from cancelling and restarting pathfinding every tick.
+- Direct movement cancels an in-progress path. `move` is intentionally continuous; it has no
+  destination or completion, so `walk_to` is the synchronous movement API.
 
 ## Perception
 
 All perception helpers require a **sensor module** unless noted. Most also require power, consume
-action power, and respect line of sight and sensor range.
+action power, and respect line of sight and sensor range. The standard sensor module covers **16
+tiles**; on normal grids `MapGridComponent.TileSize` is 1, so one tile equals one world unit.
 
 | Function | Returns | Notes |
 |---|---|---|
-| `robot.scan([radius])` | list or `false, reason` | All entities in range: `{id, name, kind, distance, x, y}`. Radius defaults to the sensor range and is clamped to it. Has a 0.25 s cooldown. |
+| `robot.scan([radius])` | list or `false, reason` | All entities in range: `{id, name, kind, distance, x, y}`. Radius defaults to the sensor range and is clamped to it. Returns at most the sensor module's scan result cap (normally 16), nearest first. Uses the shared sensor-query budget. |
 | `robot.scan_mobs([radius])` | list or `false, reason` | Same as `scan`, filtered to `kind == "mob"`. |
 | `robot.scan_items([radius])` | list or `false, reason` | Same as `scan`, filtered to `kind == "item"`. Only loose, unanchored items; installed pipes, vents, scrubbers and machines are excluded. |
 | `robot.scan_structures([radius])` | list or `false, reason` | Same as `scan`, filtered to `kind == "structure"`. Returns installed/anchorable machinery, pipes, vents, scrubbers and constructible machines; walls/windows remain `object`. |
 | `robot.scan_doors([radius])` | list or `false, reason` | Same as `scan`, filtered to `kind == "door"`. |
-| `robot.find(name [, radius])` | handle or `nil, reason` | Case-insensitive substring match on entity name. Returns the nearest match as a bare handle. Returns `nil, reason` when there is no match, no sensor, or no power. Only scans **uncontained** entities. Intentionally bypasses the scan cooldown check but still costs power and sets the next scan time. |
+| `robot.find(name [, radius])` | handle or `nil, reason` | Case-insensitive substring match on entity name. Returns the nearest match as a bare handle. Returns `nil, reason` when there is no match, no sensor, no power, or the sensor query budget is empty. Only scans **uncontained** entities. Searches every entity in range, not just the multi-scan result cap, so nearby clutter cannot hide a farther named target. |
 | `robot.inspect(handle)` | table or `false, reason` | Identity, health, ID (name, job, job id, departments, access tags), worn equipment, held items and component flags. Requires sensor range and line of sight. |
 | `robot.has_job(handle, job)` | boolean, or `false, reason` | Case-insensitive match against the ID card's job prototype id/localized title, with a sector-record fallback. Requires sensor range and line of sight. |
 | `robot.has_access(handle, access)` | boolean, or `false, reason` | Checks the ID card's access tags/groups. Use tags such as `Security` for NFSD or `Pirate` for pirates. Requires sensor range and line of sight. |
@@ -733,8 +720,10 @@ action power, and respect line of sight and sensor range.
 `dx`/`dy` are offsets from the assembly's current position. Tile lookups are limited by sensor
 range and line of sight for each entity.
 
-`find`, `scan`, `scan_mobs` and `scan_items` are capped by the sensor module's maximum scan result
-count (normally 16) and return the nearest results first.
+Multi-result scans (`scan`, `scan_mobs`, `scan_items`, `scan_structures`, `scan_doors`) are capped
+by the sensor module's maximum scan result count (normally 16) and return the nearest results first.
+Single-result lookups (`find`, `nearest_*`) search the whole sensor range and are not hidden by
+closer entities.
 
 Example:
 
@@ -968,7 +957,15 @@ source to the assembly's `Trigger` sink, and the assembly's source ports to any 
 | `robot.plant(handle)` | Same as `use_item` | `true` or `false, reason` |
 | `robot.attack(handle)` | Manipulator, melee weapon, power | `true` or `false, reason` |
 | `robot.shoot(handle)` | Manipulator, gun in hand, line of sight | `true` or `false, reason` |
-| `robot.inject(handle)` | Manipulator, syringe/injector in active hand, power | `true` or `false, reason` |
+| `robot.inject(handle)` | Manipulator, syringe/injector in active hand, power | `true` after the injection do-after, or `false, reason` |
+
+`use`, `use_item`, `interact`/`harvest`, `plant`, `trigger` and `inject` are synchronous by default:
+if the action starts a do-after, they yield until it completes (up to 30 seconds), return
+`false, "action cancelled"` if it is interrupted, and `false, "action timed out"` if it never
+finishes. Their `_async` variants (`use_async`, `use_item_async`, `interact_async`,
+`harvest_async`, `plant_async`, `trigger_async`, `inject_async`) return immediately after the event
+is handled. `pickup`, `drop`, `attack`, `shoot`, transfers, dispensing, ChemMaster actions and
+`send_signal` are already instantaneous and have no async variants.
 
 - `pickup` requires the target to have an `ItemComponent`.
 - `drop` drops the assembly's active held item.
@@ -1395,11 +1392,13 @@ programs; scripts always require an explicit Run.
 | Per-tick program budget | 0.5 ms basic / 0.75 ms advanced |
 | Maximum time without `robot.wait` | 5 seconds |
 | Maximum single `robot.wait` | 1 hour |
+| `walk_to` timeout | 60 seconds |
+| Synchronous action timeout | 30 seconds (`use`, `use_item`, `interact`, `harvest`, `plant`, `trigger`, `inject`) |
 | Retained console lines | 100 |
 | Maximum guarded string size | 1 MiB |
 | Event queue | 16 events (oldest dropped) |
 | Opaque handles per runtime | 256 |
-| Scan cooldown | 0.25 seconds |
+| Sensor query budget | 4 per second, burst of 4 (`scan`, `find`, `nearest_*`, `scan_puddles`) |
 | `say` rate limit | 0.5 seconds |
 | `radio` rate limit | 1 second |
 | Signal/trigger rate limit | 0.5 seconds |
@@ -1408,17 +1407,18 @@ programs; scripts always require an explicit Run.
 | ChemMaster pill/bottle rate limit | 0.5 seconds |
 | Speech/radio text length | 1–200 characters |
 | Transfer/dispense amount | 1000 units per call |
-| Decal query radius | Up to sensor range, default 0.75 m |
-| `find` / scan result count | Sensor module maximum, normally 16 |
+| Decal query radius | Up to sensor range, default 0.75 tiles |
+| Multi-result scan count | Sensor module maximum, normally 16 |
 | `wait_event` timeout slices | 50 ms, up to roughly 600 seconds |
 
 ## Gotchas
 
-- **`robot.wait` cannot cross a `pcall`/C-call boundary.** Do not call it inside `pcall`. The
-  `Coroutine` standard library is not exposed.
+- **`robot.wait`, `walk_to` and synchronous actions cannot cross a `pcall`/C-call boundary.**
+  Do not call them inside `pcall`. The `Coroutine` standard library is not exposed.
 - **A program must yield.** Loops without `robot.wait` are stopped after 5 seconds.
-- **`find` ignores the scan cooldown.** It still consumes power and advances the cooldown timer, so
-  a script can scan and immediately find once, then must wait for the next scan.
+- **Sensor lookups share a query budget.** `scan`, `find`, `nearest_*` and `scan_puddles` draw
+  from the same 4-per-second bucket. A tight loop receives `false/nil, "scan cooldown"` for extra
+  calls instead of rescanning hundreds of times per tick. Add `robot.wait(0.25)` to loops.
 - **Structures are not items.** Gas pipes, vents, scrubbers, cables and constructible machines
   often inherit `BaseItem`, but they have `ItemComponent` for construction only. `GetKind` treats
   anchored/anchorable entities as `structure` and `MachineComponent` entities as `structure`;
@@ -1455,8 +1455,15 @@ programs; scripts always require an explicit Run.
 - **`robot.get_tile_relative`/`tile` and `entities_on_tile` require a powered sensor.** They return
   `false, reason` when the sensor is missing, unpowered, or the tile is out of range.
 - **`walk_to` does not open or unlock doors.** There is no automatic path-blocker event. Use
-  `scan_doors` + `door_status` and check `can_open`, `bolted`, `access` and `state`; `walk_status()`
-  returns `no_path` when the destination cannot be reached.
+  `scan_doors` + `door_status` and check `can_open`, `bolted`, `access` and `state`; `walk_to`
+  returns `false, "no path"` when the destination cannot be reached.
+- **`walk_to` waits; `walk_to_async` does not.** A script that wants to do other work while moving
+  must use `walk_to_async`; a script that just wants to go somewhere should use `walk_to` and drop
+  the old `walk_status` loop.
+- **Actions with do-afters wait by default.** If a construction, injection or tool use is
+  interrupted, the default function returns `false, "action cancelled"`. Use the `_async` variant
+  if the script must continue while the action runs; the next synchronous action waits for the
+  previous one to finish first.
 - **Decals are tile data, not entities.** `robot.decals()` returns only cleanable decals; use
   `decal_id` with normal cleaning tools/actions. It requires a powered sensor and a grid.
 - **Puddles are entities with a solution, not decals.** `robot.scan_puddles()` requires a chemical
@@ -1976,8 +1983,8 @@ element of the same shape, and all positions are local grid coordinates in tiles
 | `robot.pickup(handle)` | `true` | `false, reason` |
 | `robot.drop()` | `true` | `false, reason` |
 | `robot.held()` | list of handle entries | — |
-| `robot.use(handle)` | `true` | `false, reason` |
-| `robot.use_item(handle)` | `true` | `false, reason` |
+| `robot.use(handle)` | `true` after any do-after | `false, reason` |
+| `robot.use_item(handle)` | `true` after any do-after | `false, reason` |
 | `robot.attack(handle)` | `true` | `false, reason` |
 | `robot.shoot(handle)` | `true` | `false, reason` |
 | `robot.interact(handle)` / `robot.harvest(handle)` | `true` | `false, reason` |
@@ -1985,7 +1992,11 @@ element of the same shape, and all positions are local grid coordinates in tiles
 | `robot.water(target, amount [, slot])` | `true` | `false, reason` |
 | `robot.trigger(handle)` | `true` | `false, reason` |
 | `robot.send_signal([state [, port]])` | `true` | `false, reason` |
-| `robot.inject(handle)` | `true` | `false, reason` |
+| `robot.inject(handle)` | `true` after the do-after | `false, reason` |
+| `robot.walk_to_async(x, y [, range, smooth])` | `true` | `false, reason` |
+| `robot.use_async` / `use_item_async` / `interact_async` / `harvest_async` / `plant_async` / `trigger_async` / `inject_async` | `true` | `false, reason` |
+| `robot.action_busy()` | boolean | — |
+| `robot.action_marker()` / `robot.action_status(marker)` | action tracking helpers | — |
 | `robot.beakers()` | list of solution tables with `slot`/`handle` | — |
 | `robot.reagents([slot])` | solution table | `false, reason` |
 | `robot.transfer_to(target, amount [, slot])` | `true` | `false, reason` |
@@ -2037,3 +2048,5 @@ When changing the API:
 | 2026-11-07 | Added the gas analyzer module and `analyze_gas` for pipes, vents, scrubbers, canisters, filters, mixers and local atmosphere readings. |
 | 2026-11-09 | Added GLua-style table/string helpers: `table.HasValue`/`Contains`, `IsEmpty`, `Count`, `GetKeys`, `KeyFromValue`, `Random`, `Add`, `RemoveByValue`; `string.Trim`, `StartsWith`/`StartWith`, `EndsWith`, `Split`; `istable`/`isstring`/`isnumber`/`isbool`/`isfunction`. |
 | 2026-11-09 | Replaced the engine editor with a custom inline-syntax-colored Lua editor (line numbers, selection, copy/paste, tab indentation, undo/redo). Added multi-port signal sources, transfer rate limiting, Bluespace Dock/grid persistence coverage, puddle chemical analysis, ChemMaster automation, job/access/wanted queries, and chassis variants. |
+| 2026-11-10 | Standard sensor range is now 16 tiles. `find`/`nearest_*` search the full range instead of only the 16 nearest entities. Sensor lookups share a 4-per-second token bucket, and `walk_to` rate-limits/retargets path starts so tight follow loops cannot spam pathfinding or trip the allocation watchdog. |
+| 2026-11-10 | Lua-facing actions are synchronous by default. `walk_to` yields until arrival/no-path/timeout and `walk_to_async` is the fire-and-forget variant. `use`, `use_item`, `interact`/`harvest`, `plant`, `trigger` and `inject` wait for their do-after and expose `_async` variants; instant actions are unchanged. |

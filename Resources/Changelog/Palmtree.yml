@@ -1963,6 +1963,25 @@ Entries:
         Circuit modules can now be fabricated in the exosuit fabricator. New Programmable and
         Advanced Programmable Circuitry research nodes unlock them, while the chassis remains
         admin-spawn only during live testing.
+    - type: Tweak
+      message: Circuit sensor modules now have a 16-tile range.
+    - type: Fix
+      message: >-
+        Circuit find and nearest lookups now search the full sensor range instead of only the
+        sixteen nearest entities, so nearby clutter no longer hides a wrench or person farther
+        away.
+    - type: Fix
+      message: >-
+        Circuit sensor lookups and walk_to commands are rate-limited, so tight Lua loops no longer
+        rescan hundreds of times per tick or restart pathfinding every tick.
+    - type: Tweak
+      message: >-
+        Circuit walk_to now waits until the robot arrives or fails, while walk_to_async keeps the
+        old fire-and-forget behavior.
+    - type: Tweak
+      message: >-
+        Circuit use, use_item, interact, harvest, plant, trigger and inject now wait for their
+        do-after to finish. Async variants are available for scripts that need to keep running.
   id: 90129
   time: '2026-11-09T12:00:00.0000000+00:00'
 - author: ARTHURMURILO

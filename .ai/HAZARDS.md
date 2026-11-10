@@ -822,3 +822,43 @@ so these fail only in CI:
   `StripStationReferences`/`UndockShuttle` must go through `RestoreStoreFailure` (station refs, deed,
   docking to the *grid it was docked to*). A stripped ship has no station member/bound components, so
   its station-bound machinery and power look "soft-broken" until it is restored.
+
+## 29. Programmable circuitry: sensor lookups and pathfinding loops (2026-11)
+
+- **`maxScanResults` is a display cap, not a search cap.** `ScanEntities` originally sorted every
+  visible entity, then truncated to `CircuitAssemblyComponent.MaxScanResults` (normally 16), and
+  `find` searched only that truncated list. In a dense room the 16 nearest entities can all sit
+  within ~1.7 tiles, so `robot.find("wrench")` appeared to have a 1.7-tile sensor even though the
+  module said 6 (now 16) tiles. Multi-result scans should truncate; single-result `find` and
+  `nearest_*` helpers must search every candidate in range. `CircuitrySensorRangeTest` covers both
+  the 16-tile range and the "more than 16 closer decoys" case.
+- **Sensor ranges are tiles.** `CircuitPartComponent.SensorRange` is compared against world-space
+  distances. Content grids use `MapGridComponent.TileSize = 1`, so tiles and world units are the
+  same on normal maps; if a map ever changes `TileSize`, every sensor/path range needs an explicit
+  conversion instead of assuming 1:1. The UI reports the value as tiles.
+- **Never let `find` bypass the sensor-query budget.** It used to explicitly skip the cooldown. A
+  user loop such as `find -> position_of -> walk_to` without `robot.wait` then performed hundreds
+  of full scans per resume and eventually allocated ~497 MB, tripping
+  `MaxAllocationBytesPerResume` (8 MiB). `CircuitLuaRuntime` now uses a shared 4-token/s bucket for
+  `scan`, `find`, `nearest_*` and `scan_puddles`; the bucket still allows a scan followed by a
+  couple of finds in one tick.
+- **Pathfinding restarts are expensive even when Lua allocation stays low.** `NPCSteeringSystem`
+  cancels and recreates a path request when `Register` is called with different coordinates. A
+  follow loop that re-passes a moving entity's position every tick can therefore restart pathfinding
+  every tick. `CircuitMovementSystem.TryWalkTo` now ignores targets within 0.75 tiles of the current
+  path target while a path is active, and the Lua API rate-limits successful path starts to one per
+  0.25 s. Do not remove those guards without a dense-map stress test.
+
+- **Do not make pathfinding itself synchronous on the server thread.** `NPCSteeringSystem` and
+  `PathfindingSystem` are asynchronous because A* can take milliseconds on a large ship. The Lua
+  `walk_to` wrapper is synchronous *to the script* only: it starts the async path and yields via
+  `robot.wait`, so the server tick keeps running. `walk_to_async` exposes the old fire-and-forget
+  behavior. Never replace this with a blocking `.Result`/`.Wait()` or a direct synchronous path
+  call from a Lua callback.
+- **Do-after-backed Lua actions wait by default.** `use`, `use_item`, `interact`/`harvest`,
+  `plant`, `trigger` and `inject` wrap the instant callback and poll `DoAfterComponent` through
+  `action_busy`/`action_marker`/`action_status`. They return `false, "action cancelled"` when the
+  do-after is interrupted and time out after 30 s. The `_async` variants are the old immediate
+  behavior; a later synchronous action first waits for any existing do-after so it cannot confuse
+  an old completed/cancelled entry with the new action's result. Keep the do-after index
+  comparison wrap-safe (`ushort`).

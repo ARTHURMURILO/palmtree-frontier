@@ -140,14 +140,14 @@
   parent: BaseItem
   id: CircuitSensor
   name: sensor module
-  description: A short-range camera and microphone. Lets the assembly see, inspect and hear nearby entities.
+  description: A 16-tile camera and microphone. Lets the assembly see, inspect and hear nearby entities.
   components:
   - type: Sprite
     sprite: Objects/Misc/module.rsi
     state: bluespacearray
   - type: CircuitPart
     partType: Sensor
-    sensorRange: 6
+    sensorRange: 16
     maxScanResults: 16
     idlePowerDraw: 0.05
     actionPowerCost: 0.05

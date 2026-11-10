@@ -16,7 +16,7 @@ circuit-hand-label = manipulator
 
 circuit-assembly-ui-title = Programmable Assembly
 circuit-assembly-ui-rename = Rename
-circuit-assembly-ui-status = Modules: { $modules } | Hands: { $hands } | Sensor: { $sensor }
+circuit-assembly-ui-status = Modules: { $modules } | Hands: { $hands } | Sensor: { $sensor } tiles
 circuit-assembly-ui-power = Power: { $current } / { $max }
 circuit-assembly-ui-no-power = No power cell
 circuit-assembly-ui-radio = Radio: { $channels }

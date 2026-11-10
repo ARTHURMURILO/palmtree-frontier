@@ -10,12 +10,28 @@ using Robust.Shared.Timing;
 
 namespace Content.Server._PS.Circuitry.Systems;
 
+public enum CircuitWalkResult : byte
+{
+    Failed,
+    NoPower,
+    Started,
+    AlreadyThere,
+    AlreadyPathing,
+}
+
 /// <summary>
 /// Palmtree: drives assemblies. Direct movement writes the same <see cref="InputMoverComponent"/>
 /// fields NPC steering uses; path movement delegates to <see cref="NPCSteeringSystem"/>.
 /// </summary>
 public sealed class CircuitMovementSystem : EntitySystem
 {
+    /// <summary>
+    /// While already pathing, ignore new walk_to targets this close to the current one. Scripts
+    /// that chase a moving entity call walk_to every tick; without this guard each call cancels
+    /// the in-flight path and starts another pathfinding job.
+    /// </summary>
+    private const float RetargetDistance = 0.75f;
+
     [Dependency] private readonly CircuitAssemblySystem _assembly = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly NPCSteeringSystem _steering = default!;
@@ -59,6 +75,7 @@ public sealed class CircuitMovementSystem : EntitySystem
                 (xform.Coordinates.Position - target.Position).Length() <= component.WalkArrivalRange)
             {
                 _assembly.StopMovement(uid, component);
+                component.WalkArrived = true;
                 continue;
             }
 
@@ -95,6 +112,7 @@ public sealed class CircuitMovementSystem : EntitySystem
 
         direction = direction.Normalized();
         component.WalkMode = CircuitWalkMode.Direct;
+        component.WalkArrived = false;
         component.MoveDirection = direction;
         component.WalkTarget = null;
         component.LastMovePosition = Transform(uid).LocalPosition;
@@ -104,7 +122,7 @@ public sealed class CircuitMovementSystem : EntitySystem
         return true;
     }
 
-    public bool TryWalkTo(
+    public CircuitWalkResult TryWalkTo(
         EntityUid uid,
         EntityCoordinates target,
         float range = 0.5f,
@@ -112,10 +130,13 @@ public sealed class CircuitMovementSystem : EntitySystem
         CircuitAssemblyComponent? component = null)
     {
         if (!Resolve(uid, ref component, false))
-            return false;
+            return CircuitWalkResult.Failed;
 
-        if (!component.Capabilities.HasFlag(CircuitCapability.Locomotion) || !component.Powered)
-            return false;
+        if (!component.Capabilities.HasFlag(CircuitCapability.Locomotion))
+            return CircuitWalkResult.Failed;
+
+        if (!component.Powered)
+            return CircuitWalkResult.NoPower;
 
         // Pathfinding rarely lands exactly on an item's centre. At speed, a fixed 0.5 tile
         // tolerance is not enough braking distance, so scale the arrival target with walk speed.
@@ -133,21 +154,40 @@ public sealed class CircuitMovementSystem : EntitySystem
         if ((Transform(uid).Coordinates.Position - target.Position).Length() <= range)
         {
             _assembly.StopMovement(uid, component);
-            return true;
+            component.WalkArrived = true;
+            return CircuitWalkResult.AlreadyThere;
         }
 
+        // The script is chasing a target that has barely moved since the last command. Keep the
+        // existing path instead of cancelling it and allocating another pathfinding request.
+        if (component.WalkMode == CircuitWalkMode.Path &&
+            component.WalkTarget is { } currentTarget &&
+            (currentTarget.Position - target.Position).LengthSquared() <=
+            RetargetDistance * RetargetDistance)
+        {
+            if (!TryComp<NPCSteeringComponent>(uid, out var steering) ||
+                steering.Status != SteeringStatus.NoPath)
+            {
+                return CircuitWalkResult.AlreadyPathing;
+            }
+        }
+
+        if (!_assembly.TryConsumePower(uid, component.ActionPowerCost, component))
+            return CircuitWalkResult.NoPower;
+
         EnsureComp<ActiveNPCComponent>(uid);
-        var steering = _steering.Register(uid, target);
-        steering.DirectMove = false;
-        steering.Range = range;
-        steering.InRangeMaxSpeed = smooth ? MathF.Max(0.1f, walkSpeed * 0.15f) : null;
+        var newSteering = _steering.Register(uid, target);
+        newSteering.DirectMove = false;
+        newSteering.Range = range;
+        newSteering.InRangeMaxSpeed = smooth ? MathF.Max(0.1f, walkSpeed * 0.15f) : null;
 
         component.WalkMode = CircuitWalkMode.Path;
+        component.WalkArrived = false;
         component.MoveDirection = Vector2.Zero;
         component.WalkTarget = target;
         component.WalkArrivalRange = range;
         component.LastMovePosition = Transform(uid).LocalPosition;
-        return true;
+        return CircuitWalkResult.Started;
     }
 
     public void Stop(EntityUid uid, CircuitAssemblyComponent? component = null)
@@ -164,7 +204,7 @@ public sealed class CircuitMovementSystem : EntitySystem
             return "moving";
 
         if (component.WalkMode != CircuitWalkMode.Path)
-            return "idle";
+            return component.WalkArrived ? "arrived" : "idle";
 
         // Do not rely solely on NPC steering's idea of "in range": small targets and grid
         // alignment can make it keep nudging past the point forever.
@@ -173,6 +213,7 @@ public sealed class CircuitMovementSystem : EntitySystem
             MathF.Max(0.5f, component.WalkArrivalRange))
         {
             _assembly.StopMovement(uid, component);
+            component.WalkArrived = true;
             return "arrived";
         }
 
@@ -182,6 +223,7 @@ public sealed class CircuitMovementSystem : EntitySystem
         if (steering.Status == SteeringStatus.InRange)
         {
             _assembly.StopMovement(uid, component);
+            component.WalkArrived = true;
             return "arrived";
         }
 
