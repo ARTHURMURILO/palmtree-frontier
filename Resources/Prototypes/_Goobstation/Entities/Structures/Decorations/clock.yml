@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Ported from Goob Station (_Goobstation/Entities/Structures/Decorations/clock.yml).
+# Palmtree: the ticking ambient sound used Goob audio, so it was dropped.
+
+- type: entity
+  id: Clock
+  parent: BaseStructure
+  name: wall clock
+  description: Would you look at the time!
+  placement:
+    mode: SnapgridCenter
+  components:
+  - type: Construction
+    graph: WallClock
+    node: wallClock
+  - type: Anchorable
+  - type: Clock
+  - type: Sprite
+    sprite: _Goobstation/Structures/Decoration/clock.rsi
+    state: clock
+    drawdepth: WallMountedItems
+    snapCardinals: true
+  - type: Fixtures
+    fixtures:
+      fix1:
+        shape:
+          !type:PhysShapeCircle
+          radius: 0
+  - type: Damageable
+    damageContainer: StructuralInorganic
+    damageModifierSet: Metallic
+  - type: Destructible
+    thresholds:
+      - trigger:
+          !type:DamageTrigger
+          damage: 50
+        behaviors:
+        - !type:DoActsBehavior
+          acts: [ "Destruction" ]
