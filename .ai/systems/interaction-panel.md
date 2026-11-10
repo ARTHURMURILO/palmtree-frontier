@@ -94,11 +94,11 @@ content are intentionally not ported.
    climax at `tolerance*3` resets lust and plays `final_*` sounds. Repeating the same interaction
    uses `continueMessages` when provided.
 7. **Climax fluids / drip.** `InteractionPrototype.CumTarget` (`vagina`/`anus`/`mouth`/`exterior`)
-   maps a climax: internal endings store the penis organ's `SemenVolume` in the partner's
-   `DrippingCumComponent` (10 u/s **droplet** decals while not wearing a jumpsuit, 10u per drip;
-   the first movement/interaction starts the drip and it then keeps going while standing still;
-   drips never grow into the full puddle decals), exterior endings drop the full `SemenPuddle*`
-   decals on the ground.
+   maps a climax: internal endings store the whole penis organ's `SemenVolume` in the partner's
+   `DrippingCumComponent` at once (10 u/s **droplet** decals while not wearing a jumpsuit, 10u per
+   drip; the first movement/interaction starts the drip and it then keeps going while standing
+   still; drips never grow into the full puddle decals), exterior endings drop `SemenPuddle*`
+   decals on the ground (one per 50u, capped at 3).
    A null cum target (manual Climax with no recent interaction) is treated as an exterior climax on
    the actor. Receiver-side acts (`Ride`, `TakeAnal`) reuse the same cum target for the **target's**
    climax, so the penetrator finishing fills the actor. Each interaction can define
@@ -107,16 +107,15 @@ content are intentionally not ported.
    `forceClimax` exterior action with no orgasm gate; the **Climax** action (`forceClimax`) has no
    range or orgasm requirement, is usable on self or others, and reuses the last interaction's cum
    target when it has none of its own. Both go through the same `TriggerClimax`/`EmitClimax` code.
-   **Multi-pulse climax:** a climax splits `SemenVolume` into 30u pulses (max 10, so 300u = 10
-   pulses). The first pulse fires immediately; the rest follow every 0.6s from the server `Update`
-   loop, each placing a decal/drip, sending the cum message and moaning. While
-   `InteractionStateComponent.ClimaxPulsesLeft > 0` the actor cannot start another climax
-   (`CanPerform`/`TryPerform` reject `ForceClimax`) and climaxing participants gain no lust from
-   interactions (fail-safe against re-triggering). See `systems/genital-organs.md`.
+   **Single release / overflow:** a climax emits the entire `SemenVolume` at once (maximum 500u),
+   with the cum message and one moan. Internal releases above 50u also spill one `SemenPuddle*`
+   per 50u onto the floor (capped at 3) without costing the receiver any stored fluid;
+   vagina-only climaxes use the same count of random `FemPuddle*` decals. There is no multi-pulse
+   sequence and no mid-climax lockout. See `systems/genital-organs.md`.
 8. **Auto-repeat.** The server `Update` loop repeats the active interaction every `AutoPace`
    (Sandstorm's `interaction_speeds`: 4/2/1/0.8/0.5 s) without the 0.5 s cooldown, stopping on any
    requirement failure, target deletion or range loss. The panel state is pushed only when something
-   happens (performed interaction, climax pulse, message); the once-per-second refresh that used to
+   happens (performed interaction, message); the once-per-second refresh that used to
    keep lust bars and attribute lines live was **reverted** because it rebuilt the window and reset
    the controls the player was typing into. Reintroduce it only with a partial state update that
    leaves inputs alone.
