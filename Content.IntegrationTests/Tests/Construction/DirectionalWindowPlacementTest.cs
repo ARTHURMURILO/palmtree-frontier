@@ -314,6 +314,61 @@ public sealed class DirectionalWindowPlacementTest
         await pair.CleanReturnAsync();
     }
 
+    [Test]
+    public async Task WindowsInNeighbouringTilesDoNotBlockPlacement()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var mapMan = server.ResolveDependency<IMapManager>();
+        var tileDefMan = server.ResolveDependency<ITileDefinitionManager>();
+        var protoMan = server.ResolveDependency<IPrototypeManager>();
+        var mapSystem = entMan.System<SharedMapSystem>();
+
+        EntityUid gridUid = default;
+        EntityUid user = default;
+
+        await server.WaitPost(() =>
+        {
+            mapSystem.CreateMap(out var mapId);
+            var grid = mapMan.CreateGridEntity(mapId);
+            gridUid = grid.Owner;
+
+            var plating = new Tile(tileDefMan["Plating"].TileId);
+            for (var x = 10; x <= 14; x++)
+            for (var y = 29; y <= 31; y++)
+                mapSystem.SetTile(gridUid, grid.Comp, new Vector2i(x, y), plating);
+
+            // Windows on the same edge of the tiles either side of an empty tile, like a cage wall.
+            foreach (var x in new[] { 11.5f, 13.5f })
+            {
+                var window = entMan.SpawnEntity("WindowDirectional", new EntityCoordinates(gridUid, new Vector2(x, 30.5f)));
+                entMan.GetComponent<TransformComponent>(window).LocalRotation = Direction.North.ToAngle();
+            }
+
+            user = entMan.SpawnEntity("MobHuman", new EntityCoordinates(gridUid, new Vector2(12.5f, 30.5f)));
+        });
+
+        // Let the anchored lookup catch up with the spawned windows.
+        await server.WaitRunTicks(2);
+
+        await server.WaitAssertion(() =>
+        {
+            var middle = new EntityCoordinates(gridUid, new Vector2(12.5f, 30.5f));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(CanBuild(protoMan, "WindowDirectional", user, middle, Direction.North), Is.True,
+                    "A directional window in a neighbouring tile should not block this tile's free edge.");
+                Assert.That(CanBuild(protoMan, "WindowDirectional", user, middle, Direction.South), Is.True,
+                    "A directional window in a neighbouring tile should not block any other edge either.");
+            });
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
     private static void SetRcdMode(IEntityManager entMan, EntityUid rcd, string mode)
     {
         entMan.EventBus.RaiseLocalEvent(rcd, new RCDSystemMessage(mode));
