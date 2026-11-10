@@ -651,13 +651,18 @@ so these fail only in CI:
   the placement point that includes `PlacementOffset` — the server does not know the admin offset,
   so using it made the ghost and the built pipe disagree when the `ps.placement.offset_*` CVars
   were set.
-- **`Unstackable` is the atmos no-stacking marker.** `RCDSystem.IsConstructionLocationValid`
-  applies the check only when the *built* prototype has the tag (all atmos piping via
-  `GasPipeSansLayers`, plus the devices) and compares
-  `AtmosPipeLayersComponent.CurrentPipeLayer`; entities without alternative prototypes count as
-  primary. Pipes have no fixtures, so the collision check cannot catch them — this is why the RCD
-  could "place one anyway" after the popup from `PipeRestrictOverlapSystem` (which only runs on
-  anchoring).
+- **`Unstackable` is for devices only; pipes use node-aware overlap.** `GasPipeSansLayers` must
+  *not* carry the tag: `NoUnstackableInTile` (construction) is layer-agnostic, so tagging pipes
+  blocks every vent/pump built on the pipe that feeds it. `RCDSystem.IsConstructionLocationValid`
+  keeps the tag check for the built *device* (same-layer `AtmosPipeLayersComponent.CurrentPipeLayer`)
+  and additionally raises `RCDAtmosOverlapAttemptEvent` for any prototype with a `NodeContainer`.
+  `PipeRestrictOverlapSystem` handles it on the server: it resolves the mirror/RPD-layer prototype,
+  then compares `PipeNode.OriginalPipeDirection` rotated by the placement angle against the
+  anchored nodes' directions and layers. The client has no node data (Nodes is `serverOnly`), so
+  its event is a no-op and the server repeats the check in the do-after attempt. Pipes have no
+  fixtures, which is why the collision check cannot catch them — the node check is what prevents
+  the RCD from spawning an overlapping pipe that `PipeRestrictOverlapSystem` would immediately
+  unanchor.
 - **`RCDComponent.SpeedMultiplier` divides delays, so >1 is faster.** It is applied in
   `OnAfterInteract` to prototype and per-entity deconstruct delays; a non-positive value is ignored
   (var-edit safety) and `InstantConstruction` still forces 0.

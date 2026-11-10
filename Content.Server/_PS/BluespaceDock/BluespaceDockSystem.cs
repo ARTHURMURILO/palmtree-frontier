@@ -37,7 +37,10 @@ using Content.Server.Shuttles.Components;
 using Content.Server.Shuttles.Systems;
 using Content.Server.Station.Systems;
 using Content.Server.Storage.Components;
+using Content.Server.Tesla.Components;
 using Content.Server.Weapons.Ranged.Systems;
+using Content.Shared._EE.Supermatter.Components;
+using Content.Shared.Singularity.Components;
 using Content.Shared._NF.BindToStation;
 using Content.Shared._NF.CCVar;
 using Content.Shared._NF.ShuttleRecords;
@@ -668,6 +671,16 @@ public sealed class BluespaceDockSystem : EntitySystem
         List<string>? skipped = null)
     {
         error = null;
+
+        // Palmtree: never store a live engine, a singularity, or an energy ball inside a ship
+        // file. The admin force-dock path purges them before calling this; ordinary console
+        // storage is refused outright.
+        if (HasDangerousShipEntities(shuttleUid))
+        {
+            error = "bluespace-dock-error-dangerous-engine-aboard";
+            return false;
+        }
+
         var path = new ResPath($"{ShipDirectory}/{relativePath}");
 
         // In-flight projectiles are runtime state and are never saved: a stored bolt would come
@@ -2679,9 +2692,11 @@ public sealed class BluespaceDockSystem : EntitySystem
     /// force-dock too: instead of refusing a ship with living things aboard, the store moves them off
     /// it (see <see cref="EvacuateGrid"/>). <paramref name="requireAllowedGroup"/> is also for
     /// force-dock: admins may store a ship of any category (or one with no vessel identity at all).
+    /// <paramref name="allowDangerousEngines"/> is for force-dock too: the dangerous engine check is
+    /// skipped so the command can purge the engine state instead of refusing the ship.
     /// </summary>
     public string? FindStoreBlocker(EntityUid shuttleUid, bool requireDocked, EntityUid? stationGrid,
-        bool allowOrganics = false, bool requireAllowedGroup = true)
+        bool allowOrganics = false, bool requireAllowedGroup = true, bool allowDangerousEngines = false)
     {
         if (!Exists(shuttleUid) || !HasComp<ShuttleComponent>(shuttleUid))
             return "bluespace-dock-error-no-ship";
@@ -2694,6 +2709,9 @@ public sealed class BluespaceDockSystem : EntitySystem
 
         if (requireDocked && (stationGrid is not { } grid || !IsDockedToGrid(shuttleUid, grid)))
             return "bluespace-dock-error-not-docked";
+
+        if (!allowDangerousEngines && HasDangerousShipEntities(shuttleUid))
+            return "bluespace-dock-error-dangerous-engine-aboard";
 
         if (!allowOrganics && FoundOrganics(shuttleUid) is not null)
             return "bluespace-dock-error-organic-aboard";
@@ -3389,6 +3407,58 @@ public sealed class BluespaceDockSystem : EntitySystem
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Palmtree: whether a grid contains an engine or failure state that must never be saved
+    /// into the bluespace dock.
+    /// </summary>
+    public bool HasDangerousShipEntities(EntityUid gridUid)
+    {
+        var entities = new HashSet<EntityUid>();
+        GetEntitiesOnGrid(gridUid, entities);
+
+        foreach (var uid in entities)
+        {
+            if (IsDangerousShipEntity(uid))
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Palmtree: delete supermatter crystals, singularities, and tesla balls from a grid.
+    /// Used by the admin force-dock command before storing a ship.
+    /// </summary>
+    public int PurgeDangerousShipEntities(EntityUid gridUid)
+    {
+        var entities = new HashSet<EntityUid>();
+        GetEntitiesOnGrid(gridUid, entities);
+
+        var deleted = 0;
+        foreach (var uid in entities)
+        {
+            if (!IsDangerousShipEntity(uid))
+                continue;
+
+            QueueDel(uid);
+            deleted++;
+        }
+
+        return deleted;
+    }
+
+    private bool IsDangerousShipEntity(EntityUid uid)
+    {
+        if (HasComp<SupermatterComponent>(uid)
+            || HasComp<SingularityComponent>(uid)
+            || HasComp<TeslaEnergyBallComponent>(uid))
+            return true;
+
+        // The sliver and the small discharge balls do not carry the full engine components.
+        var prototype = MetaData(uid).EntityPrototype?.ID;
+        return prototype is "SupermatterSliver" or "TeslaMiniEnergyBall" or "SupermatterZapBall";
     }
 
     #endregion Ship state helpers

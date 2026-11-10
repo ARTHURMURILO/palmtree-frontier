@@ -311,6 +311,7 @@
   - TEG
   - RTG
   - SolarPanels
+  - Supermatter # EE/Coyote
 
 - type: guideEntry
   id: AME

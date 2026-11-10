@@ -29,7 +29,7 @@
   abstract: true
   components:
   - type: Contraband
-    severity: Class2
+    severity: Class2Restricted
     # Security and heads only (finally, shotgun traffic controller)
     allowedDepartments: [ Security, Command ]
 

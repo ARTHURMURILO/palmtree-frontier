@@ -4,8 +4,14 @@
   examineText: contraband-examine-text-Class1
 
 # Tier 2 - civilian lethal items and restricted gear; a permit is required.
+# Permit-only items have no department exemption, so this severity does not show a department/job list.
 - type: contrabandSeverity
   id: Class2
+  examineText: contraband-examine-text-Class2
+
+# Tier 2 gear that is restricted to specific departments/jobs (e.g. NFSD equipment).
+- type: contrabandSeverity
+  id: Class2Restricted
   examineText: contraband-examine-text-Class2
   showDepartmentsAndJobs: true
 
