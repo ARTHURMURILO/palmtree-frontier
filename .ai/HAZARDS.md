@@ -826,12 +826,16 @@ so these fail only in CI:
 ## 29. Programmable circuitry: sensor lookups and pathfinding loops (2026-11)
 
 - **`maxScanResults` is a display cap, not a search cap.** `ScanEntities` originally sorted every
-  visible entity, then truncated to `CircuitAssemblyComponent.MaxScanResults` (normally 16), and
-  `find` searched only that truncated list. In a dense room the 16 nearest entities can all sit
+  visible entity, then truncated to `CircuitAssemblyComponent.MaxScanResults` (16 at the time; the
+  standard sensor now returns up to 200), and `find` searched only that truncated list. In a dense
+  room those nearest entities can all sit
   within ~1.7 tiles, so `robot.find("wrench")` appeared to have a 1.7-tile sensor even though the
   module said 6 (now 16) tiles. Multi-result scans should truncate; single-result `find` and
-  `nearest_*` helpers must search every candidate in range. `CircuitrySensorRangeTest` covers both
-  the 16-tile range and the "more than 16 closer decoys" case.
+  `nearest_*` helpers must search every candidate in range. The current 200-row cap is safe for
+  performance because `ScanEntities` sorts candidates first and raycasts nearest-first only until
+  the cap is filled; do not restore the old "raycast every candidate then truncate" order.
+  `CircuitrySensorRangeTest` covers the 16-tile range, the "more than 200 closer decoys" case, and
+  the 200-row scan cap.
 - **Sensor ranges are tiles.** `CircuitPartComponent.SensorRange` is compared against world-space
   distances. Content grids use `MapGridComponent.TileSize = 1`, so tiles and world units are the
   same on normal maps; if a map ever changes `TileSize`, every sensor/path range needs an explicit

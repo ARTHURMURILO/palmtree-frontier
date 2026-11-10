@@ -690,7 +690,7 @@ tiles**; on normal grids `MapGridComponent.TileSize` is 1, so one tile equals on
 
 | Function | Returns | Notes |
 |---|---|---|
-| `robot.scan([radius])` | list or `false, reason` | All entities in range: `{id, name, kind, distance, x, y}`. Radius defaults to the sensor range and is clamped to it. Returns at most the sensor module's scan result cap (normally 16), nearest first. Uses the shared sensor-query budget. |
+| `robot.scan([radius])` | list or `false, reason` | All entities in range: `{id, name, kind, distance, x, y}`. Radius defaults to the sensor range and is clamped to it. Returns at most the sensor module's scan result cap (200 on the standard sensor), nearest first. Uses the shared sensor-query budget. |
 | `robot.scan_mobs([radius])` | list or `false, reason` | Same as `scan`, filtered to `kind == "mob"`. |
 | `robot.scan_items([radius])` | list or `false, reason` | Same as `scan`, filtered to `kind == "item"`. Only loose, unanchored items; installed pipes, vents, scrubbers and machines are excluded. |
 | `robot.scan_structures([radius])` | list or `false, reason` | Same as `scan`, filtered to `kind == "structure"`. Returns installed/anchorable machinery, pipes, vents, scrubbers and constructible machines; walls/windows remain `object`. |
@@ -721,7 +721,7 @@ tiles**; on normal grids `MapGridComponent.TileSize` is 1, so one tile equals on
 range and line of sight for each entity.
 
 Multi-result scans (`scan`, `scan_mobs`, `scan_items`, `scan_structures`, `scan_doors`) are capped
-by the sensor module's maximum scan result count (normally 16) and return the nearest results first.
+by the sensor module's maximum scan result count (200 on the standard sensor) and return the nearest results first. The scanner sorts candidates first and only raycasts in nearest-first order until the cap is filled.
 Single-result lookups (`find`, `nearest_*`) search the whole sensor range and are not hidden by
 closer entities.
 
@@ -1408,7 +1408,7 @@ programs; scripts always require an explicit Run.
 | Speech/radio text length | 1–200 characters |
 | Transfer/dispense amount | 1000 units per call |
 | Decal query radius | Up to sensor range, default 0.75 tiles |
-| Multi-result scan count | Sensor module maximum, normally 16 |
+| Multi-result scan count | Sensor module maximum, 200 on the standard sensor |
 | `wait_event` timeout slices | 50 ms, up to roughly 600 seconds |
 
 ## Gotchas
@@ -2049,4 +2049,5 @@ When changing the API:
 | 2026-11-09 | Added GLua-style table/string helpers: `table.HasValue`/`Contains`, `IsEmpty`, `Count`, `GetKeys`, `KeyFromValue`, `Random`, `Add`, `RemoveByValue`; `string.Trim`, `StartsWith`/`StartWith`, `EndsWith`, `Split`; `istable`/`isstring`/`isnumber`/`isbool`/`isfunction`. |
 | 2026-11-09 | Replaced the engine editor with a custom inline-syntax-colored Lua editor (line numbers, selection, copy/paste, tab indentation, undo/redo). Added multi-port signal sources, transfer rate limiting, Bluespace Dock/grid persistence coverage, puddle chemical analysis, ChemMaster automation, job/access/wanted queries, and chassis variants. |
 | 2026-11-10 | Standard sensor range is now 16 tiles. `find`/`nearest_*` search the full range instead of only the 16 nearest entities. Sensor lookups share a 4-per-second token bucket, and `walk_to` rate-limits/retargets path starts so tight follow loops cannot spam pathfinding or trip the allocation watchdog. |
+| 2026-11-10 | Multi-result scans now cap at 200 results instead of 16. The scanner raycasts nearest-first only until the cap is filled, so the larger result set does not multiply line-of-sight checks. |
 | 2026-11-10 | Lua-facing actions are synchronous by default. `walk_to` yields until arrival/no-path/timeout and `walk_to_async` is the fire-and-forget variant. `use`, `use_item`, `interact`/`harvest`, `plant`, `trigger` and `inject` wait for their do-after and expose `_async` variants; instant actions are unchanged. |

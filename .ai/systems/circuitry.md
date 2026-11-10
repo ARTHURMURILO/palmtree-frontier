@@ -61,10 +61,11 @@
   `trigger`, `inject`) also wait for completion by default, with 30 s timeouts and cancellation
   reporting. Their `_async` variants expose the old immediate behavior. Instant actions (pickup,
   drop, attack, shoot, transfers, dispensing, ChemMaster, send_signal) are unchanged.
-- Sensor module range is 16 tiles. Sensor lookups share a 4-per-second token bucket (burst of 4),
-  so a tight `find`/`scan` loop gets `scan cooldown` instead of rescanning hundreds of times per
-  resume. Multi-result scans keep the 16-result display cap; single-result `find`/`nearest_*`
-  lookups search the whole range and are not hidden by closer entities.
+- Sensor module range is 16 tiles and multi-result scans cap at 200 rows. Sensor lookups share a
+  4-per-second token bucket (burst of 4), so a tight `find`/`scan` loop gets `scan cooldown`
+  instead of rescanning hundreds of times per resume. The scanner sorts candidates and raycasts
+  nearest-first only until the cap is filled; single-result `find`/`nearest_*` lookups search the
+  whole range and are not hidden by closer entities.
 - `LuaBrainSystem` runtime lifecycle, `LuaProgram` execution, source persistence on the CPU item.
 - `CircuitLuaApiSystem` with opaque handles, scan/find/inspect, nearest/tile helpers, speech,
   item use/pickup/harvest, guns, melee, 4 indexed beakers, analyzers, reagent transfer and dispenser

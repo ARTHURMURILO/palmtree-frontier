@@ -1965,6 +1965,10 @@ Entries:
         admin-spawn only during live testing.
     - type: Tweak
       message: Circuit sensor modules now have a 16-tile range.
+    - type: Tweak
+      message: >-
+        Circuit scans now return up to 200 results instead of 16. The scanner checks line of sight
+        nearest-first only until the cap is filled, keeping scans bounded.
     - type: Fix
       message: >-
         Circuit find and nearest lookups now search the full sensor range instead of only the

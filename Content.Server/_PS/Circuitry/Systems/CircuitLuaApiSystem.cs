@@ -522,7 +522,7 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         if (!_assembly.TryConsumePower(runtime.Assembly, component.ActionPowerCost, component))
             return Bool(false, "no power");
 
-        var entities = ScanEntities(runtime, radius, kind, component.MaxScanResults > 0 ? component.MaxScanResults : 16);
+        var entities = ScanEntities(runtime, radius, kind, component.MaxScanResults > 0 ? component.MaxScanResults : 200);
         var table = NewTable(runtime);
         var index = 1;
 
@@ -2875,7 +2875,9 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         string? kind,
         int maxResults)
     {
-        var result = new List<(EntityUid, float)>();
+        // Collect and sort candidates first. Line-of-sight raycasts are the expensive part, so only
+        // check them in nearest-first order until the result cap is filled.
+        var candidates = new List<(EntityUid Uid, float Distance)>();
         _lookupSet.Clear();
         _lookup.GetEntitiesInRange(runtime.Assembly, radius, _lookupSet, LookupFlags.Uncontained);
 
@@ -2889,20 +2891,28 @@ public sealed class CircuitLuaApiSystem : EntitySystem
             if (kind != null && GetKind(uid) != kind)
                 continue;
 
-            if (!_interaction.InRangeUnobstructed(runtime.Assembly, uid, radius))
-                continue;
-
             var other = _transform.GetMapCoordinates(uid);
             if (origin.MapId != other.MapId)
                 continue;
 
-            result.Add((uid, (origin.Position - other.Position).Length()));
+            candidates.Add((uid, (origin.Position - other.Position).Length()));
         }
 
-        result.Sort((a, b) => a.Item2.CompareTo(b.Item2));
+        candidates.Sort((a, b) => a.Distance.CompareTo(b.Distance));
 
-        if (maxResults > 0 && result.Count > maxResults)
-            result.RemoveRange(maxResults, result.Count - maxResults);
+        var limit = maxResults > 0 ? maxResults : int.MaxValue;
+        var result = new List<(EntityUid, float)>(Math.Min(limit, candidates.Count));
+
+        foreach (var candidate in candidates)
+        {
+            if (result.Count >= limit)
+                break;
+
+            if (!_interaction.InRangeUnobstructed(runtime.Assembly, candidate.Uid, radius))
+                continue;
+
+            result.Add(candidate);
+        }
 
         return result;
     }

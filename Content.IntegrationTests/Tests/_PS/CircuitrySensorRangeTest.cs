@@ -149,7 +149,7 @@ public sealed class CircuitrySensorRangeTest
     }
 
     [Test]
-    public async Task FindIgnoresTheMultiScanResultCap()
+    public async Task FindAndScanUseTheirDifferentCaps()
     {
         await using var pair = await PoolManager.GetServerClient();
         var server = pair.Server;
@@ -171,12 +171,13 @@ public sealed class CircuitrySensorRangeTest
             var cell = entMan.SpawnEntity("PowerCellSmall", map.GridCoords);
             var sensor = entMan.SpawnEntity("CircuitSensor", map.GridCoords);
 
-            // More decoys than maxScanResults (16), all closer than the target. This is the
-            // dense-room case where find() used to stop seeing anything past the 16 nearest.
-            for (var i = 0; i < 24; i++)
+            // More decoys than maxScanResults (now 200), all closer than the target. This is the
+            // dense-room case where find() used to stop seeing anything past the result cap.
+            for (var i = 0; i < 225; i++)
             {
                 var decoy = entMan.SpawnEntity("Wrench",
-                    new EntityCoordinates(map.Grid.Owner, new Vector2(1f + i * 0.05f, 0.5f)));
+                    new EntityCoordinates(map.Grid.Owner,
+                        new Vector2(1f + i % 15 * 0.2f, 1f + i / 15 * 0.2f)));
                 entMan.System<MetaDataSystem>().SetEntityName(decoy, "closer wrench");
             }
 
@@ -194,7 +195,10 @@ public sealed class CircuitrySensorRangeTest
 
             entMan.GetComponent<CircuitCpuComponent>(cpu).Source = """
                 function main()
-                    log("find", tostring(robot.find("far target wrench")))
+                    local target = robot.find("far target wrench")
+                    local things = robot.scan(6)
+                    log("find", tostring(target))
+                    log("scan", tostring(#things))
                 end
                 """;
         });
@@ -213,7 +217,8 @@ public sealed class CircuitrySensorRangeTest
             var log = string.Join("\n", runtime!.Program.Log);
             Assert.That(runtime.Program.LastError, Is.Null, log);
             Assert.That(log, Does.Not.Contain("find\tnil"), log);
-            Assert.That(log, Does.StartWith("find\t"), log);
+            Assert.That(log, Does.Contain("find\t"), log);
+            Assert.That(log, Does.Contain("scan\t200"), log);
         });
 
         await pair.CleanReturnAsync();

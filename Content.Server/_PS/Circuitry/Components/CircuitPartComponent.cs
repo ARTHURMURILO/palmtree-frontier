@@ -59,7 +59,7 @@ public sealed partial class CircuitPartComponent : Component
     public float SensorRange = 16f;
 
     [DataField]
-    public int MaxScanResults = 16;
+    public int MaxScanResults = 200;
 
     [DataField]
     public CircuitAnalyzerType AnalyzerType;

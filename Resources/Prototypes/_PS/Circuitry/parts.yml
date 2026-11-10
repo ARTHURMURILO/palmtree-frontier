@@ -148,7 +148,7 @@
   - type: CircuitPart
     partType: Sensor
     sensorRange: 16
-    maxScanResults: 16
+    maxScanResults: 200
     idlePowerDraw: 0.05
     actionPowerCost: 0.05
   - type: Tag
