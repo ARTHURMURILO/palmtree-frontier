@@ -52,6 +52,11 @@
         - analyzer3
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
+  # A bare chassis has no locomotion module, and CircuitAssemblySystem.Recompute zeroes the
+  # inherited mob speeds on startup. Declare that here so spawning does not modify the component.
+  - type: MovementSpeedModifier
+    baseWalkSpeed: 0
+    baseSprintSpeed: 0
   - type: Hands
     showInHands: false
     canBeStripped: false
