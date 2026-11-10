@@ -118,6 +118,9 @@ public sealed partial class CircuitAssemblyComponent : Component
     public CircuitWalkMode WalkMode;
 
     [ViewVariables]
+    public bool WalkArrived;
+
+    [ViewVariables]
     public EntityCoordinates? WalkTarget;
 
     [ViewVariables]

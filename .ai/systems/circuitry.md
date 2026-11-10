@@ -7,18 +7,20 @@
 
 ## Status
 
-- Branch: `circuitry`.
+- Branch: `master` (merged from `circuitry`).
 - Phase 0 (Lua sandbox spike): **complete**.
 - Phases 1–3 (assembly, Lua brain/API, actions/perception/UI): **implemented, awaiting in-game/UX testing**.
-- Phase 4 (construction/content polish) is partial: chassis sprite variants and ChemMaster support
-  are in, while lathe/construction, research, sound and balance work remain. Phase 5 (hardening) is
-  in progress: grid and Bluespace Dock persistence, ownership administration, a Lua kill switch,
-  editor coverage, Lua soak/queue tests and a many-assembly stress test are in place.
-- Validation: solution build, YAMLLinter, Content.Tests, and 21 targeted `Circuitry*` integration
+- Phase 4 (construction/content polish) is partial: chassis sprite variants, ChemMaster support,
+  module fabrication and the Programmable/Advanced Programmable Circuitry research nodes are in,
+  while chassis construction, sound and balance work remain. Phase 5 (hardening) is in progress:
+  grid and Bluespace Dock persistence, ownership administration, a Lua kill switch, editor coverage,
+  Lua soak/queue tests and a many-assembly stress test are in place.
+- Validation: solution build, YAMLLinter, Content.Tests, and 30 targeted `Circuitry*` integration
   tests pass (assembly/Lua, hearing, inspect, BUI open, analyzers/dispenser, ChemMaster, security,
   radio, power budget, scan kinds, signals, item/solution autonomy, decals/doors, puddles, events,
   editor Run auto-save, gas analyzer, grid save/load, Bluespace Dock round-trip, many-assembly
-  stress). The BUI test covers the installed-CPU editor and a CPU held in hand.
+  stress, 16-tile sensor range, dense-room find, sensor-query throttling, synchronous and async walk-to, and synchronous do-after actions).
+  The BUI test covers the installed-CPU editor and a CPU held in hand.
 
 ### Implemented Phases 1–3
 
@@ -49,7 +51,21 @@
   targets default to a 0.5-tile arrival tolerance and are clamped to at least 0.5. With smoothing
   enabled (default), tolerance scales with current walk speed up to 1.25 tiles and steering brakes
   near the target; `walk_status` stops the path and reports `arrived` once within tolerance,
-  preventing overshoot loops around small items.
+  preventing overshoot loops around small items. A new path start is rate-limited to 0.25 s, and
+  commands targeting within 0.75 tiles of the current path target are no-ops, so follow loops do
+  not cancel/restart pathfinding every tick.
+- Lua-facing movement is synchronous by default: `walk_to` yields through `robot.wait` until
+  arrival, no-path or a 60 s timeout. `walk_to_async` is the fire-and-forget variant. The C#
+  pathfinding itself stays asynchronous; no server tick is ever blocked.
+- Lua-facing actions that can start do-afters (`use`, `use_item`, `interact`/`harvest`, `plant`,
+  `trigger`, `inject`) also wait for completion by default, with 30 s timeouts and cancellation
+  reporting. Their `_async` variants expose the old immediate behavior. Instant actions (pickup,
+  drop, attack, shoot, transfers, dispensing, ChemMaster, send_signal) are unchanged.
+- Sensor module range is 16 tiles and multi-result scans cap at 200 rows. Sensor lookups share a
+  4-per-second token bucket (burst of 4), so a tight `find`/`scan` loop gets `scan cooldown`
+  instead of rescanning hundreds of times per resume. The scanner sorts candidates and raycasts
+  nearest-first only until the cap is filled; single-result `find`/`nearest_*` lookups search the
+  whole range and are not hidden by closer entities.
 - `LuaBrainSystem` runtime lifecycle, `LuaProgram` execution, source persistence on the CPU item.
 - `CircuitLuaApiSystem` with opaque handles, scan/find/inspect, nearest/tile helpers, speech,
   item use/pickup/harvest, guns, melee, 4 indexed beakers, analyzers, reagent transfer and dispenser
@@ -143,18 +159,18 @@ as a container ID; if a hand is named `left_arm` while the manipulator item slot
 the hand container is the module slot and the hand appears to hold the installed manipulator. Use
 the `hand_<slot>` prefix (`hand_left_arm`, `hand_right_arm`) and test pickup after installing an arm.
 
-Known MVP limits: no construction/lathe chain; no access chip, weapon mount, or `on_tick`
-callbacks. Radio encryption keys are inserted by using them on the chassis; extraction uses the
-module's normal screwdriver interaction after ejecting it. ChemMaster buffer transfer, pill and
-bottle production are available through the dedicated `chem_master_*` API. Future work: an
-identification module/component that gives the assembly its own job/access identity, rather than
-only reading nearby ID cards. `robot.find` intentionally does not use the scan
-cooldown (it still charges power and sets the next scan time) so a script can scan then immediately
-find. It only sees `LookupFlags.Uncontained` entities: a wrench inside a toolbox, belt, backpack or
-hand is invisible to it; use `robot.held()` for the assembly's own items or inspect the
-carrier/container. Single-entity lookups return handles: `find` and all `nearest_*` helpers return a handle, or
-`nil, reason` (no sensor, no power, or no match). Multi-entity lookups keep their table shape, with
-each entity entry carrying its handle in `.id`.
+Known MVP limits: the chassis has no construction/lathe chain (its modules are fabricated); no
+access chip, weapon mount, or `on_tick` callbacks. Radio encryption keys are inserted by using them
+on the chassis; extraction uses the module's normal screwdriver interaction after ejecting it.
+ChemMaster buffer transfer, pill and bottle production are available through the dedicated
+`chem_master_*` API. Future work: an identification module/component that gives the assembly its own
+job/access identity, rather than only reading nearby ID cards. `robot.find` shares the sensor-query
+token bucket with `scan` and the `nearest_*` helpers, so tight loops receive `scan cooldown` instead
+of rescanning every iteration. It only sees `LookupFlags.Uncontained` entities: a wrench inside a
+toolbox, belt, backpack or hand is invisible to it; use `robot.held()` for the assembly's own items
+or inspect the carrier/container. Single-entity lookups return handles: `find` and all `nearest_*`
+helpers return a handle, or `nil, reason` (no sensor, no power, cooldown, or no match). Multi-entity
+lookups keep their table shape, with each entity entry carrying its handle in `.id`.
 
 ## Design summary
 

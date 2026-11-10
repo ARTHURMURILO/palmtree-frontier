@@ -560,6 +560,20 @@ so these fail only in CI:
   throws must not skip the registration of every entity after it. It also re-links every
   `ExtensionCableReceiverComponent` without a provider - a loaded machine whose APC link is missing
   shows "un-powered" until a player deconstructs and rebuilds it.
+- **Dangling entity references deserialize as `EntityUid.Invalid`, not as null.** Legacy ship
+  files contain `ents: [invalid]`, `storedItems: invalid` and `invalid` values in other components
+  (`ContainedSolution.container`, `Action.entIcon`, `RadarConsole.targetEntity`, ...). Loading one
+  leaves `EntityUid.Invalid` behind, so any traversal that calls `MetaData`/`Transform` on every
+  entity throws `Entity 0 does not have a component of type MetaDataComponent` (the 2026-11-09 dock
+  crash: `HasDangerousShipEntities`/`PurgeDangerousShipEntities`, which made `RefreshState` blank to
+  "INSERT ID" and broke `forcedock`). Rules:
+  - `GetEntitiesOnGrid` skips `!IsValid() || !Exists` uids and `IsDangerousShipEntity` re-checks.
+  - Ship-file writes prune undeclared/invalid `ContainerContainer` (`ents`/`ent`) and `Storage`
+    (`storedItems`) references, and `PruneInvalidComponentReferences` nulls/removes every remaining
+    `invalid` component value (except `Transform.parent`, which is legitimately invalid on a grid
+    root). `TryWriteSanitizedShipFile` does the same on load and only loads the sanitized temporary
+    copy. The three corrupt files pulled from the 2026-11-09 incident had 576 such references.
+    Do not assume a file's components are clean.
 
 ## 26. RCD/RPD port notes (2026-10-18)
 
@@ -822,3 +836,47 @@ so these fail only in CI:
   `StripStationReferences`/`UndockShuttle` must go through `RestoreStoreFailure` (station refs, deed,
   docking to the *grid it was docked to*). A stripped ship has no station member/bound components, so
   its station-bound machinery and power look "soft-broken" until it is restored.
+
+## 29. Programmable circuitry: sensor lookups and pathfinding loops (2026-11)
+
+- **`maxScanResults` is a display cap, not a search cap.** `ScanEntities` originally sorted every
+  visible entity, then truncated to `CircuitAssemblyComponent.MaxScanResults` (16 at the time; the
+  standard sensor now returns up to 200), and `find` searched only that truncated list. In a dense
+  room those nearest entities can all sit
+  within ~1.7 tiles, so `robot.find("wrench")` appeared to have a 1.7-tile sensor even though the
+  module said 6 (now 16) tiles. Multi-result scans should truncate; single-result `find` and
+  `nearest_*` helpers must search every candidate in range. The current 200-row cap is safe for
+  performance because `ScanEntities` sorts candidates first and raycasts nearest-first only until
+  the cap is filled; do not restore the old "raycast every candidate then truncate" order.
+  `CircuitrySensorRangeTest` covers the 16-tile range, the "more than 200 closer decoys" case, and
+  the 200-row scan cap.
+- **Sensor ranges are tiles.** `CircuitPartComponent.SensorRange` is compared against world-space
+  distances. Content grids use `MapGridComponent.TileSize = 1`, so tiles and world units are the
+  same on normal maps; if a map ever changes `TileSize`, every sensor/path range needs an explicit
+  conversion instead of assuming 1:1. The UI reports the value as tiles.
+- **Never let `find` bypass the sensor-query budget.** It used to explicitly skip the cooldown. A
+  user loop such as `find -> position_of -> walk_to` without `robot.wait` then performed hundreds
+  of full scans per resume and eventually allocated ~497 MB, tripping
+  `MaxAllocationBytesPerResume` (8 MiB). `CircuitLuaRuntime` now uses a shared 4-token/s bucket for
+  `scan`, `find`, `nearest_*` and `scan_puddles`; the bucket still allows a scan followed by a
+  couple of finds in one tick.
+- **Pathfinding restarts are expensive even when Lua allocation stays low.** `NPCSteeringSystem`
+  cancels and recreates a path request when `Register` is called with different coordinates. A
+  follow loop that re-passes a moving entity's position every tick can therefore restart pathfinding
+  every tick. `CircuitMovementSystem.TryWalkTo` now ignores targets within 0.75 tiles of the current
+  path target while a path is active, and the Lua API rate-limits successful path starts to one per
+  0.25 s. Do not remove those guards without a dense-map stress test.
+
+- **Do not make pathfinding itself synchronous on the server thread.** `NPCSteeringSystem` and
+  `PathfindingSystem` are asynchronous because A* can take milliseconds on a large ship. The Lua
+  `walk_to` wrapper is synchronous *to the script* only: it starts the async path and yields via
+  `robot.wait`, so the server tick keeps running. `walk_to_async` exposes the old fire-and-forget
+  behavior. Never replace this with a blocking `.Result`/`.Wait()` or a direct synchronous path
+  call from a Lua callback.
+- **Do-after-backed Lua actions wait by default.** `use`, `use_item`, `interact`/`harvest`,
+  `plant`, `trigger` and `inject` wrap the instant callback and poll `DoAfterComponent` through
+  `action_busy`/`action_marker`/`action_status`. They return `false, "action cancelled"` when the
+  do-after is interrupted and time out after 30 s. The `_async` variants are the old immediate
+  behavior; a later synchronous action first waits for any existing do-after so it cannot confuse
+  an old completed/cancelled entry with the new action's result. Keep the do-after index
+  comparison wrap-safe (`ushort`).

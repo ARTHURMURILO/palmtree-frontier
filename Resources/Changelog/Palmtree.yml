@@ -1963,6 +1963,29 @@ Entries:
         Circuit modules can now be fabricated in the exosuit fabricator. New Programmable and
         Advanced Programmable Circuitry research nodes unlock them, while the chassis remains
         admin-spawn only during live testing.
+    - type: Tweak
+      message: Circuit sensor modules now have a 16-tile range.
+    - type: Tweak
+      message: >-
+        Circuit scans now return up to 200 results instead of 16. The scanner checks line of sight
+        nearest-first only until the cap is filled, keeping scans bounded.
+    - type: Fix
+      message: >-
+        Circuit find and nearest lookups now search the full sensor range instead of only the
+        sixteen nearest entities, so nearby clutter no longer hides a wrench or person farther
+        away.
+    - type: Fix
+      message: >-
+        Circuit sensor lookups and walk_to commands are rate-limited, so tight Lua loops no longer
+        rescan hundreds of times per tick or restart pathfinding every tick.
+    - type: Tweak
+      message: >-
+        Circuit walk_to now waits until the robot arrives or fails, while walk_to_async keeps the
+        old fire-and-forget behavior.
+    - type: Tweak
+      message: >-
+        Circuit use, use_item, interact, harvest, plant, trigger and inject now wait for their
+        do-after to finish. Async variants are available for scripts that need to keep running.
   id: 90129
   time: '2026-11-09T12:00:00.0000000+00:00'
 - author: ARTHURMURILO
@@ -2049,3 +2072,15 @@ Entries:
   time: '2026-11-10T01:30:31.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/a317782b69337625bf71ea8de52a35f79fb528da
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        Fixed bluespace dock consoles showing "INSERT ID" and failing to store
+        or retrieve ships saved with old dangling entity references.
+    - type: Fix
+      message: Fixed forcedock crashing on legacy ship files.
+  id: 90138
+  time: '2026-11-10T13:52:49.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/bce651dbe830f5d435da0081f64e6b74bb9ef2db

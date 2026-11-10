@@ -54,12 +54,12 @@ public sealed partial class CircuitPartComponent : Component
     [DataField]
     public float HandRange = 1.5f;
 
-    // Sensor / voice / generic.
+    // Sensor / voice / generic. SensorRange is measured in tiles (standard grids have TileSize 1).
     [DataField]
-    public float SensorRange = 6f;
+    public float SensorRange = 16f;
 
     [DataField]
-    public int MaxScanResults = 16;
+    public int MaxScanResults = 200;
 
     [DataField]
     public CircuitAnalyzerType AnalyzerType;

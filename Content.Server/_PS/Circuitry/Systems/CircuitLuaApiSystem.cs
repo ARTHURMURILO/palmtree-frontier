@@ -37,6 +37,7 @@ using Content.Shared.CriminalRecords;
 using Content.Shared.Damage;
 using Content.Shared.Decals;
 using Content.Shared.DeviceLinking;
+using Content.Shared.DoAfter;
 using Content.Shared.Doors.Components;
 using Content.Shared.FixedPoint;
 using Content.Shared.Fluids.Components;
@@ -87,6 +88,89 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         end
         """;
 
+    private const string WalkToSource = """
+        return function(x, y, range, smooth)
+            local ok, reason = robot.walk_to_async(x, y, range, smooth)
+            if not ok then
+                -- Yield even on failure so a retry loop cannot spin without ever waiting.
+                robot.wait(0.1)
+                return false, reason
+            end
+
+            -- walk_to_async may have been an immediate "already here" no-op.
+            local status = robot.walk_status()
+            if status == "arrived" then
+                -- Yield one tick so a follow loop cannot spin when the target is already adjacent.
+                robot.wait(0)
+                return true
+            end
+            if status == "no_path" then
+                robot.wait(0.1)
+                return false, "no path"
+            end
+
+            local elapsed = 0
+            while status == "moving" do
+                elapsed = elapsed + robot.wait(0.1)
+                if elapsed > 60 then
+                    robot.stop()
+                    return false, "walk timed out"
+                end
+                status = robot.walk_status()
+            end
+
+            if status == "arrived" then return true end
+            if status == "no_path" then
+                robot.wait(0.1)
+                return false, "no path"
+            end
+            robot.wait(0.1)
+            return false, "movement stopped"
+        end
+        """;
+
+    /// <summary>
+    /// Wraps an instant action callback so it waits for any do-after the action started. The
+    /// original callback is exposed as the matching `_async` function. The wrapper yields through
+    /// `robot.wait`, so a long construction or injection does not block the server tick.
+    /// </summary>
+    private const string ActionWrapperSource = """
+        return function(async_fn)
+            local function wait_current()
+                local elapsed = 0
+                while robot.action_busy() do
+                    elapsed = elapsed + robot.wait(0.05)
+                    if elapsed > 30 then return false, "action timed out" end
+                end
+                return true
+            end
+
+            return function(...)
+                -- Finish a previous action first so its completed/cancelled entry cannot be
+                -- mistaken for this action's result.
+                local idle, idleReason = wait_current()
+                if not idle then return false, idleReason end
+
+                local marker = robot.action_marker()
+                local ok, reason = async_fn(...)
+                if not ok then return false, reason end
+
+                local elapsed = 0
+                while true do
+                    local status = robot.action_status(marker)
+                    if status == "running" then
+                        elapsed = elapsed + robot.wait(0.05)
+                        if elapsed > 30 then return false, "action timed out" end
+                    elseif status == "cancelled" then
+                        return false, "action cancelled"
+                    else
+                        return true
+                    end
+                end
+            end
+        end
+        """;
+
     private readonly HashSet<EntityUid> _lookupSet = new();
 
     [Dependency] private readonly AccessReaderSystem _access = default!;
@@ -128,9 +212,14 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         robot.Set("has_module", DynValue.NewCallback((_, args) => HasModule(runtime, args), "has_module"));
 
         robot.Set("move", DynValue.NewCallback((_, args) => Move(runtime, args), "move"));
-        robot.Set("walk_to", DynValue.NewCallback((_, args) => WalkTo(runtime, args), "walk_to"));
+        robot.Set("walk_to_async", DynValue.NewCallback((_, args) => WalkTo(runtime, args), "walk_to_async"));
         robot.Set("stop", DynValue.NewCallback((_, _) => Stop(runtime), "stop"));
         robot.Set("walk_status", DynValue.NewCallback((_, _) => WalkStatus(runtime), "walk_status"));
+
+        // Blocking-to-Lua wrapper: starts the async path, then yields until the robot arrives.
+        // This keeps walk_to from blocking the server thread while making scripts much simpler.
+        var walkToBuilder = script.LoadString(WalkToSource, null, "circuit-walk-to");
+        robot.Set("walk_to", script.Call(walkToBuilder));
 
         robot.Set("scan", DynValue.NewCallback((_, args) => Scan(runtime, args, null), "scan"));
         robot.Set("scan_mobs", DynValue.NewCallback((_, args) => Scan(runtime, args, "mob"), "scan_mobs"));
@@ -168,23 +257,51 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         var waitEventBuilder = script.LoadString(WaitEventSource, null, "circuit-wait-event");
         robot.Set("wait_event", script.Call(waitEventBuilder));
 
+        robot.Set("action_busy", DynValue.NewCallback((_, _) => ActionBusy(runtime), "action_busy"));
+        robot.Set("action_marker", DynValue.NewCallback((_, _) => ActionMarker(runtime), "action_marker"));
+        robot.Set("action_status", DynValue.NewCallback((_, args) => ActionStatus(runtime, args), "action_status"));
+
+        var actionWrapperFactory = script.Call(
+            script.LoadString(ActionWrapperSource, null, "circuit-action-wrapper"));
+
+        void RegisterAction(string name, string asyncName, DynValue callback)
+        {
+            robot.Set(asyncName, callback);
+            robot.Set(name, script.Call(actionWrapperFactory, callback));
+        }
+
         robot.Set("say", DynValue.NewCallback((_, args) => Say(runtime, args), "say"));
         robot.Set("radio", DynValue.NewCallback((_, args) => Radio(runtime, args), "radio"));
         robot.Set("radio_channels", DynValue.NewCallback((_, _) => RadioChannels(runtime), "radio_channels"));
         robot.Set("pickup", DynValue.NewCallback((_, args) => Pickup(runtime, args), "pickup"));
         robot.Set("drop", DynValue.NewCallback((_, _) => Drop(runtime), "drop"));
         robot.Set("held", DynValue.NewCallback((_, _) => Held(runtime), "held"));
-        robot.Set("use", DynValue.NewCallback((_, args) => Use(runtime, args), "use"));
-        robot.Set("use_item", DynValue.NewCallback((_, args) => UseItem(runtime, args), "use_item"));
+
+        var useCallback = DynValue.NewCallback((_, args) => Use(runtime, args), "use_async");
+        RegisterAction("use", "use_async", useCallback);
+
+        var useItemCallback = DynValue.NewCallback((_, args) => UseItem(runtime, args), "use_item_async");
+        RegisterAction("use_item", "use_item_async", useItemCallback);
+        robot.Set("plant_async", useItemCallback);
+        robot.Set("plant", script.Call(actionWrapperFactory, useItemCallback));
+
         robot.Set("attack", DynValue.NewCallback((_, args) => Attack(runtime, args), "attack"));
         robot.Set("shoot", DynValue.NewCallback((_, args) => Shoot(runtime, args), "shoot"));
-        robot.Set("interact", DynValue.NewCallback((_, args) => Interact(runtime, args), "interact"));
-        robot.Set("harvest", DynValue.NewCallback((_, args) => Interact(runtime, args), "harvest"));
-        robot.Set("plant", DynValue.NewCallback((_, args) => UseItem(runtime, args), "plant"));
+
+        var interactCallback = DynValue.NewCallback((_, args) => Interact(runtime, args), "interact_async");
+        RegisterAction("interact", "interact_async", interactCallback);
+        robot.Set("harvest_async", interactCallback);
+        robot.Set("harvest", script.Call(actionWrapperFactory, interactCallback));
+
         robot.Set("water", DynValue.NewCallback((_, args) => Transfer(runtime, args, true), "water"));
-        robot.Set("trigger", DynValue.NewCallback((_, args) => Trigger(runtime, args), "trigger"));
+
+        var triggerCallback = DynValue.NewCallback((_, args) => Trigger(runtime, args), "trigger_async");
+        RegisterAction("trigger", "trigger_async", triggerCallback);
+
         robot.Set("send_signal", DynValue.NewCallback((_, args) => SendSignal(runtime, args), "send_signal"));
-        robot.Set("inject", DynValue.NewCallback((_, args) => Inject(runtime, args), "inject"));
+
+        var injectCallback = DynValue.NewCallback((_, args) => Inject(runtime, args), "inject_async");
+        RegisterAction("inject", "inject_async", injectCallback);
 
         robot.Set("analyze_plant", DynValue.NewCallback((_, args) => AnalyzePlant(runtime, args), "analyze_plant"));
         robot.Set("analyze_chemicals", DynValue.NewCallback((_, args) => AnalyzeChemicals(runtime, args), "analyze_chemicals"));
@@ -352,10 +469,23 @@ public sealed class CircuitLuaApiSystem : EntitySystem
 
         var target = new EntityCoordinates(parent.Value, new Vector2((float) x, (float) y));
 
-        if (!_assembly.TryConsumePower(runtime.Assembly, component.ActionPowerCost, component))
-            return Bool(false, "no power");
+        if (_timing.CurTime < runtime.NextWalk)
+            return Bool(false, "walk cooldown");
 
-        return Bool(_movement.TryWalkTo(runtime.Assembly, target, range, smooth, component));
+        var result = _movement.TryWalkTo(runtime.Assembly, target, range, smooth, component);
+        switch (result)
+        {
+            case CircuitWalkResult.Started:
+                runtime.NextWalk = _timing.CurTime + TimeSpan.FromSeconds(0.25);
+                return Bool(true);
+            case CircuitWalkResult.AlreadyThere:
+            case CircuitWalkResult.AlreadyPathing:
+                return Bool(true);
+            case CircuitWalkResult.NoPower:
+                return Bool(false, "no power");
+            default:
+                return Bool(false, "cannot start walking");
+        }
     }
 
     private DynValue Stop(CircuitLuaRuntime runtime)
@@ -380,20 +510,19 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         if (!component.Powered)
             return Bool(false, "no power");
 
-        if (_timing.CurTime < runtime.NextScan)
-            return Bool(false, "scan cooldown");
-
         var radius = args.Count > 0 && args[0].Type == DataType.Number
             ? (float) args[0].Number
             : component.SensorRange;
 
         radius = Math.Clamp(radius, 0.1f, component.SensorRange);
-        runtime.NextScan = _timing.CurTime + TimeSpan.FromSeconds(0.25);
+
+        if (!TryConsumeSensorQuery(runtime))
+            return Bool(false, "scan cooldown");
 
         if (!_assembly.TryConsumePower(runtime.Assembly, component.ActionPowerCost, component))
             return Bool(false, "no power");
 
-        var entities = ScanEntities(runtime, radius, kind);
+        var entities = ScanEntities(runtime, radius, kind, component.MaxScanResults > 0 ? component.MaxScanResults : 200);
         var table = NewTable(runtime);
         var index = 1;
 
@@ -434,20 +563,17 @@ public sealed class CircuitLuaApiSystem : EntitySystem
             : component.SensorRange;
 
         radius = Math.Clamp(radius, 0.1f, component.SensorRange);
-        runtime.NextScan = _timing.CurTime + TimeSpan.FromSeconds(0.25);
+
+        if (!TryConsumeSensorQuery(runtime))
+            return LookupFailure("scan cooldown");
 
         if (!_assembly.TryConsumePower(runtime.Assembly, component.ActionPowerCost, component))
             return LookupFailure("no power");
 
-        foreach (var (uid, _) in ScanEntities(runtime, radius, null))
-        {
-            if (!Name(uid).Contains(name, StringComparison.OrdinalIgnoreCase))
-                continue;
+        if (!TryFindNearestInRange(runtime, radius, null, false, name, out var found))
+            return LookupFailure("no matching entity in range");
 
-            return DynValue.NewNumber(runtime.GetHandle(uid));
-        }
-
-        return LookupFailure("no matching entity in range");
+        return DynValue.NewNumber(runtime.GetHandle(found));
     }
 
     /// <summary>
@@ -739,11 +865,16 @@ public sealed class CircuitLuaApiSystem : EntitySystem
 
         radius = Math.Clamp(radius, 0.1f, component.SensorRange);
 
-        var nearest = ScanEntities(runtime, radius, kind).FirstOrDefault();
-        if (nearest.Uid == EntityUid.Invalid)
+        if (!TryConsumeSensorQuery(runtime))
+            return LookupFailure("scan cooldown");
+
+        if (!_assembly.TryConsumePower(runtime.Assembly, component.ActionPowerCost, component))
+            return LookupFailure("no power");
+
+        if (!TryFindNearestInRange(runtime, radius, kind, false, null, out var nearest))
             return LookupFailure("no matching entity in range");
 
-        return DynValue.NewNumber(runtime.GetHandle(nearest.Uid));
+        return DynValue.NewNumber(runtime.GetHandle(nearest));
     }
 
     private DynValue NearestPerson(CircuitLuaRuntime runtime, CallbackArguments args)
@@ -763,13 +894,16 @@ public sealed class CircuitLuaApiSystem : EntitySystem
 
         radius = Math.Clamp(radius, 0.1f, component.SensorRange);
 
-        foreach (var (uid, _) in ScanEntities(runtime, radius, "mob"))
-        {
-            if (HasComp<HumanoidAppearanceComponent>(uid))
-                return DynValue.NewNumber(runtime.GetHandle(uid));
-        }
+        if (!TryConsumeSensorQuery(runtime))
+            return LookupFailure("scan cooldown");
 
-        return LookupFailure("no matching person in range");
+        if (!_assembly.TryConsumePower(runtime.Assembly, component.ActionPowerCost, component))
+            return LookupFailure("no power");
+
+        if (!TryFindNearestInRange(runtime, radius, "mob", true, null, out var person))
+            return LookupFailure("no matching person in range");
+
+        return DynValue.NewNumber(runtime.GetHandle(person));
     }
 
     private DynValue Distance(CircuitLuaRuntime runtime, CallbackArguments args)
@@ -915,7 +1049,7 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         if (!component.Powered)
             return Bool(false, "no power");
 
-        if (_timing.CurTime < runtime.NextScan)
+        if (!TryConsumeSensorQuery(runtime))
             return Bool(false, "scan cooldown");
 
         var radius = args.Count > 0 && args[0].Type == DataType.Number
@@ -923,7 +1057,6 @@ public sealed class CircuitLuaApiSystem : EntitySystem
             : 1f;
 
         radius = Math.Clamp(radius, 0.1f, component.SensorRange);
-        runtime.NextScan = _timing.CurTime + TimeSpan.FromSeconds(0.25);
 
         if (!_assembly.TryConsumePower(runtime.Assembly, component.ActionPowerCost, component))
             return Bool(false, "no power");
@@ -2587,12 +2720,164 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         return true;
     }
 
+    /// <summary>
+    /// Returns the nearest entity matching every supplied filter. Unlike <see cref="ScanEntities"/>
+    /// this is not limited by the scan-result cap: single-result lookups such as <c>find</c> must
+    /// be able to see a named target even when many other entities are closer.
+    /// </summary>
+    private bool TryFindNearestInRange(
+        CircuitLuaRuntime runtime,
+        float radius,
+        string? kind,
+        bool humanoidOnly,
+        string? nameContains,
+        out EntityUid found)
+    {
+        found = EntityUid.Invalid;
+        var origin = _transform.GetMapCoordinates(runtime.Assembly);
+        _lookupSet.Clear();
+        _lookup.GetEntitiesInRange(runtime.Assembly, radius, _lookupSet, LookupFlags.Uncontained);
+
+        var bestDistance = float.MaxValue;
+
+        foreach (var uid in _lookupSet)
+        {
+            if (uid == runtime.Assembly || Deleted(uid))
+                continue;
+
+            if (kind != null && GetKind(uid) != kind)
+                continue;
+
+            if (humanoidOnly && !HasComp<HumanoidAppearanceComponent>(uid))
+                continue;
+
+            // Name matching is much cheaper than a line-of-sight raycast, so do it first.
+            if (nameContains != null &&
+                !Name(uid).Contains(nameContains, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var other = _transform.GetMapCoordinates(uid);
+            if (origin.MapId != other.MapId)
+                continue;
+
+            var distance = (origin.Position - other.Position).Length();
+            if (distance >= bestDistance)
+                continue;
+
+            if (!_interaction.InRangeUnobstructed(runtime.Assembly, uid, radius))
+                continue;
+
+            bestDistance = distance;
+            found = uid;
+        }
+
+        return found.IsValid();
+    }
+
+    private bool TryConsumeSensorQuery(CircuitLuaRuntime runtime)
+    {
+        var now = _timing.CurTime;
+        var elapsed = now - runtime.LastSensorQuery;
+        if (elapsed > TimeSpan.Zero)
+        {
+            runtime.SensorQueryTokens = Math.Min(
+                CircuitLuaRuntime.MaxSensorQueryTokens,
+                runtime.SensorQueryTokens + elapsed.TotalSeconds * CircuitLuaRuntime.SensorQueriesPerSecond);
+            runtime.LastSensorQuery = now;
+        }
+
+        if (runtime.SensorQueryTokens < 1)
+            return false;
+
+        runtime.SensorQueryTokens -= 1;
+        return true;
+    }
+
+    /// <summary>
+    /// True while the assembly has a do-after that has not completed or been cancelled. Used by
+    /// the Lua synchronous action wrappers.
+    /// </summary>
+    private DynValue ActionBusy(CircuitLuaRuntime runtime)
+    {
+        if (!TryComp<DoAfterComponent>(runtime.Assembly, out var component))
+            return DynValue.NewBoolean(false);
+
+        foreach (var doAfter in component.DoAfters.Values)
+        {
+            if (!doAfter.Completed && !doAfter.Cancelled)
+                return DynValue.NewBoolean(true);
+        }
+
+        return DynValue.NewBoolean(false);
+    }
+
+    private DynValue ActionMarker(CircuitLuaRuntime runtime)
+    {
+        return DynValue.NewNumber(TryComp<DoAfterComponent>(runtime.Assembly, out var component)
+            ? component.NextId
+            : 0);
+    }
+
+    private DynValue ActionStatus(CircuitLuaRuntime runtime, CallbackArguments args)
+    {
+        if (!TryGetNumber(args, 0, out var markerValue))
+            return DynValue.NewString("none");
+
+        var marker = (ushort) (int) markerValue;
+
+        if (!TryComp<DoAfterComponent>(runtime.Assembly, out var component))
+            return DynValue.NewString("none");
+
+        var running = false;
+        foreach (var doAfter in component.DoAfters.Values)
+        {
+            if (!IsDoAfterAtOrAfter(doAfter.Index, marker))
+                continue;
+
+            if (doAfter.Cancelled)
+                return DynValue.NewString("cancelled");
+
+            if (!doAfter.Completed)
+                running = true;
+        }
+
+        if (running)
+            return DynValue.NewString("running");
+
+        // The do-after was already completed and removed from the component.
+        if (IsDoAfterAfter(component.NextId, marker))
+            return DynValue.NewString("done");
+
+        return DynValue.NewString("none");
+    }
+
+    /// <summary>
+    /// True for the do-after index that was next in line when the marker was taken.
+    /// </summary>
+    private static bool IsDoAfterAtOrAfter(ushort value, ushort marker)
+    {
+        return value == marker || IsDoAfterAfter(value, marker);
+    }
+
+    /// <summary>
+    /// Compares ushort do-after indices across the normal wrap point.
+    /// </summary>
+    private static bool IsDoAfterAfter(ushort value, ushort marker)
+    {
+        return value != marker && (ushort) (value - marker) < 0x8000;
+    }
+
     private List<(EntityUid Uid, float Distance)> ScanEntities(
         CircuitLuaRuntime runtime,
         float radius,
-        string? kind)
+        string? kind,
+        int maxResults)
     {
-        var result = new List<(EntityUid, float)>();
+        // Collect and sort candidates first. Line-of-sight raycasts are the expensive part, so only
+        // check them in nearest-first order until the result cap is filled.
+        var candidates = new List<(EntityUid Uid, float Distance)>();
         _lookupSet.Clear();
         _lookup.GetEntitiesInRange(runtime.Assembly, radius, _lookupSet, LookupFlags.Uncontained);
 
@@ -2606,22 +2891,28 @@ public sealed class CircuitLuaApiSystem : EntitySystem
             if (kind != null && GetKind(uid) != kind)
                 continue;
 
-            if (!_interaction.InRangeUnobstructed(runtime.Assembly, uid, radius))
-                continue;
-
             var other = _transform.GetMapCoordinates(uid);
             if (origin.MapId != other.MapId)
                 continue;
 
-            result.Add((uid, (origin.Position - other.Position).Length()));
+            candidates.Add((uid, (origin.Position - other.Position).Length()));
         }
 
-        result.Sort((a, b) => a.Item2.CompareTo(b.Item2));
+        candidates.Sort((a, b) => a.Distance.CompareTo(b.Distance));
 
-        var component = Comp<CircuitAssemblyComponent>(runtime.Assembly);
-        var max = component.MaxScanResults > 0 ? component.MaxScanResults : 16;
-        if (result.Count > max)
-            result.RemoveRange(max, result.Count - max);
+        var limit = maxResults > 0 ? maxResults : int.MaxValue;
+        var result = new List<(EntityUid, float)>(Math.Min(limit, candidates.Count));
+
+        foreach (var candidate in candidates)
+        {
+            if (result.Count >= limit)
+                break;
+
+            if (!_interaction.InRangeUnobstructed(runtime.Assembly, candidate.Uid, radius))
+                continue;
+
+            result.Add(candidate);
+        }
 
         return result;
     }

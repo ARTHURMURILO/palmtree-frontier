@@ -87,7 +87,7 @@ public sealed class CircuitryAutonomyTest
 
         var brain = entMan.System<LuaBrainSystem>();
         await server.WaitPost(() => Assert.That(brain.Start(assembly), Is.True));
-        await pair.RunTicksSync(60);
+        await pair.RunTicksSync(600);
 
         await server.WaitAssertion(() =>
         {
