@@ -2104,3 +2104,25 @@ Entries:
   time: '2026-11-10T13:52:49.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/bce651dbe830f5d435da0081f64e6b74bb9ef2db
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: Fixed snout markings rendering under hair during diagonal movement.
+    - type: Tweak
+      message: >-
+        Cloaks and scarves now stay under hair in all directions while still
+        covering breasts.
+  id: 90139
+  time: '2026-11-10T16:11:54.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/7d935a6f0c75bc1e251c2475a25b44d9202e0975
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: >-
+        Added the People of Earth, Dr. Steel II: Eclectic Boogaloo and Dr. Steel
+        jukebox records to salvage wreck loot.
+  id: 90140
+  time: '2026-11-10T16:13:54.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/0f0e3adaf9dc9f0d2adf58bd9a11aaa9e33cc2f1
