@@ -434,6 +434,9 @@
     - VolumetricPump
     - PressurePump
     - PressureRegulator
+    - PassiveGate # Palmtree
+    - TemperatureGate # Palmtree
+    - TemperaturePump # Palmtree
     - VentScrubber
     - PressureValve
     - DualPortVent
@@ -442,12 +445,14 @@
     - MixerGas
     - Radiator
     - RadiatorBend
+    - HeatExchangerPipe # Palmtree
     - SignalValve
     - CanisterPort
     - FilterGas
     - Alarm
     - Sensor
     - SensorPipe
+    - GasMeter # Palmtree
     - Deconstruct
   - type: LimitedCharges
     maxCharges: 60

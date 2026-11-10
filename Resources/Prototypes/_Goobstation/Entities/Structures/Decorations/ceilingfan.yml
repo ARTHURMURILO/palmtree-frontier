@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Ported from Goob Station (_Goobstation/Entities/Structures/Decorations/ceilingfan.yml).
+# Palmtree: the ambient loop used Goob audio, so the AmbientSound component was dropped.
+
+- type: entity
+  id: CeilingFan
+  parent: BaseStructure
+  name: ceiling fan
+  description: An antiquated method of cooling the room, but it sure has a charm to it.
+  placement:
+    mode: SnapgridCenter
+  components:
+  - type: Construction
+    graph: CeilingFan
+    node: ceilingFan
+  - type: SpriteFade
+  - type: Sprite
+    noRot: true
+    sprite: _Goobstation/Structures/Decoration/ceilingfan.rsi
+    state: ceilingfan
+    drawdepth: OverMobs
+  - type: Fixtures
+    fixtures:
+      fix1:
+        shape:
+          !type:PhysShapeCircle
+          radius: 0
+  - type: Damageable
+    damageContainer: StructuralInorganic
+    damageModifierSet: Wood
+  - type: Destructible
+    thresholds:
+      - trigger:
+          !type:DamageTrigger
+          damage: 50
+        behaviors:
+        - !type:DoActsBehavior
+          acts: [ "Destruction" ]

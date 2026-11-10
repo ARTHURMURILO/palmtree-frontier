@@ -1,0 +1,6 @@
+# Palmtree: lathe recipe for the heat pump board.
+
+- type: latheRecipe
+  parent: [ BaseGoldCircuitboardRecipe, BaseEngineeringMachineRecipeCategory ]
+  id: HeatPumpMachineCircuitBoard
+  result: HeatPumpMachineCircuitBoard

@@ -4,6 +4,9 @@
   id: NFWeaponEnergyPistolLaserSvalinnCaspian
   description: Although it's usual model is a cheap and mass produced pistol, this one appears to be a unique special edition that fixes many of the issues of the original, while also increasing the efficiency of the weapon.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Gun
     fireRate: 4
     selectedMode: SemiAuto
@@ -20,7 +23,7 @@
 
 - type: entity
   id: NFWeaponEnergyPistolN1984Pulse
-  parent: [NFBaseWeaponEnergyPistolHitScanPulse, BaseWeaponPowerCellSmall, BaseC2ContrabandUnredeemable]
+  parent: [NFBaseWeaponEnergyPistolHitScanPulse, BaseWeaponPowerCellSmall, BaseC5ContrabandUnredeemable]
   name: Pulse N1984
   description: |-
     A pulse variant of the N1984 usually employed by officers.
@@ -77,6 +80,9 @@
   suffix: Lily
   description: A PHASed Energy Rectification that has been hand-modified, most likely by a scientist with far too much time on their hands. The beam is a distinctive purple-pink instead of the usual orange, and judging by the color it must be a really cute pink fox girl with some great assets to spare.
   components:
+  - type: Contraband
+    severity: Class4
+    allowedDepartments: [ Security, Command ]
   - type: Gun
     soundGunshot:
       collection: Phaser
@@ -93,6 +99,9 @@
   description: |-
     This experimental weapon is capable of recovering patients. Effective, albeit slowly.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Medical, Command ]
   - type: Sprite
     sprite: Objects/Weapons/Guns/Battery/pulse_rifle.rsi
   - type: Clothing

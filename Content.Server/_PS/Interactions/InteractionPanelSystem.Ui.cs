@@ -69,6 +69,9 @@ public sealed partial class InteractionPanelSystem
         result.ArousalMultiplier = state.ArousalMultiplier;
         result.UseMoaningMultiplier = state.UseMoaningMultiplier;
         result.MoaningMultiplier = state.MoaningMultiplier;
+        result.LayerMode = TryComp<InteractionPanelComponent>(user, out var panel)
+            ? panel.LayerMode
+            : CharacterLayerMode.Default;
 
         result.ActiveAutoInteraction = state.ActiveAutoInteraction;
         result.AutoPace = state.AutoPace;
@@ -222,6 +225,23 @@ public sealed partial class InteractionPanelSystem
         state.UseMoaningMultiplier = args.Use;
         state.MoaningMultiplier = Math.Clamp(args.Value, 0, 100);
         UpdatePanelUi(ent.Owner, state);
+    }
+
+    private void OnSetLayerMode(Entity<InteractionPanelComponent> ent, ref InteractionSetLayerModeMessage args)
+    {
+        if (args.Actor != ent.Owner)
+            return;
+
+        if (!Enum.IsDefined(args.Mode))
+            return;
+
+        if (ent.Comp.LayerMode == args.Mode)
+            return;
+
+        ent.Comp.LayerMode = args.Mode;
+        Dirty(ent);
+
+        UpdatePanelUi(ent.Owner, EnsureState(ent.Owner));
     }
 
     #endregion

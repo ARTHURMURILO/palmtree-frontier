@@ -152,6 +152,8 @@ undershirts) so hiding a parent hides its sublayers.
      `SnoutAboveHair` option is enabled (default off keeps the legacy under-hair order; the
      checkbox sits in the editor's Markings tab under Leg style). A client system
      (`DirectionalLayerOrderSystem`) rebuilds the sprite when the cardinal direction changes.
+     Neck-slot clothing is moved above the genital marking group when facing south (so scarves
+     cover breasts) and restored below the head group otherwise.
      Under-clothing genital insertions anchor to stable layers, not `jumpsuit`/`outerClothing`:
      bottom organs (butt, vagina, balls, penis, belly) anchor above `LLeg` so they render below
      `UndergarmentBottom`, while breast markings anchor above `UndergarmentBottom` so they render

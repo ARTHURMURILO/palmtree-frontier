@@ -1,0 +1,55 @@
+<Document>
+  <GuideEntityEmbed Entity="GasThermoMachineHeatPump" Caption="heat pump" />
+  <Box>
+    <GuideEntityEmbed Entity="GasThermoMachineFreezer" Caption="freezer" />
+    <GuideEntityEmbed Entity="GasThermoMachineHeater" Caption="heater" />
+  </Box>
+
+  ## What it is
+
+  The heat pump is a freezer and a heater in one machine, with a catch: it does not make heat, it
+  [bold]moves[/bold] it. It has two pipe connections on opposite ends.
+
+  - The [bold]green end[/bold] is the gas port. This is the pipe you are conditioning, and it sits
+    where a freezer's pipe would be.
+  - The [bold]red end[/bold] is the waste port. When the machine cools, this is where the heat goes.
+    When it heats, this is where the heat comes from.
+
+  Wire it up, set a target temperature, and it will work out by itself whether it has to cool or heat.
+
+  ## Why you need a waste loop
+
+  A normal freezer in space can throw heat away for free, so it will happily cool a pipe to 73 K with
+  nothing else attached. The heat pump cannot: every joule it takes out of the gas has to end up in
+  the red pipe, and every joule it puts into the gas comes out of the red pipe.
+
+  That means the red pipe needs somewhere for the heat to go — a radiator loop, a big tank of gas, or
+  a cold part of the ship — and it needs to actually have gas in it, because gas is what carries the
+  heat. Cooling into a waste loop that is already hot is slow and expensive.
+
+  ## Efficiency
+
+  The machine works best when the waste loop is close to the temperature of the gas. As the waste
+  loop heats up the machine loses efficiency, and it loses a lot more if either pipe is nearly empty
+  — gas is what carries the heat away.
+
+  Because it moves heat instead of making it, the heat pump gets more cooling out of a joule than a
+  freezer does, as long as the waste loop can absorb the heat.
+
+  Better parts help. The [bold]Upgrades[/bold] entry in the machine's examine menu shows what the
+  installed parts changed:
+
+  - [bold]Matter bins[/bold] give the machine more heat capacity, raise the most heat it can move in
+    a second, and make it thriftier with power: the best bins take it from 120 kW to 700 kW, and a
+    full-tilt machine with them draws about 56 kW.
+  - [bold]Manipulators[/bold] raise the floor the efficiency falls back to when the waste loop is
+    hot, from 25% on stock parts to 90% with the best ones, and widen the range of temperatures you
+    can ask for, from 73-593 K to 28-1193 K. They do not help an empty pipe: with no gas to carry
+    the heat, even a fully upgraded machine crawls.
+
+  ## Safeties
+
+  If the waste loop gets hot enough to be dangerous, the heat pump shuts itself down. The safeties can
+  be switched off from the interface, and an emagged machine has them off already — at that point the
+  waste loop keeps climbing, and eventually the machine gives up and explodes.
+</Document>

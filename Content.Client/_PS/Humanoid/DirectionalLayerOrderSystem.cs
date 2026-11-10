@@ -38,9 +38,11 @@ public sealed class DirectionalLayerOrderSystem : EntitySystem
         base.FrameUpdate(frameTime);
 
         var query = EntityQueryEnumerator<HumanoidAppearanceComponent, SpriteComponent>();
-        while (query.MoveNext(out var uid, out var humanoid, out _))
+        while (query.MoveNext(out var uid, out var humanoid, out var sprite))
         {
             var direction = _appearance.GetScreenDirection(uid);
+            _appearance.UpdateNeckLayerOrder(uid, sprite, direction);
+
             if (_lastDirection.TryGetValue(uid, out var last) && last == direction)
                 continue;
 

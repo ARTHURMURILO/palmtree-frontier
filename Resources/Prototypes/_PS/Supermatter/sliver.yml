@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2025 Goob Station contributors
+# SPDX-FileCopyrightText: 2025 Palmtree Frontier contributors
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+- type: entity
+  parent: BaseItem
+  id: SupermatterSliver
+  name: supermatter sliver
+  description: A shard from the supermatter crystal. Highly radioactive.
+  components:
+  - type: PointLight
+    enabled: true
+    radius: 3
+    energy: 2
+    color: "#fff633"
+  - type: RadiationSource
+    intensity: 0.75
+  - type: Icon
+    sprite: _EE/Structures/Power/Generation/Supermatter/supermatter_sliver.rsi
+    state: icon
+  - type: Sprite
+    sprite: _EE/Structures/Power/Generation/Supermatter/supermatter_sliver.rsi
+    state: icon
+  - type: StealTarget
+    stealGroup: SupermatterSliver
+  - type: Tag
+    tags:
+    - HighRiskItem
+  - type: SupermatterImmune

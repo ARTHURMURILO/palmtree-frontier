@@ -79,7 +79,7 @@
 
 - type: entity
   name: combat knife
-  parent: [BaseKnife, BaseC1Contraband] # Frontier: BaseSecurityContraband<BaseC1Contraband
+  parent: [BaseKnife, BaseC2Contraband] # Frontier: BaseSecurityContraband<BaseC2Contraband
   id: CombatKnife
   description: A deadly knife intended for melee confrontations.
   components:
@@ -131,7 +131,7 @@
 
 - type: entity
   name: survival knife
-  parent: [BaseC1Contraband, CombatKnife] # BaseSecurityCargoContraband<BaseC1Contraband
+  parent: [BaseC2Contraband, CombatKnife] # BaseSecurityCargoContraband<BaseC2Contraband
   id: SurvivalKnife
   description: Weapon of first and last resort for combatting space carp.
   components:
@@ -146,7 +146,7 @@
 
 - type: entity
   name: kukri knife
-  parent: [BaseC1Contraband, CombatKnife] # BaseSecurityCargoContraband<BaseC1Contraband
+  parent: [BaseC2Contraband, CombatKnife] # BaseSecurityCargoContraband<BaseC2Contraband
   id: KukriKnife
   description: Professionals have standards. Be polite. Be efficient. Have a plan to kill everyone you meet.
   components:
@@ -163,7 +163,7 @@
     storedSprite: null
 
 - type: entity
-  parent: [ClothingHeadHatGreyFlatcap, BaseC1Contraband] # Frontier: BaseMinorContraband<BaseC1Contraband
+  parent: [ClothingHeadHatGreyFlatcap, BaseC2Contraband] # Frontier: BaseMinorContraband<BaseC2Contraband
   id: BladedFlatcapGrey
   name: grey flatcap
   description: Fashionable for both the working class and old man Jenkins. It has glass shards hidden in the brim.
@@ -203,7 +203,7 @@
 
 - type: entity
   name: shiv
-  parent: [BaseKnife, BaseC1Contraband] # BaseMinorContraband<BaseC1Contraband
+  parent: [BaseKnife, BaseC2Contraband] # BaseMinorContraband<BaseC2Contraband
   id: Shiv
   description: A crude weapon fashioned from a piece of cloth and a glass shard.
   components:
@@ -288,7 +288,7 @@
 
 - type: entity
   name: throwing knife
-  parent: [BaseKnife, BaseC1Contraband] # Frontier: BaseSyndicateContraband<BaseC1Contraband
+  parent: [BaseKnife, BaseC2Contraband] # Frontier: BaseSyndicateContraband<BaseC2Contraband
   id: ThrowingKnife
   description: This blood-red knife is very aerodynamic and easy to throw, but good luck trying to fight someone hand-to-hand.
   components:

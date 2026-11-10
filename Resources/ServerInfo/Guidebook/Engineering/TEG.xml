@@ -18,6 +18,14 @@
     <GuideEntityEmbed Entity="TegCirculator" Caption="" Margin="0"/>
   </Box>
 
+  <!-- Palmtree: TEG flatpacks and pack-up -->
+  The generator and its circulators are delivered as flatpacks. Unfold a flatpack with a multitool,
+  then anchor the part with a wrench. A deployed part can be packed back into its flatpack from the
+  context menu; packing takes five seconds. Cargo sells a complete kit. Advanced Atmospherics
+  unlocks both flatpack recipes; print a blueprint at a blueprint lithograph and use it at an
+  engineering techfab.
+  <!-- End Palmtree -->
+
   The circulators take in either a hot or cold gas, and pass it through the machine to exchange heat.
   The gas then gets output on the other end of the circulator. The generator produces the actual power and outputs it over an [color=orange]HV wire[/color].
 

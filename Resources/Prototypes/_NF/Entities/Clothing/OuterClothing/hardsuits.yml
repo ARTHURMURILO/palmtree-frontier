@@ -225,7 +225,7 @@
     clothingPrototype: ClothingHeadHelmetHardsuitNfsdBrigmedic
 
 - type: entity
-  parent: [BaseC2ContrabandUnredeemable, ClothingOuterHardsuitJuggernaut] # Jugger Suit
+  parent: [BaseC5ContrabandUnredeemable, ClothingOuterHardsuitJuggernaut] # Jugger Suit
   id: ClothingOuterHardsuitNfsdExperimental
   name: NFSD experimental combat suit
   description: A very heavily armored NFSD suit. This space proof marvel of engineering uses state of the art alloys to provide immense protection while sacrificing little mobility.

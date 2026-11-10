@@ -632,7 +632,7 @@
 # Normal
 
 - type: entity
-  parent: [FoodSnackLollypopWrappedBase, BaseC1Contraband]
+  parent: [FoodSnackLollypopWrappedBase, BaseC5ContrabandUnredeemable]
   id: FoodSnackLollypopWrappedSyndicate
   name: wrapped syndicate lollypop
   description: Manufactured by Donk co, and perfect for storing chems discreetly.
@@ -1150,7 +1150,7 @@
 
 - type: entity
   categories: [ HideSpawnMenu ]
-  parent: [FoodSnackLollypopTrashBase, BaseC1Contraband] # Frontier: BaseSyndicateContraband > BaseC1Contraband
+  parent: [FoodSnackLollypopTrashBase, BaseC5ContrabandUnredeemable] # Frontier: BaseSyndicateContraband > BaseC5ContrabandUnredeemable
   id: FoodSnackLollypopTrashSyndicate
   name: syndicate lollypop wrapper
   description: Someone's been naughty...

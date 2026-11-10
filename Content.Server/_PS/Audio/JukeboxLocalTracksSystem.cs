@@ -10,13 +10,13 @@ namespace Content.Server._PS.Audio;
 
 /// <summary>
 /// Handles the Palmtree jukebox records that live in gitignored folders.
-/// The Palm Record is injected into every jukebox, while the Starjunk record is added to the
+/// The Palm Record is injected into every jukebox, while the other records are added to the
 /// dungeon record spawner at runtime so clean checkouts stay free of copyrighted audio paths.
 /// </summary>
 public sealed class JukeboxLocalTracksSystem : EntitySystem
 {
     private const string DefaultRecordPrototype = "PalmtreeRecord";
-    private const string DungeonRecordPrototype = "StarjunkRecord";
+    private static readonly string[] DungeonRecordPrototypes = ["StarjunkRecord", "TunesOfAnarchyRecord"];
     private const string DungeonRecordSpawner = "NFJukeboxRecordSpawner";
 
     [Dependency] private readonly IPrototypeManager _prototypes = default!;
@@ -58,19 +58,27 @@ public sealed class JukeboxLocalTracksSystem : EntitySystem
         if (ent.Comp.EntityPrototype?.ID != DungeonRecordSpawner)
             return;
 
-        if (!_prototypes.HasIndex<EntityPrototype>(DungeonRecordPrototype))
-            return;
-
         if (!TryComp<RandomSpawnerComponent>(ent.Owner, out var spawner))
             return;
 
-        foreach (var prototype in spawner.Prototypes)
+        foreach (var recordPrototype in DungeonRecordPrototypes)
         {
-            if (prototype.Id == DungeonRecordPrototype)
-                return;
-        }
+            if (!_prototypes.HasIndex<EntityPrototype>(recordPrototype))
+                continue;
 
-        spawner.Prototypes.Add(DungeonRecordPrototype);
+            var alreadyAdded = false;
+            foreach (var prototype in spawner.Prototypes)
+            {
+                if (prototype.Id == recordPrototype)
+                {
+                    alreadyAdded = true;
+                    break;
+                }
+            }
+
+            if (!alreadyAdded)
+                spawner.Prototypes.Add(recordPrototype);
+        }
     }
 
     private bool ContainsRecord(StorageComponent storage, string recordPrototype)

@@ -1,0 +1,440 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Construction graphs for the Goob decor port (Palmtree).
+# Entities: Resources/Prototypes/_Goobstation/Entities/Structures/Decorations/
+
+- type: constructionGraph
+  id: Vase
+  start: start
+  graph:
+    - node: start
+      actions:
+        - !type:DestroyEntity {}
+      edges:
+        - to: vaseEmpty
+          steps:
+            - material: Glass
+              amount: 1
+              doAfter: 1
+        - to: vaseChrysanthemums
+          steps:
+            - material: Glass
+              amount: 1
+              doAfter: 1
+        - to: vaseTulips
+          steps:
+            - material: Glass
+              amount: 1
+              doAfter: 1
+        - to: vaseDaisies
+          steps:
+            - material: Glass
+              amount: 1
+              doAfter: 1
+        - to: vaseWhiteDaisies
+          steps:
+            - material: Glass
+              amount: 1
+              doAfter: 1
+        - to: vaseRoses
+          steps:
+            - material: Glass
+              amount: 1
+              doAfter: 1
+        - to: vaseLilies
+          steps:
+            - material: Glass
+              amount: 1
+              doAfter: 1
+        - to: vaseMarigolds
+          steps:
+            - material: Glass
+              amount: 1
+              doAfter: 1
+        - to: vaseViolets
+          steps:
+            - material: Glass
+              amount: 1
+              doAfter: 1
+
+    - node: vaseEmpty
+      entity: VasePlant0
+      edges:
+        - to: start
+          completed:
+            - !type:GivePrototype
+              prototype: SheetGlass1
+              amount: 1
+          steps:
+            - tool: Prying
+              doAfter: 1
+
+    - node: vaseChrysanthemums
+      entity: VasePlant1
+      edges:
+        - to: start
+          completed:
+            - !type:GivePrototype
+              prototype: SheetGlass1
+              amount: 1
+          steps:
+            - tool: Prying
+              doAfter: 1
+
+    - node: vaseTulips
+      entity: VasePlant2
+      edges:
+        - to: start
+          completed:
+            - !type:GivePrototype
+              prototype: SheetGlass1
+              amount: 1
+          steps:
+            - tool: Prying
+              doAfter: 1
+
+    - node: vaseDaisies
+      entity: VasePlant3
+      edges:
+        - to: start
+          completed:
+            - !type:GivePrototype
+              prototype: SheetGlass1
+              amount: 1
+          steps:
+            - tool: Prying
+              doAfter: 1
+
+    - node: vaseWhiteDaisies
+      entity: VasePlant4
+      edges:
+        - to: start
+          completed:
+            - !type:GivePrototype
+              prototype: SheetGlass1
+              amount: 1
+          steps:
+            - tool: Prying
+              doAfter: 1
+
+    - node: vaseRoses
+      entity: VasePlant5
+      edges:
+        - to: start
+          completed:
+            - !type:GivePrototype
+              prototype: SheetGlass1
+              amount: 1
+          steps:
+            - tool: Prying
+              doAfter: 1
+
+    - node: vaseLilies
+      entity: VasePlant6
+      edges:
+        - to: start
+          completed:
+            - !type:GivePrototype
+              prototype: SheetGlass1
+              amount: 1
+          steps:
+            - tool: Prying
+              doAfter: 1
+
+    - node: vaseMarigolds
+      entity: VasePlant7
+      edges:
+        - to: start
+          completed:
+            - !type:GivePrototype
+              prototype: SheetGlass1
+              amount: 1
+          steps:
+            - tool: Prying
+              doAfter: 1
+
+    - node: vaseViolets
+      entity: VasePlant8
+      edges:
+        - to: start
+          completed:
+            - !type:GivePrototype
+              prototype: SheetGlass1
+              amount: 1
+          steps:
+            - tool: Prying
+              doAfter: 1
+
+- type: constructionGraph
+  id: Candelabra
+  start: start
+  graph:
+    - node: start
+      actions:
+        - !type:DestroyEntity {}
+      edges:
+        - to: candelabraUnlit
+          completed:
+            - !type:SnapToGrid {}
+          steps:
+            - material: Steel
+              amount: 2
+              doAfter: 2
+            - material: Cloth
+              amount: 1
+              doAfter: 1
+
+    - node: candelabraUnlit
+      entity: BaseCandelabra
+      edges:
+        - to: candelabraLit
+          steps:
+            - tool: Welding
+              doAfter: 1
+        - to: start
+          completed:
+            - !type:GivePrototype
+              prototype: SheetSteel1
+              amount: 2
+          steps:
+            - tool: Prying
+              doAfter: 1
+
+    - node: candelabraLit
+      entity: CandelabraLit
+      edges:
+        - to: start
+          completed:
+            - !type:GivePrototype
+              prototype: SheetSteel1
+              amount: 2
+          steps:
+            - tool: Prying
+              doAfter: 1
+
+- type: constructionGraph
+  id: CeilingFan
+  start: start
+  graph:
+    - node: start
+      actions:
+        - !type:DestroyEntity {}
+      edges:
+        - to: ceilingFan
+          completed:
+            - !type:SnapToGrid {}
+          steps:
+            - material: Steel
+              amount: 2
+              doAfter: 2
+            - material: Cable
+              amount: 1
+              doAfter: 1
+
+    - node: ceilingFan
+      entity: CeilingFan
+      edges:
+        - to: start
+          completed:
+            - !type:GivePrototype
+              prototype: SheetSteel1
+              amount: 2
+          steps:
+            - tool: Prying
+              doAfter: 1
+
+- type: constructionGraph
+  id: WallClock
+  start: start
+  graph:
+    - node: start
+      actions:
+        - !type:DestroyEntity {}
+      edges:
+        - to: wallClock
+          completed:
+            - !type:SnapToGrid {}
+          steps:
+            - material: Steel
+              amount: 1
+              doAfter: 1
+            - material: Glass
+              amount: 1
+              doAfter: 1
+
+    - node: wallClock
+      entity: Clock
+      edges:
+        - to: start
+          completed:
+            - !type:GivePrototype
+              prototype: SheetSteel1
+              amount: 1
+          steps:
+            - tool: Prying
+              doAfter: 1
+
+- type: constructionGraph
+  id: DesktopComputer
+  start: start
+  graph:
+    - node: start
+      actions:
+        - !type:DestroyEntity {}
+      edges:
+        - to: desktopComputer
+          completed:
+            - !type:SnapToGrid {}
+          steps:
+            - material: Steel
+              amount: 3
+              doAfter: 2
+            - material: Glass
+              amount: 2
+              doAfter: 1
+            - material: Cable
+              amount: 1
+              doAfter: 1
+
+    - node: desktopComputer
+      entity: Desktop
+      edges:
+        - to: start
+          completed:
+            - !type:GivePrototype
+              prototype: SheetSteel1
+              amount: 3
+          steps:
+            - tool: Prying
+              doAfter: 1
+
+- type: constructionGraph
+  id: Barrel
+  start: start
+  graph:
+    - node: start
+      actions:
+        - !type:DestroyEntity {}
+      edges:
+        - to: barrelSteel
+          completed:
+            - !type:SnapToGrid {}
+          steps:
+            - material: Steel
+              amount: 4
+              doAfter: 2
+        - to: barrelPlanks
+          completed:
+            - !type:SnapToGrid {}
+          steps:
+            - material: WoodPlank
+              amount: 4
+              doAfter: 2
+        - to: barrelFire
+          completed:
+            - !type:SnapToGrid {}
+          steps:
+            - material: Steel
+              amount: 4
+              doAfter: 2
+            - material: WoodPlank
+              amount: 1
+              doAfter: 1
+
+    - node: barrelSteel
+      entity: BlackBarrelBase
+      edges:
+        - to: start
+          completed:
+            - !type:GivePrototype
+              prototype: SheetSteel1
+              amount: 4
+          steps:
+            - tool: Prying
+              doAfter: 1
+
+    - node: barrelPlanks
+      entity: BarrelPlanks
+      edges:
+        - to: start
+          completed:
+            - !type:GivePrototype
+              prototype: MaterialWoodPlank1
+              amount: 4
+          steps:
+            - tool: Prying
+              doAfter: 1
+
+    - node: barrelFire
+      entity: BarrelFire
+      edges:
+        - to: start
+          completed:
+            - !type:GivePrototype
+              prototype: SheetSteel1
+              amount: 4
+          steps:
+            - tool: Prying
+              doAfter: 1
+
+- type: constructionGraph
+  id: FloorLight
+  start: start
+  graph:
+    - node: start
+      actions:
+        - !type:DestroyEntity {}
+      edges:
+        - to: floorLightEmpty
+          completed:
+            - !type:SnapToGrid {}
+          steps:
+            - material: Steel
+              amount: 2
+              doAfter: 2
+            - material: Glass
+              amount: 1
+              doAfter: 1
+
+    - node: floorLightEmpty
+      entity: PoweredFloorLightEmpty
+      edges:
+        - to: start
+          completed:
+            - !type:GivePrototype
+              prototype: SheetSteel1
+              amount: 2
+          steps:
+            - tool: Prying
+              doAfter: 1
+
+
+- type: constructionGraph
+  id: ConstructionBarricade
+  start: start
+  graph:
+    - node: start
+      actions:
+        - !type:DestroyEntity {}
+      edges:
+        - to: constructionBarricade
+          completed:
+            - !type:SnapToGrid {}
+          steps:
+            - material: Plastic
+              amount: 3
+              doAfter: 2
+            - material: Steel
+              amount: 2
+              doAfter: 1
+
+    - node: constructionBarricade
+      entity: ConstructionBarricade
+      edges:
+        - to: start
+          completed:
+            - !type:GivePrototype
+              prototype: SheetSteel1
+              amount: 2
+          steps:
+            - tool: Prying
+              doAfter: 1
