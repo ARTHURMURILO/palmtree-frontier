@@ -702,6 +702,8 @@ public sealed class BluespaceDockSystem : EntitySystem
         var removed = StripStationReferences(shuttleUid);
         stripped?.AddRange(removed);
 
+        var dropped = new List<DroppedShipEntity>();
+
         try
         {
             _resource.UserData.CreateDir(path.Directory);
@@ -729,7 +731,7 @@ public sealed class BluespaceDockSystem : EntitySystem
                     return false;
                 }
 
-                var dropped = FindDroppedEntities(path, manifest);
+                dropped = FindDroppedEntities(path, manifest);
                 if (dropped.Count > 0)
                 {
                     skipped?.AddRange(dropped.Select(d => d.Prototype));
@@ -765,6 +767,11 @@ public sealed class BluespaceDockSystem : EntitySystem
                 error = "bluespace-dock-error-save-empty";
                 return false;
             }
+
+            // A live grid can still hold container references to entities that no longer exist
+            // (a legacy file loaded before this cleanup, for instance). They serialize as
+            // EntityUid.Invalid and would crash the next grid walk, so prune them now.
+            TryRecordDroppedEntities(path, dropped);
 
             return true;
         }
@@ -1114,6 +1121,7 @@ public sealed class BluespaceDockSystem : EntitySystem
                             && entity.TryGet<SequenceDataNode>("components", out var components))
                         {
                             PruneUndeclaredReferences(components, declared);
+                            PruneInvalidComponentReferences(components);
                         }
                     }
                 }
@@ -1141,7 +1149,10 @@ public sealed class BluespaceDockSystem : EntitySystem
                 droppedData.Add(node);
             }
 
-            root["droppedEntities"] = droppedData;
+            if (dropped.Count > 0)
+                root["droppedEntities"] = droppedData;
+            else
+                root.Remove("droppedEntities");
 
             using (var writer = _resource.UserData.OpenWriteText(path))
             {
@@ -1242,23 +1253,20 @@ public sealed class BluespaceDockSystem : EntitySystem
     }
 
     /// <summary>
-    /// Writes a copy of a ship file with the entities whose prototype no longer exists removed, so the
-    /// loader can read it (the engine refuses a whole file over a single missing prototype). The
-    /// original is left untouched for recovery. Returns false when there is nothing to fix.
+    /// Writes a copy of a ship file with the entities whose prototype no longer exists removed, and
+    /// prunes container/storage references the sanitized file no longer declares (including the
+    /// <c>invalid</c> references left behind by old saves). The original is left untouched for
+    /// recovery. Returns false when there is nothing to fix.
     /// </summary>
     /// <remarks>
     /// The engine's own <c>BeforeEntityReadEvent.DeletedPrototypes</c> hook is not used here: it creates
     /// those entities without their prototype, which throws on components with required fields
     /// (`MeleeWeaponComponent.damage`, for instance) and takes the whole load down with it. Dropping
-    /// the entities instead only leaves the references to them invalid, which the deserializer logs
-    /// and carries on from.
+    /// the entities instead only leaves the references to them invalid, so they must be pruned too.
     /// </remarks>
     public bool TryWriteSanitizedShipFile(ResPath path, HashSet<string> missing, out string? sanitizedRelative)
     {
         sanitizedRelative = null;
-
-        if (missing.Count == 0)
-            return false;
 
         try
         {
@@ -1291,9 +1299,6 @@ public sealed class BluespaceDockSystem : EntitySystem
                     CollectEntityUids(group, dropped);
                 }
             }
-
-            if (dropped.Count == 0)
-                return false;
 
             bool grew;
             do
@@ -1343,12 +1348,19 @@ public sealed class BluespaceDockSystem : EntitySystem
 
             root["entities"] = kept;
 
-            // The copy no longer declares the dropped uids, so anything that pointed at them
-            // (a container that held one, a Storage that listed one) would deserialize to
-            // EntityUid.Invalid - and the deserializer logs "unknown entity yaml uid" for every
-            // one of them. Prune those references from the survivors.
+            // Build the set of uids the sanitized file still declares. Anything else (a removed
+            // prototype, or an "invalid" reference left behind by an old save) would deserialize
+            // to EntityUid.Invalid, which crashes any system that walks the grid's contents.
             // Ref: HardLight's ShipSaveYamlSanitizer.PruneContainerReferencesToRemovedEntities
             // (see .ai/HAZARDS.md section 25).
+            var declared = new HashSet<string>();
+            foreach (var node in kept)
+            {
+                if (node is MappingDataNode group)
+                    CollectEntityUids(group, declared);
+            }
+
+            var changed = dropped.Count > 0;
             foreach (var node in kept)
             {
                 if (node is not MappingDataNode group ||
@@ -1359,13 +1371,23 @@ public sealed class BluespaceDockSystem : EntitySystem
 
                 foreach (var entityNode in groupEntities)
                 {
-                    if (entityNode is MappingDataNode entity
-                        && entity.TryGet<SequenceDataNode>("components", out var components))
+                    if (entityNode is not MappingDataNode entity
+                        || !entity.TryGet<SequenceDataNode>("components", out var components))
                     {
-                        PruneDroppedReferences(components, dropped);
+                        continue;
                     }
+
+                    var referencesChanged = PruneReferences(components,
+                        uid => dropped.Contains(uid) || !declared.Contains(uid));
+                    var invalidChanged = PruneInvalidComponentReferences(components);
+
+                    if (referencesChanged || invalidChanged)
+                        changed = true;
                 }
             }
+
+            if (!changed)
+                return false;
 
             var name = $"migrated-{Guid.NewGuid():N}.yml";
             var destination = new ResPath($"{ShipDirectory}/{name}");
@@ -1402,20 +1424,12 @@ public sealed class BluespaceDockSystem : EntitySystem
     }
 
     /// <summary>
-    /// Removes references to dropped entity uids from an entity's component list: container contents
-    /// (<c>ContainerContainer</c>) and storage lists (<c>Storage</c>), the two places a saved entity
-    /// names other entities by uid outside of component data fields.
-    /// </summary>
-    private static void PruneDroppedReferences(SequenceDataNode components, HashSet<string> dropped)
-    {
-        PruneReferences(components, dropped.Contains);
-    }
-
-    /// <summary>
     /// Removes container/storage references for which <paramref name="isStale"/> is true.
+    /// Returns true when at least one reference was removed.
     /// </summary>
-    private static void PruneReferences(SequenceDataNode components, Func<string, bool> isStale)
+    private static bool PruneReferences(SequenceDataNode components, Func<string, bool> isStale)
     {
+        var changed = false;
         foreach (var compNode in components)
         {
             if (compNode is not MappingDataNode component
@@ -1427,20 +1441,23 @@ public sealed class BluespaceDockSystem : EntitySystem
             switch (type.Value)
             {
                 case "ContainerContainer":
-                    PruneContainerContents(component, isStale);
+                    changed |= PruneContainerContents(component, isStale);
                     break;
                 case "Storage":
-                    PruneStoredItems(component, isStale);
+                    changed |= PruneStoredItems(component, isStale);
                     break;
             }
         }
+
+        return changed;
     }
 
-    private static void PruneContainerContents(MappingDataNode component, Func<string, bool> isStale)
+    private static bool PruneContainerContents(MappingDataNode component, Func<string, bool> isStale)
     {
         if (!component.TryGet<MappingDataNode>("containers", out var containers))
-            return;
+            return false;
 
+        var changed = false;
         foreach (var (_, containerNode) in containers)
         {
             if (containerNode is not MappingDataNode container)
@@ -1451,7 +1468,10 @@ public sealed class BluespaceDockSystem : EntitySystem
                 for (var i = ents.Count - 1; i >= 0; i--)
                 {
                     if (ents[i] is ValueDataNode value && isStale(value.Value))
+                    {
                         ents.RemoveAt(i);
+                        changed = true;
+                    }
                 }
             }
 
@@ -1461,14 +1481,17 @@ public sealed class BluespaceDockSystem : EntitySystem
                 && isStale(single.Value))
             {
                 container["ent"] = ValueDataNode.Null();
+                changed = true;
             }
         }
+
+        return changed;
     }
 
-    private static void PruneStoredItems(MappingDataNode component, Func<string, bool> isStale)
+    private static bool PruneStoredItems(MappingDataNode component, Func<string, bool> isStale)
     {
         if (!component.TryGet<MappingDataNode>("storedItems", out var storedItems))
-            return;
+            return false;
 
         var toRemove = new List<string>();
         foreach (var (key, _) in storedItems.Children)
@@ -1479,6 +1502,79 @@ public sealed class BluespaceDockSystem : EntitySystem
 
         foreach (var key in toRemove)
             storedItems.Remove(key);
+
+        return toRemove.Count > 0;
+    }
+
+    /// <summary>
+    /// Removes every dangling <c>invalid</c> entity reference from an entity's components, not just
+    /// the container/storage lists. Legacy files can carry these in components such as
+    /// <c>ContainedSolution</c>, <c>Action</c> or <c>RadarConsole</c>; the deserializer logs an error
+    /// for each one and leaves <c>EntityUid.Invalid</c> behind. <c>Transform.parent</c> is exempt: a
+    /// grid root legitimately has an invalid parent.
+    /// </summary>
+    private static bool PruneInvalidComponentReferences(SequenceDataNode components)
+    {
+        var changed = false;
+        foreach (var compNode in components)
+        {
+            if (compNode is not MappingDataNode component
+                || !component.TryGet<ValueDataNode>("type", out var type))
+            {
+                continue;
+            }
+
+            changed |= PruneInvalidReferences(component, skipParent: type.Value == "Transform");
+        }
+
+        return changed;
+    }
+
+    private static bool PruneInvalidReferences(DataNode node, bool skipParent)
+    {
+        var changed = false;
+
+        if (node is MappingDataNode mapping)
+        {
+            // Snapshot the keys: entries are removed while iterating.
+            foreach (var (key, value) in mapping.Children.ToArray())
+            {
+                if (key == "invalid")
+                {
+                    mapping.Remove(key);
+                    changed = true;
+                    continue;
+                }
+
+                if (skipParent && key == "parent")
+                    continue;
+
+                if (value is ValueDataNode { Value: "invalid" })
+                {
+                    mapping[key] = ValueDataNode.Null();
+                    changed = true;
+                    continue;
+                }
+
+                changed |= PruneInvalidReferences(value, skipParent);
+            }
+        }
+        else if (node is SequenceDataNode sequence)
+        {
+            for (var i = sequence.Count - 1; i >= 0; i--)
+            {
+                if (sequence[i] is ValueDataNode { Value: "invalid" })
+                {
+                    sequence.RemoveAt(i);
+                    changed = true;
+                    continue;
+                }
+
+                changed |= PruneInvalidReferences(sequence[i], skipParent);
+            }
+        }
+
+        return changed;
     }
 
     /// <summary>
@@ -1536,19 +1632,25 @@ public sealed class BluespaceDockSystem : EntitySystem
             if (!_resource.UserData.Exists(path))
                 return false;
 
-            // An update may have removed something the ship uses: the engine refuses a whole file over
-            // one missing prototype, so those entities are dropped from a copy and the copy is loaded.
+            // An update may have removed something the ship uses, and older saves can contain
+            // container/storage references that no longer point at anything. Both are fixed in a
+            // temporary copy so the original file stays available for recovery.
             var missing = CollectMissingPrototypes(path);
-            if (missing.Count > 0)
+            if (TryWriteSanitizedShipFile(path, missing, out var copy))
             {
-                _sawmill.Warning($"Ship file {relativePath} uses {missing.Count} prototype(s) that no longer exist " +
-                                 $"({string.Join(", ", missing)}); those entities are dropped for this load");
-
-                if (TryWriteSanitizedShipFile(path, missing, out var copy))
+                if (missing.Count > 0)
                 {
-                    sanitizedRelative = copy;
-                    path = new ResPath($"{ShipDirectory}/{copy}");
+                    _sawmill.Warning($"Ship file {relativePath} uses {missing.Count} prototype(s) that no longer exist " +
+                                     $"({string.Join(", ", missing)}); those entities are dropped for this load");
                 }
+                else
+                {
+                    _sawmill.Warning($"Ship file {relativePath} contains invalid container/storage references; " +
+                                     "they were pruned for this load");
+                }
+
+                sanitizedRelative = copy;
+                path = new ResPath($"{ShipDirectory}/{copy}");
             }
 
             _map.CreateMap(out var mapId);
@@ -1897,33 +1999,46 @@ public sealed class BluespaceDockSystem : EntitySystem
         {
             hasActiveShip = true;
             activeShipName = ShipyardSystem.GetFullName(deed);
-            activeShipValue = AppraiseShip(shuttleUid);
-            storeCost = (int) (activeShipValue * _cfg.GetCVar(NFCCVars.BluespaceDockStoreTax));
 
-            canSellActive = true;
-
-            // Run the same rule ladder the store action runs, so the button state cannot drift from
-            // what the server will actually accept.
-            var stationGrid = _station.GetOwningStation(consoleUid) is { Valid: true } owningStation
-                ? _station.GetLargestGrid(owningStation)
-                : null;
-
-            storeBlocked = FindStoreBlocker(shuttleUid, requireDocked: true, stationGrid);
-
-            if (storeBlocked is null && balance < storeCost)
-                storeBlocked = "bluespace-dock-error-insufficient-funds";
-
-            if (storeBlocked is null)
+            // A single bad legacy entity must not blank the whole console (the UI would fall back
+            // to its default "INSERT ID" state). Degrade to a visible error instead.
+            try
             {
-                var maxShips = _cfg.GetCVar(NFCCVars.BluespaceDockMaxShips);
-                if (maxShips > 0 && TryGetCharacter(actor, targetId, out var userId, out var characterName)
-                    && CountStoredShips(userId, characterName) >= maxShips)
-                {
-                    storeBlocked = "bluespace-dock-error-too-many-ships";
-                }
-            }
+                activeShipValue = AppraiseShip(shuttleUid);
+                storeCost = (int) (activeShipValue * _cfg.GetCVar(NFCCVars.BluespaceDockStoreTax));
 
-            canStore = storeBlocked is null;
+                canSellActive = true;
+
+                // Run the same rule ladder the store action runs, so the button state cannot drift from
+                // what the server will actually accept.
+                var stationGrid = _station.GetOwningStation(consoleUid) is { Valid: true } owningStation
+                    ? _station.GetLargestGrid(owningStation)
+                    : null;
+
+                storeBlocked = FindStoreBlocker(shuttleUid, requireDocked: true, stationGrid);
+
+                if (storeBlocked is null && balance < storeCost)
+                    storeBlocked = "bluespace-dock-error-insufficient-funds";
+
+                if (storeBlocked is null)
+                {
+                    var maxShips = _cfg.GetCVar(NFCCVars.BluespaceDockMaxShips);
+                    if (maxShips > 0 && TryGetCharacter(actor, targetId, out var userId, out var characterName)
+                        && CountStoredShips(userId, characterName) >= maxShips)
+                    {
+                        storeBlocked = "bluespace-dock-error-too-many-ships";
+                    }
+                }
+
+                canStore = storeBlocked is null;
+            }
+            catch (Exception e)
+            {
+                _sawmill.Error($"Failed to refresh bluespace dock state for {ToPrettyString(shuttleUid)}: {e}");
+                canSellActive = false;
+                canStore = false;
+                storeBlocked = "bluespace-dock-error-save-failed";
+            }
         }
 
         if (hasId && TryGetCharacter(actor, targetId, out var userId2, out var characterName2))
@@ -3384,6 +3499,13 @@ public sealed class BluespaceDockSystem : EntitySystem
         while (queue.Count > 0)
         {
             var current = queue.Dequeue();
+
+            // Legacy ship files can contain container references to entities that were already
+            // missing when the file was written. The deserializer turns those references into
+            // EntityUid.Invalid, and walking one must not throw: the rest of the grid is fine.
+            if (!current.IsValid() || !Exists(current))
+                continue;
+
             if (!entities.Add(current))
                 continue;
 
@@ -3451,6 +3573,9 @@ public sealed class BluespaceDockSystem : EntitySystem
 
     private bool IsDangerousShipEntity(EntityUid uid)
     {
+        if (!Exists(uid))
+            return false;
+
         if (HasComp<SupermatterComponent>(uid)
             || HasComp<SingularityComponent>(uid)
             || HasComp<TeslaEnergyBallComponent>(uid))

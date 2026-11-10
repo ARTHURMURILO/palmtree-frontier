@@ -560,6 +560,20 @@ so these fail only in CI:
   throws must not skip the registration of every entity after it. It also re-links every
   `ExtensionCableReceiverComponent` without a provider - a loaded machine whose APC link is missing
   shows "un-powered" until a player deconstructs and rebuilds it.
+- **Dangling entity references deserialize as `EntityUid.Invalid`, not as null.** Legacy ship
+  files contain `ents: [invalid]`, `storedItems: invalid` and `invalid` values in other components
+  (`ContainedSolution.container`, `Action.entIcon`, `RadarConsole.targetEntity`, ...). Loading one
+  leaves `EntityUid.Invalid` behind, so any traversal that calls `MetaData`/`Transform` on every
+  entity throws `Entity 0 does not have a component of type MetaDataComponent` (the 2026-11-09 dock
+  crash: `HasDangerousShipEntities`/`PurgeDangerousShipEntities`, which made `RefreshState` blank to
+  "INSERT ID" and broke `forcedock`). Rules:
+  - `GetEntitiesOnGrid` skips `!IsValid() || !Exists` uids and `IsDangerousShipEntity` re-checks.
+  - Ship-file writes prune undeclared/invalid `ContainerContainer` (`ents`/`ent`) and `Storage`
+    (`storedItems`) references, and `PruneInvalidComponentReferences` nulls/removes every remaining
+    `invalid` component value (except `Transform.parent`, which is legitimately invalid on a grid
+    root). `TryWriteSanitizedShipFile` does the same on load and only loads the sanitized temporary
+    copy. The three corrupt files pulled from the 2026-11-09 incident had 576 such references.
+    Do not assume a file's components are clean.
 
 ## 26. RCD/RPD port notes (2026-10-18)
 
