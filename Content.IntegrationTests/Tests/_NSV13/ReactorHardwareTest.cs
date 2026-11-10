@@ -12,7 +12,7 @@ using Content.Shared._NSV13.Reactor;
 using Content.Shared.Atmos;
 using Content.Shared.Construction.Components;
 using Content.Shared.Construction.Prototypes;
-using Content.Shared._Goobstation.Supermatter.Components;
+using Content.Shared._EE.Supermatter.Components;
 using Content.Shared.Movement.Pulling.Components;
 using Content.Shared.NodeContainer;
 using Content.Shared.Movement.Pulling.Components;
@@ -183,7 +183,7 @@ public sealed class ReactorHardwareTest
             var fullProto = protoMan.Index<EntityPrototype>("Supermatter");
             Assert.That(fullProto.TryGetComponent<SupermatterComponent>(out var full), Is.True);
 
-            Assert.That(small.DelaminationPoint, Is.EqualTo(full!.DelaminationPoint),
+            Assert.That(small.DamageDelaminationPoint, Is.EqualTo(full!.DamageDelaminationPoint),
                 "the shard is a mounting option, not a weaker engine");
             Assert.That(small.DelamTimer, Is.EqualTo(full.DelamTimer), "the shard uses the same fuse length");
 

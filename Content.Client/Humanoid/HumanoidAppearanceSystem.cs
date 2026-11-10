@@ -84,6 +84,55 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
     }
 
     /// <summary>
+    /// Palmtree: neck-slot clothing should cover genitals when facing south. Move the neck layer
+    /// above the genital marking group in that direction, and back below the head group otherwise.
+    /// </summary>
+    public void UpdateNeckLayerOrder(EntityUid uid, SpriteComponent sprite, RsiDirection? direction = null)
+    {
+        if (!_sprite.LayerMapTryGet((uid, sprite), "neck", out var neckIndex, false))
+            return;
+
+        var screenDirection = direction ?? GetScreenDirection(uid);
+
+        SpriteComponent.Layer? neckLayer;
+        if (screenDirection == RsiDirection.South)
+        {
+            if (!_sprite.LayerMapTryGet((uid, sprite), "mask", out var maskIndex, false)
+                || neckIndex == maskIndex - 1
+                || !_sprite.TryGetLayer((uid, sprite), neckIndex, out neckLayer, false))
+            {
+                return;
+            }
+
+            _sprite.RemoveLayer((uid, sprite), neckIndex);
+
+            // The mask layer shifts down when the neck layer is removed from before it.
+            var newIndex = _sprite.LayerMapTryGet((uid, sprite), "mask", out maskIndex, false)
+                ? _sprite.AddLayer((uid, sprite), neckLayer, maskIndex)
+                : _sprite.AddLayer((uid, sprite), neckLayer);
+
+            _sprite.LayerMapSet((uid, sprite), "neck", newIndex);
+            return;
+        }
+
+        if (!_sprite.LayerMapTryGet((uid, sprite), HumanoidVisualLayers.FacialHair, out var facialHairIndex, false)
+            || neckIndex == facialHairIndex - 1
+            || !_sprite.TryGetLayer((uid, sprite), neckIndex, out neckLayer, false))
+        {
+            return;
+        }
+
+        _sprite.RemoveLayer((uid, sprite), neckIndex);
+
+        var restoredIndex = _sprite.LayerMapTryGet((uid, sprite), HumanoidVisualLayers.FacialHair, out facialHairIndex, false)
+            ? _sprite.AddLayer((uid, sprite), neckLayer, facialHairIndex)
+            : _sprite.AddLayer((uid, sprite), neckLayer);
+
+        _sprite.LayerMapSet((uid, sprite), "neck", restoredIndex);
+    }
+
+
+    /// <summary>
     /// Palmtree: whether the mob currently wears a garment on a slot that is drawn over genitals.
     /// Used to keep the south-facing genital layer above hair/tails only when there is nothing
     /// covering the organ.
@@ -148,6 +197,8 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
 
         var humanoidAppearance = entity.Comp1;
         var sprite = entity.Comp2;
+
+        UpdateNeckLayerOrder(entity.Owner, sprite);
 
         sprite[_sprite.LayerMapReserve((entity.Owner, sprite), HumanoidVisualLayers.Eyes)].Color = humanoidAppearance.EyeColor;
 

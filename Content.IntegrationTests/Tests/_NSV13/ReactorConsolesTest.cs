@@ -319,8 +319,8 @@ public sealed class ReactorConsolesTest
             var nodes = entMan.GetComponent<NodeContainerComponent>(uid);
             var fuel = (PipeNode) nodes.Nodes[comp.FuelInputName];
 
-            fuel.Air.AdjustMoles(Gas.ConstrictedPlasma, 200f);
-            fuel.Air.AdjustMoles(Gas.Plasma, 200f);
+            // Constricted plasma is not one of this fork's gases; plasma is the stormdrive's fuel.
+            fuel.Air.AdjustMoles(Gas.Plasma, 400f);
             fuel.Air.Temperature = 600f;
 
             comp.State = StormdriveState.Running;
@@ -340,7 +340,7 @@ public sealed class ReactorConsolesTest
             var comp = entMan.GetComponent<StormdriveComponent>(uid);
             var nodes = entMan.GetComponent<NodeContainerComponent>(uid);
             var fuel = (PipeNode) nodes.Nodes[comp.FuelInputName];
-            before = fuel.Air.GetMoles(Gas.ConstrictedPlasma);
+            before = fuel.Air.GetMoles(Gas.Plasma);
 
             Assert.That(before, Is.GreaterThan(0f), "the fuel line should hold gas");
         });
@@ -353,7 +353,7 @@ public sealed class ReactorConsolesTest
             var nodes = entMan.GetComponent<NodeContainerComponent>(uid);
             var fuel = (PipeNode) nodes.Nodes[comp.FuelInputName];
 
-            after = fuel.Air.GetMoles(Gas.ConstrictedPlasma);
+            after = fuel.Air.GetMoles(Gas.Plasma);
             power = comp.LastPowerProduced;
 
             Assert.That(after, Is.LessThan(before), "a running drive must eat its fuel");

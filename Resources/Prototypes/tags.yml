@@ -1509,6 +1509,9 @@
   id: WhitelistChameleonPDA
 
 - type: Tag
+  id: DirectionalWindow # Palmtree: edge-mounted window; does not fill its tile for construction
+
+- type: Tag
   id: Window
 
 - type: Tag

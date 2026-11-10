@@ -1,4 +1,4 @@
-﻿- type: guideEntry
+- type: guideEntry
   id: Engineering
   name: guide-entry-engineering
   text: "/ServerInfo/Guidebook/Engineering/Engineering.xml"
@@ -65,6 +65,8 @@
   - GasCanisters
   - Thermomachines
   - GasCondensing
+  - TemperatureDevices # Palmtree
+  - HeatPump # Palmtree
 
 - type: guideEntry
   id: Pipes
@@ -311,7 +313,7 @@
   - TEG
   - RTG
   - SolarPanels
-  - Supermatter # Goobstation
+  - Supermatter # EE/Coyote
 
 - type: guideEntry
   id: AME

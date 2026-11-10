@@ -1,0 +1,18 @@
+- type: guideEntry
+  id: FrontierCode
+  name: guide-entry-frontier-code
+  text: "/ServerInfo/_PS/Guidebook/Code/FrontierCode.xml"
+  priority: 1
+  children:
+  - FrontierCodeGeneral
+  - FrontierCodePenal
+
+- type: guideEntry
+  id: FrontierCodeGeneral
+  name: guide-entry-frontier-code-general
+  text: "/ServerInfo/_PS/Guidebook/Code/FrontierCodeGeneral.xml"
+
+- type: guideEntry
+  id: FrontierCodePenal
+  name: guide-entry-frontier-code-penal
+  text: "/ServerInfo/_PS/Guidebook/Code/FrontierCodePenal.xml"

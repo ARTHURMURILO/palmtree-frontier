@@ -1,0 +1,140 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Construction graphs for the Goob decor port, batch 2 (CD rack, torch, fires).
+
+- type: constructionGraph
+  id: CdRackGraph
+  start: start
+  graph:
+    - node: start
+      actions:
+        - !type:DestroyEntity {}
+      edges:
+        - to: CdRackNode
+          completed:
+            - !type:SnapToGrid {}
+          steps:
+            - material: WoodPlank
+              amount: 3
+              doAfter: 4
+    - node: CdRackNode
+      entity: CdRack
+      edges:
+        - to: start
+          completed:
+            - !type:GivePrototype
+              prototype: MaterialWoodPlank1
+              amount: 3
+          steps:
+            - tool: Prying
+              doAfter: 2
+
+- type: constructionGraph
+  id: WallTorchGraph
+  start: start
+  graph:
+    - node: start
+      actions:
+        - !type:DestroyEntity {}
+      edges:
+        - to: wallTorch
+          completed:
+            - !type:SnapToGrid {}
+          steps:
+            - material: WoodPlank
+              amount: 2
+              doAfter: 4
+            - material: Cloth
+              amount: 1
+              doAfter: 1
+    - node: wallTorch
+      entity: TorchWall
+      edges:
+        - to: start
+          completed:
+            - !type:GivePrototype
+              prototype: MaterialWoodPlank1
+              amount: 2
+          steps:
+            - tool: Prying
+              doAfter: 1
+
+- type: constructionGraph
+  id: RMCCampfire
+  start: start
+  graph:
+    - node: start
+      actions:
+        - !type:DestroyEntity {}
+      edges:
+        - to: campfire
+          completed:
+            - !type:SnapToGrid {}
+          steps:
+            - material: WoodPlank
+              amount: 8
+              doAfter: 3
+    - node: campfire
+      entity: RMCCampfire
+      edges:
+        - to: start
+          completed:
+            - !type:GivePrototype
+              prototype: MaterialWoodPlank1
+              amount: 8
+          steps:
+            - tool: Prying
+              doAfter: 3
+
+- type: constructionGraph
+  id: FieryStakeGraph
+  start: start
+  graph:
+    - node: start
+      actions:
+        - !type:DestroyEntity {}
+      edges:
+        - to: BonfireNode
+          completed:
+            - !type:SnapToGrid {}
+          steps:
+            - material: WoodPlank
+              amount: 10
+              doAfter: 4
+    - node: BonfireNode
+      entity: FieryStake
+      edges:
+        - to: start
+          completed:
+            - !type:GivePrototype
+              prototype: MaterialWoodPlank1
+              amount: 5
+          steps:
+            - tool: Prying
+              doAfter: 2
+
+- type: constructionGraph
+  id: BonfireStake
+  start: start
+  graph:
+    - node: start
+      actions:
+        - !type:DestroyEntity {}
+      edges:
+        - to: bonfireStake
+          completed:
+            - !type:SnapToGrid {}
+          steps:
+            - material: WoodPlank
+              amount: 10
+              doAfter: 4
+    - node: bonfireStake
+      entity: BonfireStake
+      edges:
+        - to: start
+          completed:
+            - !type:GivePrototype
+              prototype: MaterialWoodPlank1
+              amount: 5
+          steps:
+            - tool: Prying
+              doAfter: 2

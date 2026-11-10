@@ -47,7 +47,7 @@ public abstract partial class SharedToolSystem
 
         var tileRef = _maps.GetTileRef(gridUid, grid, args.GridTile);
         var coords = _maps.ToCoordinates(tileRef, grid);
-        if (comp.RequiresUnobstructed && _turfs.IsTileBlocked(gridUid, tileRef.GridIndices, CollisionGroup.MobMask))
+        if (comp.RequiresUnobstructed && IsTileObstructed(gridUid, tileRef.GridIndices))
             return;
 
         if (!TryDeconstructWithToolQualities(tileRef, tool.Qualities))
@@ -80,7 +80,7 @@ public abstract partial class SharedToolSystem
         if (string.IsNullOrWhiteSpace(tileDef.BaseTurf))
             return false;
 
-        if (comp.RequiresUnobstructed && _turfs.IsTileBlocked(gridUid, tileRef.GridIndices, CollisionGroup.MobMask))
+        if (comp.RequiresUnobstructed && IsTileObstructed(gridUid, tileRef.GridIndices))
             return false;
 
         var coordinates = _maps.GridTileToLocal(gridUid, mapGrid, tileRef.GridIndices);
@@ -90,6 +90,15 @@ public abstract partial class SharedToolSystem
         var args = new TileToolDoAfterEvent(GetNetEntity(gridUid), tileRef.GridIndices);
         UseTool(ent, user, ent, comp.Delay, tool.Qualities, args, out _, toolComponent: tool);
         return true;
+    }
+
+    /// <summary>
+    /// Palmtree: a directional window only covers one edge of its tile, so it must not stop
+    /// players from prying or digging up the tile underneath it.
+    /// </summary>
+    private bool IsTileObstructed(EntityUid gridUid, Vector2i indices)
+    {
+        return _turfs.IsTileBlocked(gridUid, indices, CollisionGroup.MobMask, ignoreDirectionalWindows: true);
     }
 
     public bool TryDeconstructWithToolQualities(TileRef tileRef, PrototypeFlags<ToolQualityPrototype> withToolQualities)

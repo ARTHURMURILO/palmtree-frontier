@@ -1,0 +1,17 @@
+# Palmtree: board for the heat pump.
+
+- type: entity
+  id: HeatPumpMachineCircuitBoard
+  parent: BaseMachineCircuitboard
+  name: heat pump thermomachine machine board
+  description: A machine printed circuit board for a heat pump thermomachine.
+  components:
+  - type: Sprite
+    state: engineering
+  - type: MachineBoard
+    prototype: GasThermoMachineHeatPump
+    requirements:
+      MatterBin: 2
+      Manipulator: 2
+    stackRequirements:
+      Cable: 5

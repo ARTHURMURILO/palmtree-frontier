@@ -1,0 +1,20 @@
+- type: Tag
+  id: CircuitCpu
+
+- type: Tag
+  id: CircuitLocomotion
+
+- type: Tag
+  id: CircuitManipulator
+
+- type: Tag
+  id: CircuitVoice
+
+- type: Tag
+  id: CircuitSensor
+
+- type: Tag
+  id: CircuitAnalyzer
+
+- type: Tag
+  id: CircuitRadio

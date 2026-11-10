@@ -1,0 +1,45 @@
+<Document>
+  # Temperature devices
+  These devices move [color=#a4885c]heat[/color] instead of gas, and are mostly used to cool engine loops
+  or to keep a ship's coolant somewhere useful. They are not part of the standard air loop.
+
+  <Box>
+    <GuideEntityEmbed Entity="GasTemperatureGate" Caption="temperature gate"/>
+    <GuideEntityEmbed Entity="GasTemperaturePump" Caption="temperature pump"/>
+    <GuideEntityEmbed Entity="GasHeatExchanger" Caption="heat exchanger"/>
+    <GuideEntityEmbed Entity="GasMeter" Caption="atmos meter"/>
+  </Box>
+
+  ## Temperature gate
+  The temperature gate only lets gas through while the gas on its [color=#a4885c]inlet[/color] side is
+  colder than the temperature it is set to.
+  Open its interface to set the threshold (from [color=orange]2.7 K[/color] up to [color=orange]4500 K[/color]),
+  to switch it on and off, or to invert it so it opens on gas that is [color=#a4885c]hotter[/color] than the threshold instead.
+
+  Like the [textlink="pressure regulator" link="PressureRegulator"], the gate never creates a pressure difference of its own:
+  it releases gas until both sides are at the same pressure, so it cannot push gas into a pipeline that is already fuller.
+  It [color=#a4885c]requires power[/color] to run.
+
+  ## Temperature pump
+  The temperature pump moves heat, not gas.
+  Its inlet pipeline is cooled down and its outlet pipeline is heated up, and it only ever works in that direction -
+  the hot side has to face the cold side.
+  Open its interface to set how much of the temperature difference is moved each second.
+  It [color=#a4885c]requires power[/color] to run.
+
+  ## Heat exchanger
+  The heat exchanger brings the gas in two pipelines to the same temperature without moving any gas between them.
+  It only has [color=#a4885c]one pipe port[/color], so it works in pairs:
+  build two of them and place them [color=#a4885c]flat face to flat face[/color], with the pipe ports pointing away from each other.
+  Hook the hot loop up to one of them and the cold loop up to the other.
+
+  The flat side is the front - the side with the short pipe port is the back, and that is where the loop connects.
+  A heat exchanger on its own, or back to back with another one, does nothing: the flat faces have to touch.
+
+  Do not confuse it with the [textlink="radiator" link="Radiators"], which exchanges heat with the air of the tile it sits on.
+
+  ## Atmos meter
+  The atmos meter is a gauge you bolt onto a pipeline.
+  The length of its bar shows the pressure (up to about 6000 kPa), and examining it gives you the exact pressure and temperature.
+  It is the quickest way to see what a pipeline is doing without carrying a gas analyzer.
+</Document>

@@ -195,7 +195,7 @@ public sealed class StormdriveAnomalySystem : EntitySystem
                 continue;
 
             // IrradiateEntity takes rads/s and a duration; a pulse is modelled as one second's worth.
-            _radiation.IrradiateEntity(entity, rads, 1f);
+            _radiation.IrradiateEntity(entity, rads, 0f, 1f);
         }
     }
 

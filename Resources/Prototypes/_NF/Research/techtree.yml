@@ -733,6 +733,43 @@
   position: 0, 16
 
 - type: technology
+  id: NFCircuitry
+  name: nf-research-technology-circuitry
+  entityIcon: CircuitCpuBasic
+  discipline: NFEngineering
+  tier: 1
+  cost: 5000
+  recipeUnlocks:
+  - CircuitCpuBasic
+  - CircuitWheels
+  - CircuitManipulator
+  - CircuitSpeaker
+  - CircuitSensor
+  - CircuitRadio
+  technologyPrerequisites:
+  - NFBasicRobotics
+  position: 0, 17
+
+- type: technology
+  id: NFAdvancedCircuitry
+  name: nf-research-technology-advanced-circuitry
+  entityIcon: CircuitCpuAdvanced
+  discipline: NFEngineering
+  tier: 2
+  cost: 10000
+  recipeUnlocks:
+  - CircuitCpuAdvanced
+  - CircuitTracks
+  - CircuitThruster
+  - CircuitBotanicalAnalyzer
+  - CircuitChemicalAnalyzer
+  - CircuitMedicalAnalyzer
+  - CircuitGasAnalyzer
+  technologyPrerequisites:
+  - NFCircuitry
+  position: 1, 17
+
+- type: technology
   id: NFVim
   name: nf-research-technology-vim
   entityIcon: MechVim
@@ -742,8 +779,8 @@
   recipeUnlocks:
   - VimHarness
   technologyPrerequisites:
-  - NFBasicRobotics
-  position: 0, 17
+  - NFCritterMechs
+  position: 3, 17
 
 - type: technology
   id: NFRoboticsEquipment
@@ -795,8 +832,8 @@
   - HamtrPeripheralsElectronics
   prerequisiteLineType: Diagonal
   technologyPrerequisites:
-  - NFBasicRobotics
-  position: 1, 17
+  - NFRipleyAPLU
+  position: 3, 16
 
 - type: technology
   id: NFAdvancedRoboticsEquipment
@@ -1458,6 +1495,7 @@
   - HolofanProjector
   - AlertsComputerCircuitboard
   - AtmosMonitoringComputerCircuitboard
+  - SupermatterComputerCircuitboard # Palmtree
 #  - FireExtinguisherBluespace # DeltaV
   technologyPrerequisites:
   - NFAtmosphericTech
@@ -1513,6 +1551,9 @@
   cost: 7500
   recipeUnlocks:
   - HellfireFreezerMachineCircuitBoard
+  - HeatPumpMachineCircuitBoard # Palmtree
+  - TegCirculatorFlatpack # Palmtree
+  - TegCenterFlatpack # Palmtree
   technologyPrerequisites:
   - NFAtmosphericTech
   position: 1, 34
