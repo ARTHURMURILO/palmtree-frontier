@@ -15,11 +15,11 @@
   while chassis construction, sound and balance work remain. Phase 5 (hardening) is in progress:
   grid and Bluespace Dock persistence, ownership administration, a Lua kill switch, editor coverage,
   Lua soak/queue tests and a many-assembly stress test are in place.
-- Validation: solution build, YAMLLinter, Content.Tests, and 30 targeted `Circuitry*` integration
+- Validation: solution build, YAMLLinter, Content.Tests, and 35 targeted `Circuitry*` integration
   tests pass (assembly/Lua, hearing, inspect, BUI open, analyzers/dispenser, ChemMaster, security,
   radio, power budget, scan kinds, signals, item/solution autonomy, decals/doors, puddles, events,
   editor Run auto-save, gas analyzer, grid save/load, Bluespace Dock round-trip, many-assembly
-  stress, 16-tile sensor range, dense-room find, sensor-query throttling, synchronous and async walk-to, and synchronous do-after actions).
+  stress, 16-tile sensor range, dense-room find, sensor-query throttling, synchronous and async walk-to, entity-handle walking, no-path retries, held-item UI/examine, power transfer, ranged shooting at sight range, and synchronous do-after actions).
   The BUI test covers the installed-CPU editor and a CPU held in hand.
 
 ### Implemented Phases 1–3
@@ -32,8 +32,11 @@
   radio module.
 - Chassis variants: engineering, janitorial, medical, mining, service, peacekeeping and derelict
   assemblies reuse the corresponding SS13/tg borg chassis states from `Mobs/Silicon/chassis.rsi`.
-  They are mechanically identical to `CircuitAssembly`. The empty/filled chassis itself has no
-  lathe recipe and stays admin-spawn only during live testing.
+  The walkable drone setups from `electronic_setups.dmi` are ported into
+  `Resources/Textures/_PS/Mobs/Silicon/circuit_assemblies.rsi` as six drone chassis variants
+  (generic, arms, secbot, medbot, genbot and android). The stationary boxes and gun chassis are
+  intentionally omitted. All variants are mechanically identical to `CircuitAssembly`. The
+  empty/filled chassis itself has no lathe recipe and stays admin-spawn only during live testing.
 - Fabrication/research: all physical modules (basic/advanced CPU, wheels, tracks, thruster,
   manipulator, speaker, sensor, radio, botanical/chemical/medical/gas analyzers) are in the
   `CircuitryParts` exosuit-fabricator pack and also listed in `NFBlueprintsEngineering` so the
@@ -47,6 +50,12 @@
   0.02–0.06 per metre; action cost is 0.02–0.1. A fully loaded assembly idles under 1 charge/sec,
   comfortably below the microreactor's 12/sec self-recharge. Regression test:
   `Content.IntegrationTests/Tests/_PS/CircuitryPowerTest.cs`.
+- Power transfer: `robot.battery(handle)` reads any battery/slotted cell; `robot.charge(handle,
+  amount)` charges a held or nearby battery/gun from the assembly; `robot.charge_from(amount [,
+  radius])` draws from nearby APCs, SMES units, batteries and power cells. Transfers use the
+  battery `GetChargeEvent`/`ChangeChargeEvent` path so guns with inserted cells work, are
+  nearest-first, and are rate-limited to 0.5 s. Regression test:
+  `Content.IntegrationTests/Tests/_PS/CircuitryPowerTransferTest.cs`.
 - Direct movement and `NPCSteeringSystem` pathfinding (`robot.move`, `robot.walk_to`). Path
   targets default to a 0.5-tile arrival tolerance and are clamped to at least 0.5. With smoothing
   enabled (default), tolerance scales with current walk speed up to 1.25 tiles and steering brakes
@@ -55,12 +64,16 @@
   commands targeting within 0.75 tiles of the current path target are no-ops, so follow loops do
   not cancel/restart pathfinding every tick.
 - Lua-facing movement is synchronous by default: `walk_to` yields through `robot.wait` until
-  arrival, no-path or a 60 s timeout. `walk_to_async` is the fire-and-forget variant. The C#
-  pathfinding itself stays asynchronous; no server tick is ever blocked.
+  arrival, no-path or a 60 s timeout. It accepts either `x, y` coordinates or a single entity
+  handle, so scripts can walk directly to a `find`/`nearest_*` result. `walk_to_async` is the
+  fire-and-forget variant. The C# pathfinding itself stays asynchronous; no server tick is ever
+  blocked. Re-issuing a walk command clears a previous terminal `NoPath` steering state, so a bot
+  retries after a door opens or a temporary blockage is removed.
 - Lua-facing actions that can start do-afters (`use`, `use_item`, `interact`/`harvest`, `plant`,
   `trigger`, `inject`) also wait for completion by default, with 30 s timeouts and cancellation
   reporting. Their `_async` variants expose the old immediate behavior. Instant actions (pickup,
-  drop, attack, shoot, transfers, dispensing, ChemMaster, send_signal) are unchanged.
+  drop, attack, shoot, transfers, dispensing, ChemMaster, send_signal) are unchanged. `shoot`
+  checks ranged line of sight (at least 20 tiles), not the 1.5-tile manipulator hand range.
 - Sensor module range is 16 tiles and multi-result scans cap at 200 rows. Sensor lookups share a
   4-per-second token bucket (burst of 4), so a tight `find`/`scan` loop gets `scan cooldown`
   instead of rescanning hundreds of times per resume. The scanner sorts candidates and raycasts
@@ -131,6 +144,9 @@
 - Server BUIs + client assembly panel and code editor. The installed CPU editor is served by the
   chassis (`CircuitCpuUiKey` on `CircuitAssembly`) because opening a BUI on a CPU item inside an item
   slot fails the interaction range assert. A CPU held in hand still uses its own `CircuitCpuUiKey`.
+  The assembly panel lists each manipulator hand's held item as a take button (or a disabled
+  "No item"), and examine reports what the assembly is holding. The server exposes
+  `CircuitAssemblyUiSystem.TryTakeHeld` plus the `CircuitAssemblyTakeHeldMessage` BUI message.
 - CPU editor: a content-side `LuaCodeEditor` control replaces the engine `TextEdit`, providing
   inline Lua syntax colors, line numbers, mouse/keyboard selection, copy/cut/paste, Tab-to-spaces,
   auto-indent on Enter, undo/redo (Ctrl+Z/Ctrl+Y), and paste normalization of tabs/newlines. The

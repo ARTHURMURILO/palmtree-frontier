@@ -18,6 +18,7 @@ using Content.Server.Decals;
 using Content.Server.DeviceLinking.Systems;
 using Content.Server.Hands.Systems;
 using Content.Server.NodeContainer.Nodes;
+using Content.Server.Power.Components;
 using Content.Server.Radio.EntitySystems;
 using Content.Server.Weapons.Melee;
 using Content.Server.Weapons.Ranged.Systems;
@@ -90,7 +91,14 @@ public sealed class CircuitLuaApiSystem : EntitySystem
 
     private const string WalkToSource = """
         return function(x, y, range, smooth)
-            local ok, reason = robot.walk_to_async(x, y, range, smooth)
+            local ok, reason
+            if y == nil then
+                -- Single argument: an entity handle. walk_to_async resolves it to coordinates.
+                ok, reason = robot.walk_to_async(x)
+            else
+                ok, reason = robot.walk_to_async(x, y, range, smooth)
+            end
+
             if not ok then
                 -- Yield even on failure so a retry loop cannot spin without ever waiting.
                 robot.wait(0.1)
@@ -173,6 +181,10 @@ public sealed class CircuitLuaApiSystem : EntitySystem
 
     private readonly HashSet<EntityUid> _lookupSet = new();
 
+    private const float DefaultPowerTransferRange = 2f;
+    private const float MaxPowerTransferRange = 4f;
+    private static readonly TimeSpan PowerTransferCooldown = TimeSpan.FromSeconds(0.5);
+
     [Dependency] private readonly AccessReaderSystem _access = default!;
     [Dependency] private readonly AccessSystem _accessSystem = default!;
     [Dependency] private readonly ActionBlockerSystem _actionBlocker = default!;
@@ -208,6 +220,9 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         robot.Set("self", DynValue.NewCallback((_, _) => BuildSelf(runtime), "self"));
         robot.Set("position", DynValue.NewCallback((_, _) => BuildPosition(runtime), "position"));
         robot.Set("power", DynValue.NewCallback((_, _) => BuildPower(runtime), "power"));
+        robot.Set("battery", DynValue.NewCallback((_, args) => BatteryInfo(runtime, args), "battery"));
+        robot.Set("charge_from", DynValue.NewCallback((_, args) => ChargeFrom(runtime, args), "charge_from"));
+        robot.Set("charge", DynValue.NewCallback((_, args) => Charge(runtime, args), "charge"));
         robot.Set("health", DynValue.NewCallback((_, _) => BuildHealth(runtime), "health"));
         robot.Set("has_module", DynValue.NewCallback((_, args) => HasModule(runtime, args), "has_module"));
 
@@ -390,6 +405,191 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         return DynValue.NewTuple(DynValue.NewNumber(power), DynValue.NewNumber(maxPower));
     }
 
+    private DynValue BatteryInfo(CircuitLuaRuntime runtime, CallbackArguments args)
+    {
+        if (!TryGetHandle(runtime, args, 0, out var target))
+            return Bool(false, "invalid entity handle");
+
+        if (!TryGetBatteryCharge(target, out var current, out var max))
+            return Bool(false, "target has no battery");
+
+        var table = NewTable(runtime);
+        table.Set("charge", DynValue.NewNumber(current));
+        table.Set("max", DynValue.NewNumber(max));
+        table.Set("percent", DynValue.NewNumber(max > 0f ? current / max * 100f : 0f));
+        return DynValue.NewTable(table);
+    }
+
+    /// <summary>
+    /// Draws charge from the nearest APC/battery/power-cell source into the assembly's own cell.
+    /// </summary>
+    private DynValue ChargeFrom(CircuitLuaRuntime runtime, CallbackArguments args)
+    {
+        if (!TryGetNumber(args, 0, out var amount) || amount <= 0)
+            return Bool(false, "charge_from expects a positive amount");
+
+        if (!TryComp<CircuitAssemblyComponent>(runtime.Assembly, out var component))
+            return Bool(false, "assembly is missing");
+
+        if (component.Cell == null)
+            return Bool(false, "no power cell");
+
+        if (_timing.CurTime < runtime.NextPowerTransfer)
+            return Bool(false, "power transfer rate limited");
+
+        if (!TryGetBatteryCharge(runtime.Assembly, out var ownCharge, out var ownMax))
+            return Bool(false, "no power cell");
+
+        var missing = ownMax - ownCharge;
+        if (missing <= 0.01f)
+            return Bool(false, "battery is full");
+
+        var radius = args.Count > 1 && args[1].Type == DataType.Number
+            ? (float) args[1].Number
+            : DefaultPowerTransferRange;
+        radius = Math.Clamp(radius, 0.5f, MaxPowerTransferRange);
+
+        var requested = MathF.Min((float) amount, missing);
+        var sources = new List<(EntityUid Uid, float Distance)>();
+        var origin = _transform.GetMapCoordinates(runtime.Assembly);
+        _lookupSet.Clear();
+        _lookup.GetEntitiesInRange(runtime.Assembly, radius, _lookupSet, LookupFlags.Uncontained);
+
+        foreach (var uid in _lookupSet)
+        {
+            if (uid == runtime.Assembly || Deleted(uid))
+                continue;
+
+            if (!TryGetBatteryCharge(uid, out var sourceCharge, out _) || sourceCharge <= 0f)
+                continue;
+
+            var other = _transform.GetMapCoordinates(uid);
+            if (origin.MapId != other.MapId)
+                continue;
+
+            var distance = (origin.Position - other.Position).Length();
+            if (distance > radius)
+                continue;
+
+            if (!_interaction.InRangeUnobstructed(runtime.Assembly, uid, radius))
+                continue;
+
+            sources.Add((uid, distance));
+        }
+
+        sources.Sort((a, b) => a.Distance.CompareTo(b.Distance));
+
+        var moved = 0f;
+        foreach (var (source, _) in sources)
+        {
+            if (!TryGetBatteryCharge(source, out var sourceCharge, out _))
+                continue;
+
+            var take = MathF.Min(requested - moved, sourceCharge);
+            if (take <= 0f)
+                continue;
+
+            var drain = new ChangeChargeEvent(-take);
+            RaiseLocalEvent(source, ref drain);
+            var removed = take + drain.ResidualValue;
+            if (removed <= 0f)
+                continue;
+
+            var add = new ChangeChargeEvent(removed);
+            RaiseLocalEvent(runtime.Assembly, ref add);
+            var added = removed - add.ResidualValue;
+
+            if (added < removed)
+            {
+                var refund = new ChangeChargeEvent(removed - added);
+                RaiseLocalEvent(source, ref refund);
+            }
+
+            moved += added;
+            if (moved >= requested)
+                break;
+        }
+
+        if (moved <= 0f)
+            return Bool(false, "no nearby power source");
+
+        runtime.NextPowerTransfer = _timing.CurTime + PowerTransferCooldown;
+        _assembly.RefreshPowerState(runtime.Assembly, component);
+        return Bool(true);
+    }
+
+    /// <summary>
+    /// Charges a battery, power cell or battery-powered item (including an energy gun) from the
+    /// assembly's own cell. The target can be held by the assembly or nearby on the ground.
+    /// </summary>
+    private DynValue Charge(CircuitLuaRuntime runtime, CallbackArguments args)
+    {
+        if (!TryGetHandle(runtime, args, 0, out var target))
+            return Bool(false, "invalid entity handle");
+
+        if (!TryGetNumber(args, 1, out var amount) || amount <= 0)
+            return Bool(false, "charge expects a positive amount");
+
+        if (target == runtime.Assembly)
+            return Bool(false, "use charge_from to charge the assembly");
+
+        if (!TryComp<CircuitAssemblyComponent>(runtime.Assembly, out var component))
+            return Bool(false, "assembly is missing");
+
+        if (component.Cell == null)
+            return Bool(false, "no power cell");
+
+        if (_timing.CurTime < runtime.NextPowerTransfer)
+            return Bool(false, "power transfer rate limited");
+
+        if (!_interaction.InRangeUnobstructed(runtime.Assembly, target,
+                MathF.Max(component.HandRange, DefaultPowerTransferRange)))
+        {
+            return Bool(false, "target is out of reach or not visible");
+        }
+
+        if (!TryGetBatteryCharge(target, out var targetCharge, out var targetMax))
+            return Bool(false, "target has no battery");
+
+        var missing = targetMax - targetCharge;
+        if (missing <= 0.01f)
+            return Bool(false, "target battery is full");
+
+        var requested = MathF.Min((float) amount, missing);
+        var drain = new ChangeChargeEvent(-requested);
+        RaiseLocalEvent(runtime.Assembly, ref drain);
+        var removed = requested + drain.ResidualValue;
+
+        if (removed <= 0f)
+            return Bool(false, "no power");
+
+        var add = new ChangeChargeEvent(removed);
+        RaiseLocalEvent(target, ref add);
+        var added = removed - add.ResidualValue;
+
+        if (added < removed)
+        {
+            var refund = new ChangeChargeEvent(removed - added);
+            RaiseLocalEvent(runtime.Assembly, ref refund);
+        }
+
+        if (added <= 0f)
+            return Bool(false, "target battery refused charge");
+
+        runtime.NextPowerTransfer = _timing.CurTime + PowerTransferCooldown;
+        _assembly.RefreshPowerState(runtime.Assembly, component);
+        return Bool(true);
+    }
+
+    private bool TryGetBatteryCharge(EntityUid uid, out float current, out float max)
+    {
+        var ev = new GetChargeEvent();
+        RaiseLocalEvent(uid, ref ev);
+        current = ev.CurrentCharge;
+        max = ev.MaxCharge;
+        return max > 0f;
+    }
+
     private DynValue BuildHealth(CircuitLuaRuntime runtime)
     {
         var (damage, maxHealth) = GetHealth(runtime.Assembly);
@@ -450,8 +650,33 @@ public sealed class CircuitLuaApiSystem : EntitySystem
 
     private DynValue WalkTo(CircuitLuaRuntime runtime, CallbackArguments args)
     {
-        if (!TryGetNumber(args, 0, out var x) || !TryGetNumber(args, 1, out var y))
-            return Bool(false, "walk_to expects x, y");
+        double x;
+        double y;
+
+        if (!TryGetNumber(args, 1, out y))
+        {
+            // A single numeric argument is an entity handle rather than an x coordinate.
+            if (args.Count != 1 || args[0].Type != DataType.Number)
+                return Bool(false, "walk_to expects x, y or an entity handle");
+
+            if (!runtime.TryResolve((int) args[0].Number, out var targetUid))
+                return Bool(false, "invalid entity handle");
+
+            var selfXform = Transform(runtime.Assembly);
+            var targetXform = Transform(targetUid);
+            if (selfXform.GridUid != targetXform.GridUid ||
+                selfXform.MapUid != targetXform.MapUid)
+            {
+                return Bool(false, "target is on a different grid");
+            }
+
+            x = targetXform.Coordinates.Position.X;
+            y = targetXform.Coordinates.Position.Y;
+        }
+        else if (!TryGetNumber(args, 0, out x))
+        {
+            return Bool(false, "walk_to expects x, y or an entity handle");
+        }
 
         var range = args.Count > 2 && args[2].Type == DataType.Number ? (float) args[2].Number : 0.5f;
         var smooth = args.Count <= 3 || args[3].Type != DataType.Boolean || args[3].Boolean;
@@ -2472,8 +2697,14 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         if (!TryGetHandle(runtime, args, 0, out var target))
             return Bool(false, "invalid entity handle");
 
-        if (!CanManipulate(runtime, target, out var component, out var error))
-            return Bool(false, error);
+        if (!TryComp<CircuitAssemblyComponent>(runtime.Assembly, out var component))
+            return Bool(false, "assembly is missing");
+
+        if (!component.Capabilities.HasFlag(CircuitCapability.Manipulator))
+            return Bool(false, "no manipulator module");
+
+        if (!component.Powered)
+            return Bool(false, "no power");
 
         if (!_hands.TryGetActiveItem((runtime.Assembly, (HandsComponent?) null), out var held) ||
             !TryComp<GunComponent>(held.Value, out var gun))
@@ -2481,6 +2712,7 @@ public sealed class CircuitLuaApiSystem : EntitySystem
             return Bool(false, "no gun in hand");
         }
 
+        // Ranged attacks use sight range, not the manipulator's 1.5-tile hand range.
         if (!_interaction.InRangeUnobstructed(runtime.Assembly, target, MathF.Max(component.SensorRange, 20f)))
             return Bool(false, "target is out of sight");
 

@@ -1,8 +1,11 @@
+using System;
 using System.Linq;
 using Content.Server._PS.Circuitry.Components;
 using Content.Server._PS.Circuitry.Systems;
+using Content.Server.Hands.Systems;
 using Content.Shared._PS.Circuitry;
 using Content.Shared.Containers.ItemSlots;
+using Content.Shared.Popups;
 using Content.Shared.Radio.Components;
 using Content.Shared.UserInterface;
 using Robust.Server.GameObjects;
@@ -15,9 +18,11 @@ public sealed class CircuitAssemblyUiSystem : EntitySystem
 {
     [Dependency] private readonly CircuitAssemblySystem _assembly = default!;
     [Dependency] private readonly CircuitCpuUiSystem _cpuUi = default!;
+    [Dependency] private readonly HandsSystem _hands = default!;
     [Dependency] private readonly ItemSlotsSystem _itemSlots = default!;
     [Dependency] private readonly LuaBrainSystem _lua = default!;
     [Dependency] private readonly MetaDataSystem _metaData = default!;
+    [Dependency] private readonly SharedPopupSystem _popup = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly UserInterfaceSystem _ui = default!;
 
@@ -35,6 +40,7 @@ public sealed class CircuitAssemblyUiSystem : EntitySystem
         Subs.BuiEvents<CircuitAssemblyComponent>(CircuitAssemblyUiKey.Key, subs =>
         {
             subs.Event<CircuitAssemblyEjectMessage>(OnEject);
+            subs.Event<CircuitAssemblyTakeHeldMessage>(OnTakeHeld);
             subs.Event<CircuitAssemblyRenameMessage>(OnRename);
             subs.Event<CircuitAssemblyLockMessage>(OnLock);
             subs.Event<CircuitAssemblyOpenCpuMessage>(OnOpenCpu);
@@ -108,6 +114,33 @@ public sealed class CircuitAssemblyUiSystem : EntitySystem
 
         _itemSlots.TryEject(uid, args.SlotId, args.Actor, out _);
         UpdateUi(uid, component);
+    }
+
+    private void OnTakeHeld(EntityUid uid, CircuitAssemblyComponent component, CircuitAssemblyTakeHeldMessage args)
+    {
+        TryTakeHeld(uid, args.Actor, args.HandId, component);
+    }
+
+    public bool TryTakeHeld(
+        EntityUid uid,
+        EntityUid actor,
+        string handId,
+        CircuitAssemblyComponent? component = null)
+    {
+        if (!Resolve(uid, ref component, false) || !_assembly.CanModify(uid, actor, component))
+            return false;
+
+        if (!_hands.TryGetHeldItem(uid, handId, out var held) || held is null)
+            return false;
+
+        if (!_hands.TryPickupAnyHand(actor, held.Value, checkActionBlocker: true, animateUser: false))
+        {
+            _popup.PopupEntity(Loc.GetString("circuit-assembly-ui-cannot-take"), uid, actor);
+            return false;
+        }
+
+        UpdateUi(uid, component);
+        return true;
     }
 
     private void OnRename(EntityUid uid, CircuitAssemblyComponent component, CircuitAssemblyRenameMessage args)
@@ -196,6 +229,29 @@ public sealed class CircuitAssemblyUiSystem : EntitySystem
         var runtime = _lua.GetRuntime(uid);
         state.Running = runtime?.Program.IsRunning ?? false;
         state.Error = runtime?.Program.LastError;
+
+        foreach (var (slotId, role) in component.Slots)
+        {
+            if (role != CircuitSlotRole.Manipulator)
+                continue;
+
+            var handId = $"hand_{slotId}";
+            if (!_hands.TryGetHand(uid, handId, out _))
+                continue;
+
+            var hand = new CircuitHandState
+            {
+                HandId = handId,
+                Label = slotId.Contains("right", StringComparison.OrdinalIgnoreCase)
+                    ? Loc.GetString("circuit-assembly-hand-right")
+                    : Loc.GetString("circuit-assembly-hand-left"),
+            };
+
+            if (_hands.TryGetHeldItem(uid, handId, out var held) && held is { } heldItem)
+                hand.ItemName = MetaData(heldItem).EntityName;
+
+            state.HeldItems.Add(hand);
+        }
 
         foreach (var (slotId, role) in component.Slots)
         {

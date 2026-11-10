@@ -1932,6 +1932,22 @@ Entries:
         assembly chassis visuals.
     - type: Add
       message: >-
+        Added six walkable integrated-electronics drone chassis variants: generic, arms, secbot,
+        medbot, genbot and android.
+    - type: Add
+      message: >-
+        The programmable assembly panel now shows held items and lets you take them, and examine
+        shows what the assembly is holding.
+    - type: Add
+      message: >-
+        Circuit assemblies can inspect battery charge and transfer power: charge held or nearby
+        batteries and energy guns, or draw power from nearby APCs and batteries.
+    - type: Fix
+      message: >-
+        Circuit shoot no longer incorrectly requires the target to be within the manipulator's
+        hand range.
+    - type: Add
+      message: >-
         Circuit assemblies can check a person's job, access and wanted status, including the
         wanted reason.
     - type: Add
@@ -1978,10 +1994,14 @@ Entries:
       message: >-
         Circuit sensor lookups and walk_to commands are rate-limited, so tight Lua loops no longer
         rescan hundreds of times per tick or restart pathfinding every tick.
+    - type: Fix
+      message: >-
+        Reissuing walk_to now clears a previous no-path state, so circuit assemblies retry after a
+        door opens or an obstacle moves.
     - type: Tweak
       message: >-
         Circuit walk_to now waits until the robot arrives or fails, while walk_to_async keeps the
-        old fire-and-forget behavior.
+        old fire-and-forget behavior. Both accept an entity handle as well as x, y coordinates.
     - type: Tweak
       message: >-
         Circuit use, use_item, interact, harvest, plant, trigger and inject now wait for their

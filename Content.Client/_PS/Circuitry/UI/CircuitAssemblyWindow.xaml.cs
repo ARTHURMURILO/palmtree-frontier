@@ -15,6 +15,7 @@ public sealed partial class CircuitAssemblyWindow : BaseWindow
     private const int DragMarginSize = 7;
 
     public event Action<string>? OnEject;
+    public event Action<string>? OnTakeHeld;
     public event Action? OnOpenProgram;
     public event Action? OnRun;
     public event Action? OnStop;
@@ -31,6 +32,7 @@ public sealed partial class CircuitAssemblyWindow : BaseWindow
 
         TitleLabel.Text = Loc.GetString("circuit-assembly-ui-title");
         RenameButton.Text = Loc.GetString("circuit-assembly-ui-rename");
+        HeldItemsLabel.Text = Loc.GetString("circuit-assembly-ui-held-items");
         RunButton.Text = Loc.GetString("circuit-assembly-ui-run");
         StopButton.Text = Loc.GetString("circuit-assembly-ui-stop");
         ProgramButton.Text = Loc.GetString("circuit-assembly-ui-program");
@@ -56,6 +58,13 @@ public sealed partial class CircuitAssemblyWindow : BaseWindow
             return;
 
         OnRename?.Invoke(name);
+    }
+
+    private static string TrimForButton(string text)
+    {
+        const int maxLength = 40;
+        text = text.Trim();
+        return text.Length <= maxLength ? text : text[..(maxLength - 3)] + "...";
     }
 
     protected override DragMode GetDragModeFor(Vector2 relativeMousePos)
@@ -130,6 +139,52 @@ public sealed partial class CircuitAssemblyWindow : BaseWindow
         LockButton.Disabled = false;
         NameEdit.Editable = canModify;
         RenameButton.Disabled = !canModify;
+
+        HeldItemsList.Children.Clear();
+
+        if (state.HeldItems.Count == 0)
+        {
+            HeldItemsList.AddChild(new Button
+            {
+                Text = Loc.GetString("circuit-assembly-ui-no-hands"),
+                Disabled = true,
+                HorizontalExpand = true,
+                Margin = new Thickness(0, 2),
+            });
+        }
+        else
+        {
+            foreach (var hand in state.HeldItems)
+            {
+                var row = new BoxContainer
+                {
+                    Orientation = BoxContainer.LayoutOrientation.Horizontal,
+                    HorizontalExpand = true,
+                    Margin = new Thickness(0, 2),
+                };
+
+                row.AddChild(new Label
+                {
+                    Text = hand.Label,
+                    MinSize = new Vector2(52, 0),
+                });
+
+                var itemName = string.IsNullOrWhiteSpace(hand.ItemName) ? null : hand.ItemName.Trim();
+                var take = new Button
+                {
+                    Text = itemName == null
+                        ? Loc.GetString("circuit-assembly-ui-no-item")
+                        : TrimForButton(itemName),
+                    Disabled = !canModify || itemName == null,
+                    HorizontalExpand = true,
+                };
+
+                var handId = hand.HandId;
+                take.OnPressed += _ => OnTakeHeld?.Invoke(handId);
+                row.AddChild(take);
+                HeldItemsList.AddChild(row);
+            }
+        }
 
         ErrorLabel.Text = state.Error ?? string.Empty;
         ErrorLabel.Visible = state.Error != null;

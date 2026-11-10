@@ -165,8 +165,8 @@ public sealed class CircuitMovementSystem : EntitySystem
             (currentTarget.Position - target.Position).LengthSquared() <=
             RetargetDistance * RetargetDistance)
         {
-            if (!TryComp<NPCSteeringComponent>(uid, out var steering) ||
-                steering.Status != SteeringStatus.NoPath)
+            if (!TryComp<NPCSteeringComponent>(uid, out var existingSteering) ||
+                existingSteering.Status != SteeringStatus.NoPath)
             {
                 return CircuitWalkResult.AlreadyPathing;
             }
@@ -176,10 +176,22 @@ public sealed class CircuitMovementSystem : EntitySystem
             return CircuitWalkResult.NoPower;
 
         EnsureComp<ActiveNPCComponent>(uid);
-        var newSteering = _steering.Register(uid, target);
-        newSteering.DirectMove = false;
-        newSteering.Range = range;
-        newSteering.InRangeMaxSpeed = smooth ? MathF.Max(0.1f, walkSpeed * 0.15f) : null;
+        var steering = _steering.Register(uid, target);
+        steering.DirectMove = false;
+        steering.Range = range;
+        steering.InRangeMaxSpeed = smooth ? MathF.Max(0.1f, walkSpeed * 0.15f) : null;
+
+        // A new explicit walk command must clear a previous terminal pathfinding failure. Without
+        // this, re-issuing walk_to to the same coordinates after a door opens (or a temporary
+        // blockage clears) returns the existing NoPath steering component and never retries.
+        if (steering.Status == SteeringStatus.NoPath)
+        {
+            steering.Status = SteeringStatus.Moving;
+            steering.FailedPathCount = 0;
+            steering.CurrentPath.Clear();
+            steering.PathfindToken?.Cancel();
+            steering.PathfindToken = null;
+        }
 
         component.WalkMode = CircuitWalkMode.Path;
         component.WalkArrived = false;
