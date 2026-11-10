@@ -129,6 +129,7 @@
   - SmallGyroscopeMachineCircuitboard
   # AdvancedAtmospherics
   - HellfireFreezerMachineCircuitBoard
+  - HeatPumpMachineCircuitBoard # Palmtree
   - PortableScrubberMachineCircuitBoard
   - HolofanProjector
   - AlertsComputerCircuitboard

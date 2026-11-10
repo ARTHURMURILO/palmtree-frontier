@@ -111,6 +111,28 @@ Ported from the current `/tg/station` checkout (`tgstation-master`), not from Co
   `.ai/systems/atmos-temperature-devices.md`. Test:
   `Content.IntegrationTests/Tests/_PS/Atmos/TemperatureDevicesTest.cs`.
 
+### 3.5 Heat pump, the two-port thermomachine (2026-11, `_PS`)
+
+The freezer/heater /tg/station had from 2021 to 2022 (`binary/thermomachine`, PR #57831, later removed
+in #66411): the same machine, but it moves heat between two pipes instead of making it. Ported as a
+**sidegrade** - the vanilla freezer and heater are untouched and stay researchable.
+
+- Not a port of the *current* /tg/station code, which has reverted to the unary thermomachine; the
+  source is the last version before the revert (commit `d7f3828d`), kept in the workspace as
+  `tg-thermomachine-2022.dm`.
+- Heating takes heat out of the waste loop rather than making it from nothing, which is a deliberate
+  deviation from /tg/station (the original only moved heat while cooling). Five more were needed
+  because SS14 is not BYOND: the transfer is capped by `MaxHeatRate` and by what each mixture can
+  absorb, the compressor's waste heat is its electrical draw, the parts efficiency floor is capped at
+  0.9, and the safeties threshold is 200 000 K rather than 500 000 K because a gas mixture here
+  cannot exceed `Atmospherics.Tmax`. All of them are listed in `.ai/systems/atmos-heat-pump.md`.
+- The new board is unlocked by the existing `NFAdvancedAtmospherics` node, alongside the hellfire
+  freezer, rather than by a research node of its own, and is added to the `NFEngineeringBoardsStatic`
+  lathe pack and the blueprints pack.
+- Design decisions and the full list of deviations: `.ai/systems/atmos-heat-pump.md`. Test:
+  `Content.IntegrationTests/Tests/_PS/Atmos/HeatPumpTest.cs`. Sprites:
+  `Tools/gen_heat_pump_sprites.py` (vanilla thermomachine body + vanilla pipe tinted green/red).
+
 ## 4. What was deliberately NOT ported
 
 | Feature | Reason / status |

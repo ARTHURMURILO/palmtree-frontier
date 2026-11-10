@@ -106,6 +106,7 @@ Fork modules are folder/namespace prefixes:
 | `.ai/systems/circuitry.md` | Programmable assemblies: Lua CPU runtime, modules, movement, perception, actions, UI, hazards |
 | `.ai/systems/circuitry-lua-api.md` | Living Lua API reference for `robot`: signatures, return shapes, hardware requirements, limits, gotchas |
 | `.ai/systems/game-ticker.md` | Round state machine, presets, rules, maps, spawn |
+| `.ai/systems/atmos-heat-pump.md` | Heat pump: the two-port thermomachine from /tg/station, its maths, efficiency, safeties and deviations |
 | `.ai/systems/core-gameplay.md` | Interactions, body/damage, atmos, power, chemistry, construction, NPC, shuttles |
 | `.ai/systems/atmos-temperature-devices.md` | Temperature gate/pump, heat exchanger, atmos meter: /tg/ maths, pipe layers, sprites, RPD wiring |
 | `.ai/systems/content-pipeline-and-tooling.md` | Prototypes, localization, maps, tests, CI, packaging |
