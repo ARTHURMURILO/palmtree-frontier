@@ -23,6 +23,7 @@ content are intentionally not ported.
 | Genital resolver (organs) | `Content.Shared/_PS/Interactions/GenitalSystem.cs` |
 | Server system | `Content.Server/_PS/Interactions/InteractionPanelSystem*.cs` |
 | Server runtime state | `Content.Server/_PS/Interactions/InteractionStateComponent.cs` |
+| Layer preference | `CharacterLayerMode` + `InteractionPanelComponent.LayerMode`; client watchdog `Content.Client/_PS/Interactions/CharacterLayerSystem.cs` |
 | Client BUI/window | `Content.Client/_PS/Interactions/InteractionBoundUserInterface.cs`, `InteractionWindow.xaml(.cs)` |
 | Prototypes | `Resources/Prototypes/_PS/Interactions/interactions.yml` |
 | Sound collections | `Resources/Prototypes/_PS/SoundCollections/interactions.yml` |
@@ -124,6 +125,20 @@ content are intentionally not ported.
 10. **Admin logs.** Every performed interaction (and every manual climax) is written to the admin
    logs as `LogType.Interaction` with both participants and the interaction prototype id/name.
    Auto-repeat continuations are not logged again, so a chain produces one log entry.
+
+## Character layer preference
+
+The Preferences tab has a **Layer: Below / Default / Above** dropdown. It is stored in the
+networked `InteractionPanelComponent.LayerMode` (server-authoritative, session-only, default
+`Default`) so every client renders the character the same way. A client watchdog
+(`CharacterLayerSystem`) runs **once per second** and keeps every living mob on its own base draw
+depth plus the character's offset. Humanoids use `Mobs` as their base (`BelowMobs`/`Mobs`/`OverMobs`);
+other living mobs keep the depth they first appeared with (e.g. mice stay on `SmallMobs`). Mobs
+without `InteractionPanelComponent` simply use `Default`. This also repairs stale draw depths left by
+other visual states; the old manual workaround (buckling on a chair and unbuckling) is no longer
+needed. Buckled entities are skipped while the buckle system owns their draw depth, and dead
+entities are skipped while the damage-state visualizer owns `DeadMobs`; the watchdog takes over
+again after unbuckle/revive.
 
 ## Range and visibility (PVS)
 

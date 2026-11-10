@@ -99,6 +99,7 @@ public sealed partial class InteractionPanelSystem : EntitySystem
         SubscribeLocalEvent<InteractionPanelComponent, InteractionSetSoundsMessage>(OnSetSounds);
         SubscribeLocalEvent<InteractionPanelComponent, InteractionSetArousalMultiplierMessage>(OnSetArousalMultiplier);
         SubscribeLocalEvent<InteractionPanelComponent, InteractionSetMoaningMultiplierMessage>(OnSetMoaningMultiplier);
+        SubscribeLocalEvent<InteractionPanelComponent, InteractionSetLayerModeMessage>(OnSetLayerMode);
 
         CommandBinds.Builder
             .Bind(ContentKeyFunctions.InteractWithEntity,

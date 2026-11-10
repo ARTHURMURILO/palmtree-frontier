@@ -131,6 +131,13 @@ public sealed class InteractionPanelTest
             Assert.That(interactions.TryPerform(user, target, fuck), Is.True);
             Assert.That(server.System<DrippingCumSystem>().GetSemen(target), Is.GreaterThan(0));
 
+            // Layer preference round-trips through the panel state.
+            var panelComp = entMan.GetComponent<InteractionPanelComponent>(user);
+            panelComp.LayerMode = CharacterLayerMode.Above;
+            Assert.That(interactions.BuildState(user, interactions.EnsureState(user)).LayerMode,
+                Is.EqualTo(CharacterLayerMode.Above));
+            panelComp.LayerMode = CharacterLayerMode.Default;
+
             // Bound UI state and messages must be NetSerializable; serialize them to catch
             // missing attributes/fields at test time instead of at runtime.
             var serializer = server.ResolveDependency<IRobustSerializer>();
@@ -148,6 +155,7 @@ public sealed class InteractionPanelTest
             Serialize(serializer, new InteractionSetSoundsMessage(false));
             Serialize(serializer, new InteractionSetArousalMultiplierMessage(true, 150));
             Serialize(serializer, new InteractionSetMoaningMultiplierMessage(true, 50));
+            Serialize(serializer, new InteractionSetLayerModeMessage(CharacterLayerMode.Above));
 
             entMan.DeleteEntity(user);
             entMan.DeleteEntity(target);
