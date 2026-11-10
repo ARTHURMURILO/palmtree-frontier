@@ -26,6 +26,14 @@ public sealed partial class BluespaceDockEntry
     [DataField]
     public string OwnerName = string.Empty;
 
+    /// <summary>
+    /// Character slot index at storage time. A slot survives a character rename, so it is the
+    /// stable per-character key. Entries written before this field existed have -1 and fall back to
+    /// the owner ckey (or name when the ckey is empty).
+    /// </summary>
+    [DataField]
+    public int OwnerSlot = -1;
+
     /// <summary>Vessel prototype id, when the ship came from a shipyard.</summary>
     [DataField]
     public string? Vessel;

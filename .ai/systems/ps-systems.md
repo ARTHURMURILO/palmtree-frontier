@@ -615,10 +615,13 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
 | Locale | `Resources/Locale/en-US/_PS/bluespace-dock.ftl` |
 
 - **Persistence**: `UserData/bluespace_dock/registry.yml` is the authoritative list of stored ships
-  (`BluespaceDockEntry`: ship id, file, owner ckey + character name, vessel prototype id, model,
-  full name, suffix, recorded value, timestamp); `UserData/bluespace_dock/<shipId>.yml` is the ship
-  payload written by `MapLoaderSystem.TrySaveGrid`. Ownership is per **character** (ckey *and* ID
-  card name must match), so another character of the same player does not see the ship. Both writes
+  (`BluespaceDockEntry`: ship id, file, owner ckey + character name + character slot, vessel
+  prototype id, model, full name, suffix, recorded value, timestamp);
+  `UserData/bluespace_dock/<shipId>.yml` is the ship
+  payload written by `MapLoaderSystem.TrySaveGrid`. Ownership is per **character**: entries store
+  the ckey and the character slot index (which survives a rename), so another character of the same
+  player does not see the ship. Legacy entries without a slot fall back to the ckey, so a renamed
+  character keeps ships stored before the slot field existed. Both writes
   happen synchronously at store time (`TrySaveGrid` and `SaveRegistry` write straight to `UserData`)
   and the original grid is deleted only afterwards, so a crash cannot lose a stored ship and nothing
   waits for a round end. The registry is cached per round, re-read on round restart, and
@@ -880,11 +883,13 @@ a crash can leave files behind). The tool:
   required in the console slot, because the **deed** (Frontier's ship ownership document) is written
   onto an ID and read from there by the shipyard and the dock - that is a Frontier mechanic, not the
   dock's storage.
-- **Ownership matching** (`BluespaceDockSystem.EntryBelongsToCharacter`): a normal entry needs the
-  ckey *and* the character name to match, so another character of the same player does not see it. An
-  entry with an **empty ckey** (written before a player could be picked, or by hand) matches by
-  character name alone - that is the only way a name-keyed entry can ever be used, since an ID card
-  does not carry a ckey.
+- **Ownership matching** (`BluespaceDockSystem.EntryBelongsToCharacter`): new entries match the
+  ckey **and character slot index**, so a character rename keeps access while another character of
+  the same player does not see the ship. Legacy entries written before `OwnerSlot` existed (slot
+  -1) fall back to the ckey, which also survives a rename. An entry with an **empty ckey** (written
+  by hand or by an admin restore by name) matches by character name alone - that is the only way a
+  name-keyed entry can be used, since an ID card does not carry a ckey; renaming one of those still
+  requires fixing `OwnerName` in `registry.yml`.
 
 ### Admin tools: player ships (`manageships`, `forcedock`)
 
