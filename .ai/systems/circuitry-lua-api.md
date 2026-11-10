@@ -274,8 +274,8 @@ end
 ```
 
 `walk_to` does not automatically open or unlock doors. Use `scan_doors` and `door_status` to
-inspect a route before committing to it, and `walk_status() == "no_path"` to detect an unreachable
-destination.
+inspect a route before committing to it. `walk_to` returns `false, "no path"` for an unreachable
+destination; `walk_status() == "no_path"` is the equivalent check when using `walk_to_async`.
 
 ### Cleanable decals
 
@@ -713,7 +713,7 @@ tiles**; on normal grids `MapGridComponent.TileSize` is 1, so one tile equals on
 | `robot.get_tile_relative([dx, dy])` / `robot.tile(...)` | table or `false, reason` | Powered sensor required. Returns `{x, y, entities}` where `entities` is a list of entity entries. |
 | `robot.entities_on_tile([dx, dy])` | list or `false, reason` | Powered sensor required. Returns the entity list directly. |
 | `robot.decals([radius])` | list or `false, reason` | Powered sensor required. Returns cleanable decals only: `{decal_id, decal, x, y, cleanable}`. |
-| `robot.scan_puddles([radius])` | list or `false, reason` | Chemical analyzer and powered sensor required. Returns floor puddles with `id`, name, position, volume, temperature and contents. |
+| `robot.scan_puddles([radius])` | list or `false, reason` | Chemical analyzer and powered sensor required. Returns floor puddles with `id`, name, position, volume, temperature and contents. Uses the shared sensor-query budget. |
 | `robot.door_status(handle)` | table or `false, reason` | Door state, bolted/powered/firelock/access flags and `can_open`. |
 | `robot.can_open(handle)` | boolean | Shortcut for `door_status(handle).can_open`. |
 
@@ -721,9 +721,11 @@ tiles**; on normal grids `MapGridComponent.TileSize` is 1, so one tile equals on
 range and line of sight for each entity.
 
 Multi-result scans (`scan`, `scan_mobs`, `scan_items`, `scan_structures`, `scan_doors`) are capped
-by the sensor module's maximum scan result count (200 on the standard sensor) and return the nearest results first. The scanner sorts candidates first and only raycasts in nearest-first order until the cap is filled.
-Single-result lookups (`find`, `nearest_*`) search the whole sensor range and are not hidden by
-closer entities.
+by the sensor module's maximum scan result count (200 on the standard sensor) and return the
+nearest results first. The scanner sorts candidates first and only raycasts in nearest-first order
+until the cap is filled. Single-result lookups (`find`, `nearest_*`) search the whole sensor range
+and are not hidden by closer entities. All of `scan*`, `find`, `nearest_*` and `scan_puddles` draw
+from the same four-per-second sensor-query budget.
 
 Example:
 
@@ -873,7 +875,7 @@ keys. The assembly does not queue its own radio transmissions.
 | `robot.say(text)` | Speaker module, power | `true` or `false, reason` |
 | `robot.radio(text [, channel])` | Radio module, power, matching key | `true` or `false, reason` |
 | `robot.radio_channels()` | Radio module | list or `false, reason` |
-| `robot.trigger(handle)` | Manipulator, powered, active held item | `true` or `false, reason` |
+| `robot.trigger(handle)` | Manipulator, powered, active held item | `true` after any do-after, or `false, reason` |
 | `robot.send_signal([state [, port]])` | Radio module, power, matching source port | `true` or `false, reason` |
 
 ### `say`
@@ -951,10 +953,10 @@ source to the assembly's `Trigger` sink, and the assembly's source ports to any 
 | `robot.pickup(handle)` | Manipulator, item target, power | `true` or `false, reason` |
 | `robot.drop()` | Manipulator, power | `true` or `false, reason` |
 | `robot.held()` | — | list of `{id, name}` |
-| `robot.use(handle)` | Power, interaction permission, hand range | `true` or `false, reason` |
-| `robot.use_item(handle)` | Manipulator, active held item, power | `true` or `false, reason` |
-| `robot.interact(handle)` / `robot.harvest(handle)` | Manipulator, power | `true` or `false, reason` |
-| `robot.plant(handle)` | Same as `use_item` | `true` or `false, reason` |
+| `robot.use(handle)` | Power, interaction permission, hand range | `true` after any do-after, or `false, reason` |
+| `robot.use_item(handle)` | Manipulator, active held item, power | `true` after any do-after, or `false, reason` |
+| `robot.interact(handle)` / `robot.harvest(handle)` | Manipulator, power | `true` after any do-after, or `false, reason` |
+| `robot.plant(handle)` | Same as `use_item` | `true` after any do-after, or `false, reason` |
 | `robot.attack(handle)` | Manipulator, melee weapon, power | `true` or `false, reason` |
 | `robot.shoot(handle)` | Manipulator, gun in hand, line of sight | `true` or `false, reason` |
 | `robot.inject(handle)` | Manipulator, syringe/injector in active hand, power | `true` after the injection do-after, or `false, reason` |
@@ -965,7 +967,9 @@ if the action starts a do-after, they yield until it completes (up to 30 seconds
 finishes. Their `_async` variants (`use_async`, `use_item_async`, `interact_async`,
 `harvest_async`, `plant_async`, `trigger_async`, `inject_async`) return immediately after the event
 is handled. `pickup`, `drop`, `attack`, `shoot`, transfers, dispensing, ChemMaster actions and
-`send_signal` are already instantaneous and have no async variants.
+`send_signal` are already instantaneous and have no async variants. `action_busy()`,
+`action_marker()` and `action_status(marker)` are the low-level tracking helpers used by the
+synchronous wrappers; normal scripts should use the high-level functions.
 
 - `pickup` requires the target to have an `ItemComponent`.
 - `drop` drops the assembly's active held item.
@@ -1944,7 +1948,8 @@ element of the same shape, and all positions are local grid coordinates in tiles
 | `robot.log(...)` / `print(...)` | `nil` | — |
 | `robot.wait(seconds)` | elapsed seconds (`number`) | — |
 | `robot.move(dx, dy)` | `true` | `false, reason` |
-| `robot.walk_to(x, y [, range, smooth])` | `true` | `false, reason` |
+| `robot.walk_to(x, y [, range, smooth])` | `true` on arrival | `false, reason` |
+| `robot.walk_to_async(x, y [, range, smooth])` | `true` once the path starts | `false, reason` |
 | `robot.stop()` | `true` | — |
 | `robot.walk_status()` | `"idle"`, `"moving"`, `"arrived"` or `"no_path"` | — |
 | `robot.scan([radius])` | list of entity entries | `false, reason` |
@@ -1987,13 +1992,12 @@ element of the same shape, and all positions are local grid coordinates in tiles
 | `robot.use_item(handle)` | `true` after any do-after | `false, reason` |
 | `robot.attack(handle)` | `true` | `false, reason` |
 | `robot.shoot(handle)` | `true` | `false, reason` |
-| `robot.interact(handle)` / `robot.harvest(handle)` | `true` | `false, reason` |
-| `robot.plant(handle)` | `true` | `false, reason` |
+| `robot.interact(handle)` / `robot.harvest(handle)` | `true` after any do-after | `false, reason` |
+| `robot.plant(handle)` | `true` after any do-after | `false, reason` |
 | `robot.water(target, amount [, slot])` | `true` | `false, reason` |
-| `robot.trigger(handle)` | `true` | `false, reason` |
+| `robot.trigger(handle)` | `true` after any do-after | `false, reason` |
 | `robot.send_signal([state [, port]])` | `true` | `false, reason` |
 | `robot.inject(handle)` | `true` after the do-after | `false, reason` |
-| `robot.walk_to_async(x, y [, range, smooth])` | `true` | `false, reason` |
 | `robot.use_async` / `use_item_async` / `interact_async` / `harvest_async` / `plant_async` / `trigger_async` / `inject_async` | `true` | `false, reason` |
 | `robot.action_busy()` | boolean | — |
 | `robot.action_marker()` / `robot.action_status(marker)` | action tracking helpers | — |
