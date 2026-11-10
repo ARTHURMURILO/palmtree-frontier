@@ -263,13 +263,24 @@ public sealed partial class RbmkReactorComponent : Component
 
     /// <summary>Turns the reactor's kilowatts into something usable.</summary>
     /// <remarks>
-    ///     Palmtree: doubled from 8000. The moderator gate destroys every mole fed to it each tick,
-    ///     which was balanced against stations with gas miners on tap. A ship buys its plasma by the
-    ///     canister, so the same watt now costs half the moderator gas - the reactor is exactly as
-    ///     hungry for coolant, but twice as efficient with what it burns.
+    ///     Palmtree: 32000, four times the 8000 of the original. The moderator gate destroys every
+    ///     mole fed to it each tick, which was balanced against stations with gas miners on tap. A
+    ///     ship buys its plasma by the canister, so a watt now costs a quarter of the moderator gas.
+    ///
+    ///     The number is pinned to the stormdrive, measured in play: a drive making 2.2 MW burns
+    ///     1.9 mol/s, about 1.16 MW per mol/s. With a balanced plasma/oxygen gate at 75 % core power
+    ///     this figure gives the RBMK 50 * 0.75 * 32000 = 1.2 MW per mol/s, so the two machines cost
+    ///     about the same per watt - the RBMK burns ~1.8 mol/s to make the drive's 2.2 MW. At the
+    ///     doubled (16000) figure it made ~0.6 MW per mol/s and needed twice the gas for the same
+    ///     output, which is why it read as far hungrier than the drive.
+    ///
+    ///     This scales electrical output only: K gain, heat, temperature, pressure and the meltdown
+    ///     path do not read it, and the gate's contents still set the burn. Power is linear in the
+    ///     moderator moles, so a crew that wants a smaller bill feeds the gate less - the prototype's
+    ///     0.5/0.25-mole floors are what let it run right down to stormdrive-scale loads.
     /// </remarks>
     [DataField]
-    public float BasePowerModifier = 16000f;
+    public float BasePowerModifier = 32000f;
 
     /// <summary>Ticks the core survives without coolant before it starts eating itself.</summary>
     [DataField]

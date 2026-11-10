@@ -36,7 +36,9 @@
   1. Fill the coolant loop with a cold gas — oxygen, plasma or carbon dioxide — and turn the loop
      pumps on. Cold coolant in, hot coolant out.
   2. Feed the moderator line. The classic mix is [bold]80 % oxygen / 20 % plasma[/bold]. Plasma is the
-     fuel; oxygen multiplies the power.
+     fuel; oxygen multiplies the power. The gate burns everything in it every cycle, so the feed rate
+     is the fuel bill: power scales with the gas, and opening a canister straight into the gate just
+     drains it faster for watts you may not need.
   3. Load the fuel rods. The pre-started reactor ships with five uranium rods; the exact count sets
      how much reactivity the control rods can push against.
   4. Set K to 3 to start the reaction, then back to 1 when output reaches about 60 %. The rods chase
