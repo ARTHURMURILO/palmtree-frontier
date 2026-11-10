@@ -1949,10 +1949,13 @@ Entries:
     - type: Add
       message: >-
         Circuit assemblies with manipulators can now point at targets with robot.point.
+    - type: Add
+      message: >-
+        Added robot.combat(true/false) for explicit circuit combat stance control.
     - type: Fix
       message: >-
-        Circuit melee attack now enables combat mode automatically and reports attack cooldown
-        failures instead of returning false with no reason.
+        Circuit melee attack now temporarily enables combat mode and restores the previous stance,
+        so interaction cannot be left in combat mode by accident.
     - type: Fix
       message: >-
         Circuit shoot no longer incorrectly requires the target to be within the manipulator's

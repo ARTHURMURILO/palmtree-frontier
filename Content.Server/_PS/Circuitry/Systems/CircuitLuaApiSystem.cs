@@ -476,6 +476,7 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         robot.Set("attack", DynValue.NewCallback((_, args) => Attack(runtime, args), "attack"));
         robot.Set("shoot", DynValue.NewCallback((_, args) => Shoot(runtime, args), "shoot"));
         robot.Set("point", DynValue.NewCallback((_, args) => Point(runtime, args), "point"));
+        robot.Set("combat", DynValue.NewCallback((_, args) => Combat(runtime, args), "combat"));
 
         var interactCallback = DynValue.NewCallback((_, args) => Interact(runtime, args), "interact_async");
         RegisterAction("interact", "interact_async", interactCallback);
@@ -2865,18 +2866,45 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         if (!_melee.TryGetWeapon(runtime.Assembly, out var weaponUid, out var melee))
             return Bool(false, "no melee weapon");
 
-        EnsureComp<CombatModeComponent>(runtime.Assembly);
-        _combatMode.SetInCombatMode(runtime.Assembly, true);
-
         if (melee.NextAttack > _timing.CurTime)
             return Bool(false, "attack cooldown");
 
         if (!_assembly.TryConsumePower(runtime.Assembly, component.ActionPowerCost, component))
             return Bool(false, "no power");
 
-        return _melee.AttemptLightAttack(runtime.Assembly, weaponUid, melee, target)
+        EnsureComp<CombatModeComponent>(runtime.Assembly);
+        var wasInCombat = _combatMode.IsInCombatMode(runtime.Assembly);
+        if (!wasInCombat)
+            _combatMode.SetInCombatMode(runtime.Assembly, true);
+
+        var attacked = _melee.AttemptLightAttack(runtime.Assembly, weaponUid, melee, target);
+
+        // Do not leave combat mode enabled just because the script swung once. A script that wants
+        // a persistent combat stance should call robot.combat(true) explicitly.
+        if (!wasInCombat)
+            _combatMode.SetInCombatMode(runtime.Assembly, false);
+
+        return attacked
             ? Bool(true)
             : Bool(false, "attack failed");
+    }
+
+    private DynValue Combat(CircuitLuaRuntime runtime, CallbackArguments args)
+    {
+        if (!TryComp<CircuitAssemblyComponent>(runtime.Assembly, out _))
+            return Bool(false, "assembly is missing");
+
+        var combat = EnsureComp<CombatModeComponent>(runtime.Assembly);
+
+        if (args.Count > 0)
+        {
+            if (args[0].Type != DataType.Boolean)
+                return Bool(false, "combat expects true or false");
+
+            _combatMode.SetInCombatMode(runtime.Assembly, args[0].Boolean, combat);
+        }
+
+        return DynValue.NewBoolean(combat.IsInCombatMode);
     }
 
     private DynValue Point(CircuitLuaRuntime runtime, CallbackArguments args)

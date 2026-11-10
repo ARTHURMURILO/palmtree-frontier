@@ -1030,7 +1030,8 @@ source to the assembly's `Trigger` sink, and the assembly's source ports to any 
 | `robot.use_item(handle)` | Manipulator, active held item, power | `true` after any do-after, or `false, reason` |
 | `robot.interact(handle)` / `robot.harvest(handle)` | Manipulator, power | `true` after any do-after, or `false, reason` |
 | `robot.plant(handle)` | Same as `use_item` | `true` after any do-after, or `false, reason` |
-| `robot.attack(handle)` | Manipulator, melee weapon, power | `true` or `false, reason`; automatically enables combat mode |
+| `robot.attack(handle)` | Manipulator, melee weapon, power | `true` or `false, reason`; temporarily enables combat mode for the swing |
+| `robot.combat([enabled])` | Assembly | Current combat state, or `false, reason` for a non-boolean argument |
 | `robot.point(handle)` | Manipulator, power | `true` or `false, reason`; spawns the normal pointing arrow |
 | `robot.shoot(handle)` | Manipulator, gun in hand, line of sight | `true` or `false, reason` |
 | `robot.inject(handle)` | Manipulator, syringe/injector in active hand, power | `true` after the injection do-after, or `false, reason` |
@@ -1052,8 +1053,11 @@ synchronous wrappers; normal scripts should use the high-level functions.
 - `interact` raises an `InteractHandEvent` (for example, harvesting a hydroponics tray).
 - `plant` is an alias for `use_item`.
 - `harvest` is an alias for `interact`.
-- `attack` uses the active hand's melee weapon and enables combat mode automatically. It returns
-  `false, "attack cooldown"` while the weapon is still recovering.
+- `attack` uses the active hand's melee weapon. It temporarily enables combat mode if necessary,
+  then restores the previous state, so a one-off attack cannot leave the assembly stuck in combat
+  mode. It returns `false, "attack cooldown"` while the weapon is still recovering.
+- `robot.combat(true)` / `robot.combat(false)` sets a persistent combat stance. `robot.combat()`
+  returns the current state. Scripts that attack repeatedly should enable combat mode explicitly.
 - `point` points at the target with the normal `PointingArrow` effect. It has a 0.5 s cooldown and
   does not send the player-chat popup text that a player's Ctrl+Shift+Middle Click does.
 - `shoot` uses the active hand's gun. The target check uses at least 20 metres of line of sight, or
@@ -2077,6 +2081,7 @@ element of the same shape, and all positions are local grid coordinates in tiles
 | `robot.use(handle)` | `true` after any do-after | `false, reason` |
 | `robot.use_item(handle)` | `true` after any do-after | `false, reason` |
 | `robot.attack(handle)` | `true` | `false, reason` |
+| `robot.combat([enabled])` | current combat state (`boolean`) | `false, reason` for an invalid argument |
 | `robot.point(handle)` | `true` | `false, reason` |
 | `robot.shoot(handle)` | `true` | `false, reason` |
 | `robot.interact(handle)` / `robot.harvest(handle)` | `true` after any do-after | `false, reason` |
@@ -2141,7 +2146,7 @@ When changing the API:
 | 2026-11-09 | Replaced the engine editor with a custom inline-syntax-colored Lua editor (line numbers, selection, copy/paste, tab indentation, undo/redo). Added multi-port signal sources, transfer rate limiting, Bluespace Dock/grid persistence coverage, puddle chemical analysis, ChemMaster automation, job/access/wanted queries, and chassis variants. |
 | 2026-11-10 | Standard sensor range is now 16 tiles. `find`/`nearest_*` search the full range instead of only the 16 nearest entities. Sensor lookups share a 4-per-second token bucket, and `walk_to` rate-limits/retargets path starts so tight follow loops cannot spam pathfinding or trip the allocation watchdog. |
 | 2026-11-10 | Multi-result scans now cap at 200 results instead of 16. The scanner raycasts nearest-first only until the cap is filled, so the larger result set does not multiply line-of-sight checks. |
-| 2026-11-10 | Added `robot.point(handle)` for manipulator-equipped assemblies. Melee `attack` now enables combat mode automatically and reports cooldown failures. |
+| 2026-11-10 | Added `robot.combat([enabled])` and `robot.point(handle)` for manipulator-equipped assemblies. Melee `attack` temporarily enables combat mode and restores the previous stance. |
 | 2026-11-10 | Added GLua-style `hook.Add`/`Remove`/`Has`/`Run`/`Call` event hooks. Hooks are pumped when the script waits and do not consume events from `wait_event`. |
 | 2026-11-10 | Added battery inspection and power transfer APIs: `battery`, `charge`, and `charge_from`. Assemblies can draw from nearby APCs/batteries and charge held or nearby cells/guns. |
 | 2026-11-10 | Fixed `shoot` incorrectly requiring the target to be within manipulator hand range; ranged attacks now use sight range. |

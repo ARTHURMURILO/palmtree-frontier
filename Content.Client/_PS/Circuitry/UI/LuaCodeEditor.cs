@@ -62,7 +62,7 @@ public sealed class LuaCodeEditor : Control
         "has_job", "has_access", "wanted_status", "solution", "item_status", "door_status",
         "can_open", "poll_event", "wait_event", "say", "radio", "radio_channels", "pickup",
         "drop", "held", "use", "use_async", "use_item", "use_item_async", "attack", "shoot",
-        "point", "interact", "interact_async", "harvest", "harvest_async", "plant", "plant_async",
+        "point", "combat", "interact", "interact_async", "harvest", "harvest_async", "plant", "plant_async",
         "water", "trigger", "trigger_async", "send_signal", "inject", "inject_async",
         "action_busy", "action_marker", "action_status",
         "analyze_plant", "analyze_chemicals",

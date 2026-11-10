@@ -74,8 +74,9 @@
   reporting. Their `_async` variants expose the old immediate behavior. Instant actions (pickup,
   drop, attack, shoot, transfers, dispensing, ChemMaster, send_signal) are unchanged. `shoot`
   checks ranged line of sight (at least 20 tiles), not the 1.5-tile manipulator hand range.
-  `attack` enables combat mode automatically; `point` spawns the normal pointing arrow and requires
-  a manipulator.
+  `attack` temporarily enables combat mode and restores the previous stance; `robot.combat(true/
+  false)` sets a persistent stance. `point` spawns the normal pointing arrow and requires a
+  manipulator.
 - Sensor module range is 16 tiles and multi-result scans cap at 200 rows. Sensor lookups share a
   4-per-second token bucket (burst of 4), so a tight `find`/`scan` loop gets `scan cooldown`
   instead of rescanning hundreds of times per resume. The scanner sorts candidates and raycasts

@@ -54,6 +54,9 @@ public sealed class CircuitryAttackTest
                     local target = robot.find("attack target")
                     local ok, reason = robot.attack(target)
                     log("attack", tostring(ok), tostring(reason))
+                    log("combat", tostring(robot.combat()))
+                    log("combat_on", tostring(robot.combat(true)))
+                    log("combat_off", tostring(robot.combat(false)))
                 end
                 """;
         });
@@ -72,7 +75,10 @@ public sealed class CircuitryAttackTest
             var log = string.Join("\n", runtime!.Program.Log);
             Assert.That(runtime.Program.LastError, Is.Null, log);
             Assert.That(log, Does.Contain("attack\ttrue"), log);
-            Assert.That(entMan.GetComponent<CombatModeComponent>(assembly).IsInCombatMode, Is.True);
+            Assert.That(log, Does.Contain("combat\tfalse"), log);
+            Assert.That(log, Does.Contain("combat_on\ttrue"), log);
+            Assert.That(log, Does.Contain("combat_off\tfalse"), log);
+            Assert.That(entMan.GetComponent<CombatModeComponent>(assembly).IsInCombatMode, Is.False);
         });
 
         await pair.CleanReturnAsync();
