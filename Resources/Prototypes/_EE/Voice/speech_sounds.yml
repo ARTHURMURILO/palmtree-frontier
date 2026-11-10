@@ -10,6 +10,7 @@
 - type: speechSounds
   id: SupermatterSilent
   variation: 0
+  playerSelectable: false
   saySound:
     path: /Audio/_EE/Supermatter/status/empty.ogg
   askSound:
@@ -20,6 +21,7 @@
 - type: speechSounds
   id: SupermatterWarning
   variation: 0
+  playerSelectable: false
   saySound:
     path: /Audio/_EE/Supermatter/status/terminal_alert.ogg
   askSound:
@@ -30,6 +32,7 @@
 - type: speechSounds
   id: SupermatterDanger
   variation: 0
+  playerSelectable: false
   saySound:
     path: /Audio/_EE/Supermatter/status/engine_alert2.ogg
   askSound:
@@ -40,6 +43,7 @@
 - type: speechSounds
   id: SupermatterEmergency
   variation: 0
+  playerSelectable: false
   saySound:
     path: /Audio/_EE/Supermatter/status/engine_alert1.ogg
   askSound:
@@ -50,6 +54,7 @@
 - type: speechSounds
   id: SupermatterDelaminating
   variation: 0
+  playerSelectable: false
   saySound:
     path: /Audio/_EE/Supermatter/status/bloblarm.ogg
   askSound:

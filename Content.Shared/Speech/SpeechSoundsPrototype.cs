@@ -23,5 +23,13 @@ namespace Content.Shared.Speech
 
         [DataField("exclaimSound")]
         public SoundSpecifier ExclaimSound { get; set; } = new SoundPathSpecifier("/Audio/Voice/Talk/speak_2_exclaim.ogg");
+
+        /// <summary>
+        /// Palmtree: whether players may pick this set as their character's voice bark.
+        /// Non-player sets (the supermatter's status alarms, for example) are still valid
+        /// <see cref="SpeechComponent"/> sounds, but must not show up in character creation.
+        /// </summary>
+        [DataField]
+        public bool PlayerSelectable { get; set; } = true;
     }
 }

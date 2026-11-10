@@ -1693,7 +1693,10 @@ namespace Content.Client.Lobby.UI
 
             VoiceBarkButton.AddItem(Loc.GetString("humanoid-profile-editor-voice-bark-default"), 0);
 
+            // Palmtree: some speech sounds are not voices (the supermatter's status alarms, for
+            // example). They live in the same prototype type, so filter them out explicitly.
             var voiceBarks = _prototypeManager.EnumeratePrototypes<SpeechSoundsPrototype>()
+                .Where(p => p.PlayerSelectable)
                 .OrderBy(p => GetVoiceBarkName(p.ID))
                 .ToArray();
 

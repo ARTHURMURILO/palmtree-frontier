@@ -650,9 +650,14 @@ namespace Content.Shared.Preferences
                 speciesPrototype = prototypeManager.Index(Species);
             }
 
-            // Palmtree: drop voice barks that no longer exist.
-            if (VoiceBark is { } voice && !prototypeManager.HasIndex(voice))
+            // Palmtree: drop voice barks that no longer exist, or that are not meant for players.
+            // Speech sounds are shared with NPCs and machines (the supermatter's status alarms are
+            // the same prototype type), and those must never end up on a character.
+            if (VoiceBark is { } voice
+                && (!prototypeManager.HasIndex(voice) || !prototypeManager.Index(voice).PlayerSelectable))
+            {
                 VoiceBark = null;
+            }
 
             // Palmtree/Coyote: always-visible emote categories can never be hidden.
             _hiddenEmoteCategories.Remove(EmoteCategory.Sex);
