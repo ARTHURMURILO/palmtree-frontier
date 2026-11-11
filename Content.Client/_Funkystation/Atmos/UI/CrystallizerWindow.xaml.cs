@@ -162,7 +162,7 @@ namespace Content.Client._Funkystation.Atmos.UI
                 "zaukeriteRecipe"
             };
 
-            _nothingButton.Text = "Nothing";
+            _nothingButton.Text = Loc.GetString("crystallizer-nothing");
             _nothingButton.HorizontalExpand = true;
             _nothingButton.Pressed = true;
 
@@ -258,7 +258,7 @@ namespace Content.Client._Funkystation.Atmos.UI
 
             if (recipe == null)
             {
-                var selectMessage = new Label { Text = "Please select a recipe." };
+                var selectMessage = new Label { Text = Loc.GetString("crystallizer-select-recipe") };
                 RequirementsContainer.AddChild(selectMessage);
                 GasList.Children.Clear();
                 return;
@@ -280,7 +280,7 @@ namespace Content.Client._Funkystation.Atmos.UI
                     var gas = (Gas) i;
                     if (Atmospherics.GasNames.TryGetValue(gas, out var gasName))
                     {
-                        var gasLabel = new Label { Text = $" - {gasName}: {recipe.MinimumRequirements[i]} moles" };
+                        var gasLabel = new Label { Text = $" - " + Loc.GetString("crystallizer-gas-requirement", ("gas", gasName), ("moles", recipe.MinimumRequirements[i])) };
                         RequirementsContainer.AddChild(gasLabel);
                     }
                 }
@@ -314,7 +314,7 @@ namespace Content.Client._Funkystation.Atmos.UI
                         var moles = _gasMixture != null ? _gasMixture.GetMoles(i) : 0f;
                         var gasLabel = new Label { Text = gasName, Margin = new Thickness(5) };
                         var gasControl = new Control { HorizontalExpand = true };
-                        var molesLabel = new Label { Text = $"{moles:F2} moles", Margin = new Thickness(5) };
+                        var molesLabel = new Label { Text = Loc.GetString("crystallizer-moles", ("moles", $"{moles:F2}")), Margin = new Thickness(5) };
 
                         gasContainer.AddChild(gasLabel);
                         gasContainer.AddChild(gasControl);

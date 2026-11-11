@@ -923,7 +923,10 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
             }
 
             // Explosion
-            var totalIntensity = (devastatingExplosion + heavyImpactExplosion + lightImpactExplosion + flashExplosion) * 100f;
+            // Palmtree: Funky multiplies by 100, which is station-scale. Ships are much smaller,
+            // so a full-power meltdown would take the whole vessel with it. 10 keeps the same
+            // recipe flags and level scaling but tops out around a 12-tile radius.
+            var totalIntensity = (devastatingExplosion + heavyImpactExplosion + lightImpactExplosion + flashExplosion) * 10f;
             totalIntensity = critical ? totalIntensity * 2 : totalIntensity;
             if (totalIntensity > 0)
             {

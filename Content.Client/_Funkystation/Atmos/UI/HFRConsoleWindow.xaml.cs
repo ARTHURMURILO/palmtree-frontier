@@ -60,62 +60,26 @@ public sealed partial class HFRConsoleWindow : FancyWindow
     public Action<HashSet<Gas>>? OnSetFilterGases { get; set; }
 
     private readonly Dictionary<Button, string> _recipeButtons = new();
-    private readonly Dictionary<Button, PanelContainer> _recipePanels = new();
-    private readonly Dictionary<Button, bool> _recipePanelIsDark = new();
     private Button? _selectedButton;
     private readonly Dictionary<Gas, Button> _gasControls = new();
 
-    private static readonly Dictionary<string, string> GasAbbreviations = new()
+    private string GetGasText(string gas)
     {
-        { "Ammonia", "NH\u2083" },
-        { "CarbonDioxide", "CO\u2082" },
-        { "Frezon", "Frezon" },
-        { "Nitrogen", "N\u2082" },
-        { "NitrousOxide", "N\u2082O" },
-        { "Oxygen", "O\u2082" },
-        { "Plasma", "Plasma" },
-        { "Tritium", "Tritium" },
-        { "WaterVapor", "H\u2082O" },
-        { "BZ", "BZ" },
-        { "Healium", "Healium" },
-        { "Nitrium", "Nitrium" },
-        { "Pluoxium", "Pluox" },
-        { "Hydrogen", "H\u2082" },
-        { "HyperNoblium", "Hyper-Nob" },
-        { "ProtoNitrate", "Proto-Nitrate" },
-        { "Zauker", "Zauker" },
-        { "Halon", "Halon" },
-        { "Helium", "He" },
-        { "AntiNoblium", "Anti-Nob" },
-        { "Miasma", "Miasma" },
-        { "Unknown", "X" }
-    };
+        return Enum.TryParse<Gas>(gas, true, out var parsed)
+            ? Atmospherics.GasAbbreviations.GetValueOrDefault(parsed, gas)
+            : gas;
+    }
 
-    private static readonly Dictionary<string, Color> GasColors = new()
+    private Color? GetGasColor(string gas)
     {
-        { "Oxygen", Color.FromHex("#2887E8") },
-        { "Nitrogen", Color.FromHex("#DA1010") },
-        { "CarbonDioxide", Color.FromHex("#4E4E4E") },
-        { "Plasma", Color.FromHex("#FF3300") },
-        { "Tritium", Color.FromHex("#13FF4B") },
-        { "WaterVapor", Color.FromHex("#BFFFFD") },
-        { "Ammonia", Color.FromHex("#56941E") },
-        { "NitrousOxide", Color.FromHex("#8F00FF") },
-        { "Frezon", Color.FromHex("#3A758C") },
-        { "BZ", Color.FromHex("#9370DB") },
-        { "Healium", Color.FromHex("#FA8072") },
-        { "Nitrium", Color.FromHex("#A52A2A") },
-        { "Pluoxium", Color.FromHex("#7364FF") },
-        { "Hydrogen", Color.FromHex("#FFFAF0") },
-        { "HyperNoblium", Color.FromHex("#33CCCC") },
-        { "ProtoNitrate", Color.FromHex("#009933") },
-        { "Zauker", Color.FromHex("#006400") },
-        { "Halon", Color.FromHex("#E3574D") },
-        { "Helium", Color.FromHex("#FFE600") },
-        { "AntiNoblium", Color.FromHex("#992C0B") },
-        { "Miasma", Color.FromHex("#CBB413") },
-        { "Unknown", Color.White }
-    };
+        if (!Enum.TryParse<Gas>(gas, true, out var parsed) ||
+            !_protoManager.TryIndex(((int) parsed).ToString(), out GasPrototype? prototype))
+        {
+            return null;
+        }
+
+        return Color.FromHex(prototype.Color);
+    }
 
     private static readonly List<string> OrderedRecipeIds = new()
     {
@@ -233,27 +197,10 @@ public sealed partial class HFRConsoleWindow : FancyWindow
         var notoSansDisplayFont = new VectorFont(_resourceCache.GetResource<FontResource>("/Fonts/NotoSansDisplay/NotoSansDisplay-Regular.ttf"), 11);
         var fontAwesome6FreeFont = new VectorFont(_resourceCache.GetResource<FontResource>("/Fonts/_Funkystation/FontAwesome6Free/fa-solid-900.ttf"), 11);
 
-        int topMargin = 49;
-        int rowIndex = 0;
-
         foreach (var recipeId in OrderedRecipeIds)
         {
             if (!_protoManager.TryIndex<FusionRecipePrototype>(recipeId, out var recipe))
                 continue;
-
-            string GetGasText(string gas) => GasAbbreviations.TryGetValue(gas, out var abbr) ? abbr : gas;
-            Color? GetGasColor(string gas) => GasColors.TryGetValue(gas, out var color) ? color : (Color?)null;
-
-            var isDark = rowIndex % 2 == 0;
-            var panel = new PanelContainer
-            {
-                HorizontalExpand = true,
-                SetHeight = 30,
-                Margin = new Thickness(8, topMargin, 8, 0),
-                VerticalAlignment = Control.VAlignment.Top,
-                PanelOverride = isDark ? new StyleBoxFlat { BackgroundColor = Color.FromHex("#222222") } : null
-            };
-            DropdownTableBody.Children.Add(panel);
 
             var button = new Button
             {
@@ -266,8 +213,6 @@ public sealed partial class HFRConsoleWindow : FancyWindow
             };
             button.OnPressed += _ => SelectButton(button, recipe.ID);
             _recipeButtons.Add(button, recipe.ID);
-            _recipePanels.Add(button, panel);
-            _recipePanelIsDark.Add(button, isDark);
             SelectionBox.Children.Add(button);
 
             FuelPrimaryBox.Children.Add(new Label
@@ -446,8 +391,6 @@ public sealed partial class HFRConsoleWindow : FancyWindow
                 FontOverride = fontAwesome6FreeFont
             });
 
-            topMargin += 30;
-            rowIndex++;
         }
     }
 
@@ -459,16 +402,14 @@ public sealed partial class HFRConsoleWindow : FancyWindow
         {
             FusionGasesContent.Children.Add(new Label
             {
-                Text = "No recipe has been selected.",
+                Text = Loc.GetString("hfr-console-no-recipe"),
                 FontColorOverride = Color.Red,
                 Margin = new Thickness(0, 5)
             });
             return;
         }
 
-        string GetGasText(string gas) => GasAbbreviations.TryGetValue(gas, out var abbr) ? abbr : gas;
         string GetGasFullName(Gas gas) => Atmospherics.GasNames.TryGetValue(gas, out var name) ? name : gas.ToString();
-        Color? GetGasColor(string gas) => GasColors.TryGetValue(gas, out var color) ? color : (Color?)null;
 
         var internalFusionMoles = _currentState?.InternalFusionMoles ?? new Dictionary<Gas, float>();
         var recipeGases = new HashSet<string>(recipe.Requirements);
@@ -491,8 +432,8 @@ public sealed partial class HFRConsoleWindow : FancyWindow
             var molesLabel = new Label
             {
                 Text = Enum.TryParse<Gas>(gas, out gasEnum) && internalFusionMoles.TryGetValue(gasEnum, out var moles)
-                    ? $"{moles:0.00} moles"
-                    : "0.00 moles",
+                    ? Loc.GetString("hfr-console-moles", ("moles", $"{moles:0.00}"))
+                    : Loc.GetString("hfr-console-moles", ("moles", "0.00")),
                 FontColorOverride = GetGasColor(gas) ?? Color.White
             };
             gasBox.Children.Add(molesLabel);
@@ -519,7 +460,7 @@ public sealed partial class HFRConsoleWindow : FancyWindow
             gasBox.Children.Add(new Control { HorizontalExpand = true });
             var molesLabel = new Label
             {
-                Text = $"{moles:0.00} moles",
+                Text = Loc.GetString("hfr-console-moles", ("moles", $"{moles:0.00}")),
                 FontColorOverride = GetGasColor(gas) ?? Color.White
             };
             gasBox.Children.Add(molesLabel);
@@ -531,17 +472,15 @@ public sealed partial class HFRConsoleWindow : FancyWindow
     {
         ModeratorGasesContent.Children.Clear();
 
-        string GetGasText(string gas) => GasAbbreviations.TryGetValue(gas, out var abbr) ? abbr : gas;
         string GetGasFullName(Gas gas) => Atmospherics.GasNames.TryGetValue(gas, out var name) ? name : gas.ToString();
-        Color? GetGasColor(string gas) => GasColors.TryGetValue(gas, out var color) ? color : (Color?)null;
 
         var moderatorMoles = state?.ModeratorInternalMoles ?? new Dictionary<Gas, float>();
         var priorityGases = new List<Gas> { Gas.Plasma, Gas.BZ, Gas.ProtoNitrate };
 
         // Display Plasma, BZ, ProtoNitrate
-        MPlasmaMoles.Text = moderatorMoles.TryGetValue(Gas.Plasma, out var plasmaMoles) ? $"{plasmaMoles:0.00} moles" : "0.00 moles";
-        MBZMoles.Text = moderatorMoles.TryGetValue(Gas.BZ, out var bZMoles) ? $"{bZMoles:0.00} moles" : "0.00 moles";
-        MProtoNitrateMoles.Text = moderatorMoles.TryGetValue(Gas.ProtoNitrate, out var pNMoles) ? $"{pNMoles:0.00} moles" : "0.00 moles";
+        MPlasmaMoles.Text = moderatorMoles.TryGetValue(Gas.Plasma, out var plasmaMoles) ? Loc.GetString("hfr-console-moles", ("moles", $"{plasmaMoles:0.00}")) : Loc.GetString("hfr-console-moles", ("moles", "0.00"));
+        MBZMoles.Text = moderatorMoles.TryGetValue(Gas.BZ, out var bZMoles) ? Loc.GetString("hfr-console-moles", ("moles", $"{bZMoles:0.00}")) : Loc.GetString("hfr-console-moles", ("moles", "0.00"));
+        MProtoNitrateMoles.Text = moderatorMoles.TryGetValue(Gas.ProtoNitrate, out var pNMoles) ? Loc.GetString("hfr-console-moles", ("moles", $"{pNMoles:0.00}")) : Loc.GetString("hfr-console-moles", ("moles", "0.00"));
 
         // Iterate through all other gases in moderatorMoles
         foreach (var (gasEnum, moles) in moderatorMoles)
@@ -563,7 +502,7 @@ public sealed partial class HFRConsoleWindow : FancyWindow
             gasBox.Children.Add(new Control { HorizontalExpand = true });
             var molesLabel = new Label
             {
-                Text = $"{moles:0.00} moles",
+                Text = Loc.GetString("hfr-console-moles", ("moles", $"{moles:0.00}")),
                 FontColorOverride = GetGasColor(gas) ?? Color.White
             };
             gasBox.Children.Add(molesLabel);
@@ -575,9 +514,9 @@ public sealed partial class HFRConsoleWindow : FancyWindow
     {
         if (_currentState == null)
         {
-            MPlasmaMoles.Text = "0.00 moles";
-            MBZMoles.Text = "0.00 moles";
-            MProtoNitrateMoles.Text = "0.00 moles";
+            MPlasmaMoles.Text = Loc.GetString("hfr-console-moles", ("moles", "0.00"));
+            MBZMoles.Text = Loc.GetString("hfr-console-moles", ("moles", "0.00"));
+            MProtoNitrateMoles.Text = Loc.GetString("hfr-console-moles", ("moles", "0.00"));
             UpdateFusionGasesContent(null);
             ReactorIntegrityLabel.Text = "100%";
             IronContentLabel.Text = "0%";
@@ -594,8 +533,8 @@ public sealed partial class HFRConsoleWindow : FancyWindow
 
             FusionTemperature.Text = "3 K";
             ModeratorTemperature.Text = "3 K";
-            CoolantTemperature.Text = "Empty";
-            OutputTemperature.Text = "Empty";
+            CoolantTemperature.Text = Loc.GetString("hfr-console-empty");
+            OutputTemperature.Text = Loc.GetString("hfr-console-empty");
             FusionTrend.Text = "-";
             ModeratorTrend.Text = "-";
             SetBarHeight(FusionTempBar, 0f);
@@ -832,7 +771,7 @@ public sealed partial class HFRConsoleWindow : FancyWindow
         bool coolantEmpty = state.CoolantMoles <= moleThreshold;
         if (coolantEmpty)
         {
-            CoolantTemperature.Text = "Empty";
+            CoolantTemperature.Text = Loc.GetString("hfr-console-empty");
             CoolantTemperature.FontColorOverride = Color.Red;
             SetBarHeight(CoolantTempBar, 0f);
         }
@@ -846,7 +785,7 @@ public sealed partial class HFRConsoleWindow : FancyWindow
         bool outputEmpty = state.OutputMoles <= moleThreshold;
         if (outputEmpty)
         {
-            OutputTemperature.Text = "Empty";
+            OutputTemperature.Text = Loc.GetString("hfr-console-empty");
             OutputTemperature.FontColorOverride = Color.Red;
             SetBarHeight(OutputTempBar, 0f);
         }
@@ -888,21 +827,11 @@ public sealed partial class HFRConsoleWindow : FancyWindow
         {
             _selectedButton.Text = " ";
             _selectedButton.Pressed = false;
-            if (_recipePanels.TryGetValue(_selectedButton, out var prevPanel) &&
-                _recipePanelIsDark.TryGetValue(_selectedButton, out var isDark))
-            {
-                prevPanel.PanelOverride = isDark ? new StyleBoxFlat { BackgroundColor = Color.FromHex("#222222") } : null;
-            }
         }
 
         button.Text = " ";
         button.Pressed = true;
         _selectedButton = button;
-
-        if (_recipePanels.TryGetValue(button, out var panel))
-        {
-            panel.PanelOverride = new StyleBoxFlat { BackgroundColor = Color.FromHex("#172d44") };
-        }
 
         OnSelectRecipe?.Invoke(recipeId);
     }
@@ -915,19 +844,10 @@ public sealed partial class HFRConsoleWindow : FancyWindow
             {
                 button.Pressed = true;
                 _selectedButton = button;
-                if (_recipePanels.TryGetValue(button, out var panel))
-                {
-                    panel.PanelOverride = new StyleBoxFlat { BackgroundColor = Color.FromHex("#172d44") };
-                }
             }
             else
             {
                 button.Pressed = false;
-                if (_recipePanels.TryGetValue(button, out var panel) &&
-                    _recipePanelIsDark.TryGetValue(button, out var isDark))
-                {
-                    panel.PanelOverride = isDark ? new StyleBoxFlat { BackgroundColor = Color.FromHex("#222222") } : null;
-                }
             }
         }
     }

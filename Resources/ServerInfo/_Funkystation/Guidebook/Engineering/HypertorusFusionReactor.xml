@@ -1,0 +1,60 @@
+<Document>
+  # Hypertorus Fusion Reactor
+
+  The Hypertorus Fusion Reactor (HFR) is a 3x3 multiblock engine that fuses a hot fuel mix into power and exotic gases. It is the most demanding machine on the ship: it needs a fuel feed, a moderator feed, a coolant loop and a waste line, and it cannot be turned off safely once the reaction is running.
+
+  <Box>
+    <GuideEntityEmbed Entity="HFRCore" Caption="core"/>
+    <GuideEntityEmbed Entity="HFRConsole" Caption="console"/>
+    <GuideEntityEmbed Entity="CrateEngineeringHFR" Caption="crate"/>
+  </Box>
+
+  ## Buying one
+
+  The crate is sold by cargo under **Atmospherics** for **10,000 credits**. It contains the core, the console, the three side parts, four corners and a printed quick guide. The HFR is not lathe-printable and does not spawn on ships by default.
+
+  ## Assembly
+
+  Lay the parts out as a 3x3 block, with the **core in the centre**:
+  - four [bold]corners[/bold] on the diagonal tiles,
+  - the **fuel input**, **moderator input** and **waste output** on three of the cardinal tiles,
+  - the **console** on the remaining cardinal tile next to the core.
+
+  Anchor every part. The core will not accept the console or the side parts until they are anchored in the right pattern; a wrench is enough. When the pattern is complete the console links itself to the core and its power draw switches on.
+
+  ## Piping and wiring
+
+  - **Coolant loop**: the core's south port. Feed it cold plasma or hyper-noblium and dump the return into space or a heat exchanger. The loop is what keeps the core from melting.
+  - **Fuel input**: the fuel mix (most recipes use tritium, hydrogen, plasma or oxygen).
+  - **Moderator input**: the moderator gas. Hyper-noblium lowers the reaction power, anti-noblium raises it.
+  - **Waste output**: the fusion products. At power level 5 and above the console refuses to dump waste, so give it a real line.
+  - The console needs **Engineering access** and an LV power connection (it draws 350 W idle and about 100 kW while the reaction runs).
+
+  ## Operation
+
+  1. Open the console and pick a **recipe** in the recipe table. The table shows the fuel pair, the products and the multipliers so you can compare recipes before starting.
+  2. Set the **fuel input rate** and **moderator input rate** (0.1–150 mol/s).
+  3. Press **Start Cooling**, then **Start Power**. The console will report the fusion temperature, efficiency, instability and the current power level.
+  4. At level 1, drop the **Heating Conductor** from its starting 500 to about 100. If the temperature keeps climbing, raise the **Current Damper** and the **Magnetic Constrictor**.
+  5. The reaction only starts once the fuel mix is hot enough. A 50/50 tritium/hydrogen mix of roughly 2000 mol, with only about 1000 mol let into the core at first, is the standard kickstart.
+
+  ## Recipes
+
+  - Plasma + Oxygen
+  - Hydrogen + Oxygen
+  - Tritium + Oxygen
+  - Hydrogen + Tritium
+  - Hyper-Noblium + Hydrogen
+  - Hyper-Noblium + Tritium
+  - Hyper-Noblium + Anti-Noblium
+
+  ## Failure
+
+  If the core overheats it will melt down: a large explosion, an EMP, spreading fire and a radiation pulse. The console shows the instability and the time left; use the **filter gases** controls to strip helium and anti-noblium from the fusion mix, or flood the moderator loop with hyper-noblium to bring the power down.
+
+  The reactor cannot be dismantled or powered off while its power level is above 0. If the APC dies, the fusion keeps running but the coolant stops — fix the power before the temperature reaches the melting point.
+
+  ## See also
+
+  [textlink="Atmospherics" link="Atmospherics"], [textlink="Gas Turbine" link="GasTurbine"], [textlink="Atmos Machines" link="AtmosMachines"]
+</Document>

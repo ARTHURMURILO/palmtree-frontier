@@ -30,6 +30,9 @@
           On: { state: electrolyzerOn }
   - type: Machine
     board: ElectrolyzerMachineCircuitboard
+  - type: GuideHelp
+    guides:
+    - AtmosMachines
   - type: WiresPanel
   - type: ItemSlots
     slots:
