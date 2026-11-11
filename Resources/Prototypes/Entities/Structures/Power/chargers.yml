@@ -106,6 +106,9 @@
           tags:
           - PowerCell
           - PowerCellSmall
+        blacklist: # Funky atmos - crystallizer cell
+          tags: # Funky atmos - crystallizer cell
+          - NoRecharge # Funky atmos - crystallizer cell
 
 - type: entity
   parent: [ BaseItemRecharger, ConstructibleMachine ]
@@ -174,6 +177,7 @@
           - BloodCultStaffRechargeable # Frontier
           tags: # Frontier
           - PotatoBattery # Frontier
+          - NoRecharge # Funky atmos - crystallizer cell
 
 - type: entity
   parent: BaseItemRecharger
@@ -200,6 +204,7 @@
         blacklist:
           tags:
           - PotatoBattery
+          - NoRecharge # Funky atmos - crystallizer cell
           components: # Frontier
           - WizardStaffRechargeable # Frontier
           - BloodCultStaffRechargeable # Frontier
@@ -237,6 +242,7 @@
           - BloodCultStaffRechargeable # Frontier
           tags: # Frontier
           - PotatoBattery # Frontier
+          - NoRecharge # Funky atmos - crystallizer cell
   # imp start
   - type: Machine
     board: WeaponCapacitorRechargerCircuitboard
