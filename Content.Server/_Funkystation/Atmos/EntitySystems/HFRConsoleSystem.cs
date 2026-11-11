@@ -14,6 +14,8 @@ using Content.Server.Power.Components;
 using Content.Server.NodeContainer.Nodes;
 using Content.Server.NodeContainer.EntitySystems;
 using Content.Server._Funkystation.Atmos.HFR.Systems;
+using Content.Shared._Funkystation.Atmos.Prototypes;
+using Robust.Shared.Prototypes;
 
 namespace Content.Server._Funkystation.Atmos.Systems;
 
@@ -26,6 +28,7 @@ public sealed class HFRConsoleSystem : EntitySystem
     [Dependency] private readonly NodeContainerSystem _nodeContainer = default!;
     [Dependency] private readonly HypertorusFusionReactorSystem _hfrSystem = default!;
     [Dependency] private readonly HFRSidePartSystem _hfrSidePartSystem = default!;
+    [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
 
     public override void Initialize()
     {
@@ -38,7 +41,6 @@ public sealed class HFRConsoleSystem : EntitySystem
         SubscribeLocalEvent<HFRConsoleComponent, HFRConsoleSetFuelInputRateMessage>(OnSetFuelInputRateMessage);
         SubscribeLocalEvent<HFRConsoleComponent, HFRConsoleSetModeratorInputRateMessage>(OnSetModeratorInputRateMessage);
         SubscribeLocalEvent<HFRConsoleComponent, HFRConsoleSelectRecipeMessage>(OnSelectRecipeMessage);
-        SubscribeLocalEvent<HFRConsoleComponent, ComponentStartup>(OnConsoleStartup);
         SubscribeLocalEvent<HFRConsoleComponent, AnchorStateChangedEvent>(OnConsoleAnchorChanged);
         SubscribeLocalEvent<HFRConsoleComponent, HFRConsoleToggleWasteRemoveMessage>(OnToggleWasteRemoveMessage);
         SubscribeLocalEvent<HFRConsoleComponent, HFRConsoleSetHeatingConductorMessage>(OnSetHeatingConductorMessage);
@@ -53,11 +55,6 @@ public sealed class HFRConsoleSystem : EntitySystem
     private void OnBeforeOpened(Entity<HFRConsoleComponent> ent, ref BeforeActivatableUIOpenEvent args)
     {
         DirtyUI(ent, ent.Comp);
-    }
-
-    private void OnConsoleStartup(EntityUid uid, HFRConsoleComponent console, ComponentStartup args)
-    {
-        SetPowerState(uid, console);
     }
 
     private void OnConsoleAnchorChanged(EntityUid uid, HFRConsoleComponent console, ref AnchorStateChangedEvent args)
@@ -87,15 +84,17 @@ public sealed class HFRConsoleSystem : EntitySystem
         if (!TryComp<ApcPowerReceiverComponent>(uid, out var powerReceiver))
             return;
 
-        bool shouldBePowered = false;
-        if (console.CoreUid != null && 
-            EntityManager.EntityExists(console.CoreUid.Value) &&
-            TryComp<HFRCoreComponent>(console.CoreUid.Value, out var coreComp))
+        // A lone console (no core yet) keeps the component's default state. Writing
+        // PowerDisabled here on spawn would dirty the prototype save test.
+        if (console.CoreUid == null ||
+            !EntityManager.EntityExists(console.CoreUid.Value) ||
+            !TryComp<HFRCoreComponent>(console.CoreUid.Value, out var coreComp))
         {
-            shouldBePowered = _hfrSystem.AreAllPartsConnected(console.CoreUid.Value, coreComp);
+            powerReceiver.PowerDisabled = false;
+            return;
         }
 
-        powerReceiver.PowerDisabled = !shouldBePowered;
+        powerReceiver.PowerDisabled = !_hfrSystem.AreAllPartsConnected(console.CoreUid.Value, coreComp);
     }
 
     private void OnTogglePowerMessage(EntityUid uid, HFRConsoleComponent component, HFRConsoleTogglePowerMessage args)
@@ -152,7 +151,7 @@ public sealed class HFRConsoleSystem : EntitySystem
     {
         if (component.CoreUid != null && TryComp<HFRCoreComponent>(component.CoreUid, out var coreComp))
         {
-            coreComp.FuelInputRate = Math.Clamp(args.Rate, 0.1f, 150f);
+            coreComp.FuelInputRate = ClampFinite(args.Rate, 0.1f, 150f);
             DirtyUI(uid, component);
         }
     }
@@ -161,7 +160,7 @@ public sealed class HFRConsoleSystem : EntitySystem
     {
         if (component.CoreUid != null && TryComp<HFRCoreComponent>(component.CoreUid, out var coreComp))
         {
-            coreComp.ModeratorInputRate = Math.Clamp(args.Rate, 0.1f, 150f);
+            coreComp.ModeratorInputRate = ClampFinite(args.Rate, 0.1f, 150f);
             DirtyUI(uid, component);
         }
     }
@@ -170,6 +169,9 @@ public sealed class HFRConsoleSystem : EntitySystem
     {
         if (component.CoreUid != null && TryComp<HFRCoreComponent>(component.CoreUid, out var coreComp))
         {
+            if (args.RecipeId == null || !_prototypeManager.HasIndex<FusionRecipePrototype>(args.RecipeId))
+                return;
+
             coreComp.SelectedRecipeId = args.RecipeId;
             DirtyUI(uid, component);
         }
@@ -188,7 +190,7 @@ public sealed class HFRConsoleSystem : EntitySystem
     {
         if (component.CoreUid != null && TryComp<HFRCoreComponent>(component.CoreUid, out var coreComp))
         {
-            coreComp.HeatingConductor = Math.Clamp(args.Rate, 50f, 500f);
+            coreComp.HeatingConductor = ClampFinite(args.Rate, 50f, 500f);
             DirtyUI(uid, component);
         }
     }
@@ -197,7 +199,7 @@ public sealed class HFRConsoleSystem : EntitySystem
     {
         if (component.CoreUid != null && TryComp<HFRCoreComponent>(component.CoreUid, out var coreComp))
         {
-            coreComp.CoolingVolume = Math.Clamp(args.Rate, 50, 2000);
+            coreComp.CoolingVolume = (int) ClampFinite(args.Rate, 50f, 2000f);
             DirtyUI(uid, component);
         }
     }
@@ -206,7 +208,7 @@ public sealed class HFRConsoleSystem : EntitySystem
     {
         if (component.CoreUid != null && TryComp<HFRCoreComponent>(component.CoreUid, out var coreComp))
         {
-            coreComp.MagneticConstrictor = Math.Clamp(args.Rate, 50f, 1000f);
+            coreComp.MagneticConstrictor = ClampFinite(args.Rate, 50f, 1000f);
             DirtyUI(uid, component);
         }
     }
@@ -215,7 +217,7 @@ public sealed class HFRConsoleSystem : EntitySystem
     {
         if (component.CoreUid != null && TryComp<HFRCoreComponent>(component.CoreUid, out var coreComp))
         {
-            coreComp.CurrentDamper = Math.Clamp(args.Rate, 0f, 1000f);
+            coreComp.CurrentDamper = ClampFinite(args.Rate, 0f, 1000f);
             DirtyUI(uid, component);
         }
     }
@@ -224,7 +226,7 @@ public sealed class HFRConsoleSystem : EntitySystem
     {
         if (component.CoreUid != null && TryComp<HFRCoreComponent>(component.CoreUid, out var coreComp))
         {
-            coreComp.ModeratorFilteringRate = Math.Clamp(args.Rate, 5f, 200f);
+            coreComp.ModeratorFilteringRate = ClampFinite(args.Rate, 5f, 200f);
             DirtyUI(uid, component);
         }
     }
@@ -233,9 +235,26 @@ public sealed class HFRConsoleSystem : EntitySystem
     {
         if (component.CoreUid != null && TryComp<HFRCoreComponent>(component.CoreUid, out var coreComp))
         {
-            coreComp.FilterGases = new HashSet<Gas>(args.Gases);
+            var filtered = new HashSet<Gas>();
+            foreach (var gas in args.Gases)
+            {
+                if ((int) gas < 0 || (int) gas >= Atmospherics.TotalNumberOfGases)
+                    continue;
+
+                filtered.Add(gas);
+            }
+
+            coreComp.FilterGases = filtered;
             DirtyUI(uid, component);
         }
+    }
+
+    /// <summary>
+    /// Clamps a client-supplied float without letting NaN/Infinity through.
+    /// </summary>
+    private static float ClampFinite(float value, float min, float max)
+    {
+        return float.IsFinite(value) ? Math.Clamp(value, min, max) : min;
     }
 
     private void DirtyUI(EntityUid uid, HFRConsoleComponent? component, UserInterfaceComponent? ui = null)

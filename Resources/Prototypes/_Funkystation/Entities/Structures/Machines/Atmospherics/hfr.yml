@@ -28,13 +28,15 @@
   - type: Rotatable
   - type: ActivatableUI
     key: enum.HFRConsoleUiKey.Key
+  - type: AccessReader
+    access: [["Engineering"]]
+  - type: ActivatableUIRequiresAccess
   - type: UserInterface
     interfaces:
       enum.HFRConsoleUiKey.Key:
         type: HFRConsoleBoundUserInterface
   - type: ApcPowerReceiver
     powerLoad: 350
-    powerDisabled: true
   - type: ActivatableUIRequiresPower
   - type: ExtensionCableReceiver
   - type: Construction

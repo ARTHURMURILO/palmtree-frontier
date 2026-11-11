@@ -368,8 +368,8 @@ SPDX-License-Identifier: AGPL-3.0-or-later AND MIT
                             <BoxContainer Orientation="Vertical" HorizontalExpand="True" >
                                 <BoxContainer Orientation="Horizontal" HorizontalExpand="True" Margin="0 0 0 5">
                                     <GridContainer HorizontalExpand="True" Columns="7" Margin="0 5 0 0">
-                                        <Button Name="SelectAllButton" HorizontalExpand="True" Text="{Loc 'Select All'}" />
-                                        <Button Name="DeselectAllButton" HorizontalExpand="True" Text="{Loc 'Deselect All'}" />
+                                        <Button Name="SelectAllButton" HorizontalExpand="True" Text="Select All" />
+                                        <Button Name="DeselectAllButton" HorizontalExpand="True" Text="Deselect All" />
                                         <Control HorizontalExpand="True" />
                                         <Control HorizontalExpand="True" />
                                         <Control HorizontalExpand="True" />

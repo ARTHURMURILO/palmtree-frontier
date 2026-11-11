@@ -98,6 +98,7 @@
         type: TurbineBoundUserInterface
   - type: AccessReader # Keeps some random tider from blowing up the turbine
     access: [["Engineering"]]
+  - type: ActivatableUIRequiresAccess
   - type: Lock
     unlockOnClick: false
 

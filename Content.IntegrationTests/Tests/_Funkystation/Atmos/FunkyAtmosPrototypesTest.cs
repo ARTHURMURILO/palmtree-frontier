@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using Content.Server.Atmos.Reactions;
 using Content.Shared._Funkystation.Atmos.Prototypes;
 using Content.Shared.Atmos;
 using Content.Shared.Atmos.Prototypes;
@@ -76,8 +77,8 @@ public sealed class FunkyAtmosPrototypesTest
                 var requirements = recipe.MinimumRequirements;
 
                 Assert.That(requirements, Is.Not.Empty, $"{recipe.ID} has no gas requirements");
-                Assert.That(requirements.Length, Is.LessThanOrEqualTo(Atmospherics.AdjustedNumberOfGases),
-                    $"{recipe.ID} needs more gas slots than the mixture has");
+                Assert.That(requirements.Length, Is.EqualTo(Atmospherics.TotalNumberOfGases),
+                    $"{recipe.ID} does not have one slot per gas");
                 Assert.That(requirements.Any(moles => moles > 0f), Is.True,
                     $"{recipe.ID} can never be completed");
                 Assert.That(recipe.MaximumTemperature, Is.GreaterThan(recipe.MinimumTemperature),
@@ -91,6 +92,33 @@ public sealed class FunkyAtmosPrototypesTest
                     Assert.That(amount, Is.GreaterThan(0), $"{recipe.ID} spawns {product} zero times");
                 }
             }
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    /// HydrogenFire used to be a truncated 14-entry array with the 0.01 requirement on the
+    /// nitrium slot, so it could never fire. Keep it on the hydrogen slot.
+    /// </summary>
+    [Test]
+    public async Task HydrogenFireUsesHydrogenSlot()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var prototypes = pair.Server.ResolveDependency<IPrototypeManager>();
+
+        var fire = prototypes.Index<GasReactionPrototype>("HydrogenFire");
+        var requirements = fire.MinimumRequirements;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(requirements, Has.Length.EqualTo(Atmospherics.TotalNumberOfGases));
+            Assert.That(requirements[(int) Gas.Hydrogen], Is.GreaterThan(0f),
+                "HydrogenFire does not require hydrogen");
+            Assert.That(requirements[(int) Gas.Oxygen], Is.GreaterThan(0f),
+                "HydrogenFire does not require oxygen");
+            Assert.That(requirements[(int) Gas.Nitrium], Is.Zero,
+                "HydrogenFire still requires nitrium");
         });
 
         await pair.CleanReturnAsync();

@@ -507,11 +507,10 @@ public static class SupermatterGasData
         { Gas.ProtoNitrate,  new(15f,   -4f,   1f,  4f) },
         { Gas.Zauker,        new(2f,    4f,    2f,  1f) },
         { Gas.Halon,         new(0.1f,  0.1f,  0.1f, 0.1f) },
+        { Gas.Helium,        new(0.1f,  0.1f,  0.1f, 0.1f) },
         { Gas.AntiNoblium,   new(-0.5f, 14f,   1f,  1f) },
-        // Triad: dropped upstream Gas.Helium and Gas.Respiron entries; those are
-        // Einstein Engines custom gases absent from this fork's Gas enum.
-        // They can never appear in a mixture here, and CalculateGasMixModifier defaults
-        // missing gases to a zero SupermatterGasFact, so this is behavior-neutral.
+        // Respiron has no upstream coefficient here; CalculateGasMixModifier defaults
+        // gases missing from this table to a zero SupermatterGasFact.
     };
 
     public static float CalculateGasMixModifier(GasMixture mix, Func<SupermatterGasFact, float> getModifier)

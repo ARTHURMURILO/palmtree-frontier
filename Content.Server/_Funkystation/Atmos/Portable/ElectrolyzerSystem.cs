@@ -34,7 +34,6 @@ public sealed class ElectrolyzerSystem : EntitySystem
     [Dependency] private readonly ItemSlotsSystem _itemSlots = default!;
     [Dependency] private readonly StackSystem _stackSystem = default!;
     [Dependency] private readonly HandsSystem _handsSystem = default!;
-    [Dependency] private readonly TagSystem _tagSystem = default!;
     [Dependency] private readonly AudioSystem _audio = default!;
     private const float WorkingPower = 2f;
     private const float PowerEfficiency = 1f;
@@ -236,11 +235,11 @@ public sealed class ElectrolyzerSystem : EntitySystem
         var heldItem = args.Used;
         var existingItem = slot.ContainerSlot.ContainedEntity;
 
-        // Tag checks
-        bool heldIsPlasma = _tagSystem.HasTag(heldItem, "PlasmaSheet");
-        bool heldIsUranium = _tagSystem.HasTag(heldItem, "UraniumSheet");
+        // Frontier has no PlasmaSheet/UraniumSheet tags, so the sheet type is
+        // read from its material composition.
+        var heldFuel = GetFuelType(heldItem);
 
-        if (!heldIsPlasma && !heldIsUranium)
+        if (heldFuel == null)
             return;
 
         args.Handled = true;
@@ -255,11 +254,10 @@ public sealed class ElectrolyzerSystem : EntitySystem
             return;
         }
 
-        bool existingIsPlasma = _tagSystem.HasTag(existingItem.Value, "PlasmaSheet");
-        bool existingIsUranium = _tagSystem.HasTag(existingItem.Value, "UraniumSheet");
+        var existingFuel = GetFuelType(existingItem.Value);
 
         // Same type: merge
-        if ((heldIsPlasma && existingIsPlasma) || (heldIsUranium && existingIsUranium))
+        if (existingFuel != null && existingFuel == heldFuel)
         {
             if (!TryComp<StackComponent>(heldItem, out var heldStack) ||
                 !TryComp<StackComponent>(existingItem.Value, out var existingStack))
@@ -309,6 +307,20 @@ public sealed class ElectrolyzerSystem : EntitySystem
                 }
             }
         }
+    }
+
+    private string? GetFuelType(EntityUid uid)
+    {
+        if (!TryComp<PhysicalCompositionComponent>(uid, out var composition))
+            return null;
+
+        if (composition.MaterialComposition.ContainsKey("Plasma"))
+            return "Plasma";
+
+        if (composition.MaterialComposition.ContainsKey("Uranium"))
+            return "Uranium";
+
+        return null;
     }
 
     private void TryTurnOn(EntityUid uid, ElectrolyzerComponent comp, EntityUid? user = null)

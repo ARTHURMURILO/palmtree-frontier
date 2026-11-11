@@ -53,7 +53,9 @@ namespace Content.Shared.Atmos
         ///     calculations and so cap it here. The physical interpretation is that at this temperature, any
         ///     gas that you would have transforms into plasma.
         /// </summary>
-        public const float Tmax = 262144; // 1/64 of max safe integer, any values above will result in a ~0.03K epsilon
+        // Funky: raised from 262144 so the HFR's 2.5e7 K fusion temperatures are reachable.
+        // Values above 262144 lose ~0.03 K of precision, which is acceptable for a reactor.
+        public const float Tmax = 262144000;
 
         /// <summary>
         ///     Liters in a cell.

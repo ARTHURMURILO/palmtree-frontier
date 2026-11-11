@@ -168,6 +168,9 @@ public abstract class SharedTurbineSystem : EntitySystem
     #region User Interface
     private void OnTurbineFlowRateChanged(EntityUid uid, TurbineComponent turbine, TurbineChangeFlowRateMessage args)
     {
+        if (!float.IsFinite(args.FlowRate))
+            return;
+
         turbine.FlowRate = Math.Clamp(args.FlowRate, 0f, turbine.FlowRateMax);
         Dirty(uid, turbine);
         UpdateUI(uid, turbine);
@@ -177,6 +180,9 @@ public abstract class SharedTurbineSystem : EntitySystem
 
     private void OnTurbineStatorLoadChanged(EntityUid uid, TurbineComponent turbine, TurbineChangeStatorLoadMessage args)
     {
+        if (!float.IsFinite(args.StatorLoad))
+            return;
+
         turbine.StatorLoad = Math.Clamp(args.StatorLoad, 1000f, turbine.StatorLoadMax);
         Dirty(uid, turbine);
         UpdateUI(uid, turbine);

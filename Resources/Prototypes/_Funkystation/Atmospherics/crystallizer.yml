@@ -131,38 +131,6 @@
   - 0 # anti-noblium
 
 - type: crystallizerRecipe
-  id: supermatterSliverRecipe
-  name: Supermatter Sliver
-  minimumTemperature: 10
-  maximumTemperature: 20
-  energyRelease: 3500000
-  products:
-    SupermatterSliver: 1
-  dangerous: true
-  minimumRequirements:
-  - 4500 # oxygen
-  - 0 # nitrogen
-  - 0 # carbon dioxide
-  - 5000 # plasma
-  - 0 # tritium
-  - 0 # water vapor
-  - 0 # ammonia
-  - 0 # nitrous oxide
-  - 0 # frezon
-  - 0 # respiron
-  - 0 # helium
-  - 200 # bz
-  - 0 # healium
-  - 0 # nitrium
-  - 0 # pluoxium
-  - 0 # hydrogen
-  - 250 # hyper-noblium
-  - 0 # proto-nitrate
-  - 0 # zauker
-  - 0 # halon
-  - 250 # anti-noblium
-
-- type: crystallizerRecipe
   id: nitrousOxideCrystalRecipe
   name: Nitrous Oxide Crystal
   minimumTemperature: 50

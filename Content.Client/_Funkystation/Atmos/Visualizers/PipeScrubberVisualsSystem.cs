@@ -26,36 +26,18 @@ public sealed class PipeScrubberVisualizerSystem : VisualizerSystem<PipeScrubber
         AppearanceSystem.TryGetData<bool>(uid, PipeScrubberVisuals.IsScrubbing, out isScrubbing, args.Component);
         AppearanceSystem.TryGetData<bool>(uid, PipeScrubberVisuals.IsDraining, out isDraining, args.Component);
 
-        bool visibleLayer = true;
+        // Layer 0 is the idle body. Layers 1-4 are the enabled light, the scrubbing
+        // animation, the full indicator and the draining animation.
+        SetLayerState(1, isEnabled, component.EnabledState, uid, args.Sprite);
+        SetLayerState(2, isScrubbing, component.ScrubbingState, uid, args.Sprite);
+        SetLayerState(3, isFull, component.FullState, uid, args.Sprite);
+        SetLayerState(4, isDraining, component.DrainingState, uid, args.Sprite);
+    }
 
-        if (isDraining)
-            _sprite.LayerSetRsiState((uid, args.Sprite), 1, component.DrainingState);
-        else if (isFull)
-            _sprite.LayerSetRsiState((uid, args.Sprite), 1, component.FullState);
-        else if (isScrubbing)
-            _sprite.LayerSetRsiState((uid, args.Sprite), 1, component.ScrubbingState);
-        else if (isEnabled)
-            _sprite.LayerSetRsiState((uid, args.Sprite), 1, component.EnabledState);
-        else
-        {
-            _sprite.LayerSetRsiState((uid, args.Sprite), 1, component.IdleState);
-            visibleLayer = false;
-        }
-
-        _sprite.LayerSetVisible((uid, args.Sprite), 1, visibleLayer);
-
-        if (AppearanceSystem.TryGetData<bool>(uid, PipeScrubberVisuals.IsFull, out var fullData, args.Component))
-        {
-            _sprite.LayerSetVisible((uid, args.Sprite), 2, fullData && !isDraining && !isScrubbing);
-            if (fullData && !isDraining && !isScrubbing)
-                _sprite.LayerSetRsiState((uid, args.Sprite), 2, component.FullState);
-        }
-
-        if (AppearanceSystem.TryGetData<bool>(uid, PipeScrubberVisuals.IsDraining, out var drainingData, args.Component))
-        {
-            _sprite.LayerSetVisible((uid, args.Sprite), 3, drainingData);
-            if (drainingData)
-                _sprite.LayerSetRsiState((uid, args.Sprite), 3, component.DrainingState);
-        }
+    private void SetLayerState(int index, bool visible, string state, EntityUid uid, SpriteComponent? sprite)
+    {
+        _sprite.LayerSetVisible((uid, sprite), index, visible);
+        if (visible)
+            _sprite.LayerSetRsiState((uid, sprite), index, state);
     }
 }

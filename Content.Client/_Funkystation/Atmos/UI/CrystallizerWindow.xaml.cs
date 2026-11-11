@@ -155,7 +155,6 @@ namespace Content.Client._Funkystation.Atmos.UI
                 "metalHydrogenRecipe",
                 "healiumCrystalRecipe",
                 "protoNitrateCrystalRecipe",
-                "supermatterSliverRecipe",
                 "nitrousOxideCrystalRecipe",
                 "diamondRecipe",
                 "plasmaSheetRecipe",

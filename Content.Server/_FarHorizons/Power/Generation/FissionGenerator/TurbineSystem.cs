@@ -249,7 +249,7 @@ public sealed class TurbineSystem : SharedTurbineSystem
             if (comp.Overspeed && _random.NextFloat() < 0.15 * Math.Min(comp.RPM / comp.BestRPM, 3))
             {
                 // TODO: damage flash
-                _audio.PlayPvs(new SoundPathSpecifier(_damageSoundList[_random.Next(0, _damageSoundList.Count - 1)]), uid, AudioParams.Default.WithVariation(0.25f).WithVolume(-1));
+                _audio.PlayPvs(new SoundPathSpecifier(_damageSoundList[_random.Next(0, _damageSoundList.Count)]), uid, AudioParams.Default.WithVariation(0.25f).WithVolume(-1));
                 comp.BladeHealth--;
                 UpdateHealthIndicators(uid, comp);
             }
