@@ -37,6 +37,8 @@ public abstract class SharedFlatpackSystem : EntitySystem
     public override void Initialize()
     {
         SubscribeLocalEvent<FlatpackComponent, InteractUsingEvent>(OnFlatpackInteractUsing);
+        // Palmtree: the delayed (reactor deployment) unpack path; zero-delay flatpacks keep the
+        // instant path below so every existing flatpack behaves exactly as it did upstream.
         SubscribeLocalEvent<FlatpackComponent, FlatpackUnpackDoAfterEvent>(OnUnpackDoAfter);
         SubscribeLocalEvent<FlatpackComponent, ExaminedEvent>(OnFlatpackExamined);
 
@@ -63,8 +65,12 @@ public abstract class SharedFlatpackSystem : EntitySystem
         if (!_tool.HasQuality(args.Used, comp.QualityNeeded) || _container.IsEntityInContainer(ent))
             return;
 
+        // Palmtree: consume the interaction before starting the optional do-after, otherwise another
+        // InteractUsing handler can also fire while the tool use is in flight.
         args.Handled = true;
 
+        // Palmtree: reactor deployment flatpacks take time to unfold; a zero delay keeps the
+        // original instant-unpack behaviour for every other flatpack.
         if (comp.UnpackDelay > TimeSpan.Zero)
         {
             _tool.UseTool(args.Used,
@@ -79,6 +85,9 @@ public abstract class SharedFlatpackSystem : EntitySystem
         TryUnpack(ent, args.User);
     }
 
+    // Palmtree: the delayed path's completion handler. The tool system raises this on the flatpack
+    // (the do-after target), and all placement checks are repeated in TryUnpack because the site can
+    // change during the do-after.
     private void OnUnpackDoAfter(Entity<FlatpackComponent> ent, ref FlatpackUnpackDoAfterEvent args)
     {
         if (args.Cancelled)
@@ -90,6 +99,8 @@ public abstract class SharedFlatpackSystem : EntitySystem
     /// <summary>
     ///     Checks that the flatpack has somewhere to go and, on the server, spawns its contents.
     /// </summary>
+    // Palmtree: split out of OnFlatpackInteractUsing so the instant and do-after paths share one
+    // placement check. Upstream kept all of this inline in the interaction handler.
     private void TryUnpack(Entity<FlatpackComponent> ent, EntityUid user)
     {
         var (uid, comp) = ent;
@@ -130,6 +141,8 @@ public abstract class SharedFlatpackSystem : EntitySystem
             return;
         }
 
+        // Palmtree: a deployment flatpack can unpack into a multi-entity assembly, so the spawn is
+        // veto-able; the reactor assembly checks its footprint before it lays any site works.
         var attempt = new FlatpackUnpackAttemptEvent(uid, user, grid, buildPos);
         RaiseLocalEvent(uid, ref attempt);
         if (attempt.Cancelled)
@@ -152,8 +165,12 @@ public abstract class SharedFlatpackSystem : EntitySystem
             LogImpact.Low,
             $"{ToPrettyString(user):player} unpacked {ToPrettyString(spawn):entity} at {xform.Coordinates} from {ToPrettyString(uid):entity}");
         RaiseLocalEvent(spawn, new FlatpackUnpackedEvent(uid, user, spawn), true);
+
+        // Palmtree: play at the flatpack's coordinates, not at the flatpack entity: that entity is
+        // deleted immediately after this and PlayPredicted parents the sound to its source, so the
+        // unwrap sound was cut off by that deletion. The grid coordinates outlive the flatpack.
+        _audio.PlayPredicted(comp.UnpackSound, xform.Coordinates, user);
         QueueDel(uid);
-        _audio.PlayPredicted(comp.UnpackSound, uid, user);
     }
 
     private void OnFlatpackExamined(Entity<FlatpackComponent> ent, ref ExaminedEvent args)
