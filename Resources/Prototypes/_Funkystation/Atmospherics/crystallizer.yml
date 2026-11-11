@@ -1,6 +1,6 @@
 # Funky atmos - /tg/ gases
 # Crystallizer recipes. The minimumRequirements arrays follow the Gas enum in
-# Content.Shared/Atmos/Atmospherics.cs (21 gases, Frontier's Respiron/Helium at 9/10).
+# Content.Shared/Atmos/Atmospherics.cs (Nucleium at 11, Frontier's Respiron/Helium at 9/10).
 
 - type: crystallizerRecipe
   id: metalHydrogenRecipe

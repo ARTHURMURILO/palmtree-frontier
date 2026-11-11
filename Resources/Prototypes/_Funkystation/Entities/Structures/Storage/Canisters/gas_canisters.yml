@@ -1,5 +1,5 @@
 # Funky atmos - /tg/ gases
-# Canisters for the gases appended in Content.Shared/Atmos/Atmospherics.cs (ids 11-20).
+# Canisters for the gases appended in Content.Shared/Atmos/Atmospherics.cs (ids 12-21; Nucleium keeps 11).
 # The 1500 L volume and the moles keep the same fill pressure as the codebase's
 # other canisters; Funky fills theirs at 1000 L.
 
