@@ -3869,23 +3869,34 @@ public sealed class BluespaceDockSystem : EntitySystem
             if (!IsLiveReactor(uid))
                 continue;
 
-            if (TryComp<RbmkReactorComponent>(uid, out var rbmk))
+            // Palmtree: isolate each core. A malformed legacy entity that throws in ShutDown or
+            // Deactivate must not abort the whole load (the same rule as
+            // RestoreMapInitRegistration); it is logged and the rest of the grid is still safed.
+            try
             {
-                _rbmk.ShutDown(uid, rbmk);
-                rbmk.Temperature = Math.Min(rbmk.Temperature, 20f);
-                rbmk.AlertActive = false;
-                safed++;
-                continue;
-            }
+                if (TryComp<RbmkReactorComponent>(uid, out var rbmk))
+                {
+                    _rbmk.ShutDown(uid, rbmk);
+                    rbmk.Temperature = Math.Min(rbmk.Temperature, 20f);
+                    rbmk.AlertActive = false;
+                    safed++;
+                    continue;
+                }
 
-            if (TryComp<StormdriveComponent>(uid, out var drive))
+                if (TryComp<StormdriveComponent>(uid, out var drive))
+                {
+                    _stormdrive.Deactivate(uid, drive);
+                    drive.Heat = Math.Min(drive.Heat, 20f);
+                    drive.ReactorEndTimes = false;
+                    drive.MeltdownAt = default;
+                    drive.WarningState = StormdriveWarning.None;
+                    safed++;
+                }
+            }
+            catch (Exception e)
             {
-                _stormdrive.Deactivate(uid, drive);
-                drive.Heat = Math.Min(drive.Heat, 20f);
-                drive.ReactorEndTimes = false;
-                drive.MeltdownAt = default;
-                drive.WarningState = StormdriveWarning.None;
-                safed++;
+                _sawmill.Error($"Bluespace dock: failed to safe reactor {ToPrettyString(uid)} on a loaded ship; " +
+                               $"continuing with the rest of the grid: {e}");
             }
         }
 

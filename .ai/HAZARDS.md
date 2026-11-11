@@ -869,6 +869,15 @@ so these fail only in CI:
 - `SafeReactors` only touches cores that `IsLiveReactor` reports: a cold, stopped core keeps its
   `DesiredK`/temperature and is not counted in `forcedock --scram`'s "safed N live reactor(s)" log.
   Its comments/docs used to imply it safed every reactor on the grid; it does not.
+- `SafeReactors` runs each core in its own try/catch (`SafeReactors` is used by the load path): a
+  legacy core whose `ShutDown`/`Deactivate` throws is logged at Error, left in whatever partial
+  state the call reached, and **not counted** as safed; the other cores on the grid are still
+  safed and the ship still loads. Do not move the loop back under one try/catch - that is how a
+  single malformed core used to reject the whole file. The load warning's "safed N" number is
+  therefore the number that actually succeeded.
+- The RBMK fuel-handling lockout lives on `RbmkReactorComponent.MaxPowerForFuelHandling` (default
+  20) and has **two deliberate comparisons**: insertion and repair refuse at `>=` (rbmk.dm E10/E12),
+  console ejection refuses at `>` (E11). They differ in the original; do not "unify" the operator.
 - The rod lists are rebuilt by the reactors' **`ComponentStartup`** handlers
   (`RbmkReactorSystem.OnStartup`, `StormdriveSystem.OnStartup`/`AdoptRods`), because a loaded ship
   skips MapInit and containers are restored as data without insert events. **Never** re-raise

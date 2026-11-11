@@ -1,10 +1,15 @@
+using System;
 using System.Numerics;
 using Content.Server._NSV13.Reactor.Components;
 using Content.Server._PS.BluespaceDock;
+using Content.Shared.Audio;
 using NUnit.Framework;
+using Robust.Shared.Configuration;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
+using Robust.Shared.Log;
 using Robust.Shared.Map;
+using Robust.UnitTesting;
 
 namespace Content.IntegrationTests.Tests._PS;
 
@@ -383,6 +388,87 @@ public sealed class BluespaceDockReactorTest
 
             Assert.That(dock.FindLiveReactor(grid), Is.Null,
                 "flatpacks are cargo; they must not count as live cores");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    /// A malformed legacy core that throws while being safed must not abort the whole load: the
+    /// failing core is logged and the other reactors on the grid are still safed. This mirrors the
+    /// per-entity isolation in <c>RestoreMapInitRegistration</c>.
+    /// </summary>
+    [Test]
+    public async Task OneReactorFailingToSafeDoesNotAbortTheOthers()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+
+        var rbmk = EntityUid.Invalid;
+        var drive = EntityUid.Invalid;
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var entMan = server.ResolveDependency<IEntityManager>();
+            var grid = testMap.Grid.Owner;
+
+            rbmk = entMan.SpawnEntity("RbmkNuclearReactorRunning",
+                new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            drive = entMan.SpawnEntity("StormdriveReactor",
+                new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            var driveComp = entMan.GetComponent<StormdriveComponent>(drive);
+
+            // The drive is live but idle, so Deactivate has no running-state announcement to send.
+            driveComp.State = StormdriveState.Idle;
+            driveComp.Heat = 300f;
+
+            Assert.That(dock.FindLiveReactor(grid), Is.Not.Null, "sanity: the grid has live cores");
+
+            // RbmkReactorSystem.ShutDown silences the core's ambient hum. Turn the hum on so that
+            // call actually dirties the component. It has to happen on an earlier tick: Dirty skips
+            // components already dirtied this tick, and the injected throw is on the dirty event.
+            server.System<SharedAmbientSoundSystem>().SetAmbience(rbmk, true);
+        });
+
+        await pair.RunTicksSync(1);
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var entMan = server.ResolveDependency<IEntityManager>();
+            var grid = testMap.Grid.Owner;
+            var rbmkComp = entMan.GetComponent<RbmkReactorComponent>(rbmk);
+            var driveComp = entMan.GetComponent<StormdriveComponent>(drive);
+
+            void ThrowOnRbmkDirty(Entity<MetaDataComponent> ent)
+            {
+                if (ent.Owner == rbmk)
+                    throw new InvalidOperationException("injected reactor safing failure");
+            }
+
+            // The injected failure is logged at Error by design; do not let the test harness turn
+            // that expected log into a test failure.
+            var cfg = server.ResolveDependency<IConfigurationManager>();
+            var oldFailureLevel = cfg.GetCVar(RTCVars.FailureLogLevel);
+            cfg.SetCVar(RTCVars.FailureLogLevel, LogLevel.Fatal);
+
+            entMan.EntityDirtied += ThrowOnRbmkDirty;
+            try
+            {
+                Assert.That(dock.SafeReactors(grid), Is.EqualTo(1),
+                    "the healthy drive must still be safed when the RBMK throws");
+            }
+            finally
+            {
+                entMan.EntityDirtied -= ThrowOnRbmkDirty;
+                cfg.SetCVar(RTCVars.FailureLogLevel, oldFailureLevel);
+            }
+
+            Assert.That(driveComp.Heat, Is.LessThan(50f), "the healthy drive was not safed");
+            Assert.That(rbmkComp.IsRunning, Is.False,
+                "the injected failure happens after ShutDown stopped the core");
         });
 
         await pair.CleanReturnAsync();
