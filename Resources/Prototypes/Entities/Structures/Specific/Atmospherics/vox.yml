@@ -17,6 +17,16 @@
       Frezon: danger
       Respiron: ignore # Frontier
       Helium: stationHe # Frontier
+      BZ: stationBZ # Funky - /tg/ gases
+      Healium: stationHealium # Funky - /tg/ gases
+      Nitrium: voxNitrium # Funky - /tg/ gases
+      Pluoxium: stationPluoxium # Funky - /tg/ gases
+      Hydrogen: danger # Funky - /tg/ gases
+      HyperNoblium: stationHyperNoblium # Funky - /tg/ gases
+      ProtoNitrate: danger # Funky - /tg/ gases
+      Zauker: danger # Funky - /tg/ gases
+      Halon: voxHalon # Funky - /tg/ gases
+      AntiNoblium: danger # Funky - /tg/ gases
 
 - type: entity
   parent: [AirSensorVoxBase, AirSensor]
