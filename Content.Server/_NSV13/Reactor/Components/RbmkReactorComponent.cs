@@ -192,6 +192,20 @@ public sealed partial class RbmkReactorComponent : Component
     [DataField]
     public int MaxFuelRods = 5;
 
+    /// <summary>
+    ///     Power percentage above which the crew may not touch the fuel rods or repair the vessel.
+    /// </summary>
+    /// <remarks>
+    ///     Palmtree: one source of truth for the DM fuel-handling lockout. The hand-interaction and
+    ///     repair paths use <c>power &gt;= MaxPowerForFuelHandling</c> (rbmk.dm E10/E12: "cannot
+    ///     insert fuel ... above 20% power"), while the console's rod-ejection path deliberately uses
+    ///     a strict <c>&gt;</c> (E11: removal is refused only once power is past 20%). The two
+    ///     operators differ in the original, so keep them different here rather than "fixing" one
+    ///     to match the other; this field is the shared value they both compare against.
+    /// </remarks>
+    [DataField]
+    public float MaxPowerForFuelHandling = 20f;
+
     #endregion
 
     #region Precharge

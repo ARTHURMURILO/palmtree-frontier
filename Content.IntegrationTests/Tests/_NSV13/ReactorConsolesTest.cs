@@ -7,6 +7,8 @@ using Content.Shared._NSV13.Reactor;
 using Content.Server.NodeContainer.Nodes;
 using Content.Shared.Atmos;
 using Content.Shared.DeviceLinking;
+using Content.Shared.DoAfter;
+using Content.Shared.Interaction;
 using Content.Shared.NodeContainer;
 using Robust.Server.GameObjects;
 using Robust.Shared.Containers;
@@ -359,6 +361,70 @@ public sealed class ReactorConsolesTest
 
             Assert.That(after, Is.LessThan(before), "a running drive must eat its fuel");
             Assert.That(power, Is.GreaterThan(0f), "a running drive must produce power");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    ///     The DM's fuel-handling lockout is one threshold with two deliberate comparisons:
+    ///     insertion and repair refuse at the threshold or above (rbmk.dm E10/E12), while console
+    ///     ejection refuses only above it (E11). The value lives on the reactor; this test uses a
+    ///     non-default value so a stale duplicate constant cannot pass it.
+    /// </summary>
+    [Test]
+    public async Task RbmkFuelHandlingUsesTheReactorThresholdAndKeepsTheDmBoundary()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+
+        await server.WaitAssertion(() =>
+        {
+            var reactor = entMan.SpawnEntity("RbmkNuclearReactor", testMap.GridCoords);
+            var comp = entMan.GetComponent<RbmkReactorComponent>(reactor);
+            comp.MaxPowerForFuelHandling = 5f;
+            comp.Power = 5f;
+
+            var user = entMan.SpawnEntity("MobHuman", testMap.GridCoords);
+            var rod = entMan.SpawnEntity("RbmkFuelRodUranium", testMap.GridCoords);
+
+            void Insert()
+            {
+                var ev = new InteractUsingEvent(user, rod, reactor,
+                    entMan.GetComponent<TransformComponent>(reactor).Coordinates);
+                entMan.EventBus.RaiseLocalEvent(reactor, ev);
+                Assert.That(ev.Handled, Is.True, "the fuel-rod interaction must be consumed");
+            }
+
+            Insert();
+            Assert.That(comp.FuelRods, Is.Empty,
+                "insertion at exactly the threshold must be refused (rbmk.dm E10 uses >=)");
+            var doAfters = entMan.GetComponent<DoAfterComponent>(user).DoAfters;
+            Assert.That(doAfters, Is.Empty, "a refused insertion must not start its do-after");
+
+            comp.Power = 4.9f;
+            Insert();
+            Assert.That(doAfters, Is.Not.Empty, "insertion below the threshold must start its do-after");
+
+            // Console ejection uses a strict >: exactly at the threshold it is still allowed.
+            var console = entMan.SpawnEntity("RbmkControlConsole", testMap.GridCoords);
+            var consoleComp = entMan.GetComponent<RbmkConsoleComponent>(console);
+            var running = entMan.SpawnEntity("RbmkNuclearReactorRunning", testMap.GridCoords);
+            var runningComp = entMan.GetComponent<RbmkReactorComponent>(running);
+            consoleComp.Reactor = running;
+            runningComp.MaxPowerForFuelHandling = 5f;
+            runningComp.Power = 5f;
+
+            entMan.EventBus.RaiseLocalEvent(console, new RbmkConsoleEjectRodMessage(0));
+            Assert.That(runningComp.FuelRods, Has.Count.EqualTo(4),
+                "ejection at exactly the threshold must be allowed (rbmk.dm E11 uses >)");
+
+            runningComp.Power = 5.1f;
+            entMan.EventBus.RaiseLocalEvent(console, new RbmkConsoleEjectRodMessage(0));
+            Assert.That(runningComp.FuelRods, Has.Count.EqualTo(4),
+                "ejection above the threshold must be refused");
         });
 
         await pair.CleanReturnAsync();

@@ -41,9 +41,6 @@ public sealed class RbmkInteractionSystem : EntitySystem
     [Dependency] private readonly MetaDataSystem _meta = default!;
     [Dependency] private readonly ToolSystem _tool = default!;
 
-    /// <summary>§attackby: fuel cannot be touched once the core is above this power percentage.</summary>
-    public const float MaxPowerForFuelHandling = 20f;
-
     private static readonly TimeSpan FuelInsertTime = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan RepairTime = TimeSpan.FromSeconds(5);
 
@@ -96,7 +93,11 @@ public sealed class RbmkInteractionSystem : EntitySystem
             return;
         }
 
-        if (reactor.Power >= MaxPowerForFuelHandling)
+        // rbmk.dm E10 locks fuel insertion at 20% and above; E12 uses the same >= gate for
+        // welder/sealant repairs. Both compare against the reactor's own field, so a mapper can
+        // tune one machine without touching the console's separate (and deliberately strict)
+        // removal check.
+        if (reactor.Power >= reactor.MaxPowerForFuelHandling)
         {
             _popup.PopupEntity(Loc.GetString("rbmk-fuel-too-hot"), uid, args.User);
             return;
@@ -124,7 +125,7 @@ public sealed class RbmkInteractionSystem : EntitySystem
         if (args.Used is not { } rodUid || !Exists(rodUid) || !HasComp<RbmkFuelRodComponent>(rodUid))
             return;
 
-        if (reactor.Power >= MaxPowerForFuelHandling || reactor.FuelRods.Count >= reactor.MaxFuelRods)
+        if (reactor.Power >= reactor.MaxPowerForFuelHandling || reactor.FuelRods.Count >= reactor.MaxFuelRods)
             return;
 
         args.Handled = true;
@@ -156,7 +157,7 @@ public sealed class RbmkInteractionSystem : EntitySystem
             return;
         }
 
-        if (reactor.Power >= MaxPowerForFuelHandling)
+        if (reactor.Power >= reactor.MaxPowerForFuelHandling)
         {
             _popup.PopupEntity(Loc.GetString("rbmk-repair-power"), uid, args.User);
             return;
@@ -214,7 +215,7 @@ public sealed class RbmkInteractionSystem : EntitySystem
             return;
         }
 
-        if (reactor.Power >= MaxPowerForFuelHandling)
+        if (reactor.Power >= reactor.MaxPowerForFuelHandling)
         {
             args.Handled = true;
             _popup.PopupEntity(Loc.GetString("rbmk-repair-power"), uid, args.User);
@@ -257,7 +258,7 @@ public sealed class RbmkInteractionSystem : EntitySystem
             return;
         }
 
-        if (reactor.Power >= MaxPowerForFuelHandling)
+        if (reactor.Power >= reactor.MaxPowerForFuelHandling)
         {
             _popup.PopupEntity(Loc.GetString("rbmk-repair-power"), uid, args.User);
             return;

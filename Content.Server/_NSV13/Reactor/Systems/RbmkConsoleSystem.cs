@@ -33,12 +33,6 @@ public sealed class RbmkConsoleSystem : EntitySystem
     [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
 
-    /// <summary>
-    ///     Fuel handling is refused above this power percentage, exactly as the DM fuel console did
-    ///     ("You cannot remove fuel from [reactor] when it is above 20% power").
-    /// </summary>
-    public const float MaxPowerForFuelHandling = 20f;
-
     public override void Initialize()
     {
         base.Initialize();
@@ -315,7 +309,7 @@ public sealed class RbmkConsoleSystem : EntitySystem
         UpdateUi(uid, console);
     }
 
-    /// <summary>§G.3: eject a fuel rod onto the deck, refused above 20 % power.</summary>
+    /// <summary>§G.3: eject a fuel rod onto the deck, refused once power is above the lockout.</summary>
     private void OnEjectRod(EntityUid uid, RbmkConsoleComponent console, RbmkConsoleEjectRodMessage args)
     {
         if (console.Reactor is not { } reactorUid ||
@@ -324,7 +318,9 @@ public sealed class RbmkConsoleSystem : EntitySystem
             return;
         }
 
-        if (reactor.Power > MaxPowerForFuelHandling || reactor.Slagged)
+        // The DM fuel console refuses removal only once power is strictly past the lockout (rbmk.dm
+        // E11), unlike insertion/repair which use >=. Keep the strict comparison.
+        if (reactor.Power > reactor.MaxPowerForFuelHandling || reactor.Slagged)
         {
             _audio.PlayPvs("/Audio/Machines/airlock_deny.ogg", uid);
             Notice(console, Loc.GetString("rbmk-console-eject-too-hot"));
