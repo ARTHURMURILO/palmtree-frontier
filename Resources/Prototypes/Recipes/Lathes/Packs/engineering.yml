@@ -82,6 +82,7 @@
   id: EngineeringBoards
   recipes:
   - ThermomachineFreezerMachineCircuitBoard
+  - HeatPumpMachineCircuitBoard # Palmtree
   - HellfireFreezerMachineCircuitBoard
   - PortableScrubberMachineCircuitBoard
   - SolarControlComputerCircuitboard
