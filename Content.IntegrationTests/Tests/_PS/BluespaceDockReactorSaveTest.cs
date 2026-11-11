@@ -5,7 +5,10 @@ using System.Numerics;
 using System.Reflection;
 using Content.Server._NSV13.Reactor.Components;
 using Content.Server._PS.BluespaceDock;
+using Content.Shared.Construction;
+using Content.Shared.DoAfter;
 using Content.Shared.Storage;
+using Content.Shared._NSV13.Reactor;
 using NUnit.Framework;
 using Robust.Server.Containers;
 using Robust.Shared.Configuration;
@@ -15,6 +18,8 @@ using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
 using Robust.Shared.Log;
 using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
+using Robust.Shared.Maths;
 using Robust.Shared.Utility;
 using Robust.UnitTesting;
 
@@ -876,6 +881,135 @@ public sealed class BluespaceDockReactorSaveTest
         await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));
         await pair.RunTicksSync(2);
         await server.WaitAssertion(() => server.System<SharedMapSystem>().DeleteMap(loadedMap));
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    ///     The site works a reactor flatpack lays (HV mesh, pipe stubs, the reinforced footing) are
+    ///     part of the machine's bookkeeping. A stored-and-retrieved reactor has to pack up cleanly:
+    ///     the site-work lists must survive the file, the entity references must be remapped to the
+    ///     loaded grid, the stubs must be removed and the original deck restored. Before the lists
+    ///     were serialized, a retrieved reactor packed back into its flatpack but left the stubs
+    ///     behind and kept the reinforced floor.
+    /// </summary>
+    [Test]
+    public async Task ReactorSiteWorksSurviveStoreRetrieveAndPack()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var res = server.ResolveDependency<IResourceManager>();
+        var mapSys = server.System<SharedMapSystem>();
+        var tiles = server.ResolveDependency<ITileDefinitionManager>();
+
+        EntityUid loadedGrid = default;
+        MapId loadedMap = default;
+        var platingId = tiles["Plating"].TileId;
+        var reinforcedId = tiles["FloorReinforced"].TileId;
+        var loadedParts = new List<EntityUid>();
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var grid = testMap.Grid.Owner;
+
+            // Clear a 5x5 subfloor for the reactor's 3x3 deployment.
+            var plating = tiles["Plating"];
+            for (var x = -2; x <= 2; x++)
+            {
+                for (var y = -2; y <= 2; y++)
+                    mapSys.SetTile(grid, testMap.Grid.Comp, new Vector2i(x, y), new Tile(plating.TileId));
+            }
+
+            var flatpack = entMan.SpawnEntity("RbmkReactorFlatpack", testMap.GridCoords);
+            var reactor = entMan.SpawnEntity("RbmkNuclearReactor", testMap.GridCoords);
+            entMan.EventBus.RaiseLocalEvent(reactor,
+                new FlatpackUnpackedEvent(flatpack, EntityUid.Invalid, reactor), true);
+            entMan.DeleteEntity(flatpack);
+
+            Assert.That(entMan.TryGetComponent<ReactorAssemblyComponent>(reactor, out var assembly), Is.True);
+            Assert.That(assembly!.Parts, Has.Count.EqualTo(12), "sanity: nine HV cables and three pipe stubs");
+            Assert.That(assembly.Floors, Has.Count.EqualTo(9), "sanity: the 3x3 footing");
+            Assert.That(assembly.FloorTile, Is.EqualTo(reinforcedId), "sanity: the flatpack laid its floor");
+
+            var path = BluespaceDockSystem.GetShipFilePath("reactor-site-works-round-trip");
+            var fullPath = new ResPath($"{BluespaceDockSystem.ShipDirectory}/{path}");
+            Assert.That(dock.TrySaveShipFile(grid, path, out var error), Is.True, error);
+
+            // The site-work bookkeeping is what used to be missing from the file. Assert it is
+            // written, not just that the component round-trips in memory.
+            using (var reader = res.UserData.OpenText(fullPath))
+            {
+                var text = reader.ReadToEnd();
+                Assert.That(text, Does.Contain("parts:"), "the site-work entity list was not serialized");
+                Assert.That(text, Does.Contain("floors:"), "the site-work floor list was not serialized");
+            }
+
+            Assert.That(dock.TryLoadShipFile(path, out var loaded), Is.True, "Loading the saved ship failed.");
+            loadedGrid = loaded!.Value;
+            loadedMap = entMan.GetComponent<TransformComponent>(loadedGrid).MapID;
+            dock.DeleteShipFile(path);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var loadedReactor = FindSingle<ReactorAssemblyComponent>(dock, entMan, loadedGrid);
+            Assert.That(loadedReactor, Is.Not.Null, "the retrieved ship lost the reactor assembly bookkeeping");
+
+            var assembly = entMan.GetComponent<ReactorAssemblyComponent>(loadedReactor!.Value);
+            Assert.That(assembly.Parts, Has.Count.EqualTo(12), "the retrieved assembly lost its site-work parts");
+            Assert.That(assembly.Floors, Has.Count.EqualTo(9), "the retrieved assembly lost its floor patches");
+            Assert.That(assembly.FloorTile, Is.EqualTo(reinforcedId), "the retrieved assembly lost the floor marker");
+
+            // The saved uids are from the old grid; they must have been remapped to the loaded copies.
+            Assert.That(assembly.Parts.All(p => entMan.EntityExists(p)), Is.True,
+                "a site-work reference did not remap to an entity on the loaded grid");
+            Assert.That(assembly.Parts.All(p =>
+                    entMan.GetComponent<TransformComponent>(p).GridUid == loadedGrid), Is.True,
+                "a site-work entity was restored on the wrong grid");
+
+            var loadedGridComp = entMan.GetComponent<MapGridComponent>(loadedGrid);
+            var loadedCenter = mapSys.TileIndicesFor(loadedGrid, loadedGridComp,
+                entMan.GetComponent<TransformComponent>(loadedReactor.Value).Coordinates);
+
+            Assert.That(mapSys.GetTileRef(loadedGrid, loadedGridComp, loadedCenter).Tile.TypeId,
+                Is.EqualTo(reinforcedId), "the retrieved reactor lost its reinforced footing");
+
+            loadedParts.AddRange(assembly.Parts);
+
+            var pack = new ReactorDeconstructDoAfterEvent();
+            var args = new DoAfterArgs(entMan, loadedReactor.Value, TimeSpan.FromSeconds(30), pack,
+                loadedReactor.Value, target: loadedReactor.Value);
+            pack.DoAfter = new Content.Shared.DoAfter.DoAfter(0, args, TimeSpan.Zero);
+            entMan.EventBus.RaiseLocalEvent(loadedReactor.Value, pack);
+
+            Assert.That(entMan.IsQueuedForDeletion(loadedReactor.Value), Is.True,
+                "packing the retrieved reactor must delete it");
+            Assert.That(loadedParts.All(p => !entMan.EntityExists(p) || entMan.IsQueuedForDeletion(p)), Is.True,
+                "packing must remove the HV cables and pipe stubs it laid");
+            Assert.That(mapSys.GetTileRef(loadedGrid, loadedGridComp, loadedCenter).Tile.TypeId,
+                Is.EqualTo(platingId), "packing must restore the deck the flatpack laid");
+        });
+
+        await pair.RunTicksSync(1);
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(loadedParts.All(p => !entMan.EntityExists(p)), Is.True,
+                "the site-work entities survived packing the retrieved reactor");
+
+            var flatpacks = entMan.EntityQuery<MetaDataComponent>()
+                .Count(meta => meta.EntityPrototype?.ID == "RbmkReactorFlatpack"
+                               && entMan.GetComponent<TransformComponent>(meta.Owner).GridUid == loadedGrid);
+            Assert.That(flatpacks, Is.EqualTo(1), "packing must return the matching reactor flatpack");
+        });
+
+        await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));
+        await pair.RunTicksSync(2);
+        await server.WaitAssertion(() => mapSys.DeleteMap(loadedMap));
 
         await pair.CleanReturnAsync();
     }

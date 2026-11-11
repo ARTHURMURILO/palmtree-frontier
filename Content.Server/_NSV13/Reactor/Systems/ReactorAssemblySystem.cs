@@ -173,7 +173,10 @@ public sealed class ReactorAssemblySystem : EntitySystem
                 if (!_map.TryGetTileRef(gridUid, grid, pos, out var tileRef))
                     continue;
 
-                assembly.Floors.Add((pos, tileRef.Tile));
+                // Palmtree: keep the original tile as a prototype ID so the site-work bookkeeping can
+                // be serialized; a raw Tile has no data definition.
+                var original = _tileManager[tileRef.Tile.TypeId];
+                assembly.Floors.Add(new ReactorFloorPatch(pos, tileRef.Tile, original.ID));
                 _map.SetTile(gridUid, grid, pos, new Tile(floor.TileId));
             }
         }
@@ -493,11 +496,21 @@ public sealed class ReactorAssemblySystem : EntitySystem
 
         if (xform.GridUid is { } gridUid && TryComp<MapGridComponent>(gridUid, out var grid))
         {
-            foreach (var (pos, original) in ent.Comp.Floors)
+            foreach (var patch in ent.Comp.Floors)
             {
                 // Only restore deck the flatpack itself laid; leave crew changes alone.
-                if (_map.TryGetTileRef(gridUid, grid, pos, out var tileRef) && tileRef.Tile.TypeId == ent.Comp.FloorTile)
-                    _map.SetTile(gridUid, grid, pos, original);
+                if (!_map.TryGetTileRef(gridUid, grid, patch.Position, out var tileRef)
+                    || tileRef.Tile.TypeId != ent.Comp.FloorTile)
+                {
+                    continue;
+                }
+
+                // A tile prototype that no longer exists cannot be restored; skip it rather than
+                // throwing away the whole flatpack hand-back on an old save.
+                if (!_tileManager.TryGetDefinition(patch.OriginalTile, out var original))
+                    continue;
+
+                _map.SetTile(gridUid, grid, patch.Position, patch.ToTile(original.TileId));
             }
         }
 
@@ -512,4 +525,3 @@ public sealed class ReactorAssemblySystem : EntitySystem
         QueueDel(uid);
     }
 }
-
