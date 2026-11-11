@@ -3831,14 +3831,16 @@ public sealed class BluespaceDockSystem : EntitySystem
     }
 
     /// <summary>
-    /// Palmtree: shut every reactor on the grid down and bring it to storage temperature.
+    /// Palmtree: shut every live reactor on the grid down and bring it to storage temperature.
     /// </summary>
     /// <remarks>
     /// Used by <c>forcedock --scram</c>. The ordinary store path refuses instead of doing this
     /// (<see cref="FindLiveReactor"/>), so a live core is never silently safed behind the crew's
-    /// back: an admin has to ask for it, and the command logs it.
+    /// back: an admin has to ask for it, and the command logs it. A core that is already cold and
+    /// stopped is not live and is left exactly as it is: its setpoint and temperature are player
+    /// configuration, not something a store needs to erase.
     /// </remarks>
-    /// <returns>How many reactors were safed.</returns>
+    /// <returns>How many live reactors were safed.</returns>
     public int SafeReactors(EntityUid gridUid)
     {
         var entities = new HashSet<EntityUid>();
@@ -3847,11 +3849,12 @@ public sealed class BluespaceDockSystem : EntitySystem
         var safed = 0;
         foreach (var uid in entities)
         {
+            if (!IsLiveReactor(uid))
+                continue;
+
             if (TryComp<RbmkReactorComponent>(uid, out var rbmk))
             {
-                if (rbmk.IsRunning || rbmk.Temperature > 0f)
-                    _rbmk.ShutDown(uid, rbmk);
-
+                _rbmk.ShutDown(uid, rbmk);
                 rbmk.Temperature = Math.Min(rbmk.Temperature, 20f);
                 rbmk.AlertActive = false;
                 safed++;
@@ -3861,7 +3864,6 @@ public sealed class BluespaceDockSystem : EntitySystem
             if (TryComp<StormdriveComponent>(uid, out var drive))
             {
                 _stormdrive.Deactivate(uid, drive);
-
                 drive.Heat = Math.Min(drive.Heat, 20f);
                 drive.ReactorEndTimes = false;
                 drive.MeltdownAt = default;

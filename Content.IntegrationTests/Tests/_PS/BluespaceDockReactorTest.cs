@@ -305,6 +305,55 @@ public sealed class BluespaceDockReactorTest
     }
 
     /// <summary>
+    /// A core that is already cold and stopped is ordinary cargo: the scram must leave it alone (the
+    /// setpoint is player configuration) and must not count it as a live reactor it safed.
+    /// </summary>
+    [Test]
+    public async Task SafeReactorsLeavesAlreadyColdStoppedCoresAlone()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var entMan = server.ResolveDependency<IEntityManager>();
+            var grid = testMap.Grid.Owner;
+
+            var reactor = entMan.SpawnEntity("RbmkNuclearReactor",
+                new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            var rbmk = entMan.GetComponent<RbmkReactorComponent>(reactor);
+            rbmk.IsRunning = false;
+            rbmk.Temperature = 20f;
+            rbmk.DesiredK = 1.5f;
+
+            var drive = entMan.SpawnEntity("StormdriveReactor",
+                new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            var comp = entMan.GetComponent<StormdriveComponent>(drive);
+            comp.State = StormdriveState.Idle;
+            comp.Heat = 0f;
+            comp.LastPowerProduced = 123f;
+
+            Assert.That(dock.FindLiveReactor(grid), Is.Null, "sanity: both cores are already storable");
+
+            Assert.That(dock.SafeReactors(grid), Is.EqualTo(0),
+                "a cold, stopped core is not a live reactor and must not be counted as safed");
+            Assert.That(rbmk.DesiredK, Is.EqualTo(1.5f).Within(0.001f),
+                "the scram wiped a storable core's setpoint");
+            Assert.That(rbmk.Temperature, Is.EqualTo(20f).Within(0.001f),
+                "the scram changed an already-cold core's temperature");
+            Assert.That(rbmk.IsRunning, Is.False, "a cold core came back running");
+            Assert.That(comp.State, Is.EqualTo(StormdriveState.Idle), "the scram changed an idle drive's state");
+            Assert.That(comp.Heat, Is.EqualTo(0f).Within(0.001f), "the scram heated an already-cold drive");
+            Assert.That(comp.LastPowerProduced, Is.EqualTo(123f).Within(0.001f),
+                "the scram deactivated an already-idle drive");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
     /// A flatpacked reactor is an item, not a live core: the machine does not exist until it is
     /// unpacked, so it must not block a ship from being stored (a crew hauling a spare flatpack is
     /// normal cargo). Once unpacked, the normal gate applies again.

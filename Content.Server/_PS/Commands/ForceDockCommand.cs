@@ -22,7 +22,7 @@ public sealed class ForceDockCommand : IConsoleCommand
     [Dependency] private readonly IEntityManager _entMan = default!;
     [Dependency] private readonly ISharedPlayerManager _player = default!;
 
-    /// <summary>Safes every reactor on the ship before the store checks run.</summary>
+    /// <summary>Safes every live reactor on the ship before the store checks run.</summary>
     private const string ScramFlag = "--scram";
 
     public string Command => "forcedock";
@@ -31,8 +31,9 @@ public sealed class ForceDockCommand : IConsoleCommand
 
     public void Execute(IConsoleShell shell, string argStr, string[] args)
     {
-        // Palmtree: `--scram` safes every reactor on the ship before the store checks run. Without
-        // it a live core is refused exactly like the console refuses it - the flag is the admin's
+        // Palmtree: `--scram` safes every live reactor on the ship before the store checks run; a
+        // core that is already cold and stopped is left alone and is not counted. Without the flag
+        // a live core is refused exactly like the console refuses it - the flag is the admin's
         // explicit opt-in, not a silent bypass.
         var scram = args.Contains(ScramFlag, StringComparer.OrdinalIgnoreCase);
         args = args.Where(arg => !string.Equals(arg, ScramFlag, StringComparison.OrdinalIgnoreCase)).ToArray();
