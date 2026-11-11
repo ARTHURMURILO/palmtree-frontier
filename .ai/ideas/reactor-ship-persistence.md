@@ -148,7 +148,7 @@ both defensible alternatives.
 |---|---|
 | `BluespaceDockSystem.FindStoreBlocker` | the gate (implemented as `FindLiveReactor`). Both the dock console and `ForceDockCommand` call it and it returns a locale key. |
 | `BluespaceDockSystem.TrySaveShipFile`, next to `ResetRuntimeCooldowns` | the gate runs first, then the shared normalisation (2.2) so every save path, including tests and direct callers, gets the same state. Implemented as `NormalizeReactorRuntime`, called from `ResetRuntimeCooldowns` on save *and* load. |
-| `BluespaceDockSystem.RestoreMapInitRegistration` (`:2103`) | the documented place for "MapInit was skipped, rebuild the runtime bookkeeping". The branch-side `ComponentStartup` handlers already do this; a call here is only needed if the maintainer wants it centralised. |
+| `BluespaceDockSystem.RestoreMapInitRegistration` (`:2294`) | the documented place for "MapInit was skipped, rebuild the runtime bookkeeping". The branch-side `ComponentStartup` handlers already do this; a call here is only needed if the maintainer wants it centralised. |
 | `BluespaceDockSystem.ResetRuntimeCooldowns` | owns the reactor normalisation (it already runs on both save and load). This is the implemented home of 2.2; do not duplicate it in a reactor save hook. |
 | `ForceDockCommand.Execute` | the `--scram` policy above; implemented, and the admin log records the scram. |
 | Locale key | `bluespace-dock-error-live-reactor-aboard` (one key for both engines). |

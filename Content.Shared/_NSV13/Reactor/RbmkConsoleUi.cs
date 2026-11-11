@@ -186,4 +186,3 @@ public sealed class RbmkConsoleEjectRodMessage : BoundUserInterfaceMessage
         Index = index;
     }
 }
-

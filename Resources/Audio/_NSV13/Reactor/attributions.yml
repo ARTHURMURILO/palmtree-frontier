@@ -1,8 +1,8 @@
 # Audio ported with the NSV13 reactor modules.
 #
 # Every file here comes from BeeStation/NSV13 (nsv13/sound/), which ships under AGPL-3.0-or-later,
-# the same licence as this repository. They were copied verbatim - no re-encoding or trimming - so
-# the entries below record provenance only.
+# the same licence as this repository. The recordings were re-encoded to mono for positional audio;
+# no trimming or other edits were made. The entries below record provenance only.
 
 - files:
   - "alarm.ogg"

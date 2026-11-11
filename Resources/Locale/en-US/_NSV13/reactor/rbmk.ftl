@@ -35,4 +35,3 @@ rbmk-examine-good = The seals are in good shape and there are no visible cracks 
 rbmk-examine-worn = The seals are intact but slightly worn. No visible cracks yet.
 rbmk-examine-cracked = The vessel is cracked. It needs welding before the seals can be patched.
 rbmk-examine-failing = The vessel is badly degraded. This thing is on borrowed time.
-

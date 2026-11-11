@@ -224,4 +224,3 @@ public sealed class StormdriveConsoleMaintenanceMessage : BoundUserInterfaceMess
 public sealed class StormdriveConsoleDumpMessage : BoundUserInterfaceMessage
 {
 }
-
