@@ -110,10 +110,10 @@ public sealed class ForceDockCommand : IConsoleCommand
         // cannot smuggle a live core into storage by accident.
         var safed = scram ? dock.SafeReactors(ship.Grid) : 0;
 
-        // Every store check except the docking, ship-category, dangerous-engine and "nothing living aboard" rules:
-        // force-dock kicks the occupants out and purges dangerous engine entities instead of refusing the ship.
+        // Every store check except the docking, ship-category and "nothing living aboard" rules:
+        // force-dock kicks the occupants out instead of refusing the ship.
         if (dock.FindStoreBlocker(ship.Grid, requireDocked: false, stationGrid: null, allowOrganics: true,
-                allowDangerousEngines: true, requireAllowedGroup: false) is { } blocker)
+                requireAllowedGroup: false, allowDangerousEngines: true) is { } blocker)
         {
             shell.WriteError(Loc.GetString(blocker));
             return;

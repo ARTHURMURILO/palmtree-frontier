@@ -1,4 +1,3 @@
-using Content.Server._PS.Organs; // Palmtree: womb overflow decals
 using Content.Server.Chat.Systems;
 using Content.Shared._PS.Interactions;
 using Content.Shared._PS.Organs;
@@ -130,27 +129,19 @@ public sealed partial class InteractionPanelSystem
 
         // Only the acting party's climax maps to the interaction's cum target.
         if (isActor)
-            EmitClimax(uid, state, partner, proto);
+            EmitClimax(uid, partner, proto);
     }
 
-    /// <summary>How much semen each climax pulse emits.</summary>
-    public const double ClimaxPulseVolume = 30;
-
-    /// <summary>Hard cap on pulses per climax (even if the stored volume is larger).</summary>
-    public const int MaxClimaxPulses = 10;
-
-    /// <summary>Default delay between climax pulses (penis owners).</summary>
-    private static readonly TimeSpan DefaultClimaxPulseInterval = TimeSpan.FromSeconds(0.6);
-
-    /// <summary>Female climaxes pulse slower (1 second).</summary>
-    private static readonly TimeSpan FemaleClimaxPulseInterval = TimeSpan.FromSeconds(1);
+    /// <summary>Male internal endings only spill a floor decal above this amount.</summary>
+    private const double MaleOverflowThreshold = 50;
 
     /// <summary>
-    /// Starts a climax: the actor's stored semen is split into <see cref="ClimaxPulseVolume"/>
-    /// pulses (up to <see cref="MaxClimaxPulses"/>), each of which emits decals/drips, a cum
-    /// message and a moan. The first pulse fires on the next update tick.
+    /// Releases the actor's entire fluid volume at once according to the interaction's
+    /// <see cref="InteractionPrototype.CumTarget"/>. Internal male endings store the whole amount in
+    /// the partner and spill a single floor decal when the release is above 50u. Exterior endings
+    /// and female climaxes each leave a single decal.
     /// </summary>
-    private void EmitClimax(EntityUid uid, InteractionStateComponent state, EntityUid? partner, InteractionPrototype? proto)
+    private void EmitClimax(EntityUid uid, EntityUid? partner, InteractionPrototype? proto)
     {
         var hasPenis = _organs.TryGetOrgan(uid, GenitalType.Penis, out _, out _);
         var hasVagina = _organs.TryGetOrgan(uid, GenitalType.Vagina, out _, out _);
@@ -159,69 +150,20 @@ public sealed partial class InteractionPanelSystem
         if (!hasPenis && !hasVagina)
             return;
 
-        var volume = _organs.GetFluidVolume(uid);
-        if (volume <= 0)
+        var amount = _organs.GetFluidVolume(uid);
+        if (amount <= 0)
             return;
 
-        state.ClimaxPulseRemaining = volume;
-        state.ClimaxPulsesLeft = Math.Clamp((int) Math.Ceiling(volume / ClimaxPulseVolume), 1, MaxClimaxPulses);
-        state.ClimaxPulseInterval = hasPenis ? DefaultClimaxPulseInterval : FemaleClimaxPulseInterval;
-        state.ClimaxPulseTarget = partner is { } partnerUid && !Deleted(partnerUid) ? partnerUid : null;
-        state.ClimaxPulseProto = proto?.ID;
-        state.ClimaxPulseFemale = !hasPenis;
-        state.ClimaxPulseFirst = true;
-
-        // Fire the first pulse immediately so the climax is responsive; the rest follow in Update.
-        if (EmitClimaxPulse(uid, state, proto))
-            state.ClimaxPulsesLeft--;
-        else
-            state.ClimaxPulsesLeft = 0;
-
-        state.NextClimaxPulse = _timing.CurTime + state.ClimaxPulseInterval;
-
-        if (state.ClimaxPulsesLeft <= 0)
+        if (!hasPenis)
         {
-            state.ClimaxPulseRemaining = 0;
-            state.ClimaxPulseTarget = null;
-            state.ClimaxPulseProto = null;
-            state.ClimaxPulseFirst = false;
-            state.ClimaxPulseFemale = false;
-        }
-    }
-
-    /// <summary>
-    /// Fires a single climax pulse according to the interaction's
-    /// <see cref="InteractionPrototype.CumTarget"/>: internal endings store the pulse in the
-    /// partner (dripping when they have a vagina), exterior endings leave a full SPLURT cum decal.
-    /// A null target (manual climax) is treated as exterior. Returns false when the sequence should
-    /// stop (organ removed / nothing left to emit).
-    /// </summary>
-    private bool EmitClimaxPulse(EntityUid uid, InteractionStateComponent state, InteractionPrototype? proto)
-    {
-        var hasPenis = _organs.TryGetOrgan(uid, GenitalType.Penis, out _, out _);
-        if (!hasPenis && !_organs.TryGetOrgan(uid, GenitalType.Vagina, out _, out _))
-            return false;
-
-        var amount = Math.Min(ClimaxPulseVolume, state.ClimaxPulseRemaining);
-        if (amount <= 0)
-            return false;
-
-        state.ClimaxPulseRemaining -= amount;
-        var first = state.ClimaxPulseFirst;
-        state.ClimaxPulseFirst = false;
-
-        if (state.ClimaxPulseFemale)
-        {
-            // Female squirt: a random fem decal lands under the actor, regardless of the
-            // interaction's cum target (there is no penis to direct it anywhere).
+            // Female squirt: a single random fem decal under the actor.
             _drip.SpawnFemDecals(uid);
         }
         else
         {
             // Self/climax-with-no-target behaves like an exterior climax on the actor themselves.
             var cumTarget = proto?.CumTarget ?? "exterior";
-            var target = state.ClimaxPulseTarget;
-            var other = target is { } targetUid && !Deleted(targetUid) && targetUid != uid ? targetUid : uid;
+            var other = partner is { } partnerUid && !Deleted(partnerUid) && partnerUid != uid ? partnerUid : uid;
             var hasPartner = other != uid;
 
             switch (cumTarget)
@@ -230,21 +172,15 @@ public sealed partial class InteractionPanelSystem
                     if (!hasPartner || !_genitals.HasGenital(other, GenitalType.Vagina))
                         break;
 
-                    // Palmtree: a womb that already holds more than 60u overflows, so the floor
-                    // gets a full cum decal on every pulse. The 30u is still stored - overflow
-                    // never costs the receiver anything.
-                    if (_drip.GetSemen(other) > DrippingCumSystem.WombOverflowThreshold)
-                        _drip.SpawnCumDecals(other, amount);
-
                     _drip.AddSemen(other, amount);
                     SendCumMessage(uid, other, proto, hasPartner, "interaction-cum-inside");
+                    _popup.PopupEntity(Loc.GetString(_organs.IsWearingJumpsuit(other)
+                        ? "interaction-cum-received-held"
+                        : "interaction-cum-received"), other, other);
 
-                    if (first)
-                    {
-                        _popup.PopupEntity(Loc.GetString(_organs.IsWearingJumpsuit(other)
-                            ? "interaction-cum-received-held"
-                            : "interaction-cum-received"), other, other);
-                    }
+                    // Only a release above 50u spills; overflow costs no stored fluid.
+                    if (amount > MaleOverflowThreshold)
+                        _drip.SpawnCumDecals(other, amount);
 
                     break;
 
@@ -254,13 +190,12 @@ public sealed partial class InteractionPanelSystem
 
                     _drip.AddSemen(other, amount);
                     SendCumMessage(uid, other, proto, hasPartner, "interaction-cum-inside");
+                    _popup.PopupEntity(Loc.GetString(_organs.IsWearingJumpsuit(other)
+                        ? "interaction-cum-received-held"
+                        : "interaction-cum-received"), other, other);
 
-                    if (first)
-                    {
-                        _popup.PopupEntity(Loc.GetString(_organs.IsWearingJumpsuit(other)
-                            ? "interaction-cum-received-held"
-                            : "interaction-cum-received"), other, other);
-                    }
+                    if (amount > MaleOverflowThreshold)
+                        _drip.SpawnCumDecals(other, amount);
 
                     break;
 
@@ -275,16 +210,15 @@ public sealed partial class InteractionPanelSystem
                 default:
                     SendCumMessage(uid, other, proto, hasPartner, "interaction-cum-exterior");
 
-                    // Ejaculation leaves the full cum decals; the drip reservoir only ever makes droplets.
+                    // Ejaculation leaves a single full cum decal; the drip reservoir only ever makes droplets.
                     _drip.SpawnCumDecals(other, amount);
                     break;
             }
         }
 
-        // Each pulse comes with its own moan.
+        // One moan for the whole release.
         var collection = GetSex(uid) == Sex.Female ? "LewdMoansFemale" : "LewdMoansMale";
         PlayInteractionSound(uid, new SoundCollectionSpecifier(collection), -8f, lewd: true);
-        return true;
     }
 
     /// <summary>

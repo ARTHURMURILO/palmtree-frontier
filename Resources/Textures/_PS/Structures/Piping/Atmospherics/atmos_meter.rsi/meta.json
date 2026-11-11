@@ -1,0 +1,35 @@
+{
+    "version": 1,
+    "license": "CC-BY-SA-3.0",
+    "copyright": "Taken from https://github.com/tgstation/tgstation at commit 50b07c1ae8f3a978e11a062509b06babc5669ce5 (CC-BY-SA-3.0), repacked for Space Station 14 by Palmtree.",
+    "size": {
+        "x": 32,
+        "y": 32
+    },
+    "states": [
+        {
+            "name": "meter",
+            "directions": 4
+        },
+        {
+            "name": "pressure0",
+            "directions": 4
+        },
+        {
+            "name": "pressure1",
+            "directions": 4
+        },
+        {
+            "name": "pressure2",
+            "directions": 4
+        },
+        {
+            "name": "pressure3",
+            "directions": 4
+        },
+        {
+            "name": "pressure4",
+            "directions": 4
+        }
+    ]
+}

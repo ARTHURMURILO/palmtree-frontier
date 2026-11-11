@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "license": "CC-BY-SA-3.0",
+  "copyright": "Walkable electronic-assembly drone chassis sprites from electronic_setups.dmi (integrated electronics / Wiremod, via Skyrat/Shiptest).",
+  "size": {
+    "x": 32,
+    "y": 32
+  },
+  "states": [
+    {
+      "name": "setup_drone",
+      "directions": 4,
+      "delays": [
+        [
+          0.1,
+          1.0,
+          0.1,
+          0.1
+        ],
+        [
+          0.1,
+          1.0,
+          0.1,
+          0.1
+        ],
+        [
+          0.1,
+          1.0,
+          0.1,
+          0.1
+        ],
+        [
+          0.1,
+          1.0,
+          0.1,
+          0.1
+        ]
+      ]
+    },
+    {
+      "name": "setup_drone_arms",
+      "directions": 4
+    },
+    {
+      "name": "setup_drone_secbot"
+    },
+    {
+      "name": "setup_drone_medbot"
+    },
+    {
+      "name": "setup_drone_genbot"
+    },
+    {
+      "name": "setup_drone_android",
+      "directions": 4
+    }
+  ]
+}

@@ -170,10 +170,13 @@
 - type: entity
   name: Drozd
   categories: [ HideSpawnMenu ] # Frontier
-  parent: [BaseWeaponSubMachineGun, BaseC2ContrabandUnredeemable] # Frontier: BaseSecurityContraband<BaseC2ContrabandUnredeemable
+  parent: [BaseWeaponSubMachineGun, BaseC3Contraband] # Frontier: BaseSecurityContraband<BaseC3Contraband
   id: WeaponSubMachineGunDrozd
   description: A modern SMG manufactured by Nanotrasen’s Small Arms Division. It features an exceptional rate of fire in burst mode, useful for holding defensive angles or engaging hostiles at longer ranges. Feeds from .35 SMG magazines.
   components:
+    - type: Contraband
+      severity: Class3General
+      allowedDepartments: [ Security, Command ]
     - type: Sprite
       sprite: _NF/Objects/Weapons/Guns/SMGs/drozd.rsi # Frontier: add _NF prefix
       layers:
@@ -230,10 +233,13 @@
 - type: entity
   categories: [ HideSpawnMenu ] # Frontier
   name: WT550
-  parent: [BaseWeaponSubMachineGun, BaseC2ContrabandUnredeemable] # Frontier: BaseSecurityContraband<BaseC2ContrabandUnredeemable
+  parent: [BaseWeaponSubMachineGun, BaseC3Contraband] # Frontier: BaseSecurityContraband<BaseC3Contraband
   id: WeaponSubMachineGunWt550
   description: A truly unique firearm, the WT550 was designed by Nanotrasen's Small Arms Division as a compact submachine gun fully controllable with one hand. It contains an exotic internal recoil buffer and feeds from special top-mounted .35 magazines.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: Objects/Weapons/Guns/SMGs/wt550.rsi
     layers:

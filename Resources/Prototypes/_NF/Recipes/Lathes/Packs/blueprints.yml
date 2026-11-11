@@ -62,6 +62,20 @@
   - NFPouchAtmospherics
   # BasicRobotics
   - ProximitySensor
+  # ProgrammableCircuitry
+  - CircuitCpuBasic
+  - CircuitCpuAdvanced
+  - CircuitWheels
+  - CircuitTracks
+  - CircuitThruster
+  - CircuitManipulator
+  - CircuitSpeaker
+  - CircuitSensor
+  - CircuitRadio
+  - CircuitBotanicalAnalyzer
+  - CircuitChemicalAnalyzer
+  - CircuitMedicalAnalyzer
+  - CircuitGasAnalyzer
     # SalvageEquipment
   - ClothingMaskWeldingGas
   # SpaceScanning
@@ -115,6 +129,9 @@
   - SmallGyroscopeMachineCircuitboard
   # AdvancedAtmospherics
   - HellfireFreezerMachineCircuitBoard
+  - HeatPumpMachineCircuitBoard # Palmtree
+  - TegCirculatorFlatpack # Palmtree
+  - TegCenterFlatpack # Palmtree
   - PortableScrubberMachineCircuitBoard
   - HolofanProjector
   - AlertsComputerCircuitboard

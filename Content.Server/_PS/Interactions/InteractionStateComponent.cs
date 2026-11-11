@@ -65,34 +65,6 @@ public sealed partial class InteractionStateComponent : Component
 
     #endregion
 
-    #region Climax sequence
-
-    /// <summary>Semen units still to emit after the current pulse (see the multi-pulse climax).</summary>
-    public double ClimaxPulseRemaining;
-
-    /// <summary>How many pulses are left to fire (capped at 10 per climax).</summary>
-    public int ClimaxPulsesLeft;
-
-    /// <summary>When the next climax pulse fires.</summary>
-    public TimeSpan NextClimaxPulse;
-
-    /// <summary>Partner the climax is aimed at (null/self for a solo climax).</summary>
-    public EntityUid? ClimaxPulseTarget;
-
-    /// <summary>Interaction prototype id used for the cum messages/destination.</summary>
-    public string? ClimaxPulseProto;
-
-    /// <summary>Whether the next pulse is the first one (only the first shows the receiver popup).</summary>
-    public bool ClimaxPulseFirst;
-
-    /// <summary>True when this sequence is a female (vagina-only) climax using the fem decals.</summary>
-    public bool ClimaxPulseFemale;
-
-    /// <summary>Delay between pulses for the current sequence (females are slower).</summary>
-    public TimeSpan ClimaxPulseInterval = TimeSpan.FromSeconds(0.6);
-
-    #endregion
-
     #region Cooldowns / continuity
 
     /// <summary>Last time this mob performed any interaction (Sandstorm's last_interaction_time).</summary>

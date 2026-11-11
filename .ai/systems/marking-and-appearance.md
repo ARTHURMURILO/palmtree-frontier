@@ -147,11 +147,13 @@ undershirts) so hiding a parent hides its sublayers.
      displacement, and clamps genital layers below `jumpsuit`/`outerClothing`.
      Layer order is direction-aware on the client (screen direction = world + eye rotation):
      south-facing exposed genitals sit above hair/tails when no garment covers them,
-     east/west-facing tail markings are inserted under the hair layer, and east/west-facing
-     snout/snout-cover markings are inserted above hair when the character's
+     side-facing (including diagonal) tail markings are inserted under the hair layer, and
+     side-facing snout/snout-cover markings are inserted above hair when the character's
      `SnoutAboveHair` option is enabled (default off keeps the legacy under-hair order; the
      checkbox sits in the editor's Markings tab under Leg style). A client system
-     (`DirectionalLayerOrderSystem`) rebuilds the sprite when the cardinal direction changes.
+     (`DirectionalLayerOrderSystem`) rebuilds the sprite when the cardinal or side-facing state
+     changes. Uncovered breast markings are inserted below the neck clothing layer in every
+     direction, so scarves/cloaks cover breasts while hair and the head remain above the cloak.
      Under-clothing genital insertions anchor to stable layers, not `jumpsuit`/`outerClothing`:
      bottom organs (butt, vagina, balls, penis, belly) anchor above `LLeg` so they render below
      `UndergarmentBottom`, while breast markings anchor above `UndergarmentBottom` so they render

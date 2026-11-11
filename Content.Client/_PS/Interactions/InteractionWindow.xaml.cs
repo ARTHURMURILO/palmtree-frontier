@@ -30,6 +30,7 @@ public sealed partial class InteractionWindow : FancyWindow
     public event Action<bool, double>? OnMoaningMultiplierChanged;
     public event Action<GenitalType, bool>? OnGenitalAroused;
     public event Action<GenitalType, GenitalVisibility>? OnGenitalVisibilityChanged;
+    public event Action<CharacterLayerMode>? OnLayerModeChanged;
 
     private const string PlayIcon = "/Textures/Interface/AdminActions/play.png";
     private const string PauseIcon = "/Textures/Interface/AdminActions/pause.png";
@@ -180,6 +181,16 @@ public sealed partial class InteractionWindow : FancyWindow
                 _syncingMultiplierInput = false;
             }
         };
+
+        LayerModeButton.AddItem(Loc.GetString("interaction-layer-below"), (int) CharacterLayerMode.Below);
+        LayerModeButton.AddItem(Loc.GetString("interaction-layer-default"), (int) CharacterLayerMode.Default);
+        LayerModeButton.AddItem(Loc.GetString("interaction-layer-above"), (int) CharacterLayerMode.Above);
+        LayerModeButton.OnItemSelected += args =>
+        {
+            LayerModeButton.SelectId(args.Id);
+            if (!_updating)
+                OnLayerModeChanged?.Invoke((CharacterLayerMode) args.Id);
+        };
     }
 
     public void UpdateState(InteractionBoundUserInterfaceState state)
@@ -222,6 +233,8 @@ public sealed partial class InteractionWindow : FancyWindow
             MoaningMultiplierSpin.Value = (int) Math.Round(state.MoaningMultiplier);
             MoaningMultiplierSpin.LineEditDisabled = !state.UseMoaningMultiplier;
             MoaningMultiplierSpin.SetButtonDisabled(!state.UseMoaningMultiplier);
+
+            LayerModeButton.SelectId((int) state.LayerMode);
 
             if (state.Speeds.Count > 0)
             {

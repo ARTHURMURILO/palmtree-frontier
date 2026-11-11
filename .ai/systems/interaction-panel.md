@@ -23,6 +23,7 @@ content are intentionally not ported.
 | Genital resolver (organs) | `Content.Shared/_PS/Interactions/GenitalSystem.cs` |
 | Server system | `Content.Server/_PS/Interactions/InteractionPanelSystem*.cs` |
 | Server runtime state | `Content.Server/_PS/Interactions/InteractionStateComponent.cs` |
+| Layer preference | `CharacterLayerMode` + `InteractionPanelComponent.LayerMode`; client watchdog `Content.Client/_PS/Interactions/CharacterLayerSystem.cs` |
 | Client BUI/window | `Content.Client/_PS/Interactions/InteractionBoundUserInterface.cs`, `InteractionWindow.xaml(.cs)` |
 | Prototypes | `Resources/Prototypes/_PS/Interactions/interactions.yml` |
 | Sound collections | `Resources/Prototypes/_PS/SoundCollections/interactions.yml` |
@@ -94,11 +95,11 @@ content are intentionally not ported.
    climax at `tolerance*3` resets lust and plays `final_*` sounds. Repeating the same interaction
    uses `continueMessages` when provided.
 7. **Climax fluids / drip.** `InteractionPrototype.CumTarget` (`vagina`/`anus`/`mouth`/`exterior`)
-   maps a climax: internal endings store the penis organ's `SemenVolume` in the partner's
-   `DrippingCumComponent` (10 u/s **droplet** decals while not wearing a jumpsuit, 10u per drip;
-   the first movement/interaction starts the drip and it then keeps going while standing still;
-   drips never grow into the full puddle decals), exterior endings drop the full `SemenPuddle*`
-   decals on the ground.
+   maps a climax: internal endings store the whole penis organ's `SemenVolume` in the partner's
+   `DrippingCumComponent` at once (10 u/s **droplet** decals while not wearing a jumpsuit, 10u per
+   drip; the first movement/interaction starts the drip and it then keeps going while standing
+   still; drips never grow into the full puddle decals), exterior endings drop a single
+   `SemenPuddle*` decal on the ground.
    A null cum target (manual Climax with no recent interaction) is treated as an exterior climax on
    the actor. Receiver-side acts (`Ride`, `TakeAnal`) reuse the same cum target for the **target's**
    climax, so the penetrator finishing fills the actor. Each interaction can define
@@ -107,16 +108,15 @@ content are intentionally not ported.
    `forceClimax` exterior action with no orgasm gate; the **Climax** action (`forceClimax`) has no
    range or orgasm requirement, is usable on self or others, and reuses the last interaction's cum
    target when it has none of its own. Both go through the same `TriggerClimax`/`EmitClimax` code.
-   **Multi-pulse climax:** a climax splits `SemenVolume` into 30u pulses (max 10, so 300u = 10
-   pulses). The first pulse fires immediately; the rest follow every 0.6s from the server `Update`
-   loop, each placing a decal/drip, sending the cum message and moaning. While
-   `InteractionStateComponent.ClimaxPulsesLeft > 0` the actor cannot start another climax
-   (`CanPerform`/`TryPerform` reject `ForceClimax`) and climaxing participants gain no lust from
-   interactions (fail-safe against re-triggering). See `systems/genital-organs.md`.
+   **Single release / overflow:** a climax emits the entire `SemenVolume` at once (maximum 500u),
+   with the cum message and one moan. Male internal releases above 50u also spill a single
+   `SemenPuddle*` decal onto the floor without costing the receiver any stored fluid; female
+   climaxes leave a single random `FemPuddle*` decal. There is no multi-pulse sequence and no
+   mid-climax lockout. See `systems/genital-organs.md`.
 8. **Auto-repeat.** The server `Update` loop repeats the active interaction every `AutoPace`
    (Sandstorm's `interaction_speeds`: 4/2/1/0.8/0.5 s) without the 0.5 s cooldown, stopping on any
    requirement failure, target deletion or range loss. The panel state is pushed only when something
-   happens (performed interaction, climax pulse, message); the once-per-second refresh that used to
+   happens (performed interaction, message); the once-per-second refresh that used to
    keep lust bars and attribute lines live was **reverted** because it rebuilt the window and reset
    the controls the player was typing into. Reintroduce it only with a partial state update that
    leaves inputs alone.
@@ -125,6 +125,20 @@ content are intentionally not ported.
 10. **Admin logs.** Every performed interaction (and every manual climax) is written to the admin
    logs as `LogType.Interaction` with both participants and the interaction prototype id/name.
    Auto-repeat continuations are not logged again, so a chain produces one log entry.
+
+## Character layer preference
+
+The Preferences tab has a **Layer: Below / Default / Above** dropdown. It is stored in the
+networked `InteractionPanelComponent.LayerMode` (server-authoritative, session-only, default
+`Default`) so every client renders the character the same way. A client watchdog
+(`CharacterLayerSystem`) runs **once per second** and keeps every living mob on its own base draw
+depth plus the character's offset. Humanoids use `Mobs` as their base (`BelowMobs`/`Mobs`/`OverMobs`);
+other living mobs keep the depth they first appeared with (e.g. mice stay on `SmallMobs`). Mobs
+without `InteractionPanelComponent` simply use `Default`. This also repairs stale draw depths left by
+other visual states; the old manual workaround (buckling on a chair and unbuckling) is no longer
+needed. Buckled entities are skipped while the buckle system owns their draw depth, and dead
+entities are skipped while the damage-state visualizer owns `DeadMobs`; the watchdog takes over
+again after unbuckle/revive.
 
 ## Range and visibility (PVS)
 

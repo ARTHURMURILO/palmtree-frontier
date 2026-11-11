@@ -95,6 +95,44 @@
   `Content.IntegrationTests/Tests/_PS/InteractionPanelTest.cs` and the `ServerDbSqliteTests`
   round-trip.
 
+### 3.4 Temperature atmos devices (2026-11, `_PS`)
+
+Ported from the current `/tg/station` checkout (`tgstation-master`), not from Coyote:
+
+- **Temperature gate**, **temperature pump**, **heat exchanger** and **atmos meter** — four atmos
+  devices SS14 has no equivalent for. Each is a binary/unary device on the vanilla `AtmosDevice` +
+  `PipeNode` + `AtmosDeviceUpdateEvent` framework, with three pipe layer prototypes, a construction
+  graph, an RPD mode, a guidebook page and an integration test.
+- **Passive gate RPD entry**: `GasPassiveGate` already existed upstream (component, system, layer
+  prototypes, construction, guide) but was never added to the RPD radial, so it was only reachable
+  through the construction menu.
+- Sprites are the TG originals repacked for SS14 (same source as the vanilla atmos pumps); regenerate
+  them with `Tools/gen_atmos_tg_sprites.py --tg ../tgstation-master`. Design decisions and known gaps:
+  `.ai/systems/atmos-temperature-devices.md`. Test:
+  `Content.IntegrationTests/Tests/_PS/Atmos/TemperatureDevicesTest.cs`.
+
+### 3.5 Heat pump, the two-port thermomachine (2026-11, `_PS`)
+
+The freezer/heater /tg/station had from 2021 to 2022 (`binary/thermomachine`, PR #57831, later removed
+in #66411): the same machine, but it moves heat between two pipes instead of making it. Ported as a
+**sidegrade** - the vanilla freezer and heater are untouched and stay researchable.
+
+- Not a port of the *current* /tg/station code, which has reverted to the unary thermomachine; the
+  source is the last version before the revert (commit `d7f3828d`), kept in the workspace as
+  `tg-thermomachine-2022.dm`.
+- Heating takes heat out of the waste loop rather than making it from nothing, which is a deliberate
+  deviation from /tg/station (the original only moved heat while cooling). Five more were needed
+  because SS14 is not BYOND: the transfer is capped by `MaxHeatRate` and by what each mixture can
+  absorb, the compressor's waste heat is its electrical draw, the parts efficiency floor is capped at
+  0.9, and the safeties threshold is 200 000 K rather than 500 000 K because a gas mixture here
+  cannot exceed `Atmospherics.Tmax`. All of them are listed in `.ai/systems/atmos-heat-pump.md`.
+- The new board is unlocked by the existing `NFAdvancedAtmospherics` node, alongside the hellfire
+  freezer, rather than by a research node of its own, and is added to the `NFEngineeringBoardsStatic`
+  lathe pack and the blueprints pack.
+- Design decisions and the full list of deviations: `.ai/systems/atmos-heat-pump.md`. Test:
+  `Content.IntegrationTests/Tests/_PS/Atmos/HeatPumpTest.cs`. Sprites:
+  `Tools/gen_heat_pump_sprites.py` (vanilla thermomachine body + vanilla pipe tinted green/red).
+
 ## 4. What was deliberately NOT ported
 
 | Feature | Reason / status |
@@ -840,13 +878,20 @@ Follow-up on the RCD/RPD after the second pass:
   device-on-pipe placement. Instead the RCD/RPD raises `RCDAtmosOverlapAttemptEvent`, and the
   server's `PipeRestrictOverlapSystem` compares the placement's resolved prototype nodes (mirror
   flip + RPD layer variant included) with the anchored nodes on the tile: only a same-layer,
-  same-direction overlap is vetoed. `Unstackable` remains on the devices themselves (vents, pumps,
-  sensors, manifold), so a second device on the same layer is still rejected. Pipes have no
-  fixtures, which is why the old collision check let duplicates through (the overlap popup came
-  from `PipeRestrictOverlapSystem` after the spawn).
+  same-direction overlap is vetoed. The layer itself comes from `RPDLayerEvent`, because the
+  server's click location is snapped to the tile centre; `RCDComponent.LastKnownPipeLayer` is
+  server-only working state and the resolved value rides in `RCDDoAfterEvent.Layer`. `Unstackable` remains on the devices themselves (vents, pumps,
+  sensors), so a second device on the same layer is still rejected.
+- **Pipe segments never share a layer.** The `AtmosPipeSegment` tag (`_PS/tags.yml`) marks the five
+  plain pipe shapes, the manifold and the broken pipe. Two segments on one layer have the same
+  sprite draw depth and z-fight even when their node directions do not overlap, so
+  `IsConstructionLocationValid` rejects that pair outright. Devices are exempt: their sprites use
+  a different draw depth, and the node check decides whether they fit. The tag is networked, so
+  the client's placement ghost also shows the stack as invalid; the client still cannot read the
+  server-only `PipeNode` data used for direction conflicts.
 - Test: `Content.IntegrationTests/Tests/_PS/RcdAtmosStackingTest.cs` (pipe-on-pipe same layer
   blocked, empty tile allowed, another layer allowed, valid vent-on-pipe allowed, conflicting
-  vent node blocked, non-conflicting pipe orientation allowed, second device blocked).
+  vent node blocked, second device blocked).
 - **Client ghost parity (2026-11)**: the placement ghost used to stay green for a node conflict
   because `NodeContainerComponent.Nodes` is `serverOnly`. The server now maintains a networked
   `AtmosPipeNodeDirectionsComponent` (one `PipeDirection` mask per atmos layer) on entities with
@@ -861,7 +906,6 @@ Follow-up on the RCD/RPD after the second pass:
   half-filling it. The RCD stays 1:1. Only as much of the cartridge as the missing charges need is
   consumed (a half-full RPD uses 15 of the 30, leaving 15). Test: `RcdBehaviorTest`
   (`OneCompressedMatterCartridgeFillsTheTool`, `RpdUsesOnlyAsMuchMatterAsTheMissingCharges`).
-
 
 ## 25. 2026-10 Salto expedition ship (Coyote `_CS`)
 

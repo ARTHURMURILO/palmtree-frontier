@@ -23,19 +23,8 @@ public sealed class ServerRingHolderSystem : EntitySystem
     {
         base.Initialize();
 
-        SubscribeLocalEvent<RingHolderComponent, ComponentInit>(OnComponentInit);
         SubscribeLocalEvent<RingHolderComponent, ExaminedEvent>(OnExamined);
         SubscribeLocalEvent<RingHolderComponent, InteractUsingEvent>(OnInteractUsing);
-    }
-
-    private void OnComponentInit(Entity<RingHolderComponent> ent, ref ComponentInit args)
-    {
-        var itemSlots = EnsureComp<ItemSlotsComponent>(ent.Owner);
-
-        for (var i = 0; i < ent.Comp.MaxRings; i++)
-        {
-            _itemSlots.AddItemSlot(ent.Owner, RingHolderComponent.GetSlotId(i), new ItemSlot(ent.Comp.RingSlot), itemSlots);
-        }
     }
 
     private void OnExamined(Entity<RingHolderComponent> ent, ref ExaminedEvent args)

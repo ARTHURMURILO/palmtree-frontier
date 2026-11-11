@@ -449,13 +449,29 @@ public sealed class BluespaceDockTest
             {
                 OwnerUserId = "ckey-one",
                 OwnerName = "Mike Winterbells",
+                OwnerSlot = 0,
             };
 
-            // Normal entries need both the ckey and the character name.
-            Assert.That(BluespaceDockSystem.EntryBelongsToCharacter(owned, "ckey-one", "Mike Winterbells"), Is.True);
-            Assert.That(BluespaceDockSystem.EntryBelongsToCharacter(owned, "ckey-one", "Someone Else"), Is.False);
-            Assert.That(BluespaceDockSystem.EntryBelongsToCharacter(owned, "ckey-two", "Mike Winterbells"), Is.False,
+            // New entries key on ckey + character slot, so a rename keeps access while another
+            // character on the same account does not see the ship.
+            Assert.That(BluespaceDockSystem.EntryBelongsToCharacter(owned, "ckey-one", "Mike Winterbells", 0), Is.True);
+            Assert.That(BluespaceDockSystem.EntryBelongsToCharacter(owned, "ckey-one", "Renamed Character", 0), Is.True,
+                "Renaming a character must not lose access to its stored ships.");
+            Assert.That(BluespaceDockSystem.EntryBelongsToCharacter(owned, "ckey-one", "Mike Winterbells", 1), Is.False,
                 "Another character of the same player must not see it.");
+            Assert.That(BluespaceDockSystem.EntryBelongsToCharacter(owned, "ckey-two", "Mike Winterbells", 0), Is.False);
+
+            // Entries written before the slot field existed have no stable per-character key; the
+            // ckey is the only thing that survives a rename, so they fall back to it.
+            var legacy = new BluespaceDockEntry
+            {
+                OwnerUserId = "ckey-one",
+                OwnerName = "Mike Winterbells",
+                OwnerSlot = -1,
+            };
+
+            Assert.That(BluespaceDockSystem.EntryBelongsToCharacter(legacy, "ckey-one", "Renamed Character", 0), Is.True);
+            Assert.That(BluespaceDockSystem.EntryBelongsToCharacter(legacy, "ckey-two", "Renamed Character", 0), Is.False);
 
             // Admin-restored entries have no ckey (an ID card does not carry one) and match by name.
             var restored = new BluespaceDockEntry

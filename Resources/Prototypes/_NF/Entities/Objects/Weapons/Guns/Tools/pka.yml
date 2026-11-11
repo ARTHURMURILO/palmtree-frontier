@@ -131,6 +131,9 @@
   name: proto-kinetic accelerator cannon
   description: Fires high-damage kinetic bolts at a short range, strong enough to destroy hard rocks.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _NF/Objects/Weapons/Guns/Basic/kinetic_accelerator_cannon.rsi
   - type: Item
@@ -143,6 +146,9 @@
   id: NFWeaponPka
   parent: [ NFBaseWeaponFramePkaNanotrasen, NFBaseWeaponPkaChamberKineticMedium ]
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _NF/Objects/Weapons/Guns/Basic/kinetic_accelerator.rsi
   - type: Item
@@ -163,6 +169,9 @@
   name: sawn-off proto-kinetic accelerator
   description: Boundaries and rules are meant to be broken; otherwise, there will be no progress, but this thing here is a good argument against that statement.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _NF/Objects/Weapons/Guns/Basic/kinetic_accelerator_sawn.rsi
   - type: Item
@@ -180,6 +189,9 @@
   suffix: Cyborg
   description: Fires low-damage kinetic bolts at a short range. Specially adapted for cyborgs.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Wieldable
     freeHandsRequired: 0
 
@@ -189,5 +201,8 @@
   suffix: Cyborg
   description: Fires high-damage kinetic bolts at a short range, strong enough to destroy hard rocks. Specially adapted for cyborgs.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Wieldable
     freeHandsRequired: 0

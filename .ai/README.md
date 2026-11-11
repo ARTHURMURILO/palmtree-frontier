@@ -103,9 +103,14 @@ Fork modules are folder/namespace prefixes:
 | `.ai/systems/consent-and-erp.md` | NSFW age gate (account flag, lobby prompt, `nsfwtoggle`, what it gates), ERP feature set, how to add full consent later |
 | `.ai/systems/interaction-panel.md` | Sandstorm interaction panel port: prototypes, organ-based genitals, session consent, lust/moans, UI, keybind |
 | `.ai/systems/genital-organs.md` | Organ-based genitals replacing genital markings: catalog, profile/DB, editor tab, cum overlay and semen drip |
+| `.ai/systems/circuitry.md` | Programmable assemblies: Lua CPU runtime, modules, movement, perception, actions, UI, hazards |
+| `.ai/systems/circuitry-lua-api.md` | Living Lua API reference for `robot`: signatures, return shapes, hardware requirements, limits, gotchas |
 | `.ai/systems/game-ticker.md` | Round state machine, presets, rules, maps, spawn |
+| `.ai/systems/atmos-heat-pump.md` | Heat pump: the two-port thermomachine from /tg/station, its maths, efficiency, safeties and deviations |
 | `.ai/systems/core-gameplay.md` | Interactions, body/damage, atmos, power, chemistry, construction, NPC, shuttles |
+| `.ai/systems/atmos-temperature-devices.md` | Temperature gate/pump, heat exchanger, atmos meter: /tg/ maths, pipe layers, sprites, RPD wiring |
 | `.ai/systems/content-pipeline-and-tooling.md` | Prototypes, localization, maps, tests, CI, packaging |
+| `.ai/guides/prototype-tutorial.md` | Beginner-friendly prototype authoring: YAML, inheritance, components, sprites, other prototype kinds, testing |
 | `.ai/guides/porting-from-coyote.md` | Repeatable method for porting Coyote/Floof content into this repo |
 | `.ai/guides/porting-from-ss13.md` | Porting BYOND SS13 features, `.dmm` maps and sprites into this repo |
 | `.ai/guides/adding-markings.md` | Adding markings (normal, genital, kind-shared, layered, digitigrade) |
@@ -121,6 +126,7 @@ Fork modules are folder/namespace prefixes:
 
 | Guide | Answers |
 |---|---|
+| `.ai/guides/prototype-tutorial.md` | How to write/create entity and non-entity prototypes, with real examples and a no-code walkthrough |
 | `.ai/guides/porting-from-coyote.md` | How to port content from `coyote-frontier` and other forks, field adaptations, asset copying, lint gates |
 | `.ai/guides/porting-from-ss13.md` | BYOND SS13 sources, TGM `.dmm` parsing, format-7 map generation, sprite limits, SS13→SS14 concept mapping, hazards |
 | `.ai/guides/adding-markings.md` | `MarkingPrototype` fields, categories, `kindAllowance`, `layering`/`colorLinks`, `altSprites`, sprites/locale, genital rules |

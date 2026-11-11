@@ -49,6 +49,7 @@
   - GasRecyclerMachineCircuitboard
   - PortableScrubberMachineCircuitBoard
   - ThermomachineFreezerMachineCircuitBoard
+  - HeatPumpMachineCircuitBoard # Palmtree
   - CondenserMachineCircuitBoard
 
 - type: latheRecipePack
