@@ -525,6 +525,11 @@ client-side preference that scales every jukebox stream, separate from master vo
   `AudioComponent.Volume` every audio frame, so setting the live volume does not stick. The system
   stores each stream's server-provided base volume (copy the `AudioParams` struct out before reading
   `.Volume`, or the access analyzer flags it as an execute access) and reapplies base + offset.
+- The work runs in `FrameUpdate`, ordered `UpdatesBefore` the engine `AudioSystem`, not in `Update`.
+  `Update` runs during prediction: dirtying the networked `AudioComponent` there makes the client
+  reset it to the server state (full volume) and a new stream can play a frame or two before the
+  slider is applied. Frame updates run before audio processing and outside prediction, so the first
+  audible frame is already at the user's volume.
 - UI: `SliderVolumeJukebox` in `Content.Client/Options/UI/Tabs/AudioTab.xaml(.cs)`; locale in
   `Resources/Locale/en-US/_PS/audio.ftl`.
 
