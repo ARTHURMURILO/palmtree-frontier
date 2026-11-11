@@ -1511,6 +1511,9 @@
   recipeUnlocks:
   - ThermomachineFreezerMachineCircuitBoard
   - GasRecyclerMachineCircuitboard
+  - ElectrolyzerMachineCircuitboard # Funky
+  - CrystallizerMachineCircuitboard # Funky
+  - GasTurbineFlatpack # Funky
   position: 0, 34
 
 - type: technology
@@ -1537,6 +1540,7 @@
   cost: 2500
   recipeUnlocks:
   - PortableScrubberMachineCircuitBoard
+  - PipeScrubberMachineCircuitBoard # Funky
   prerequisiteLineType: Diagonal
   technologyPrerequisites:
   - NFAtmosphericTech
@@ -1557,6 +1561,24 @@
   technologyPrerequisites:
   - NFAtmosphericTech
   position: 1, 34
+
+- type: technology
+  id: NFHypertorusFusionReactor
+  name: nf-research-technology-hypertorus-fusion-reactor
+  entityIcon: HFRCore
+  discipline: NFEngineering
+  tier: 2
+  cost: 15000
+  recipeUnlocks:
+  - HFRCoreBox
+  - HFRCornerBox
+  - HFRFuelBox
+  - HFRModeratorBox
+  - HFRWasteBox
+  - HFRConsoleBox
+  technologyPrerequisites:
+  - NFAdvancedAtmospherics
+  position: 2, 34
 
 # region Jetpack
 

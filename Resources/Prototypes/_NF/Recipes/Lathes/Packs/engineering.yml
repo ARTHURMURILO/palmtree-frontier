@@ -51,9 +51,6 @@
   - ThermomachineFreezerMachineCircuitBoard
   - HeatPumpMachineCircuitBoard # Palmtree
   - CondenserMachineCircuitBoard
-  - ElectrolyzerMachineCircuitboard # Funky
-  - CrystallizerMachineCircuitboard # Funky
-  - PipeScrubberMachineCircuitBoard # Funky
 
 - type: latheRecipePack
   id: NFEngineeringMaterialsStatic
@@ -127,3 +124,25 @@
   - SuperMatterBinStockPart
   - PicoManipulatorStockPart
   - NFWeaponParticleDecelerator
+
+- type: latheRecipePack
+  id: NFAtmosMachineryEngineering
+  recipes:
+  - ElectrolyzerMachineCircuitboard # Funky
+  - CrystallizerMachineCircuitboard # Funky
+  - GasTurbineFlatpack # Funky
+
+- type: latheRecipePack
+  id: NFAtmosMachineryGeneral
+  recipes:
+  - PipeScrubberMachineCircuitBoard # Funky
+
+- type: latheRecipePack
+  id: NFAtmosMachineryHFR
+  recipes:
+  - HFRCoreBox # Funky
+  - HFRCornerBox # Funky
+  - HFRFuelBox # Funky
+  - HFRModeratorBox # Funky
+  - HFRWasteBox # Funky
+  - HFRConsoleBox # Funky

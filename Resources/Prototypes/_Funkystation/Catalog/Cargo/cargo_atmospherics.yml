@@ -13,3 +13,33 @@
   cost: 10000
   category: cargoproduct-category-name-atmospherics
   group: market
+
+- type: cargoProduct
+  id: AtmosElectrolyzerBoardOrder
+  icon:
+    sprite: Objects/Misc/module.rsi
+    state: engineering
+  product: ElectrolyzerMachineCircuitboard
+  cost: 750
+  category: cargoproduct-category-name-atmospherics
+  group: market
+
+- type: cargoProduct
+  id: AtmosCrystallizerBoardOrder
+  icon:
+    sprite: Objects/Misc/module.rsi
+    state: engineering
+  product: CrystallizerMachineCircuitboard
+  cost: 750
+  category: cargoproduct-category-name-atmospherics
+  group: market
+
+- type: cargoProduct
+  id: AtmosPipeScrubberBoardOrder
+  icon:
+    sprite: Objects/Misc/module.rsi
+    state: engineering
+  product: PipeScrubberMachineCircuitBoard
+  cost: 500
+  category: cargoproduct-category-name-atmospherics
+  group: market
