@@ -774,6 +774,113 @@ public sealed class BluespaceDockReactorSaveTest
     }
 
     /// <summary>
+    /// Files written before the storage gate existed (or hand-edited ones) can carry a running or
+    /// hot core. New files are always written cold and stopped, but a loaded ship must satisfy that
+    /// invariant no matter where its file came from: the load path safes the offending core and
+    /// logs it.
+    /// </summary>
+    [Test]
+    public async Task HandEditedLiveReactorLoadsColdAndStopped()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var res = server.ResolveDependency<IResourceManager>();
+
+        EntityUid loadedGrid = default;
+        MapId loadedMap = default;
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var grid = testMap.Grid.Owner;
+
+            var reactor = entMan.SpawnEntity("RbmkNuclearReactor",
+                new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            var rbmk = entMan.GetComponent<RbmkReactorComponent>(reactor);
+            rbmk.IsRunning = false;
+            rbmk.Temperature = 20f;
+            rbmk.DesiredK = 0.7f;
+
+            var drive = entMan.SpawnEntity("StormdriveReactor",
+                new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            var comp = entMan.GetComponent<StormdriveComponent>(drive);
+            comp.State = StormdriveState.Idle;
+            comp.Heat = 0f;
+            // A component whose fields all equal its prototype is omitted from the file entirely, so
+            // give the drive a non-default field to make sure its block is the one we edit below.
+            comp.ReactorId = "legacy-drive";
+
+            Assert.That(dock.FindLiveReactor(grid), Is.Null, "sanity: a cold, stopped grid is storable");
+
+            var path = BluespaceDockSystem.GetShipFilePath("hand-edited-live-reactor-load");
+            Assert.That(dock.TrySaveShipFile(grid, path, out var error), Is.True, error);
+
+            var fullPath = new ResPath($"{BluespaceDockSystem.ShipDirectory}/{path}");
+            string text;
+            using (var reader = res.UserData.OpenText(fullPath))
+            {
+                text = reader.ReadToEnd();
+            }
+
+            // Make the file look like one written by a build without the gate: a running RBMK at
+            // 800 °C and a running stormdrive at 800 heat.
+            const string rbmkMarker = "    - type: RbmkReactor\n";
+            var rbmkIndex = text.IndexOf(rbmkMarker, StringComparison.Ordinal);
+            Assert.That(rbmkIndex, Is.GreaterThanOrEqualTo(0), "sanity: the saved file has an RBMK block");
+            text = text.Insert(rbmkIndex + rbmkMarker.Length, "      running: true\n");
+            text = text.Replace("      temperature: 20\n", "      temperature: 800\n");
+
+            const string driveMarker = "    - type: Stormdrive\n";
+            var driveIndex = text.IndexOf(driveMarker, StringComparison.Ordinal);
+            Assert.That(driveIndex, Is.GreaterThanOrEqualTo(0), "sanity: the saved file has a stormdrive block");
+            text = text.Insert(driveIndex + driveMarker.Length,
+                "      state: Running\n" +
+                "      heat: 800\n");
+
+            using (var writer = res.UserData.OpenWriteText(fullPath))
+            {
+                writer.Write(text);
+            }
+
+            Assert.That(dock.TryLoadShipFile(path, out var loaded), Is.True, "Loading the edited file failed.");
+            loadedGrid = loaded!.Value;
+            loadedMap = entMan.GetComponent<TransformComponent>(loadedGrid).MapID;
+            dock.DeleteShipFile(path);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+
+            var loadedReactor = FindSingle<RbmkReactorComponent>(dock, entMan, loadedGrid);
+            Assert.That(loadedReactor, Is.Not.Null, "The retrieved ship lost its RBMK.");
+            var rbmk = entMan.GetComponent<RbmkReactorComponent>(loadedReactor!.Value);
+            Assert.That(rbmk.IsRunning, Is.False, "a legacy running core came back running");
+            Assert.That(rbmk.Temperature, Is.LessThan(50f), "a legacy hot core came back hot");
+            Assert.That(rbmk.DesiredK, Is.EqualTo(0f).Within(0.001f),
+                "the load-time scram should zero the setpoint of a running core");
+
+            var loadedDrive = FindSingle<StormdriveComponent>(dock, entMan, loadedGrid);
+            Assert.That(loadedDrive, Is.Not.Null, "The retrieved ship lost its stormdrive.");
+            var drive = entMan.GetComponent<StormdriveComponent>(loadedDrive!.Value);
+            Assert.That(drive.State, Is.EqualTo(StormdriveState.Idle),
+                "a legacy running drive came back outside Idle");
+            Assert.That(drive.Heat, Is.LessThan(50f), "a legacy hot drive came back hot");
+
+            Assert.That(dock.FindLiveReactor(loadedGrid), Is.Null,
+                "the loaded ship still violates the cold-and-stopped invariant");
+        });
+
+        await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));
+        await pair.RunTicksSync(2);
+        await server.WaitAssertion(() => server.System<SharedMapSystem>().DeleteMap(loadedMap));
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
     /// Finds the one entity on a loaded grid that has <typeparamref name="TComp"/>, or null.
     /// </summary>
     private static EntityUid? FindSingle<TComp>(BluespaceDockSystem dock, IEntityManager entMan, EntityUid grid)

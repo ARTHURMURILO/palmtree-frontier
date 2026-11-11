@@ -1725,6 +1725,20 @@ public sealed class BluespaceDockSystem : EntitySystem
             // ship must never come back with its buttons, switches or tools "on cooldown".
             ResetRuntimeCooldowns(shuttleUid.Value);
 
+            // Palmtree: everything this build writes is cold and stopped (FindLiveReactor is the
+            // store gate), but a file written before the gate existed - or a hand-edited one - can
+            // still carry a running or hot core. The transient flags were just normalised; what is
+            // left is the running/temperature state, so restore the gate's invariant here instead of
+            // letting a retrieved ship come back live with no gas behind it. This is defensive
+            // policy for pre-gate files; see .ai/ideas/reactor-ship-persistence.md.
+            if (FindLiveReactor(shuttleUid.Value) is { } liveReactor)
+            {
+                var safed = SafeReactors(shuttleUid.Value);
+                _sawmill.Warning($"Ship file {relativePath} contains a live reactor " +
+                                 $"({ToPrettyString(liveReactor)}); safed {safed} live reactor(s) on load " +
+                                 "so the retrieved ship is cold and stopped");
+            }
+
             // A stored ship is saved from a live grid, so every entity in the file carries
             // `mapInit: true` and the engine deliberately **skips MapInitEvent** when loading them
             // (it only bumps their life stage - that is what makes a re-loaded live save keep its
