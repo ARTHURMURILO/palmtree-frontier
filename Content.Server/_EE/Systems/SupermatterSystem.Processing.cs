@@ -186,6 +186,36 @@ public sealed partial class SupermatterSystem
             Gas.Oxygen,
             Math.Max((energy + gasReleased.Temperature * sm.HeatModifier - Atmospherics.T0C) / _config.GetCVar(ECCVars.SupermatterOxygenReleaseModifier), 0f));
 
+        // Assmos - /tg/ gases.
+        // Carbon dioxide and oxygen in the chamber turn into pluoxium.
+        if (mix.GetMoles(Gas.CarbonDioxide) > 0.01f)
+        {
+            var co2PP = gasReleased.Pressure * (mix.GetMoles(Gas.CarbonDioxide) / mix.TotalMoles * 100);
+            var co2Ratio = Math.Clamp(0.5f * (co2PP - 101.325f * 0.01f) / (co2PP + 101.325f * 0.25f), 0, 1);
+            var consumedCO2 = gasReleased.GetMoles(Gas.CarbonDioxide) * co2Ratio;
+            consumedCO2 = Math.Min(consumedCO2, Math.Min(gasReleased.GetMoles(Gas.Oxygen), gasReleased.GetMoles(Gas.CarbonDioxide)));
+
+            if (consumedCO2 > 0)
+            {
+                gasReleased.AdjustMoles(Gas.CarbonDioxide, -consumedCO2);
+                gasReleased.AdjustMoles(Gas.Oxygen, -consumedCO2);
+                gasReleased.AdjustMoles(Gas.Pluoxium, consumedCO2);
+            }
+        }
+
+        // Anti-noblium and helium fuse into hyper-noblium.
+        if (mix.GetMoles(Gas.AntiNoblium) > 0.01f && mix.GetMoles(Gas.Helium) > 0.01f)
+        {
+            var consumedAN = Math.Min(gasReleased.GetMoles(Gas.Helium), gasReleased.GetMoles(Gas.AntiNoblium)) * 0.5f;
+
+            if (consumedAN > 0)
+            {
+                gasReleased.AdjustMoles(Gas.AntiNoblium, -consumedAN);
+                gasReleased.AdjustMoles(Gas.Helium, -consumedAN);
+                gasReleased.AdjustMoles(Gas.HyperNoblium, consumedAN);
+            }
+        }
+
         _atmosphere.Merge(mix, gasReleased);
 
         var powerReduction = (float)Math.Pow(sm.Power / 500, 3);
