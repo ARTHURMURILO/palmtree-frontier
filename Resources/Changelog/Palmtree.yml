@@ -2148,3 +2148,13 @@ Entries:
   time: '2026-11-10T23:58:45.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/42668750c85f60b26ab6523e92046a0d1426f6d7
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        Fixed jukeboxes briefly playing at full volume after the volume slider
+        was lowered.
+  id: 90142
+  time: '2026-11-11T00:10:00.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/99d41838a600e72dc341ad1d430bb21ac936e327
