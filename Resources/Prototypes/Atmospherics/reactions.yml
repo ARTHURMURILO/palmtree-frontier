@@ -107,7 +107,7 @@
 #      gas: 5
 #      reagent: Water
 
- # Assmos - /tg/ gases
+# Assmos - /tg/ gases
 - type: gasReaction
   id: bzProduction
   priority: 2
