@@ -1,0 +1,51 @@
+# SPDX-FileCopyrightText: 2025 Steve <marlumpy@gmail.com>
+# SPDX-FileCopyrightText: 2025 taydeo <td12233a@gmail.com>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later AND MIT
+
+- type: entity
+  id: ElectrolyzerMachineCircuitboard
+  parent: BaseMachineCircuitboard
+  name: electrolyzer machine board
+  description: A machine printed circuit board for an electrolyzer.
+  components:
+  - type: Sprite
+    state: engineering
+  - type: MachineBoard
+    prototype: Electrolyzer
+    stackRequirements:
+      Steel: 5
+      Capacitor: 4
+      CableHV: 5
+      Plasteel: 2
+
+- type: entity
+  id: CrystallizerMachineCircuitboard
+  parent: BaseMachineCircuitboard
+  name: crystallizer machine board
+  description: A machine printed circuit board for a crystallizer.
+  components:
+  - type: MachineBoard
+    prototype: Crystallizer
+    stackRequirements:
+      Steel: 5
+      Glass: 5
+      Capacitor: 2
+      Manipulator: 4
+      MatterBin: 4
+
+- type: entity
+  id: PipeScrubberMachineCircuitBoard
+  parent: BaseMachineCircuitboard
+  name: pipe scrubber machine board
+  description: A machine printed circuit board for a pipe scrubber.
+  components:
+  - type: Sprite
+    state: engineering
+  - type: MachineBoard
+    prototype: PipeScrubber
+    stackRequirements:
+      MatterBin: 1
+      Manipulator: 2
+      Cable: 5
+      Glass: 2

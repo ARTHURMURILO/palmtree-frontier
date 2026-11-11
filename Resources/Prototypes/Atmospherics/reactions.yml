@@ -106,3 +106,461 @@
 #    - !type:WaterVaporReaction
 #      gas: 5
 #      reagent: Water
+
+ # Assmos - /tg/ gases
+- type: gasReaction
+  id: bzProduction
+  priority: 2
+  maximumTemperature: 313.149 # Atmospherics.FireMinimumTemperatureToExist - 60
+  minimumRequirements:
+  - 0 # oxygen
+  - 0 # nitrogen
+  - 0 # carbon dioxide
+  - 10 # plasma
+  - 0 # tritium
+  - 0 # water vapor
+  - 0 # ammonia
+  - 10 # n2o
+  - 0 # frezon
+  - 0 # respiron
+  - 0 # helium
+  - 0 # nucleium (NSV13, reserved)
+  - 0 # bz
+  - 0 # healium
+  - 0 # nitrium
+  - 0 # pluoxium
+  - 0 # hydrogen
+  - 0 # hyper-noblium
+  - 0 # proto-nitrate
+  - 0 # zauker
+  - 0 # halon
+  - 0 # anti-noblium
+  effects:
+  - !type:BZProductionReaction {}
+
+- type: gasReaction
+  id: HealiumProduction
+  priority: 2
+  maximumTemperature: 300.0
+  minimumTemperature: 22.0
+  minimumRequirements:
+  - 0 # oxygen
+  - 0 # nitrogen
+  - 0 # carbon dioxide
+  - 0 # plasma
+  - 0 # tritium
+  - 0 # water vapor
+  - 0 # ammonia
+  - 0 # n2o
+  - 5 # frezon
+  - 0 # respiron
+  - 0 # helium
+  - 0 # nucleium (NSV13, reserved)
+  - 5 # bz
+  - 0 # healium
+  - 0 # nitrium
+  - 0 # pluoxium
+  - 0 # hydrogen
+  - 0 # hyper-noblium
+  - 0 # proto-nitrate
+  - 0 # zauker
+  - 0 # halon
+  - 0 # anti-noblium
+  effects:
+  - !type:HealiumProductionReaction {}
+
+- type: gasReaction
+  id: NitriumProduction
+  priority: 2
+  minimumTemperature: 1500.0
+  minimumRequirements:
+  - 0 # oxygen
+  - 10 # nitrogen
+  - 0 # carbon dioxide
+  - 0 # plasma
+  - 20 # tritium
+  - 0 # water vapor
+  - 0 # ammonia
+  - 0 # n2o
+  - 0 # frezon
+  - 0 # respiron
+  - 0 # helium
+  - 0 # nucleium (NSV13, reserved)
+  - 5 # bz
+  - 0 # healium
+  - 0 # nitrium
+  - 0 # pluoxium
+  - 0 # hydrogen
+  - 0 # hyper-noblium
+  - 0 # proto-nitrate
+  - 0 # zauker
+  - 0 # halon
+  - 0 # anti-noblium
+  effects:
+  - !type:NitriumProductionReaction {}
+
+- type: gasReaction
+  id: NitriumDecomposition
+  priority: 2
+  maximumTemperature: 343.15
+  minimumRequirements:
+  - 0.01 # oxygen
+  - 0 # nitrogen
+  - 0 # carbon dioxide
+  - 0 # plasma
+  - 0 # tritium
+  - 0 # water vapor
+  - 0 # ammonia
+  - 0 # n2o
+  - 0 # frezon
+  - 0 # respiron
+  - 0 # helium
+  - 0 # nucleium (NSV13, reserved)
+  - 0 # bz
+  - 0 # healium
+  - 0.01 # nitrium
+  - 0 # pluoxium
+  - 0 # hydrogen
+  - 0 # hyper-noblium
+  - 0 # proto-nitrate
+  - 0 # zauker
+  - 0 # halon
+  - 0 # anti-noblium
+  effects:
+  - !type:NitriumDecompositionReaction {}
+
+- type: gasReaction
+  id: PluoxiumProduction
+  priority: 3
+  minimumTemperature: 50.0
+  maximumTemperature: 273.15
+  minimumRequirements:
+  - 0.01 # oxygen
+  - 0 # nitrogen
+  - 0.01 # carbon dioxide
+  - 0 # plasma
+  - 0.01 # tritium
+  - 0 # water vapor
+  - 0 # ammonia
+  - 0 # n2o
+  - 0 # frezon
+  - 0 # respiron
+  - 0 # helium
+  - 0 # nucleium (NSV13, reserved)
+  - 0 # bz
+  - 0 # healium
+  - 0 # nitrium
+  - 0 # pluoxium
+  - 0 # hydrogen
+  - 0 # hyper-noblium
+  - 0 # proto-nitrate
+  - 0 # zauker
+  - 0 # halon
+  - 0 # anti-noblium
+  effects:
+  - !type:PluoxiumTritiumProductionReaction {}
+
+- type: gasReaction
+  id: PluoxiumRadiationProduction
+  priority: 4
+  minimumTemperature: 50.0
+  maximumTemperature: 273.15
+  minimumRequirements:
+  - 5 # oxygen
+  - 0 # nitrogen
+  - 5 # carbon dioxide
+  - 0 # plasma
+  - 0 # tritium
+  - 0 # water vapor
+  - 0 # ammonia
+  - 0 # n2o
+  - 0 # frezon
+  - 0 # respiron
+  - 0 # helium
+  - 0 # nucleium (NSV13, reserved)
+  - 0 # bz
+  - 0 # healium
+  - 0 # nitrium
+  - 0 # pluoxium
+  - 0 # hydrogen
+  - 0 # hyper-noblium
+  - 0 # proto-nitrate
+  - 0 # zauker
+  - 0 # halon
+  - 0 # anti-noblium
+  effects:
+  - !type:PluoxiumRadiationProductionReaction {}
+
+- type: gasReaction
+  id: MetalHydrogenReaction
+  priority: 1
+  maximumTemperature: 273.2
+  minimumRequirements:
+  - 0 # oxygen
+  - 0 # nitrogen
+  - 0 # carbon dioxide
+  - 0 # plasma
+  - 0 # tritium
+  - 0 # water vapor
+  - 0 # ammonia
+  - 0 # n2o
+  - 0 # frezon
+  - 0 # respiron
+  - 0 # helium
+  - 0 # nucleium (NSV13, reserved)
+  - 50 # bz
+  - 0 # healium
+  - 0 # nitrium
+  - 0 # pluoxium
+  - 300 # hydrogen
+  - 0 # hyper-noblium
+  - 0 # proto-nitrate
+  - 0 # zauker
+  - 0 # halon
+  - 0 # anti-noblium
+  effects:
+  - !type:MetalHydrogenReaction {}
+
+- type: gasReaction
+  id: HydrogenFire
+  priority: -1
+  minimumTemperature: 373.149 # Same as Atmospherics.FireMinimumTemperatureToExist
+  minimumRequirements: # In this case, same as minimum mole count.
+  - 0.01 # oxygen
+  - 0 # nitrogen
+  - 0 # carbon dioxide
+  - 0 # plasma
+  - 0 # tritium
+  - 0 # water vapor
+  - 0 # ammonia
+  - 0 # nitrous oxide
+  - 0 # frezon
+  - 0 # respiron
+  - 0 # helium
+  - 0 # nucleium (NSV13, reserved)
+  - 0 # bz
+  - 0 # healium
+  - 0 # nitrium
+  - 0 # pluoxium
+  - 0.01 # hydrogen
+  - 0 # hyper-noblium
+  - 0 # proto-nitrate
+  - 0 # zauker
+  - 0 # halon
+  - 0 # anti-noblium
+  effects:
+  - !type:HydrogenFireReaction {}
+
+- type: gasReaction
+  id: HyperNobliumProduction
+  priority: 7
+  minimumTemperature: 2.7
+  maximumTemperature: 15
+  minimumRequirements:
+  - 0 # oxygen
+  - 10 # nitrogen
+  - 0 # carbon dioxide
+  - 0 # plasma
+  - 5 # tritium
+  - 0 # water vapor
+  - 0 # ammonia
+  - 0 # n2o
+  - 0 # frezon
+  - 0 # respiron
+  - 0 # helium
+  - 0 # nucleium (NSV13, reserved)
+  - 0 # bz
+  - 0 # healium
+  - 0 # nitrium
+  - 0 # pluoxium
+  - 0 # hydrogen
+  - 0 # hyper-noblium
+  - 0 # proto-nitrate
+  - 0 # zauker
+  - 0 # halon
+  - 0 # anti-noblium
+  effects:
+  - !type:HyperNobliumProductionReaction {}
+
+- type: gasReaction
+  id: HalonOxygenAbsorption
+  priority: -4
+  minimumTemperature: 373.149
+  minimumRequirements:
+  - 0.01 # oxygen
+  - 0 # nitrogen
+  - 0 # carbon dioxide
+  - 0 # plasma
+  - 0 # tritium
+  - 0 # water vapor
+  - 0 # ammonia
+  - 0 # n2o
+  - 0 # frezon
+  - 0 # respiron
+  - 0 # helium
+  - 0 # nucleium (NSV13, reserved)
+  - 0 # bz
+  - 0 # healium
+  - 0 # nitrium
+  - 0 # pluoxium
+  - 0 # hydrogen
+  - 0 # hyper-noblium
+  - 0 # proto-nitrate
+  - 0 # zauker
+  - 0.01 # halon
+  - 0 # anti-noblium
+  effects:
+  - !type:HalonOxygenAbsorptionReaction {}
+
+- type: gasReaction
+  id: ZaukerProduction
+  priority: 9
+  minimumTemperature: 50000
+  maximumTemperature: 75000
+  minimumRequirements:
+  - 0 # oxygen
+  - 0 # nitrogen
+  - 0 # carbon dioxide
+  - 0 # plasma
+  - 0 # tritium
+  - 0 # water vapor
+  - 0 # ammonia
+  - 0 # n2o
+  - 0 # frezon
+  - 0 # respiron
+  - 0 # helium
+  - 0 # nucleium (NSV13, reserved)
+  - 0 # bz
+  - 0 # healium
+  - 0.01 # nitrium
+  - 0 # pluoxium
+  - 0 # hydrogen
+  - 0.01 # hyper-noblium
+  - 0 # proto-nitrate
+  - 0 # zauker
+  - 0 # halon
+  - 0 # anti-noblium
+  effects:
+  - !type:ZaukerProductionReaction {}
+
+- type: gasReaction
+  id: ZaukerDecomposition
+  priority: 10
+  minimumRequirements:
+  - 0 # oxygen
+  - 0.01 # nitrogen
+  - 0 # carbon dioxide
+  - 0 # plasma
+  - 0 # tritium
+  - 0 # water vapor
+  - 0 # ammonia
+  - 0 # n2o
+  - 0 # frezon
+  - 0 # respiron
+  - 0 # helium
+  - 0 # nucleium (NSV13, reserved)
+  - 0 # bz
+  - 0 # healium
+  - 0 # nitrium
+  - 0 # pluoxium
+  - 0 # hydrogen
+  - 0 # hyper-noblium
+  - 0 # proto-nitrate
+  - 0.01 # zauker
+  - 0 # halon
+  - 0 # anti-noblium
+  effects:
+  - !type:ZaukerDecompositionReaction {}
+
+- type: gasReaction
+  id: ProtoNitrateProduction
+  priority: 11
+  minimumTemperature: 5000
+  maximumTemperature: 10000
+  minimumRequirements:
+  - 0 # oxygen
+  - 0 # nitrogen
+  - 0 # carbon dioxide
+  - 0 # plasma
+  - 0 # tritium
+  - 0 # water vapor
+  - 0 # ammonia
+  - 0 # n2o
+  - 0 # frezon
+  - 0 # respiron
+  - 0 # helium
+  - 0 # nucleium (NSV13, reserved)
+  - 0 # bz
+  - 0 # healium
+  - 0 # nitrium
+  - 0.01 # pluoxium
+  - 0.01 # hydrogen
+  - 0 # hyper-noblium
+  - 0 # proto-nitrate
+  - 0 # zauker
+  - 0 # halon
+  - 0 # anti-noblium
+  effects:
+  - !type:ProtoNitrateProductionReaction {}
+
+- type: gasReaction
+  id: ProtoNitrateConversion
+  priority: 12
+  minimumRequirements:
+  - 0 # oxygen
+  - 0 # nitrogen
+  - 0 # carbon dioxide
+  - 0 # plasma
+  - 0 # tritium
+  - 0 # water vapor
+  - 0 # ammonia
+  - 0 # n2o
+  - 0 # frezon
+  - 0 # respiron
+  - 0 # helium
+  - 0 # nucleium (NSV13, reserved)
+  - 0 # bz
+  - 0 # healium
+  - 0 # nitrium
+  - 0 # pluoxium
+  - 0 # hydrogen
+  - 0 # hyper-noblium
+  - 100 # proto-nitrate
+  - 0 # zauker
+  - 0 # halon
+  - 0 # anti-noblium
+  effects:
+  - !type:ProtoNitrateConversionReaction {}
+
+- type: gasReaction
+  id: ProtoNitrateBZConversionReaction
+  priority: 13
+  minimumTemperature: 260
+  maximumTemperature: 280
+  minimumRequirements:
+  - 0 # oxygen
+  - 0 # nitrogen
+  - 0 # carbon dioxide
+  - 0 # plasma
+  - 0 # tritium
+  - 0 # water vapor
+  - 0 # ammonia
+  - 0 # n2o
+  - 0 # frezon
+  - 0 # respiron
+  - 0 # helium
+  - 0 # nucleium (NSV13, reserved)
+  - 0.01 # bz
+  - 0 # healium
+  - 0 # nitrium
+  - 0 # pluoxium
+  - 0 # hydrogen
+  - 0 # hyper-noblium
+  - 0.01 # proto-nitrate
+  - 0 # zauker
+  - 0 # halon
+  - 0 # anti-noblium
+  effects:
+  - !type:ProtoNitrateBZConversionReaction {}
+
+# Assmos - /tg/ gases end

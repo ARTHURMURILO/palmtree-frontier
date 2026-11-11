@@ -178,6 +178,41 @@ end
 
 ### Events and hearing
 
+Hooks are the easiest way to subscribe to events. They are GLua-style and run whenever the
+script yields through `robot.wait`, `wait_event`, `walk_to`, or a synchronous action:
+
+```lua
+hook.Add("speech", "greet_lily", function(ev)
+    if ev.name:lower():find("lily", 1, true) then
+        if ev.message:lower():find("hi", 1, true) then
+            robot.say("Hi!")
+        end
+    end
+end)
+
+function main()
+    while true do
+        robot.wait(1)
+    end
+end
+```
+
+| Function | Behavior |
+|---|---|
+| `hook.Add(event, name, callback)` | Adds or replaces a named hook. `event` is a string such as `"speech"`, `"radio"`, `"emote"`, `"signal"`, `"damage"`, `"attacked"` or `"projectile"`. Use `"*"` for every event. |
+| `hook.Remove(event, name)` | Removes a named hook. |
+| `hook.Has(event, name)` | Returns whether a named hook exists. |
+| `hook.Run(event [, payload])` | Manually dispatches a hook event. `hook.Call` is an alias. |
+| `hook` | Global hook table; installed by the sandbox. |
+
+- Hook callbacks receive the same event table shape as `robot.wait_event`.
+- Hooks are observers. They do not consume the event, so `wait_event` can still return it.
+- Hooks run only when the Lua program yields. A loop with no `wait` will still hit the normal
+  no-wait CPU budget.
+- `hook.Run`/`hook.Call` dispatch immediately and do not enqueue an event.
+
+The polling form remains available:
+
 ```lua
 local ev = robot.wait_event(2)
 if ev and ev.type == "speech" then
@@ -995,7 +1030,9 @@ source to the assembly's `Trigger` sink, and the assembly's source ports to any 
 | `robot.use_item(handle)` | Manipulator, active held item, power | `true` after any do-after, or `false, reason` |
 | `robot.interact(handle)` / `robot.harvest(handle)` | Manipulator, power | `true` after any do-after, or `false, reason` |
 | `robot.plant(handle)` | Same as `use_item` | `true` after any do-after, or `false, reason` |
-| `robot.attack(handle)` | Manipulator, melee weapon, power | `true` or `false, reason` |
+| `robot.attack(handle)` | Manipulator, melee weapon, power | `true` or `false, reason`; temporarily enables combat mode for the swing |
+| `robot.combat([enabled])` | Assembly | Current combat state, or `false, reason` for a non-boolean argument |
+| `robot.point(handle)` | Manipulator, power | `true` or `false, reason`; spawns the normal pointing arrow |
 | `robot.shoot(handle)` | Manipulator, gun in hand, line of sight | `true` or `false, reason` |
 | `robot.inject(handle)` | Manipulator, syringe/injector in active hand, power | `true` after the injection do-after, or `false, reason` |
 
@@ -1016,7 +1053,13 @@ synchronous wrappers; normal scripts should use the high-level functions.
 - `interact` raises an `InteractHandEvent` (for example, harvesting a hydroponics tray).
 - `plant` is an alias for `use_item`.
 - `harvest` is an alias for `interact`.
-- `attack` uses the active hand's melee weapon.
+- `attack` uses the active hand's melee weapon. It temporarily enables combat mode if necessary,
+  then restores the previous state, so a one-off attack cannot leave the assembly stuck in combat
+  mode. It returns `false, "attack cooldown"` while the weapon is still recovering.
+- `robot.combat(true)` / `robot.combat(false)` sets a persistent combat stance. `robot.combat()`
+  returns the current state. Scripts that attack repeatedly should enable combat mode explicitly.
+- `point` points at the target with the normal `PointingArrow` effect. It has a 0.5 s cooldown and
+  does not send the player-chat popup text that a player's Ctrl+Shift+Middle Click does.
 - `shoot` uses the active hand's gun. The target check uses at least 20 metres of line of sight, or
   the sensor range if larger; the target does **not** need to be within manipulator hand range.
 
@@ -1041,6 +1084,15 @@ that take an optional `slot`.
 - Amounts are capped at 1000 units.
 - `transfer` moves reagents between any two containers, such as a carried bucket and a syringe.
 - `transfer_to`/`transfer_from` also understand syringes and droppers by using their injector solution.
+- Transfers update **both** the source and destination containers, so sprites, examine text and open
+  UIs refresh immediately. Emptying a bucket or beaker no longer leaves its client-side fill level
+  stuck at the old volume.
+- Transfers move as much as fits; `true` means at least some reagents moved. Read `reagents()`
+  again for the new volume.
+- `beakers()` and `reagents()` return snapshots. Re-query them after a transfer instead of caching
+  the returned table; the table does not update itself when reagents move.
+- Empty and full failures return a specific reason such as `beaker slot 1 is empty`,
+  `target container is empty`, `target is full` or `source container is empty`.
 - `dispense` reads a reagent dispenser's storage and transfers into a beaker:
   - `selector` can be a string matched against the stored container's name or reagent prototype,
     or a 1-based numeric index. If omitted, the first stored container is used.
@@ -1443,6 +1495,8 @@ programs; scripts always require an explicit Run.
 | Sensor query budget | 4 per second, burst of 4 (`scan`, `find`, `nearest_*`, `scan_puddles`) |
 | `say` rate limit | 0.5 seconds |
 | `radio` rate limit | 1 second |
+| Pointing cooldown | 0.5 seconds |
+| Pointing range | 15 tiles |
 | Power transfer rate limit | 0.5 seconds |
 | Power transfer range | 2 tiles by default, 4 maximum |
 | Signal/trigger rate limit | 0.5 seconds |
@@ -2036,6 +2090,8 @@ element of the same shape, and all positions are local grid coordinates in tiles
 | `robot.use(handle)` | `true` after any do-after | `false, reason` |
 | `robot.use_item(handle)` | `true` after any do-after | `false, reason` |
 | `robot.attack(handle)` | `true` | `false, reason` |
+| `robot.combat([enabled])` | current combat state (`boolean`) | `false, reason` for an invalid argument |
+| `robot.point(handle)` | `true` | `false, reason` |
 | `robot.shoot(handle)` | `true` | `false, reason` |
 | `robot.interact(handle)` / `robot.harvest(handle)` | `true` after any do-after | `false, reason` |
 | `robot.plant(handle)` | `true` after any do-after | `false, reason` |
@@ -2099,6 +2155,9 @@ When changing the API:
 | 2026-11-09 | Replaced the engine editor with a custom inline-syntax-colored Lua editor (line numbers, selection, copy/paste, tab indentation, undo/redo). Added multi-port signal sources, transfer rate limiting, Bluespace Dock/grid persistence coverage, puddle chemical analysis, ChemMaster automation, job/access/wanted queries, and chassis variants. |
 | 2026-11-10 | Standard sensor range is now 16 tiles. `find`/`nearest_*` search the full range instead of only the 16 nearest entities. Sensor lookups share a 4-per-second token bucket, and `walk_to` rate-limits/retargets path starts so tight follow loops cannot spam pathfinding or trip the allocation watchdog. |
 | 2026-11-10 | Multi-result scans now cap at 200 results instead of 16. The scanner raycasts nearest-first only until the cap is filled, so the larger result set does not multiply line-of-sight checks. |
+| 2026-11-11 | Fixed circuit reagent transfers leaving the source container stale. Transfers now update both ends, empty/full failures return explicit reasons, and all action APIs report a reason instead of `false, nil`. |
+| 2026-11-10 | Added `robot.combat([enabled])` and `robot.point(handle)` for manipulator-equipped assemblies. Melee `attack` temporarily enables combat mode and restores the previous stance. |
+| 2026-11-10 | Added GLua-style `hook.Add`/`Remove`/`Has`/`Run`/`Call` event hooks. Hooks are pumped when the script waits and do not consume events from `wait_event`. |
 | 2026-11-10 | Added battery inspection and power transfer APIs: `battery`, `charge`, and `charge_from`. Assemblies can draw from nearby APCs/batteries and charge held or nearby cells/guns. |
 | 2026-11-10 | Fixed `shoot` incorrectly requiring the target to be within manipulator hand range; ranged attacks now use sight range. |
 | 2026-11-10 | `walk_to` and `walk_to_async` now accept a single entity handle as an alternative to `x, y`, so scripts can walk directly to `find`/`nearest_*` results. |

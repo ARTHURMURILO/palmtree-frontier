@@ -15,11 +15,11 @@
   while chassis construction, sound and balance work remain. Phase 5 (hardening) is in progress:
   grid and Bluespace Dock persistence, ownership administration, a Lua kill switch, editor coverage,
   Lua soak/queue tests and a many-assembly stress test are in place.
-- Validation: solution build, YAMLLinter, Content.Tests, and 35 targeted `Circuitry*` integration
+- Validation: solution build, YAMLLinter, Content.Tests, and 39 targeted `Circuitry*` integration
   tests pass (assembly/Lua, hearing, inspect, BUI open, analyzers/dispenser, ChemMaster, security,
   radio, power budget, scan kinds, signals, item/solution autonomy, decals/doors, puddles, events,
   editor Run auto-save, gas analyzer, grid save/load, Bluespace Dock round-trip, many-assembly
-  stress, 16-tile sensor range, dense-room find, sensor-query throttling, synchronous and async walk-to, entity-handle walking, no-path retries, held-item UI/examine, power transfer, ranged shooting at sight range, and synchronous do-after actions).
+  stress, 16-tile sensor range, dense-room find, sensor-query throttling, synchronous and async walk-to, entity-handle walking, no-path retries, held-item UI/examine, power transfer, ranged shooting at sight range, GLua-style event hooks, combat-mode melee, robot pointing, and synchronous do-after actions).
   The BUI test covers the installed-CPU editor and a CPU held in hand.
 
 ### Implemented Phases 1–3
@@ -74,6 +74,12 @@
   reporting. Their `_async` variants expose the old immediate behavior. Instant actions (pickup,
   drop, attack, shoot, transfers, dispensing, ChemMaster, send_signal) are unchanged. `shoot`
   checks ranged line of sight (at least 20 tiles), not the 1.5-tile manipulator hand range.
+  `attack` temporarily enables combat mode and restores the previous stance; `robot.combat(true/
+  false)` sets a persistent stance. `point` spawns the normal pointing arrow and requires a
+  manipulator. Action APIs return `false, reason` on failure instead of a bare `false`.
+- Reagent transfers update both the source and destination solutions. Emptying a bucket, beaker or
+  dispenser updates its sprite, examine text and UI immediately; empty/full failures report
+  `beaker slot N is empty`, `target is full` and similar reasons.
 - Sensor module range is 16 tiles and multi-result scans cap at 200 rows. Sensor lookups share a
   4-per-second token bucket (burst of 4), so a tight `find`/`scan` loop gets `scan cooldown`
   instead of rescanning hundreds of times per resume. The scanner sorts candidates and raycasts
@@ -85,7 +91,9 @@
   dispensing.
 - `CircuitHearingSystem` queues local `EntitySpokeEvent`s; `robot.poll_event()` returns speech
   events with speaker handle, name, ID name/job and message. `robot.wait_event(timeout)` is a Lua
-  shim over `poll_event` + `robot.wait` (50 ms slices).
+  shim over `poll_event` + `robot.wait` (50 ms slices). A GLua-style `hook.Add`/`Remove`/`Has`/
+  `Run`/`Call` layer wraps the event queue and dispatches hooks whenever the script yields; hooks
+  observe events without consuming them from `wait_event`.
 - Sensor conveniences: `scan_mobs`, `scan_items`, `scan_structures`, `scan_doors`,
   `nearest_mob`, `nearest_person`, `nearest_item`, `nearest_structure`, `nearest_door`,
   `get_tile_relative`/`tile`, `entities_on_tile`, `distance`, `position_of`, `decals`, `scan_puddles`,

@@ -132,18 +132,14 @@ public sealed partial class InteractionPanelSystem
             EmitClimax(uid, partner, proto);
     }
 
-    /// <summary>How much fluid one floor decal represents when a climax spills.</summary>
-    private const double FluidPerClimaxDecal = 50;
-
-    /// <summary>Maximum number of floor decals a single climax can leave.</summary>
-    private const int MaxClimaxDecals = 3;
+    /// <summary>Male internal endings only spill a floor decal above this amount.</summary>
+    private const double MaleOverflowThreshold = 50;
 
     /// <summary>
     /// Releases the actor's entire fluid volume at once according to the interaction's
-    /// <see cref="InteractionPrototype.CumTarget"/>. Internal endings store the whole amount in the
-    /// partner and spill floor decals when the release is above 50u (one per 50u, capped at three);
-    /// exterior endings always leave at least one decal. Vagina-only climaxes use the SPLURT fem
-    /// decals, also one per 50u (capped at three).
+    /// <see cref="InteractionPrototype.CumTarget"/>. Internal male endings store the whole amount in
+    /// the partner and spill a single floor decal when the release is above 50u. Exterior endings
+    /// and female climaxes each leave a single decal.
     /// </summary>
     private void EmitClimax(EntityUid uid, EntityUid? partner, InteractionPrototype? proto)
     {
@@ -158,13 +154,10 @@ public sealed partial class InteractionPanelSystem
         if (amount <= 0)
             return;
 
-        var decalCount = GetClimaxDecalCount(amount);
-
         if (!hasPenis)
         {
-            // Female squirt: a random fem decal per 50u, capped at three, under the actor.
-            for (var i = 0; i < decalCount; i++)
-                _drip.SpawnFemDecals(uid);
+            // Female squirt: a single random fem decal under the actor.
+            _drip.SpawnFemDecals(uid);
         }
         else
         {
@@ -185,12 +178,9 @@ public sealed partial class InteractionPanelSystem
                         ? "interaction-cum-received-held"
                         : "interaction-cum-received"), other, other);
 
-                    // A release above 50u spills onto the floor; overflow costs no stored fluid.
-                    if (amount > FluidPerClimaxDecal)
-                    {
-                        for (var i = 0; i < decalCount; i++)
-                            _drip.SpawnCumDecals(other, amount);
-                    }
+                    // Only a release above 50u spills; overflow costs no stored fluid.
+                    if (amount > MaleOverflowThreshold)
+                        _drip.SpawnCumDecals(other, amount);
 
                     break;
 
@@ -204,11 +194,8 @@ public sealed partial class InteractionPanelSystem
                         ? "interaction-cum-received-held"
                         : "interaction-cum-received"), other, other);
 
-                    if (amount > FluidPerClimaxDecal)
-                    {
-                        for (var i = 0; i < decalCount; i++)
-                            _drip.SpawnCumDecals(other, amount);
-                    }
+                    if (amount > MaleOverflowThreshold)
+                        _drip.SpawnCumDecals(other, amount);
 
                     break;
 
@@ -223,9 +210,8 @@ public sealed partial class InteractionPanelSystem
                 default:
                     SendCumMessage(uid, other, proto, hasPartner, "interaction-cum-exterior");
 
-                    // Ejaculation leaves the full cum decals; the drip reservoir only ever makes droplets.
-                    for (var i = 0; i < decalCount; i++)
-                        _drip.SpawnCumDecals(other, amount);
+                    // Ejaculation leaves a single full cum decal; the drip reservoir only ever makes droplets.
+                    _drip.SpawnCumDecals(other, amount);
                     break;
             }
         }
@@ -233,12 +219,6 @@ public sealed partial class InteractionPanelSystem
         // One moan for the whole release.
         var collection = GetSex(uid) == Sex.Female ? "LewdMoansFemale" : "LewdMoansMale";
         PlayInteractionSound(uid, new SoundCollectionSpecifier(collection), -8f, lewd: true);
-    }
-
-    /// <summary>One decal per 50u of fluid, always at least one, capped at three.</summary>
-    private static int GetClimaxDecalCount(double amount)
-    {
-        return Math.Clamp((int) (amount / FluidPerClimaxDecal), 1, MaxClimaxDecals);
     }
 
     /// <summary>

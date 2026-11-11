@@ -1942,6 +1942,20 @@ Entries:
       message: >-
         Circuit assemblies can inspect battery charge and transfer power: charge held or nearby
         batteries and energy guns, or draw power from nearby APCs and batteries.
+    - type: Add
+      message: >-
+        Added GLua-style hook.Add, hook.Remove, hook.Has, hook.Run and hook.Call event hooks for
+        circuit Lua programs.
+    - type: Add
+      message: >-
+        Circuit assemblies with manipulators can now point at targets with robot.point.
+    - type: Add
+      message: >-
+        Added robot.combat(true/false) for explicit circuit combat stance control.
+    - type: Fix
+      message: >-
+        Circuit melee attack now temporarily enables combat mode and restores the previous stance,
+        so interaction cannot be left in combat mode by accident.
     - type: Fix
       message: >-
         Circuit shoot no longer incorrectly requires the target to be within the manipulator's
@@ -2104,3 +2118,56 @@ Entries:
   time: '2026-11-10T13:52:49.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/bce651dbe830f5d435da0081f64e6b74bb9ef2db
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: Fixed snout markings rendering under hair during diagonal movement.
+    - type: Tweak
+      message: >-
+        Cloaks and scarves now stay under hair in all directions while still
+        covering breasts.
+  id: 90139
+  time: '2026-11-10T16:11:54.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/7d935a6f0c75bc1e251c2475a25b44d9202e0975
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: >-
+        Added the People of Earth, Dr. Steel II: Eclectic Boogaloo and Dr. Steel
+        jukebox records to salvage wreck loot.
+  id: 90140
+  time: '2026-11-10T16:13:54.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/0f0e3adaf9dc9f0d2adf58bd9a11aaa9e33cc2f1
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: Renaming a character no longer hides their stored bluespace dock ships.
+  id: 90141
+  time: '2026-11-10T23:58:45.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/42668750c85f60b26ab6523e92046a0d1426f6d7
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        Fixed jukeboxes briefly playing at full volume after the volume slider
+        was lowered.
+  id: 90142
+  time: '2026-11-11T00:10:00.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/99d41838a600e72dc341ad1d430bb21ac936e327
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        Circuit reagent transfers now update the source container immediately, so emptied buckets,
+        beakers and dispensers no longer keep showing their old fill level. Empty or full
+        transfers return an explicit reason instead of false with no message.
+    - type: Fix
+      message: >-
+        Circuit action APIs now return a reason for every failure, including pickup, drop, use,
+        use_item, interact, trigger and inject.
+  id: 90143
+  time: '2026-11-11T02:33:27.0000000+00:00'

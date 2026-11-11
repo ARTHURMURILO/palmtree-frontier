@@ -325,7 +325,7 @@ public sealed class BluespaceDockSystem : EntitySystem
     /// </summary>
     public void AddOrUpdateEntry(BluespaceDockEntry entry)
     {
-        var existing = FindEntry(entry.OwnerUserId, entry.OwnerName, entry.DisplayName);
+        var existing = FindEntry(entry.OwnerUserId, entry.OwnerName, entry.DisplayName, entry.OwnerSlot);
         if (existing != null)
             Registry.Entries.Remove(existing);
 
@@ -336,16 +336,18 @@ public sealed class BluespaceDockSystem : EntitySystem
     /// <summary>
     /// The entry a character has for a ship name, if any.
     /// </summary>
-    public BluespaceDockEntry? FindEntry(string ownerUserId, string ownerName, string displayName)
+    public BluespaceDockEntry? FindEntry(string ownerUserId, string ownerName, string displayName,
+        int ownerSlot = -1)
     {
         foreach (var entry in Registry.Entries)
         {
-            if (string.Equals(entry.OwnerUserId, ownerUserId, StringComparison.Ordinal)
-                && string.Equals(entry.OwnerName, ownerName, StringComparison.Ordinal)
-                && string.Equals(entry.DisplayName, displayName, StringComparison.Ordinal))
+            if (!string.Equals(entry.DisplayName, displayName, StringComparison.Ordinal)
+                || !EntryBelongsToCharacter(entry, ownerUserId, ownerName, ownerSlot))
             {
-                return entry;
+                continue;
             }
+
+            return entry;
         }
 
         return null;
@@ -1895,15 +1897,19 @@ public sealed class BluespaceDockSystem : EntitySystem
     /// <summary>
     /// Character identity used by the registry: the player's ckey plus their character name.
     /// </summary>
-    private bool TryGetCharacter(EntityUid actor, EntityUid? targetId, out string userId, out string characterName)
+    private bool TryGetCharacter(EntityUid actor, EntityUid? targetId, out string userId, out string characterName,
+        out int characterSlot)
     {
         userId = string.Empty;
         characterName = string.Empty;
+        characterSlot = -1;
 
         if (!_player.TryGetSessionByEntity(actor, out var session))
             return false;
 
         userId = session.UserId.ToString();
+        if (_prefs.TryGetCachedPreferences(session.UserId, out var prefs))
+            characterSlot = prefs.SelectedCharacterIndex;
 
         string? idName = null;
         if (targetId is { Valid: true } id && TryComp<IdCardComponent>(id, out var idCard))
@@ -1950,16 +1956,28 @@ public sealed class BluespaceDockSystem : EntitySystem
     }
 
     /// <summary>
-    /// Whether a registry entry belongs to a character. Entries written by the admin restore tool can
-    /// have no ckey (an ID card does not carry one), so those match by character name alone.
+    /// Whether a registry entry belongs to a character. The ckey + character slot is the stable
+    /// per-character identity and survives a rename. Legacy entries without a slot fall back to the
+    /// ckey (so a renamed character keeps their ships); entries written without a ckey (admin
+    /// restore/force-dock by name) match by character name alone.
     /// </summary>
-    public static bool EntryBelongsToCharacter(BluespaceDockEntry entry, string userId, string characterName)
+    public static bool EntryBelongsToCharacter(BluespaceDockEntry entry, string userId, string characterName,
+        int characterSlot = -1)
     {
-        if (!string.Equals(entry.OwnerName, characterName, StringComparison.Ordinal))
-            return false;
+        if (!string.IsNullOrEmpty(entry.OwnerUserId) && !string.IsNullOrEmpty(userId))
+        {
+            if (!string.Equals(entry.OwnerUserId, userId, StringComparison.Ordinal))
+                return false;
 
-        return string.IsNullOrEmpty(entry.OwnerUserId)
-               || string.Equals(entry.OwnerUserId, userId, StringComparison.Ordinal);
+            // New entries: two characters on the same account stay separate.
+            if (entry.OwnerSlot >= 0 && characterSlot >= 0)
+                return entry.OwnerSlot == characterSlot;
+
+            // Legacy entry without a slot: the ckey is the only identity that survives a rename.
+            return true;
+        }
+
+        return string.Equals(entry.OwnerName, characterName, StringComparison.Ordinal);
     }
 
     #endregion Checks
@@ -2039,8 +2057,9 @@ public sealed class BluespaceDockSystem : EntitySystem
                 if (storeBlocked is null)
                 {
                     var maxShips = _cfg.GetCVar(NFCCVars.BluespaceDockMaxShips);
-                    if (maxShips > 0 && TryGetCharacter(actor, targetId, out var userId, out var characterName)
-                        && CountStoredShips(userId, characterName) >= maxShips)
+                    if (maxShips > 0 && TryGetCharacter(actor, targetId, out var userId, out var characterName,
+                            out var characterSlot)
+                        && CountStoredShips(userId, characterName, characterSlot) >= maxShips)
                     {
                         storeBlocked = "bluespace-dock-error-too-many-ships";
                     }
@@ -2057,14 +2076,14 @@ public sealed class BluespaceDockSystem : EntitySystem
             }
         }
 
-        if (hasId && TryGetCharacter(actor, targetId, out var userId2, out var characterName2))
+        if (hasId && TryGetCharacter(actor, targetId, out var userId2, out var characterName2, out var characterSlot2))
         {
             var retrieveTax = _cfg.GetCVar(NFCCVars.BluespaceDockRetrieveTax);
             var sellRate = _cfg.GetCVar(NFCCVars.BluespaceDockStoredSellRate);
 
             foreach (var entry in Registry.Entries)
             {
-                if (!EntryBelongsToCharacter(entry, userId2, characterName2))
+                if (!EntryBelongsToCharacter(entry, userId2, characterName2, characterSlot2))
                     continue;
 
                 var fileExists = ShipFileExists(entry.File);
@@ -2105,12 +2124,12 @@ public sealed class BluespaceDockSystem : EntitySystem
             stored));
     }
 
-    private int CountStoredShips(string userId, string characterName)
+    private int CountStoredShips(string userId, string characterName, int characterSlot)
     {
         var count = 0;
         foreach (var entry in Registry.Entries)
         {
-            if (EntryBelongsToCharacter(entry, userId, characterName))
+            if (EntryBelongsToCharacter(entry, userId, characterName, characterSlot))
                 count++;
         }
 
@@ -2757,7 +2776,7 @@ public sealed class BluespaceDockSystem : EntitySystem
             return;
         }
 
-        if (!TryGetCharacter(player, targetId, out var userId, out var characterName))
+        if (!TryGetCharacter(player, targetId, out var userId, out var characterName, out var characterSlot))
         {
             Deny(consoleUid, component, player, "bluespace-dock-error-no-id");
             return;
@@ -2780,7 +2799,7 @@ public sealed class BluespaceDockSystem : EntitySystem
         }
 
         var maxShips = _cfg.GetCVar(NFCCVars.BluespaceDockMaxShips);
-        if (maxShips > 0 && CountStoredShips(userId, characterName) >= maxShips)
+        if (maxShips > 0 && CountStoredShips(userId, characterName, characterSlot) >= maxShips)
         {
             Deny(consoleUid, component, player, "bluespace-dock-error-too-many-ships");
             return;
@@ -2795,7 +2814,8 @@ public sealed class BluespaceDockSystem : EntitySystem
         }
 
         var displayName = ShipyardSystem.GetFullName(deed);
-        if (!TryStoreShip(shuttleUid, userId, characterName, value, player, cost, out var error, out var skipped))
+        if (!TryStoreShip(shuttleUid, userId, characterName, value, player, cost, out var error, out var skipped,
+                ownerSlot: characterSlot))
         {
             Deny(consoleUid, component, player, error ?? "bluespace-dock-error-save-failed");
             return;
@@ -2877,9 +2897,10 @@ public sealed class BluespaceDockSystem : EntitySystem
     /// <paramref name="error"/> when nothing was stored.
     /// </summary>
     public bool TryStoreShip(EntityUid shuttleUid, string ownerUserId, string ownerName, int value,
-        EntityUid? payer, int cost, out string? error)
+        EntityUid? payer, int cost, out string? error, int ownerSlot = -1)
     {
-        return TryStoreShip(shuttleUid, ownerUserId, ownerName, value, payer, cost, out error, out _);
+        return TryStoreShip(shuttleUid, ownerUserId, ownerName, value, payer, cost, out error, out _,
+            ownerSlot);
     }
 
     /// <summary>
@@ -2888,7 +2909,7 @@ public sealed class BluespaceDockSystem : EntitySystem
     /// as fresh copies on retrieval), so callers can warn the user.
     /// </summary>
     public bool TryStoreShip(EntityUid shuttleUid, string ownerUserId, string ownerName, int value,
-        EntityUid? payer, int cost, out string? error, out int skipped)
+        EntityUid? payer, int cost, out string? error, out int skipped, int ownerSlot = -1)
     {
         error = null;
         skipped = 0;
@@ -2976,6 +2997,7 @@ public sealed class BluespaceDockSystem : EntitySystem
                 File = fileName,
                 OwnerUserId = ownerUserId,
                 OwnerName = ownerName,
+                OwnerSlot = ownerSlot,
                 Vessel = known ? vesselInfo.Vessel?.Id : null,
                 Model = known ? vesselInfo.Model : "Custom",
                 Name = baseName,
@@ -3141,14 +3163,14 @@ public sealed class BluespaceDockSystem : EntitySystem
             return;
         }
 
-        if (!TryGetCharacter(player, targetId, out var userId, out var characterName))
+        if (!TryGetCharacter(player, targetId, out var userId, out var characterName, out var characterSlot))
         {
             Deny(consoleUid, component, player, "bluespace-dock-error-no-id");
             return;
         }
 
         var entry = Registry.Find(args.ShipId);
-        if (entry is null || !EntryBelongsToCharacter(entry, userId, characterName))
+        if (entry is null || !EntryBelongsToCharacter(entry, userId, characterName, characterSlot))
         {
             Deny(consoleUid, component, player, "bluespace-dock-error-no-entry");
             RefreshState(consoleUid, player);
@@ -3356,14 +3378,14 @@ public sealed class BluespaceDockSystem : EntitySystem
             return;
         }
 
-        if (!TryGetCharacter(player, targetId, out var userId, out var characterName))
+        if (!TryGetCharacter(player, targetId, out var userId, out var characterName, out var characterSlot))
         {
             Deny(consoleUid, component, player, "bluespace-dock-error-no-id");
             return;
         }
 
         var entry = Registry.Find(args.ShipId);
-        if (entry is null || !EntryBelongsToCharacter(entry, userId, characterName))
+        if (entry is null || !EntryBelongsToCharacter(entry, userId, characterName, characterSlot))
         {
             Deny(consoleUid, component, player, "bluespace-dock-error-no-entry");
             RefreshState(consoleUid, player);

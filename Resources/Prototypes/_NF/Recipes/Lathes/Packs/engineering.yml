@@ -51,6 +51,9 @@
   - ThermomachineFreezerMachineCircuitBoard
   - HeatPumpMachineCircuitBoard # Palmtree
   - CondenserMachineCircuitBoard
+  - ElectrolyzerMachineCircuitboard # Funky
+  - CrystallizerMachineCircuitboard # Funky
+  - PipeScrubberMachineCircuitBoard # Funky
 
 - type: latheRecipePack
   id: NFEngineeringMaterialsStatic

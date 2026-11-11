@@ -47,7 +47,7 @@ public sealed class LuaCodeEditor : Control
     private static readonly HashSet<string> Builtins = new()
     {
         "robot", "self", "print", "log", "ipairs", "pairs", "type", "tostring", "tonumber",
-        "math", "string", "table",
+        "math", "string", "table", "hook",
     };
     private static readonly HashSet<string> ApiFunctions = new()
     {
@@ -62,7 +62,7 @@ public sealed class LuaCodeEditor : Control
         "has_job", "has_access", "wanted_status", "solution", "item_status", "door_status",
         "can_open", "poll_event", "wait_event", "say", "radio", "radio_channels", "pickup",
         "drop", "held", "use", "use_async", "use_item", "use_item_async", "attack", "shoot",
-        "interact", "interact_async", "harvest", "harvest_async", "plant", "plant_async",
+        "point", "combat", "interact", "interact_async", "harvest", "harvest_async", "plant", "plant_async",
         "water", "trigger", "trigger_async", "send_signal", "inject", "inject_async",
         "action_busy", "action_marker", "action_status",
         "analyze_plant", "analyze_chemicals",
@@ -74,6 +74,7 @@ public sealed class LuaCodeEditor : Control
         // GLua-style table/string helpers and type shorthands.
         "HasValue", "Contains", "IsEmpty", "Count", "GetKeys", "KeyFromValue", "Random",
         "Add", "RemoveByValue", "Trim", "StartsWith", "StartWith", "EndsWith", "Split",
+        "Remove", "Run", "Has", "Call",
         "istable", "isstring", "isnumber", "isbool", "isfunction",
     };
 

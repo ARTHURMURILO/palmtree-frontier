@@ -110,6 +110,7 @@ Fork modules are folder/namespace prefixes:
 | `.ai/systems/core-gameplay.md` | Interactions, body/damage, atmos, power, chemistry, construction, NPC, shuttles |
 | `.ai/systems/atmos-temperature-devices.md` | Temperature gate/pump, heat exchanger, atmos meter: /tg/ maths, pipe layers, sprites, RPD wiring |
 | `.ai/systems/content-pipeline-and-tooling.md` | Prototypes, localization, maps, tests, CI, packaging |
+| `.ai/guides/prototype-tutorial.md` | Beginner-friendly prototype authoring: YAML, inheritance, components, sprites, other prototype kinds, testing |
 | `.ai/guides/porting-from-coyote.md` | Repeatable method for porting Coyote/Floof content into this repo |
 | `.ai/guides/porting-from-ss13.md` | Porting BYOND SS13 features, `.dmm` maps and sprites into this repo |
 | `.ai/guides/adding-markings.md` | Adding markings (normal, genital, kind-shared, layered, digitigrade) |
@@ -125,6 +126,7 @@ Fork modules are folder/namespace prefixes:
 
 | Guide | Answers |
 |---|---|
+| `.ai/guides/prototype-tutorial.md` | How to write/create entity and non-entity prototypes, with real examples and a no-code walkthrough |
 | `.ai/guides/porting-from-coyote.md` | How to port content from `coyote-frontier` and other forks, field adaptations, asset copying, lint gates |
 | `.ai/guides/porting-from-ss13.md` | BYOND SS13 sources, TGM `.dmm` parsing, format-7 map generation, sprite limits, SS13→SS14 concept mapping, hazards |
 | `.ai/guides/adding-markings.md` | `MarkingPrototype` fields, categories, `kindAllowance`, `layering`/`colorLinks`, `altSprites`, sprites/locale, genital rules |

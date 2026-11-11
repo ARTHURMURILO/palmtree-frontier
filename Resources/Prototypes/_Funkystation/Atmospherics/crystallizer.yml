@@ -1,0 +1,300 @@
+# Funky atmos - /tg/ gases
+# Crystallizer recipes. The minimumRequirements arrays follow the Gas enum in
+# Content.Shared/Atmos/Atmospherics.cs (21 gases, Frontier's Respiron/Helium at 9/10).
+
+- type: crystallizerRecipe
+  id: metalHydrogenRecipe
+  name: Metal Hydrogen
+  minimumTemperature: 50000
+  maximumTemperature: 150000
+  energyRelease: -2500000
+  products:
+    MetalHydrogen1: 1
+  dangerous: false
+  minimumRequirements:
+  - 0 # oxygen
+  - 0 # nitrogen
+  - 0 # carbon dioxide
+  - 0 # plasma
+  - 0 # tritium
+  - 0 # water vapor
+  - 0 # ammonia
+  - 0 # nitrous oxide
+  - 0 # frezon
+  - 0 # respiron
+  - 0 # helium
+  - 0 # nucleium (NSV13, reserved)
+  - 50 # bz
+  - 0 # healium
+  - 0 # nitrium
+  - 0 # pluoxium
+  - 300 # hydrogen
+  - 0 # hyper-noblium
+  - 0 # proto-nitrate
+  - 0 # zauker
+  - 0 # halon
+  - 0 # anti-noblium
+
+- type: crystallizerRecipe
+  id: healiumCrystalRecipe
+  name: Healium Crystal
+  minimumTemperature: 200
+  maximumTemperature: 400
+  energyRelease: -2000000
+  products:
+    HealiumCrystal: 1
+  dangerous: false
+  minimumRequirements:
+  - 120 # oxygen
+  - 0 # nitrogen
+  - 0 # carbon dioxide
+  - 50 # plasma
+  - 0 # tritium
+  - 0 # water vapor
+  - 0 # ammonia
+  - 0 # nitrous oxide
+  - 0 # frezon
+  - 0 # respiron
+  - 0 # helium
+  - 0 # nucleium (NSV13, reserved)
+  - 0 # bz
+  - 100 # healium
+  - 0 # nitrium
+  - 0 # pluoxium
+  - 0 # hydrogen
+  - 0 # hyper-noblium
+  - 0 # proto-nitrate
+  - 0 # zauker
+  - 0 # halon
+  - 0 # anti-noblium
+
+- type: crystallizerRecipe
+  id: protoNitrateCrystalRecipe
+  name: Proto-Nitrate Crystal
+  minimumTemperature: 200
+  maximumTemperature: 400
+  energyRelease: 1500000
+  products:
+    ProtoNitrateCrystal: 1
+  dangerous: false
+  minimumRequirements:
+  - 80 # oxygen
+  - 80 # nitrogen
+  - 0 # carbon dioxide
+  - 0 # plasma
+  - 0 # tritium
+  - 0 # water vapor
+  - 0 # ammonia
+  - 0 # nitrous oxide
+  - 0 # frezon
+  - 0 # respiron
+  - 0 # helium
+  - 0 # nucleium (NSV13, reserved)
+  - 0 # bz
+  - 0 # healium
+  - 0 # nitrium
+  - 0 # pluoxium
+  - 0 # hydrogen
+  - 0 # hyper-noblium
+  - 100 # proto-nitrate
+  - 0 # zauker
+  - 0 # halon
+  - 0 # anti-noblium
+
+- type: crystallizerRecipe
+  id: ammoniaCrystalRecipe
+  name: Ammonia Crystal
+  minimumTemperature: 200
+  maximumTemperature: 240
+  energyRelease: 950000
+  products:
+    AmmoniaCrystal: 2
+  dangerous: false
+  minimumRequirements:
+  - 0 # oxygen
+  - 40 # nitrogen
+  - 0 # carbon dioxide
+  - 0 # plasma
+  - 0 # tritium
+  - 0 # water vapor
+  - 0 # ammonia
+  - 0 # nitrous oxide
+  - 0 # frezon
+  - 0 # respiron
+  - 0 # helium
+  - 0 # nucleium (NSV13, reserved)
+  - 0 # bz
+  - 0 # healium
+  - 0 # nitrium
+  - 0 # pluoxium
+  - 50 # hydrogen
+  - 0 # hyper-noblium
+  - 0 # proto-nitrate
+  - 0 # zauker
+  - 0 # halon
+  - 0 # anti-noblium
+
+- type: crystallizerRecipe
+  id: nitrousOxideCrystalRecipe
+  name: Nitrous Oxide Crystal
+  minimumTemperature: 50
+  maximumTemperature: 350
+  energyRelease: 3500000
+  products:
+    NitrousOxideCrystal: 1
+  dangerous: false
+  minimumRequirements:
+  - 0 # oxygen
+  - 0 # nitrogen
+  - 0 # carbon dioxide
+  - 0 # plasma
+  - 0 # tritium
+  - 0 # water vapor
+  - 0 # ammonia
+  - 150 # nitrous oxide
+  - 0 # frezon
+  - 0 # respiron
+  - 0 # helium
+  - 0 # nucleium (NSV13, reserved)
+  - 30 # bz
+  - 0 # healium
+  - 0 # nitrium
+  - 0 # pluoxium
+  - 0 # hydrogen
+  - 0 # hyper-noblium
+  - 0 # proto-nitrate
+  - 0 # zauker
+  - 0 # halon
+  - 0 # anti-noblium
+
+- type: crystallizerRecipe
+  id: diamondRecipe
+  name: Diamond
+  minimumTemperature: 10000
+  maximumTemperature: 30000
+  energyRelease: 9500000
+  products:
+    MaterialDiamond1: 1
+  dangerous: false
+  minimumRequirements:
+  - 0 # oxygen
+  - 0 # nitrogen
+  - 15000 # carbon dioxide
+  - 0 # plasma
+  - 0 # tritium
+  - 0 # water vapor
+  - 0 # ammonia
+  - 0 # nitrous oxide
+  - 0 # frezon
+  - 0 # respiron
+  - 0 # helium
+  - 0 # nucleium (NSV13, reserved)
+  - 0 # bz
+  - 0 # healium
+  - 0 # nitrium
+  - 0 # pluoxium
+  - 0 # hydrogen
+  - 0 # hyper-noblium
+  - 0 # proto-nitrate
+  - 0 # zauker
+  - 0 # halon
+  - 0 # anti-noblium
+
+- type: crystallizerRecipe
+  id: plasmaSheetRecipe
+  name: Plasma Sheet
+  minimumTemperature: 10
+  maximumTemperature: 20
+  energyRelease: 3500000
+  products:
+    SheetPlasma1: 1
+  dangerous: false
+  minimumRequirements:
+  - 0 # oxygen
+  - 0 # nitrogen
+  - 0 # carbon dioxide
+  - 450 # plasma
+  - 0 # tritium
+  - 0 # water vapor
+  - 0 # ammonia
+  - 0 # nitrous oxide
+  - 0 # frezon
+  - 0 # respiron
+  - 0 # helium
+  - 0 # nucleium (NSV13, reserved)
+  - 0 # bz
+  - 0 # healium
+  - 0 # nitrium
+  - 0 # pluoxium
+  - 0 # hydrogen
+  - 0 # hyper-noblium
+  - 0 # proto-nitrate
+  - 0 # zauker
+  - 0 # halon
+  - 0 # anti-noblium
+
+- type: crystallizerRecipe
+  id: crystalCellRecipe
+  name: Crystal Cell
+  minimumTemperature: 50
+  maximumTemperature: 90
+  energyRelease: -800000
+  products:
+    CrystalCell: 1
+  dangerous: false
+  minimumRequirements:
+  - 0 # oxygen
+  - 0 # nitrogen
+  - 0 # carbon dioxide
+  - 800 # plasma
+  - 0 # tritium
+  - 0 # water vapor
+  - 0 # ammonia
+  - 0 # nitrous oxide
+  - 0 # frezon
+  - 0 # respiron
+  - 100 # helium
+  - 0 # nucleium (NSV13, reserved)
+  - 50 # bz
+  - 0 # healium
+  - 0 # nitrium
+  - 0 # pluoxium
+  - 0 # hydrogen
+  - 0 # hyper-noblium
+  - 0 # proto-nitrate
+  - 0 # zauker
+  - 0 # halon
+  - 0 # anti-noblium
+
+- type: crystallizerRecipe
+  id: zaukeriteRecipe
+  name: Zaukerite
+  minimumTemperature: 5
+  maximumTemperature: 20
+  energyRelease: 2900000
+  products:
+    Zaukerite1: 1
+  dangerous: false
+  minimumRequirements:
+  - 0 # oxygen
+  - 0 # nitrogen
+  - 0 # carbon dioxide
+  - 0 # plasma
+  - 0 # tritium
+  - 0 # water vapor
+  - 0 # ammonia
+  - 0 # nitrous oxide
+  - 0 # frezon
+  - 0 # respiron
+  - 0 # helium
+  - 0 # nucleium (NSV13, reserved)
+  - 7.5 # bz
+  - 0 # healium
+  - 0 # nitrium
+  - 0 # pluoxium
+  - 0 # hydrogen
+  - 0 # hyper-noblium
+  - 0 # proto-nitrate
+  - 20 # zauker
+  - 0 # halon
+  - 5 # anti-noblium

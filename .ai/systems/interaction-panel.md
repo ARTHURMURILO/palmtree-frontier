@@ -98,8 +98,8 @@ content are intentionally not ported.
    maps a climax: internal endings store the whole penis organ's `SemenVolume` in the partner's
    `DrippingCumComponent` at once (10 u/s **droplet** decals while not wearing a jumpsuit, 10u per
    drip; the first movement/interaction starts the drip and it then keeps going while standing
-   still; drips never grow into the full puddle decals), exterior endings drop `SemenPuddle*`
-   decals on the ground (one per 50u, capped at 3).
+   still; drips never grow into the full puddle decals), exterior endings drop a single
+   `SemenPuddle*` decal on the ground.
    A null cum target (manual Climax with no recent interaction) is treated as an exterior climax on
    the actor. Receiver-side acts (`Ride`, `TakeAnal`) reuse the same cum target for the **target's**
    climax, so the penetrator finishing fills the actor. Each interaction can define
@@ -109,10 +109,10 @@ content are intentionally not ported.
    range or orgasm requirement, is usable on self or others, and reuses the last interaction's cum
    target when it has none of its own. Both go through the same `TriggerClimax`/`EmitClimax` code.
    **Single release / overflow:** a climax emits the entire `SemenVolume` at once (maximum 500u),
-   with the cum message and one moan. Internal releases above 50u also spill one `SemenPuddle*`
-   per 50u onto the floor (capped at 3) without costing the receiver any stored fluid;
-   vagina-only climaxes use the same count of random `FemPuddle*` decals. There is no multi-pulse
-   sequence and no mid-climax lockout. See `systems/genital-organs.md`.
+   with the cum message and one moan. Male internal releases above 50u also spill a single
+   `SemenPuddle*` decal onto the floor without costing the receiver any stored fluid; female
+   climaxes leave a single random `FemPuddle*` decal. There is no multi-pulse sequence and no
+   mid-climax lockout. See `systems/genital-organs.md`.
 8. **Auto-repeat.** The server `Update` loop repeats the active interaction every `AutoPace`
    (Sandstorm's `interaction_speeds`: 4/2/1/0.8/0.5 s) without the 0.5 s cooldown, stopping on any
    requirement failure, target deletion or range loss. The panel state is pushed only when something
