@@ -4,6 +4,6 @@
     sprite: _FarHorizons/Structures/Power/Generation/FissionGenerator/cargo_icons.rsi
     state: turbine
   product: GasTurbineFlatpack
-  cost: 10000
+  cost: 5000
   category: cargoproduct-category-name-engineering
   group: market

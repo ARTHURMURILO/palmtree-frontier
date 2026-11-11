@@ -157,6 +157,8 @@
     - NFServiceKitchenStatic # Frontier
     - NFEvaSuitCommon # Frontier
     - CSPlumbingStatic # Palmtree: showers, sinks, drains
+    dynamicPacks:
+    - NFAtmosMachineryGeneral # Funky
 
   - type: EmagLatheRecipes
     emagStaticPacks:
@@ -245,6 +247,7 @@
     - NFScience # Frontier
     - NFPouches # Frontier
     - NFProtolathe # Frontier
+    - NFAtmosMachineryGeneral # Funky
   - type: EmagLatheRecipes
     emagDynamicPacks:
     - NfsdAmmoStatic # Frontier: SecurityAmmo<NfsdAmmoStatic

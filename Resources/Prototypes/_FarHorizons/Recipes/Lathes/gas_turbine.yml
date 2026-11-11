@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2025 Far Horizons contributors
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+- type: latheRecipe
+  id: GasTurbineFlatpack
+  result: GasTurbineFlatpack
+  completetime: 10
+  materials:
+    Steel: 2500
+    Glass: 500
+    Plasteel: 1000
+    Gold: 200
