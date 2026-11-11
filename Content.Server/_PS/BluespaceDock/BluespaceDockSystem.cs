@@ -2466,6 +2466,52 @@ public sealed class BluespaceDockSystem : EntitySystem
 
             if (TryComp<MaterialReclaimerMagnetPickupComponent>(uid, out var reclaimerMagnet))
                 reclaimerMagnet.NextScan = TimeSpan.Zero;
+
+            // Reactors: the gate (FindLiveReactor) already refuses a running or hot core, so this is
+            // the belt-and-braces half - the timers and toggles the gate cannot see. It runs on save
+            // and on load, so a retrieved reactor is exactly what a normal shutdown produces.
+            NormalizeReactorRuntime(uid);
+        }
+    }
+
+    /// <summary>
+    /// Palmtree: clears the transient half of a reactor's state before a ship file is written, and
+    /// again after one is loaded.
+    /// </summary>
+    /// <remarks>
+    /// This is not the store gate: <see cref="FindLiveReactor"/> still refuses a running or hot core,
+    /// and a slagged RBMK stays a slagged RBMK. It covers the state the gate cannot see and the
+    /// toggles that would make a retrieved machine behave differently from a stored one:
+    /// <list type="bullet">
+    /// <item>the RBMK alert flag and its absolute-round-clock tick/flicker timers;</item>
+    /// <item>the stormdrive meltdown fuse, warning flag, process/alert/gravity/countdown timers, and
+    /// the player-facing <c>DumpingFuel</c> toggle (a stored drive must not come back venting its
+    /// fuel line into the waste pipe with nobody aboard).</item>
+    /// </list>
+    /// Permanent facts are deliberately untouched: <c>VesselIntegrity</c>, <c>Slagged</c>,
+    /// <c>DesiredK</c>, fuel-rod depletion and age, control-rod percentages, <c>ReactorId</c>. The
+    /// loaded fuel/control rod lists are rebuilt by the reactors' own <c>ComponentStartup</c>
+    /// handlers, not here.
+    /// </remarks>
+    private void NormalizeReactorRuntime(EntityUid uid)
+    {
+        if (TryComp<RbmkReactorComponent>(uid, out var rbmk))
+        {
+            rbmk.AlertActive = false;
+            rbmk.NextTick = TimeSpan.Zero;
+            rbmk.NextFlicker = TimeSpan.Zero;
+        }
+
+        if (TryComp<StormdriveComponent>(uid, out var drive))
+        {
+            drive.ReactorEndTimes = false;
+            drive.MeltdownAt = TimeSpan.Zero;
+            drive.WarningState = StormdriveWarning.None;
+            drive.NextProcess = TimeSpan.Zero;
+            drive.NextAlert = TimeSpan.Zero;
+            drive.NextCountdownAnnounce = TimeSpan.Zero;
+            drive.NextGravityPull = TimeSpan.Zero;
+            drive.DumpingFuel = false;
         }
     }
 
