@@ -687,6 +687,93 @@ public sealed class BluespaceDockReactorSaveTest
     }
 
     /// <summary>
+    /// The load half of the normalisation. The save hook clears the transient toggles before the
+    /// file is written, so a save -> load round trip cannot prove the load call does anything:
+    /// edit the file between the two, as an older build or a hand edit would have left it.
+    /// </summary>
+    [Test]
+    public async Task LoadPathClearsHandEditedStormdriveTransients()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var res = server.ResolveDependency<IResourceManager>();
+
+        EntityUid loadedGrid = default;
+        MapId loadedMap = default;
+        const string reactorId = "load-path-probe";
+        const float rodPercent = 33.6f;
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var grid = testMap.Grid.Owner;
+
+            var drive = entMan.SpawnEntity("StormdriveReactor",
+                new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            var comp = entMan.GetComponent<StormdriveComponent>(drive);
+            comp.State = StormdriveState.Idle;
+            comp.Heat = 0f;
+            comp.ReactorId = reactorId;
+            comp.ControlRodPercent = rodPercent;
+
+            var path = BluespaceDockSystem.GetShipFilePath("hand-edited-stormdrive-load");
+            Assert.That(dock.TrySaveShipFile(grid, path, out var error), Is.True, error);
+
+            var fullPath = new ResPath($"{BluespaceDockSystem.ShipDirectory}/{path}");
+            string text;
+            using (var reader = res.UserData.OpenText(fullPath))
+            {
+                text = reader.ReadToEnd();
+            }
+
+            // The serializer omits values equal to their defaults, so the saved idle drive carries
+            // none of these keys. Add them the way an older or hand-edited file would.
+            const string marker = "    - type: Stormdrive\n";
+            var index = text.IndexOf(marker, StringComparison.Ordinal);
+            Assert.That(index, Is.GreaterThanOrEqualTo(0), "sanity: the saved file has a stormdrive block");
+            text = text.Insert(index + marker.Length,
+                "      dumpingFuel: true\n" +
+                "      reactorEndTimes: true\n" +
+                "      warningState: Meltdown\n");
+
+            using (var writer = res.UserData.OpenWriteText(fullPath))
+            {
+                writer.Write(text);
+            }
+
+            Assert.That(dock.TryLoadShipFile(path, out var loaded), Is.True, "Loading the edited file failed.");
+            loadedGrid = loaded!.Value;
+            loadedMap = entMan.GetComponent<TransformComponent>(loadedGrid).MapID;
+            dock.DeleteShipFile(path);
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var loadedDrive = FindSingle<StormdriveComponent>(dock, entMan, loadedGrid);
+            Assert.That(loadedDrive, Is.Not.Null, "The retrieved ship lost its stormdrive.");
+
+            var comp = entMan.GetComponent<StormdriveComponent>(loadedDrive!.Value);
+            Assert.That(comp.DumpingFuel, Is.False,
+                "loading must clear a serialized fuel-dump toggle (the load half of the normalisation)");
+            Assert.That(comp.ReactorEndTimes, Is.False, "loading must clear a serialized meltdown fuse.");
+            Assert.That(comp.WarningState, Is.EqualTo(StormdriveWarning.None),
+                "loading must clear a serialized warning flag.");
+            Assert.That(comp.ReactorId, Is.EqualTo(reactorId), "loading lost the drive's console link tag.");
+            Assert.That(comp.ControlRodPercent, Is.EqualTo(rodPercent).Within(0.001f),
+                "loading lost the drive's control-rod setting.");
+        });
+
+        await server.WaitAssertion(() => entMan.DeleteEntity(loadedGrid));
+        await pair.RunTicksSync(2);
+        await server.WaitAssertion(() => server.System<SharedMapSystem>().DeleteMap(loadedMap));
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
     /// Finds the one entity on a loaded grid that has <typeparamref name="TComp"/>, or null.
     /// </summary>
     private static EntityUid? FindSingle<TComp>(BluespaceDockSystem dock, IEntityManager entMan, EntityUid grid)
