@@ -15,9 +15,11 @@ namespace Content.Server._Funkystation.Atmos.Components
     public sealed partial class CrystallizerComponent : Component
     {
         [ViewVariables(VVAccess.ReadWrite)]
+        [DataField("selectedRecipeId")]
         public string? SelectedRecipeId { get; set; }
 
         [ViewVariables(VVAccess.ReadWrite)]
+        [DataField("gasInput")]
         public float GasInput { get; set; }
 
         [DataField("inlet")]

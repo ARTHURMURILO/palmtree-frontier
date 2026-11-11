@@ -31,6 +31,9 @@
   - type: AccessReader
     access: [["Engineering"]]
   - type: ActivatableUIRequiresAccess
+  - type: GuideHelp
+    guides:
+    - HypertorusFusionReactor
   - type: UserInterface
     interfaces:
       enum.HFRConsoleUiKey.Key:
@@ -95,6 +98,9 @@
     graph: HFRCore
     node: hfrCore
   - type: HFRCore
+  - type: GuideHelp
+    guides:
+    - HypertorusFusionReactor
 
 - type: entity
   parent: BaseStructure

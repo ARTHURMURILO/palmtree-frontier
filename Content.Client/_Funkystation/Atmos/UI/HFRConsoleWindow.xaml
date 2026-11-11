@@ -18,17 +18,16 @@ SPDX-License-Identifier: AGPL-3.0-or-later AND MIT
             <!-- Switches Section -->
             <BoxContainer Orientation="Vertical" Margin="10 5">
                 <BoxContainer Orientation="Horizontal" Margin="0 5">
-                    <Label Text="Start Power: " />
-                    <Button Access="Public" Name="TogglePowerButton" Text="Off" />
-                    <Label Text="Start Cooling: " Margin="10 0 0 0" />
-                    <Button Access="Public" Name="ToggleCoolingButton" Text="Off" Disabled="True" />
+                    <Label Text="{Loc 'hfr-console-start-power'}" />
+                    <Button Access="Public" Name="TogglePowerButton" Text="{Loc 'comp-gas-thermomachine-ui-status-disabled'}" />
+                    <Label Text="{Loc 'hfr-console-start-cooling'}" Margin="10 0 0 0" />
+                    <Button Access="Public" Name="ToggleCoolingButton" Text="{Loc 'comp-gas-thermomachine-ui-status-disabled'}" Disabled="True" />
                 </BoxContainer>
 
                 <!-- Recipe Dropdown -->
                 <Collapsible Margin="2 2 2 2">
-                    <CollapsibleHeading Title="Recipe selection" />
+                    <CollapsibleHeading Title="{Loc 'hfr-console-recipe-selection'}" />
                     <CollapsibleBody Margin="20 0 0 0">
-                        <PanelContainer Name="DropdownTableBody" />
                         <BoxContainer Orientation="Vertical" Name="RecipeTable">
                             <!-- Table for Fuel, Fusion Byproducts, Produced Gases, Effects -->
                             <BoxContainer Orientation="Horizontal" HorizontalExpand="True">
@@ -44,16 +43,16 @@ SPDX-License-Identifier: AGPL-3.0-or-later AND MIT
 
                                 <!-- Fuel Column -->
                                 <BoxContainer Orientation="Vertical" Margin="5 0">
-                                    <Label Text="Fuel" StyleClasses="LabelBold" HorizontalAlignment="Center" />
+                                    <Label Text="{Loc 'hfr-console-fuel'}" StyleClasses="LabelBold" HorizontalAlignment="Center" />
                                     <BoxContainer Orientation="Horizontal" Margin="0 2">
                                         <!-- Primary Gas -->
                                         <BoxContainer Name="FuelPrimaryBox" Orientation="Vertical" Margin="2 0" HorizontalAlignment="Center">
-                                            <Label Text="Primary" HorizontalAlignment="Center" Margin="0 0 0 6" />
+                                            <Label Text="{Loc 'hfr-console-primary'}" HorizontalAlignment="Center" Margin="0 0 0 6" />
                                         </BoxContainer>
                                         <PanelContainer StyleClasses="LowDivider" VerticalAlignment="Top" SetSize="2 24" />
                                         <!-- Secondary Gas -->
                                         <BoxContainer Name="FuelSecondaryBox" Orientation="Vertical" Margin="2 0" HorizontalAlignment="Center">
-                                            <Label Text="Secondary" HorizontalAlignment="Center" Margin="0 0 0 6" />
+                                            <Label Text="{Loc 'hfr-console-secondary'}" HorizontalAlignment="Center" Margin="0 0 0 6" />
                                         </BoxContainer>
                                     </BoxContainer>
                                 </BoxContainer>
@@ -63,7 +62,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later AND MIT
 
                                 <!-- Fusion Byproducts Column -->
                                 <BoxContainer Orientation="Vertical" Margin="5 0">
-                                    <Label Text="Fusion Byproducts" StyleClasses="LabelBold" HorizontalAlignment="Center" />
+                                    <Label Text="{Loc 'hfr-console-fusion-byproducts'}" StyleClasses="LabelBold" HorizontalAlignment="Center" />
                                     <BoxContainer Orientation="Horizontal" Margin="0 2">
                                         <!-- Gas 1 -->
                                         <BoxContainer Name="ByproductsSubfield1Box" Orientation="Vertical" Margin="2 0" HorizontalAlignment="Center">
@@ -81,36 +80,36 @@ SPDX-License-Identifier: AGPL-3.0-or-later AND MIT
 
                                 <!-- Produced Gases Column -->
                                 <BoxContainer Orientation="Vertical" Margin="5 0">
-                                    <Label Text="Produced Gases" StyleClasses="LabelBold" HorizontalAlignment="Center" />
+                                    <Label Text="{Loc 'hfr-console-produced-gases'}" StyleClasses="LabelBold" HorizontalAlignment="Center" />
                                     <BoxContainer Orientation="Horizontal" Margin="0 2">
                                         <!-- Tier 1 -->
                                         <BoxContainer Name="ProducedGasesTier1Box" Orientation="Vertical" Margin="2 0" HorizontalAlignment="Center">
-                                            <Label Text="Tier 1" HorizontalAlignment="Center" Margin="0 0 0 6" />
+                                            <Label Text="{Loc 'hfr-console-tier-1'}" HorizontalAlignment="Center" Margin="0 0 0 6" />
                                         </BoxContainer>
                                         <PanelContainer StyleClasses="LowDivider" VerticalAlignment="Top" SetSize="2 24" />
                                         <!-- Tier 2 -->
                                         <BoxContainer Name="ProducedGasesTier2Box" Orientation="Vertical" Margin="2 0" HorizontalAlignment="Center">
-                                            <Label Text="Tier 2" HorizontalAlignment="Center" Margin="0 0 0 6" />
+                                            <Label Text="{Loc 'hfr-console-tier-2'}" HorizontalAlignment="Center" Margin="0 0 0 6" />
                                         </BoxContainer>
                                         <PanelContainer StyleClasses="LowDivider" VerticalAlignment="Top" SetSize="2 24" />
                                         <!-- Tier 3 -->
                                         <BoxContainer Name="ProducedGasesTier3Box" Orientation="Vertical" Margin="2 0" HorizontalAlignment="Center">
-                                            <Label Text="Tier 3" HorizontalAlignment="Center" Margin="0 0 0 6" />
+                                            <Label Text="{Loc 'hfr-console-tier-3'}" HorizontalAlignment="Center" Margin="0 0 0 6" />
                                         </BoxContainer>
                                         <PanelContainer StyleClasses="LowDivider" VerticalAlignment="Top" SetSize="2 24" />
                                         <!-- Tier 4 -->
                                         <BoxContainer Name="ProducedGasesTier4Box" Orientation="Vertical" Margin="2 0" HorizontalAlignment="Center">
-                                            <Label Text="Tier 4" HorizontalAlignment="Center" Margin="0 0 0 6" />
+                                            <Label Text="{Loc 'hfr-console-tier-4'}" HorizontalAlignment="Center" Margin="0 0 0 6" />
                                         </BoxContainer>
                                         <PanelContainer StyleClasses="LowDivider" VerticalAlignment="Top" SetSize="2 24" />
                                         <!-- Tier 5 -->
                                         <BoxContainer Name="ProducedGasesTier5Box" Orientation="Vertical" Margin="2 0" HorizontalAlignment="Center">
-                                            <Label Text="Tier 5" HorizontalAlignment="Center" Margin="0 0 0 6" />
+                                            <Label Text="{Loc 'hfr-console-tier-5'}" HorizontalAlignment="Center" Margin="0 0 0 6" />
                                         </BoxContainer>
                                         <PanelContainer StyleClasses="LowDivider" VerticalAlignment="Top" SetSize="2 24" />
                                         <!-- Tier 6 -->
                                         <BoxContainer Name="ProducedGasesTier6Box" Orientation="Vertical" Margin="2 0" HorizontalAlignment="Center">
-                                            <Label Text="Tier 6" HorizontalAlignment="Center" Margin="0 0 0 6" />
+                                            <Label Text="{Loc 'hfr-console-tier-6'}" HorizontalAlignment="Center" Margin="0 0 0 6" />
                                         </BoxContainer>
                                     </BoxContainer>
                                 </BoxContainer>
@@ -120,7 +119,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later AND MIT
 
                                 <!-- Effects Column -->
                                 <BoxContainer Orientation="Vertical" Margin="5 0">
-                                    <Label Text="Effects" StyleClasses="LabelBold" HorizontalAlignment="Center" />
+                                    <Label Text="{Loc 'hfr-console-effects'}" StyleClasses="LabelBold" HorizontalAlignment="Center" />
                                     <BoxContainer Orientation="Horizontal" Margin="0 2">
                                         <!-- Subfield 1 -->
                                         <BoxContainer Name="EffectsSubfield1Box" Orientation="Vertical" Margin="2 0" HorizontalAlignment="Center">
@@ -165,40 +164,40 @@ SPDX-License-Identifier: AGPL-3.0-or-later AND MIT
                 <BoxContainer Orientation="Vertical" HorizontalExpand="True" Margin="0 0 4 0">
                     <!-- Internal Fusion Gases -->
                     <BoxContainer Orientation="Vertical">
-                        <Label Text="Internal Fusion Gases" />
+                        <Label Text="{Loc 'hfr-console-internal-fusion-gases'}" />
                         <PanelContainer StyleClasses="LowDivider" />
                         <BoxContainer Orientation="Horizontal" Margin="0 5">
-                            <Label Text="Injection Control: " />
-                            <Button Access="Public" Name="ToggleFuelInjectionButton" Text="Off" Disabled="True" />
+                            <Label Text="{Loc 'hfr-console-injection-control'}" />
+                            <Button Access="Public" Name="ToggleFuelInjectionButton" Text="{Loc 'comp-gas-thermomachine-ui-status-disabled'}" Disabled="True" />
                             <FloatSpinBox Access="Public" Name="FuelInputRateSpinbox" Value="0" MinSize="140 20" Margin="10 0 0 0" />
-                            <Label Text=" mol/s" />
+                            <Label Text="{Loc 'hfr-console-moles-per-second'}" />
                         </BoxContainer>
                         <BoxContainer Orientation="Vertical" Margin="0 5" Name="FusionGasesContent">
-                            <Label Text="No recipe has been selected." FontColorOverride="red" />
+                            <Label Text="{Loc 'hfr-console-no-recipe'}" FontColorOverride="red" />
                         </BoxContainer>
                     </BoxContainer>
                     <!-- Moderator Gases -->
                     <BoxContainer Orientation="Vertical" Margin="0 5 0 0">
-                        <Label Text="Moderator Gases" />
+                        <Label Text="{Loc 'hfr-console-moderator-gases'}" />
                         <PanelContainer StyleClasses="LowDivider" />
                         <BoxContainer Orientation="Horizontal" Margin="0 5">
-                            <Label Text="Injection Control: " />
-                            <Button Access="Public" Name="ToggleModeratorInjectionButton" Text="Off" Disabled="True" />
+                            <Label Text="{Loc 'hfr-console-injection-control'}" />
+                            <Button Access="Public" Name="ToggleModeratorInjectionButton" Text="{Loc 'comp-gas-thermomachine-ui-status-disabled'}" Disabled="True" />
                             <FloatSpinBox Access="Public" Name="ModeratorInputRateSpinbox" Value="0" MinSize="140 20" Margin="10 0 0 0" />
-                            <Label Text=" mol/s" />
+                            <Label Text="{Loc 'hfr-console-moles-per-second'}" />
                         </BoxContainer>
                         <BoxContainer Orientation="Horizontal" Margin="0 5">
-                            <Label Text="Plasma: " FontColorOverride="#FF3300" />
+                            <Label Text="{Loc 'hfr-console-plasma'}" FontColorOverride="#FF3300" />
                             <Control HorizontalExpand="True" />
                             <Label Name="MPlasmaMoles" Text="0.00 moles" FontColorOverride="#FF3300" />
                         </BoxContainer>
                         <BoxContainer Orientation="Horizontal" Margin="0 5">
-                            <Label Text="BZ: " FontColorOverride="#9370DB" />
+                            <Label Text="{Loc 'hfr-console-bz'}" FontColorOverride="#9370DB" />
                             <Control HorizontalExpand="True" />
                             <Label Name="MBZMoles" Text="0.00 moles" FontColorOverride="#9370DB" />
                         </BoxContainer>
                         <BoxContainer Orientation="Horizontal" Margin="0 5">
-                            <Label Text="Proto-Nitrate: " FontColorOverride="#009933" />
+                            <Label Text="{Loc 'hfr-console-proto-nitrate'}" FontColorOverride="#009933" />
                             <Control HorizontalExpand="True" />
                             <Label Name="MProtoNitrateMoles" Text="0.00 moles" FontColorOverride="#009933" />
                         </BoxContainer>
@@ -208,7 +207,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later AND MIT
                 </BoxContainer>
                 <!-- Gas Monitoring -->
                 <BoxContainer Orientation="Vertical" HorizontalExpand="True" Margin="4 0 0 0">
-                    <Label Text="Gas Monitoring" />
+                    <Label Text="{Loc 'hfr-console-gas-monitoring'}" />
                     <PanelContainer StyleClasses="LowDivider" />
                     <BoxContainer Orientation="Horizontal" Margin="4 10 10 4">
                         <BoxContainer Orientation="Vertical" SetSize="90 0" VerticalAlignment="Top" HorizontalAlignment="Right">
@@ -254,22 +253,22 @@ SPDX-License-Identifier: AGPL-3.0-or-later AND MIT
                             </PanelContainer>
                             <BoxContainer Orientation="Horizontal" HorizontalExpand="True" >
                                 <BoxContainer Orientation="Vertical" HorizontalExpand="True">
-                                    <Label Text="Fusion" HorizontalAlignment="Center" />
+                                    <Label Text="{Loc 'hfr-console-fusion'}" HorizontalAlignment="Center" />
                                     <Label Name="FusionTemperature" Text="3 K" HorizontalAlignment="Center" />
                                     <Label Name="FusionTrend" Text="-" HorizontalAlignment="Center" />
                                 </BoxContainer>
                                 <BoxContainer Orientation="Vertical" HorizontalExpand="True">
-                                    <Label Text="Moderator" HorizontalAlignment="Center" />
+                                    <Label Text="{Loc 'hfr-console-moderator'}" HorizontalAlignment="Center" />
                                     <Label Name="ModeratorTemperature" Text="3 K" HorizontalAlignment="Center" />
                                     <Label Name="ModeratorTrend" Text="-" HorizontalAlignment="Center" />
                                 </BoxContainer>
                                 <BoxContainer Orientation="Vertical" HorizontalExpand="True">
-                                    <Label Text="Coolant" HorizontalAlignment="Center" />
-                                    <Label Name="CoolantTemperature" Text="Empty" FontColorOverride="red" HorizontalAlignment="Center" />
+                                    <Label Text="{Loc 'hfr-console-coolant'}" HorizontalAlignment="Center" />
+                                    <Label Name="CoolantTemperature" Text="{Loc 'hfr-console-empty'}" FontColorOverride="red" HorizontalAlignment="Center" />
                                 </BoxContainer>
                                 <BoxContainer Orientation="Vertical" HorizontalExpand="True">
-                                    <Label Text="Output" HorizontalAlignment="Center" />
-                                    <Label Name="OutputTemperature" Text="Empty" FontColorOverride="red" HorizontalAlignment="Center" />
+                                    <Label Text="{Loc 'hfr-console-output'}" HorizontalAlignment="Center" />
+                                    <Label Name="OutputTemperature" Text="{Loc 'hfr-console-empty'}" FontColorOverride="red" HorizontalAlignment="Center" />
                                 </BoxContainer>
                             </BoxContainer>
                         </BoxContainer>
@@ -279,97 +278,97 @@ SPDX-License-Identifier: AGPL-3.0-or-later AND MIT
 
             <!-- Reactor Status -->
             <BoxContainer Orientation="Vertical" Margin="10 5" HorizontalExpand="True">
-                <Label Text="Reactor Status" />
+                <Label Text="{Loc 'hfr-console-reactor-status'}" />
                 <PanelContainer StyleClasses="LowDivider" />
                 <BoxContainer Orientation="Horizontal" Margin="0 20 0 10">
                     <!-- Reactor Integrity -->
                     <BoxContainer Orientation="Vertical" HorizontalExpand="True" Margin="5 0">
                         <Label Name="ReactorIntegrityLabel" Text="100%" HorizontalAlignment="Center" />
-                        <Label Text="Reactor Integrity" HorizontalAlignment="Center" />
+                        <Label Text="{Loc 'hfr-console-reactor-integrity'}" HorizontalAlignment="Center" />
                     </BoxContainer>
                     <!-- Iron Content -->
                     <BoxContainer Orientation="Vertical" HorizontalExpand="True" Margin="5 0">
                         <Label Name="IronContentLabel" Text="0%" HorizontalAlignment="Center" />
-                        <Label Text="Iron Content" HorizontalAlignment="Center" />
+                        <Label Text="{Loc 'hfr-console-iron-content'}" HorizontalAlignment="Center" />
                     </BoxContainer>
                     <!-- Area Power -->
                     <BoxContainer Orientation="Vertical" HorizontalExpand="True" Margin="5 0">
                         <Label Name="AreaPowerLabel" Text="0%" HorizontalAlignment="Center" />
-                        <Label Text="Area Power" HorizontalAlignment="Center" />
+                        <Label Text="{Loc 'hfr-console-area-power'}" HorizontalAlignment="Center" />
                     </BoxContainer>
                     <!-- Fusion Level -->
                     <BoxContainer Orientation="Vertical" HorizontalExpand="True" Margin="5 0">
                         <Label Name="FusionLevelLabel" Text="0" HorizontalAlignment="Center" />
-                        <Label Text="Fusion Level" HorizontalAlignment="Center" />
+                        <Label Text="{Loc 'hfr-console-fusion-level'}" HorizontalAlignment="Center" />
                     </BoxContainer>
                     <!-- Energy -->
                     <BoxContainer Orientation="Vertical" HorizontalExpand="True" Margin="5 0">
                         <Label Name="EnergyLabel" Text="0 TJ" HorizontalAlignment="Center" />
-                        <Label Text="Energy" HorizontalAlignment="Center" />
+                        <Label Text="{Loc 'hfr-console-energy'}" HorizontalAlignment="Center" />
                     </BoxContainer>
                     <!-- Reaction Activity -->
                     <BoxContainer Orientation="Vertical" HorizontalExpand="True" Margin="5 0">
                         <Label Name="ReactionActivityLabel" Text="0%" HorizontalAlignment="Center" />
-                        <Label Text="Reaction Activity" HorizontalAlignment="Center" />
+                        <Label Text="{Loc 'hfr-console-reaction-activity'}" HorizontalAlignment="Center" />
                     </BoxContainer>
                     <!-- Instability -->
                     <BoxContainer Orientation="Vertical" HorizontalExpand="True" Margin="5 0">
                         <Label Name="InstabilityLabel" Text="0%" HorizontalAlignment="Center" />
-                        <Label Text="Instability" HorizontalAlignment="Center" />
+                        <Label Text="{Loc 'hfr-console-instability'}" HorizontalAlignment="Center" />
                     </BoxContainer>
                 </BoxContainer>
             </BoxContainer>
 
             <!-- Reactor Control -->
             <BoxContainer Orientation="Vertical" Margin="10 5" HorizontalExpand="True">
-                <Label Text="Reactor Control" />
+                <Label Text="{Loc 'hfr-console-reactor-control'}" />
                 <PanelContainer StyleClasses="LowDivider" />
                 <BoxContainer Orientation="Horizontal" Margin="0 25 0 10">
                     <!-- Heating Conductor -->
                     <BoxContainer Orientation="Vertical" HorizontalExpand="True" Margin="5 0">
                         <FloatSpinBox Access="Public" Name="HeatingConductorSpinBox" Value="0" MinSize="140 20" HorizontalAlignment="Center" />
-                        <Label Text="Heating Conductor" HorizontalAlignment="Center" />
+                        <Label Text="{Loc 'hfr-console-heating-conductor'}" HorizontalAlignment="Center" />
                     </BoxContainer>
                     <!-- Cooling Volume -->
                     <BoxContainer Orientation="Vertical" HorizontalExpand="True" Margin="5 0">
                         <FloatSpinBox Access="Public" Name="CoolingVolumeSpinBox" Value="0" MinSize="140 20" HorizontalAlignment="Center" />
-                        <Label Text="Cooling Volume" HorizontalAlignment="Center" />
+                        <Label Text="{Loc 'hfr-console-cooling-volume'}" HorizontalAlignment="Center" />
                     </BoxContainer>
                     <!-- Magnetic Constrictor -->
                     <BoxContainer Orientation="Vertical" HorizontalExpand="True" Margin="5 0">
                         <FloatSpinBox Access="Public" Name="MagneticConstrictorSpinBox" Value="0" MinSize="140 20" HorizontalAlignment="Center" />
-                        <Label Text="Magnetic Constrictor" HorizontalAlignment="Center" />
+                        <Label Text="{Loc 'hfr-console-magnetic-constrictor'}" HorizontalAlignment="Center" />
                     </BoxContainer>
                     <!-- Current Damper -->
                     <BoxContainer Orientation="Vertical" HorizontalExpand="True" Margin="5 0">
                         <FloatSpinBox Access="Public" Name="CurrentDamperSpinBox" Value="0" MinSize="140 20" HorizontalAlignment="Center" />
-                        <Label Text="Current Damper" HorizontalAlignment="Center" />
+                        <Label Text="{Loc 'hfr-console-current-damper'}" HorizontalAlignment="Center" />
                     </BoxContainer>
                 </BoxContainer>
             </BoxContainer>
 
             <!-- Output Control -->
             <BoxContainer Orientation="Vertical" Margin="10 5" HorizontalExpand="True">
-                <Label Text="Output Control" />
+                <Label Text="{Loc 'hfr-console-output-control'}" />
                 <PanelContainer StyleClasses="LowDivider" />
                 <BoxContainer Orientation="Horizontal" Margin="0 5">
-                    <Label Text="Waste remove: " />
-                    <Button Access="Public" Name="ToggleWasteRemoveButton" Text="Off" />
+                    <Label Text="{Loc 'hfr-console-waste-remove'}" />
+                    <Button Access="Public" Name="ToggleWasteRemoveButton" Text="{Loc 'comp-gas-thermomachine-ui-status-disabled'}" />
                 </BoxContainer>
                 <BoxContainer Orientation="Horizontal" Margin="0 5">
-                    <Label Text="Moderator filtering rate: " />
+                    <Label Text="{Loc 'hfr-console-moderator-filtering-rate'}" />
                     <FloatSpinBox Access="Public" Name="ModeratorFilteringRateSpinBox" Value="0" MinSize="140 20" />
-                    <Label Text=" mol/s" />
+                    <Label Text="{Loc 'hfr-console-moles-per-second'}" />
                 </BoxContainer>
                 <BoxContainer Orientation="Horizontal" Margin="0 5" HorizontalExpand="True" >
                     <Collapsible Margin="2 2 2 2" HorizontalExpand="True" >
-                        <CollapsibleHeading Title="Filter from moderator mix" />
+                        <CollapsibleHeading Title="{Loc 'hfr-console-moderator-filter'}" />
                         <CollapsibleBody Margin="20 0 0 0">
                             <BoxContainer Orientation="Vertical" HorizontalExpand="True" >
                                 <BoxContainer Orientation="Horizontal" HorizontalExpand="True" Margin="0 0 0 5">
                                     <GridContainer HorizontalExpand="True" Columns="7" Margin="0 5 0 0">
-                                        <Button Name="SelectAllButton" HorizontalExpand="True" Text="Select All" />
-                                        <Button Name="DeselectAllButton" HorizontalExpand="True" Text="Deselect All" />
+                                        <Button Name="SelectAllButton" HorizontalExpand="True" Text="{Loc 'hfr-console-select-all'}" />
+                                        <Button Name="DeselectAllButton" HorizontalExpand="True" Text="{Loc 'hfr-console-deselect-all'}" />
                                         <Control HorizontalExpand="True" />
                                         <Control HorizontalExpand="True" />
                                         <Control HorizontalExpand="True" />

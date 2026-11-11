@@ -1,0 +1,41 @@
+<Document>
+  # Gas Turbine
+
+  The gas turbine turns hot gas into electrical power. It is the cheap half of the ship's engine room: it needs no fuel mix of its own, only a hot gas feed from something else — a burn chamber, a fusion reactor's waste line, or any other hot loop.
+
+  <Box>
+    <GuideEntityEmbed Entity="Turbine" Caption="turbine"/>
+    <GuideEntityEmbed Entity="GasTurbineFlatpack" Caption="flatpack"/>
+  </Box>
+
+  ## Buying and unpacking
+
+  Cargo sells the **flatpack** under Engineering for **10,000 credits**. Drag it onto the ship's grid and hit it with a **multitool** to unpack it into a full turbine. It needs floor space and an anchored tile.
+
+  ## Piping and wiring
+
+  The turbine creates two pipe stubs when it is anchored: an **inlet** on its west side and an **outlet** on its east side. Pipe your hot gas into the inlet and run the outlet to a waste line or space. Connect the turbine's HV output to the ship's power net.
+
+  ## Operating
+
+  1. Open the turbine UI. It requires **Engineering access**.
+  2. Set the **flow rate**: how much gas the turbine pulls per second.
+  3. Set the **stator load**: higher load extracts more power but drags the RPM down.
+  4. Watch the **RPM** and the temperature. The turbine has a best RPM; overspeeding it and running it too hot both damage the blades.
+
+  The turbine reports **overspeed**, **overtemperature**, **stalling** and **undertemperature** states in its UI. A damaged blade set still turns, but it loses efficiency and eventually fails.
+
+  ## Repair
+
+  Weld the turbine with a welding tool to repair blade damage. Each repair costs welding fuel and time; the repair dialogue and the blade health are shown in the UI.
+
+  ## Tips
+
+  - The turbine is most efficient with a steady, hot gas supply. A reactor's waste line is a good match: the turbine turns the leftover heat into power instead of venting it.
+  - Do not feed it cold gas — it will stall.
+  - The stator load can be automated with the two signal ports (increase/decrease).
+
+  ## See also
+
+  [textlink="Hypertorus Fusion Reactor" link="HypertorusFusionReactor"], [textlink="Atmospherics" link="Atmospherics"]
+</Document>
