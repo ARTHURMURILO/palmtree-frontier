@@ -178,15 +178,8 @@ public sealed partial class SupermatterSystem
         gasReleased.Temperature = Math.Max(0,
             Math.Min(gasReleased.Temperature, 2500f * sm.HeatModifier));
 
-        // Release the waste
-        gasReleased.AdjustMoles(
-            Gas.Plasma,
-            Math.Max(energy * sm.HeatModifier / _config.GetCVar(ECCVars.SupermatterPlasmaReleaseModifier), 0f));
-        gasReleased.AdjustMoles(
-            Gas.Oxygen,
-            Math.Max((energy + gasReleased.Temperature * sm.HeatModifier - Atmospherics.T0C) / _config.GetCVar(ECCVars.SupermatterOxygenReleaseModifier), 0f));
-
-        // Assmos - /tg/ gases.
+        // Assmos - /tg/ gases. These run before the waste release, like Funky's original: the
+        // freshly released plasma/oxygen must not be eaten by the conversions.
         // Carbon dioxide and oxygen in the chamber turn into pluoxium.
         if (mix.GetMoles(Gas.CarbonDioxide) > 0.01f)
         {
@@ -203,7 +196,7 @@ public sealed partial class SupermatterSystem
             }
         }
 
-        // Anti-noblium and helium fuse into hyper-noblium.
+        // Anti-noblium and helium fuse into hyper-noblium and spit lightning at the same time.
         if (mix.GetMoles(Gas.AntiNoblium) > 0.01f && mix.GetMoles(Gas.Helium) > 0.01f)
         {
             var consumedAN = Math.Min(gasReleased.GetMoles(Gas.Helium), gasReleased.GetMoles(Gas.AntiNoblium)) * 0.5f;
@@ -213,8 +206,27 @@ public sealed partial class SupermatterSystem
                 gasReleased.AdjustMoles(Gas.AntiNoblium, -consumedAN);
                 gasReleased.AdjustMoles(Gas.Helium, -consumedAN);
                 gasReleased.AdjustMoles(Gas.HyperNoblium, consumedAN);
+
+                var zapPower = Math.Clamp((int) Math.Round(consumedAN / mix.TotalMoles * 5), 0,
+                    sm.LightningPrototypes.Length - 1);
+                var zapCount = Math.Clamp((int) Math.Round(consumedAN / 4), 1, 10);
+                var zapRange = Math.Clamp(sm.Power / 1000f, 2f, 7f);
+
+                if (sm.ZapLast + TimeSpan.FromSeconds(5) <= _timing.CurTime)
+                {
+                    _lightning.ShootRandomLightnings(uid, zapRange, zapCount, sm.LightningPrototypes[zapPower].Id);
+                    sm.ZapLast = _timing.CurTime;
+                }
             }
         }
+
+        // Release the waste
+        gasReleased.AdjustMoles(
+            Gas.Plasma,
+            Math.Max(energy * sm.HeatModifier / _config.GetCVar(ECCVars.SupermatterPlasmaReleaseModifier), 0f));
+        gasReleased.AdjustMoles(
+            Gas.Oxygen,
+            Math.Max((energy + gasReleased.Temperature * sm.HeatModifier - Atmospherics.T0C) / _config.GetCVar(ECCVars.SupermatterOxygenReleaseModifier), 0f));
 
         _atmosphere.Merge(mix, gasReleased);
 
