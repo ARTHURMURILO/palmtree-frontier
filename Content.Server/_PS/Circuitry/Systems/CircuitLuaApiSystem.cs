@@ -822,10 +822,16 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         if (!component.Powered)
             return Bool(false, "no power");
 
+        if (!component.Capabilities.HasFlag(CircuitCapability.Locomotion))
+            return Bool(false, "no locomotion module");
+
         if (!_assembly.TryConsumePower(runtime.Assembly, component.ActionPowerCost, component))
             return Bool(false, "no power");
 
-        return Bool(_movement.TryStartDirect(runtime.Assembly, new Vector2((float) dx, (float) dy), component));
+        if (!_movement.TryStartDirect(runtime.Assembly, new Vector2((float) dx, (float) dy), component))
+            return Bool(false, "cannot move");
+
+        return Bool(true);
     }
 
     private DynValue WalkTo(CircuitLuaRuntime runtime, CallbackArguments args)
@@ -1881,7 +1887,10 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         if (!_assembly.TryConsumePower(runtime.Assembly, component.ActionPowerCost, component))
             return Bool(false, "no power");
 
-        return Bool(_hands.TryPickupAnyHand(runtime.Assembly, target, checkActionBlocker: true, animateUser: false));
+        if (!_hands.TryPickupAnyHand(runtime.Assembly, target, checkActionBlocker: true, animateUser: false))
+            return Bool(false, "pickup failed: no free hand or item cannot be picked up");
+
+        return Bool(true);
     }
 
     private DynValue Drop(CircuitLuaRuntime runtime)
@@ -1892,10 +1901,16 @@ public sealed class CircuitLuaApiSystem : EntitySystem
             return Bool(false, "no manipulator module");
         }
 
+        if (!_hands.TryGetActiveItem((runtime.Assembly, (HandsComponent?) null), out _))
+            return Bool(false, "nothing to drop");
+
         if (!_assembly.TryConsumePower(runtime.Assembly, component.ActionPowerCost, component))
             return Bool(false, "no power");
 
-        return Bool(_hands.TryDrop(runtime.Assembly, checkActionBlocker: true));
+        if (!_hands.TryDrop(runtime.Assembly, checkActionBlocker: true))
+            return Bool(false, "drop failed");
+
+        return Bool(true);
     }
 
     private DynValue Held(CircuitLuaRuntime runtime)
@@ -2023,7 +2038,10 @@ public sealed class CircuitLuaApiSystem : EntitySystem
 
         var ev = new InteractHandEvent(runtime.Assembly, target);
         RaiseLocalEvent(target, ev);
-        return Bool(ev.Handled);
+        if (!ev.Handled)
+            return Bool(false, "target did not handle interaction");
+
+        return Bool(true);
     }
 
     private DynValue AnalyzePlant(CircuitLuaRuntime runtime, CallbackArguments args)
@@ -2164,7 +2182,10 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         if (source is not { } sourceContainer || !sourceContainer.IsValid())
             return Bool(false, "no matching reagent container");
 
-        if (!_solutions.TryGetDrainableSolution(sourceContainer, out _, out var sourceSolution))
+        if (!_solutions.TryGetDrainableSolution(sourceContainer, out var sourceEntity, out _))
+            return Bool(false, "reagent container is not drainable");
+
+        if (sourceEntity is not { } sourceSolution)
             return Bool(false, "reagent container is not drainable");
 
         var beakerSlot = GetOptionalIndex(args, 3, 1);
@@ -2178,13 +2199,20 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         if (amount <= 0)
             return Bool(false, "dispense amount must be positive");
 
+        if (sourceSolution.Comp.Solution.Volume <= FixedPoint2.Zero)
+            return Bool(false, "source container is empty");
+
+        if (destination.Comp.Solution.AvailableVolume <= FixedPoint2.Zero)
+            return Bool(false, $"beaker slot {beakerSlot} is full");
+
         if (!_assembly.TryConsumePower(runtime.Assembly, component.ActionPowerCost, component))
             return Bool(false, "no power");
 
-        return Bool(_solutions.TryTransferSolution(
-            destination,
-            sourceSolution,
-            FixedPoint2.New(Math.Min(amount, 1000f))));
+        var quantity = FixedPoint2.New(Math.Min(amount, 1000f));
+        if (!TryTransferReagents(sourceSolution, destination, quantity, out var transferError))
+            return Bool(false, transferError);
+
+        return Bool(true);
     }
 
     private DynValue AnalyzeChemicals(CircuitLuaRuntime runtime, CallbackArguments args)
@@ -2712,7 +2740,10 @@ public sealed class CircuitLuaApiSystem : EntitySystem
 
         var ev = new ActivateInWorldEvent(runtime.Assembly, target, true);
         RaiseLocalEvent(target, ev);
-        return Bool(ev.Handled);
+        if (!ev.Handled)
+            return Bool(false, "target did not handle activation");
+
+        return Bool(true);
     }
 
     private DynValue Trigger(CircuitLuaRuntime runtime, CallbackArguments args)
@@ -2743,7 +2774,10 @@ public sealed class CircuitLuaApiSystem : EntitySystem
 
         var ev = new UseInHandEvent(runtime.Assembly);
         RaiseLocalEvent(target, ev);
-        return Bool(ev.Handled);
+        if (!ev.Handled)
+            return Bool(false, "held item did not handle use");
+
+        return Bool(true);
     }
 
     private DynValue SendSignal(CircuitLuaRuntime runtime, CallbackArguments args)
@@ -2833,7 +2867,10 @@ public sealed class CircuitLuaApiSystem : EntitySystem
             Transform(target).Coordinates,
             canReach: true);
         RaiseLocalEvent(held.Value, ev);
-        return Bool(ev.Handled);
+        if (!ev.Handled)
+            return Bool(false, "injection failed");
+
+        return Bool(true);
     }
 
     private DynValue UseItem(CircuitLuaRuntime runtime, CallbackArguments args)
@@ -2852,7 +2889,10 @@ public sealed class CircuitLuaApiSystem : EntitySystem
 
         var ev = new InteractUsingEvent(runtime.Assembly, held.Value, target, Transform(target).Coordinates);
         RaiseLocalEvent(target, ev);
-        return Bool(ev.Handled);
+        if (!ev.Handled)
+            return Bool(false, "target did not handle item use");
+
+        return Bool(true);
     }
 
     private DynValue Attack(CircuitLuaRuntime runtime, CallbackArguments args)
@@ -3025,6 +3065,54 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         return table;
     }
 
+    /// <summary>
+    /// Returns a user-facing reason why a solution cannot be moved, or null when it can.
+    /// </summary>
+    private static string? GetTransferError(
+        Entity<SolutionComponent> source,
+        Entity<SolutionComponent> destination)
+    {
+        if (source.Owner == destination.Owner)
+            return "source and target are the same container";
+
+        if (source.Comp.Solution.Volume <= FixedPoint2.Zero)
+            return "source is empty";
+
+        if (destination.Comp.Solution.AvailableVolume <= FixedPoint2.Zero)
+            return "target is full";
+
+        return null;
+    }
+
+    /// <summary>
+    /// Moves reagents between two solution entities and updates both ends. Use this instead of
+    /// <see cref="SharedSolutionContainerSystem.TryTransferSolution"/> because that overload only
+    /// updates the destination, leaving the source's appearance, examine text and UI stale.
+    /// </summary>
+    private bool TryTransferReagents(
+        Entity<SolutionComponent> source,
+        Entity<SolutionComponent> destination,
+        FixedPoint2 quantity,
+        out string error)
+    {
+        error = GetTransferError(source, destination) ?? string.Empty;
+        if (error.Length > 0)
+            return false;
+
+        var actual = FixedPoint2.Min(quantity,
+            FixedPoint2.Min(source.Comp.Solution.Volume, destination.Comp.Solution.AvailableVolume));
+
+        if (actual <= FixedPoint2.Zero)
+        {
+            error = "nothing to transfer";
+            return false;
+        }
+
+        var split = _solutions.SplitSolution(source, actual);
+        _solutions.AddSolution(destination, split);
+        return true;
+    }
+
     private DynValue TransferBetween(CircuitLuaRuntime runtime, CallbackArguments args)
     {
         if (!TryGetHandle(runtime, args, 0, out var source))
@@ -3055,6 +3143,9 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         if (!TryGetAnySolution(target, out var targetSolution, out _, out var targetError))
             return Bool(false, targetError);
 
+        if (GetTransferError(sourceSolution, targetSolution) is { } transferError)
+            return Bool(false, transferError);
+
         if (_timing.CurTime < runtime.NextTransfer)
             return Bool(false, "transfer rate limited");
 
@@ -3064,11 +3155,10 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         runtime.NextTransfer = _timing.CurTime + TimeSpan.FromSeconds(0.5);
 
         var quantity = FixedPoint2.New((float) Math.Min(amount, 1000d));
-        var moved = _solutions.TryTransferSolution(targetSolution, sourceSolution.Comp.Solution, quantity);
-        if (moved)
-            _solutions.UpdateChemicals(sourceSolution);
+        if (!TryTransferReagents(sourceSolution, targetSolution, quantity, out transferError))
+            return Bool(false, transferError);
 
-        return Bool(moved);
+        return Bool(true);
     }
 
     private bool TryGetAnySolution(
@@ -3144,6 +3234,23 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         if (!TryGetTargetSolution(target, toTarget, out var targetSolution, out var targetError))
             return Bool(false, targetError);
 
+        var sourceSolution = toTarget ? beakerSolution : targetSolution;
+        var destinationSolution = toTarget ? targetSolution : beakerSolution;
+
+        if (sourceSolution.Comp.Solution.Volume <= FixedPoint2.Zero)
+        {
+            return Bool(false, toTarget
+                ? $"beaker slot {slot} is empty"
+                : "target container is empty");
+        }
+
+        if (destinationSolution.Comp.Solution.AvailableVolume <= FixedPoint2.Zero)
+        {
+            return Bool(false, toTarget
+                ? "target is full"
+                : $"beaker slot {slot} is full");
+        }
+
         if (_timing.CurTime < runtime.NextTransfer)
             return Bool(false, "transfer rate limited");
 
@@ -3153,11 +3260,10 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         runtime.NextTransfer = _timing.CurTime + TimeSpan.FromSeconds(0.5);
 
         var quantity = FixedPoint2.New((float) Math.Min(amount, 1000d));
-        var moved = toTarget
-            ? _solutions.TryTransferSolution(targetSolution, beaker, quantity)
-            : _solutions.TryTransferSolution(beakerSolution, targetSolution.Comp.Solution, quantity);
+        if (!TryTransferReagents(sourceSolution, destinationSolution, quantity, out var transferError))
+            return Bool(false, transferError);
 
-        return Bool(moved);
+        return Bool(true);
     }
 
     private bool CanManipulate(

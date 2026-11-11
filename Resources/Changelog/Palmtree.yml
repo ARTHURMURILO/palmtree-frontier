@@ -2158,3 +2158,16 @@ Entries:
   time: '2026-11-11T00:10:00.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/99d41838a600e72dc341ad1d430bb21ac936e327
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: >-
+        Circuit reagent transfers now update the source container immediately, so emptied buckets,
+        beakers and dispensers no longer keep showing their old fill level. Empty or full
+        transfers return an explicit reason instead of false with no message.
+    - type: Fix
+      message: >-
+        Circuit action APIs now return a reason for every failure, including pickup, drop, use,
+        use_item, interact, trigger and inject.
+  id: 90143
+  time: '2026-11-11T02:33:27.0000000+00:00'

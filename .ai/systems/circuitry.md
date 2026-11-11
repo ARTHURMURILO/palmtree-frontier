@@ -15,7 +15,7 @@
   while chassis construction, sound and balance work remain. Phase 5 (hardening) is in progress:
   grid and Bluespace Dock persistence, ownership administration, a Lua kill switch, editor coverage,
   Lua soak/queue tests and a many-assembly stress test are in place.
-- Validation: solution build, YAMLLinter, Content.Tests, and 38 targeted `Circuitry*` integration
+- Validation: solution build, YAMLLinter, Content.Tests, and 39 targeted `Circuitry*` integration
   tests pass (assembly/Lua, hearing, inspect, BUI open, analyzers/dispenser, ChemMaster, security,
   radio, power budget, scan kinds, signals, item/solution autonomy, decals/doors, puddles, events,
   editor Run auto-save, gas analyzer, grid save/load, Bluespace Dock round-trip, many-assembly
@@ -76,7 +76,10 @@
   checks ranged line of sight (at least 20 tiles), not the 1.5-tile manipulator hand range.
   `attack` temporarily enables combat mode and restores the previous stance; `robot.combat(true/
   false)` sets a persistent stance. `point` spawns the normal pointing arrow and requires a
-  manipulator.
+  manipulator. Action APIs return `false, reason` on failure instead of a bare `false`.
+- Reagent transfers update both the source and destination solutions. Emptying a bucket, beaker or
+  dispenser updates its sprite, examine text and UI immediately; empty/full failures report
+  `beaker slot N is empty`, `target is full` and similar reasons.
 - Sensor module range is 16 tiles and multi-result scans cap at 200 rows. Sensor lookups share a
   4-per-second token bucket (burst of 4), so a tight `find`/`scan` loop gets `scan cooldown`
   instead of rescanning hundreds of times per resume. The scanner sorts candidates and raycasts
