@@ -1084,6 +1084,15 @@ that take an optional `slot`.
 - Amounts are capped at 1000 units.
 - `transfer` moves reagents between any two containers, such as a carried bucket and a syringe.
 - `transfer_to`/`transfer_from` also understand syringes and droppers by using their injector solution.
+- Transfers update **both** the source and destination containers, so sprites, examine text and open
+  UIs refresh immediately. Emptying a bucket or beaker no longer leaves its client-side fill level
+  stuck at the old volume.
+- Transfers move as much as fits; `true` means at least some reagents moved. Read `reagents()`
+  again for the new volume.
+- `beakers()` and `reagents()` return snapshots. Re-query them after a transfer instead of caching
+  the returned table; the table does not update itself when reagents move.
+- Empty and full failures return a specific reason such as `beaker slot 1 is empty`,
+  `target container is empty`, `target is full` or `source container is empty`.
 - `dispense` reads a reagent dispenser's storage and transfers into a beaker:
   - `selector` can be a string matched against the stored container's name or reagent prototype,
     or a 1-based numeric index. If omitted, the first stored container is used.
@@ -2146,6 +2155,7 @@ When changing the API:
 | 2026-11-09 | Replaced the engine editor with a custom inline-syntax-colored Lua editor (line numbers, selection, copy/paste, tab indentation, undo/redo). Added multi-port signal sources, transfer rate limiting, Bluespace Dock/grid persistence coverage, puddle chemical analysis, ChemMaster automation, job/access/wanted queries, and chassis variants. |
 | 2026-11-10 | Standard sensor range is now 16 tiles. `find`/`nearest_*` search the full range instead of only the 16 nearest entities. Sensor lookups share a 4-per-second token bucket, and `walk_to` rate-limits/retargets path starts so tight follow loops cannot spam pathfinding or trip the allocation watchdog. |
 | 2026-11-10 | Multi-result scans now cap at 200 results instead of 16. The scanner raycasts nearest-first only until the cap is filled, so the larger result set does not multiply line-of-sight checks. |
+| 2026-11-11 | Fixed circuit reagent transfers leaving the source container stale. Transfers now update both ends, empty/full failures return explicit reasons, and all action APIs report a reason instead of `false, nil`. |
 | 2026-11-10 | Added `robot.combat([enabled])` and `robot.point(handle)` for manipulator-equipped assemblies. Melee `attack` temporarily enables combat mode and restores the previous stance. |
 | 2026-11-10 | Added GLua-style `hook.Add`/`Remove`/`Has`/`Run`/`Call` event hooks. Hooks are pumped when the script waits and do not consume events from `wait_event`. |
 | 2026-11-10 | Added battery inspection and power transfer APIs: `battery`, `charge`, and `charge_from`. Assemblies can draw from nearby APCs/batteries and charge held or nearby cells/guns. |
