@@ -1,17 +1,37 @@
 # Reactor ship persistence
 
-**Status:** **Implemented (2026-11-06).** The data-restore fixes landed on the engine branches and the
-policy layer below landed on `experimental`:
+**Status:** **Implemented (2026-11-06), hardened 2026-11-10.** The data-restore fixes, the policy
+layer and the save/load normalisation all ship on `engines-reactors`:
 
 - `BluespaceDockSystem.FindLiveReactor` / `IsLiveReactor` is the gate; it is wired into both
   `FindStoreBlocker` (so the console refuses early) and `TrySaveShipFile` (the choke point every
-  store goes through).
-- `BluespaceDockSystem.SafeReactors` is the scram: `RbmkReactorSystem.ShutDown` (now public) for the
+  store goes through). The threshold is **exclusive**: below 50 °C stores, at 50 °C refuses.
+- `BluespaceDockSystem.SafeReactors` is the scram: `RbmkReactorSystem.ShutDown` (public) for the
   RBMK and `StormdriveSystem.Deactivate` for the drive, plus the remaining fuse/warning state.
 - `forcedock --scram` runs the scram *before* the ordinary checks, so force-dock cannot smuggle a
   live core out either; the admin log records how many cores were safed.
+- **Save/load normalisation (2026-11-10):** `BluespaceDockSystem.ResetRuntimeCooldowns` ends with
+  `NormalizeReactorRuntime`, and because that hook already runs on save *and* load, both paths share
+  one behaviour. It clears the RBMK's `AlertActive`/`NextTick`/`NextFlicker` and the stormdrive's
+  `ReactorEndTimes`/`MeltdownAt`/`WarningState`/`NextProcess`/`NextAlert`/`NextCountdownAnnounce`/
+  `NextGravityPull`/`DumpingFuel`. It does **not** touch `VesselIntegrity`, `Slagged`, `DesiredK`,
+  temperature, the rod containers, rod depletion/age or control-rod settings.
+- The branch-side restore fixes remain the other half: `FuelRods`/`ControlRods` rebuilt in
+  `ComponentStartup`, `Slagged`/`VesselIntegrity` serialized, rod depletion and relative rod age
+  serialized.
 - Locale key: `bluespace-dock-error-live-reactor-aboard`.
-- Regression test: `Content.IntegrationTests/Tests/_PS/BluespaceDockReactorTest.cs`.
+- Tests:
+  - `Content.IntegrationTests/Tests/_PS/BluespaceDockReactorTest.cs` — the gate and its edge cases
+    (`TemperatureExactlyAtTheThresholdBlocksStorage`, `RbmkAlertAloneBlocksStorage`,
+    `StormdriveWarningStatesBlockStorage`, `MaintenanceStateIsStorableOnlyWhileCold`,
+    `MultipleReactorsReturnAStableOffender`, `ReactorFlatpacksAreNotLiveCores`).
+  - `Content.IntegrationTests/Tests/_PS/BluespaceDockReactorSaveTest.cs` — real save→load round
+    trips (`ColdFuelledRbmkSurvivesTheRoundTrip`, `SlaggedRbmkStaysWreckedAcrossTheRoundTrip`,
+    `FuelledStormdriveSurvivesTheRoundTrip`, `LiveReactorNeverReachesTheShipFile`,
+    `FuelRodDepletionSurvivesTheRoundTrip`,
+    `InvalidContainerReferencesDoNotBreakReactorScansOrSaves`).
+  - `Content.IntegrationTests/Tests/_NSV13/ReactorBaseSliceTest.cs` — the reactors-only slice: a
+    directly spawned RBMK and stormdrive tick with no flatpack, cargo, research or console.
 
 **Scope:** RBMK (`engines-rbmk`) and stormdrive (`engines-stormdrive`), plus the shared save path in
 `Content.Server/_PS/BluespaceDock/BluespaceDockSystem.cs` and
@@ -56,7 +76,10 @@ clear message, not silently fixed.
 | Engine | Gate |
 |---|---|
 | RBMK | `IsRunning == false`, `Temperature < 50 °C`, `AlertActive == false`. A slagged wreck is allowed (it is legitimate cargo) and stays slagged. |
-| Stormdrive | `State` is `Idle` or `Maintenance`, `Heat < 50`, `ReactorEndTimes == false`, `WarningState == None`, no `StormdriveAnomalySurge`/`Sheer`/`Squall` on the grid |
+| Stormdrive | `State` is `Idle` or `Maintenance`, `Heat < 50`, `ReactorEndTimes == false`, `WarningState == None`. The anomaly rule from the original design (no `StormdriveAnomalySurge`/`Sheer`/`Squall` on the grid) is **not implemented** - the scan only looks at the reactor components (see section 6). |
+
+The threshold is exclusive: `49.9 °C` stores, `50 °C` refuses, matching the locale message ("cool
+below 50 °C"). All of these are one scan, `BluespaceDockSystem.FindLiveReactor`.
 
 **Do not gate on fuel rods.** With the restore fix a cold, fuelled reactor stores and reloads
 correctly, and forcing the crew to eject five rods before every dock visit is hostile. If the
@@ -69,9 +92,16 @@ Preserve the permanent facts, normalise the timers and streams:
 * Keep: `Slagged`, `VesselIntegrity`, rod `Depletion`, rod age (relative, never an absolute round
   time), control-rod percentage, mounted rods and their integrity/effectiveness, `ReactorId`, device
   links, the installed parts.
-* Normalise before the save: `NextProcess`, `NextAlert`, `NextGravityPull`, `NextCountdownAnnounce`,
-  `MeltdownAt`, `WarningState`, `ReactorEndTimes`, `AlarmStream`, `OverheatStream`. The restored
-  machine is exactly what a normal shutdown produces.
+* Normalise on save *and* load, in `BluespaceDockSystem.NormalizeReactorRuntime` (called from
+  `ResetRuntimeCooldowns`): the RBMK's `AlertActive`/`NextTick`/`NextFlicker`, and the stormdrive's
+  `ReactorEndTimes`/`MeltdownAt`/`WarningState`/`NextProcess`/`NextAlert`/`NextCountdownAnnounce`/
+  `NextGravityPull`/`DumpingFuel`. The restored machine is exactly what a normal shutdown produces.
+  `DumpingFuel` is the one serialized toggle this catches; the rest are belt-and-braces for the
+  gate and for files written by older builds.
+* `AlarmStream`/`OverheatStream` are runtime-only audio handles and are not persisted; a live core
+  that is safed stops them through the reactor's own `ShutDown`/`Deactivate` path.
+* The fuel/control-rod lists are **not** restored by the save hook: the reactors rebuild them from
+  their containers in `ComponentStartup` (see section 4).
 * Do **not** zero `Temperature`, `DesiredK` or `IsRunning` at save time. The gate already guarantees a
   cold, stopped reactor; zeroing the setpoint throws away the player's configuration, and the pipe
   network comes back empty, so a "faithful" hot restore would be a second state machine that can
@@ -92,12 +122,12 @@ a live core was safed.
 
 | Where | What |
 |---|---|
-| `BluespaceDockSystem.FindStoreBlocker` (`:2663`) | the gate. Both the dock console and `ForceDockCommand` already call it and it already returns a locale key. Add a grid scan for `RbmkReactorComponent` / `StormdriveComponent` and return a new key. |
-| `BluespaceDockSystem.TrySaveShipFile` (`:663`), next to `ResetRuntimeCooldowns` | normalise each reactor's timers/streams (2.2) so every save path, including tests and direct callers, gets the same state. |
+| `BluespaceDockSystem.FindStoreBlocker` | the gate (implemented as `FindLiveReactor`). Both the dock console and `ForceDockCommand` call it and it returns a locale key. |
+| `BluespaceDockSystem.TrySaveShipFile`, next to `ResetRuntimeCooldowns` | the gate runs first, then the shared normalisation (2.2) so every save path, including tests and direct callers, gets the same state. Implemented as `NormalizeReactorRuntime`, called from `ResetRuntimeCooldowns` on save *and* load. |
 | `BluespaceDockSystem.RestoreMapInitRegistration` (`:2103`) | the documented place for "MapInit was skipped, rebuild the runtime bookkeeping". The branch-side `ComponentStartup` handlers already do this; a call here is only needed if the maintainer wants it centralised. |
-| `BluespaceDockSystem.ResetRuntimeCooldowns` (`:2212`) | add the reactors' absolute timers (`NextProcess`, `NextAlert`, `NextGravityPull`, `NextCountdownAnnounce`, `MeltdownAt`) next to the existing AME/thruster entries, if the normalisation above does not cover them. |
-| `ForceDockCommand.Execute` (`:101`) | the `--scram` policy above; log it. |
-| New locale keys | e.g. `bluespace-dock-error-reactor-hot`, `...-reactor-running`, `...-reactor-fuse`, in `Resources/Locale/en-US/_PS/ships/` (or `bluespace_dock.ftl`). |
+| `BluespaceDockSystem.ResetRuntimeCooldowns` | owns the reactor normalisation (it already runs on both save and load). This is the implemented home of 2.2; do not duplicate it in a reactor save hook. |
+| `ForceDockCommand.Execute` | the `--scram` policy above; implemented, and the admin log records the scram. |
+| Locale key | `bluespace-dock-error-live-reactor-aboard` (one key for both engines). |
 
 A shared `ShipStoreAttemptEvent { EntityUid Grid; string? Blocker; }` raised from `FindStoreBlocker`
 is the cleaner long-term shape: it keeps `_PS/Ships` engine-agnostic and lets each machine subscribe.
@@ -116,30 +146,50 @@ Inside the reactor code, not the save path:
 4. Rod `Depletion` is saved and rod age is a relative `AgeSeconds`, never `CurTime`.
 5. The stormdrive fuse and warning state are cleared on load; a hot core re-arms its own fuse.
 
-Until the gate lands, these make a stored ship consistent even though "store a hot reactor to dodge a
-meltdown" remains. The gate is what closes that.
+The gate (section 2.1) is what closes "store a hot reactor to dodge a meltdown"; these restore fixes
+are what make a legitimately cold, stopped reactor store and load correctly.
 
 ---
 
 ## 5. Tests
 
-Add to the existing dock fixture (`Content.IntegrationTests/Tests/_PS/BluespaceDockShipSystemsTest.cs`):
-
-* store and retrieve `RbmkNuclearReactorRunning`: `FuelRods.Count == 5`, `Slagged` survives,
-  `VesselIntegrity` survives, temperature is cold;
-* store and retrieve `StormdriveReactorRunning`: `ControlRods.Count == 5`, `ControlRodIntegrity > 0`
-  after ten ticks, `ReactorEndTimes == false`;
-* store a slagged RBMK: still `Slagged`, radiation source still enabled;
-* the gate: a running/hot reactor refuses the store with the new key;
-* `forcedock --scram` on a running reactor: stored, rods on the deck, admin log written.
+* `Content.IntegrationTests/Tests/_PS/BluespaceDockReactorTest.cs` - the gate and its edges:
+  cold/running/hot refusal, scram, temperature exactly at the threshold, `AlertActive` alone,
+  every stormdrive warning state, maintenance while cold/hot, several reactors on one grid, and
+  flatpacks not counting as live cores.
+* `Content.IntegrationTests/Tests/_PS/BluespaceDockReactorSaveTest.cs` - real save -> load round
+  trips through `TrySaveShipFile`/`TryLoadShipFile`: a cold fuelled RBMK (5 rods, vessel integrity,
+  setpoint, no self-start, no meltdown), a slagged RBMK, a stormdrive with 5 control rods (integrity,
+  no fuse/warning, `DumpingFuel` cleared), refusal of a running core and the `--scram` path, rod
+  depletion/age, and the dangling-`EntityUid.Invalid` container-reference crash class.
+* `Content.IntegrationTests/Tests/_NSV13/ReactorBaseSliceTest.cs` - the reactors-only slice: a
+  directly spawned RBMK and stormdrive tick with no flatpack, cargo, research or console.
+* Master's dock-side coverage for the 2026-11-09 crash stays in
+  `BluespaceDockSaveTest.ShipFilesWithInvalidContainerReferencesLoadClean` (`bce651dbe8`); the
+  reactor tests above add the reactor-scan and save-path half.
 
 ---
 
-## 6. Open questions for the maintainer
+## 6. Resolved decisions (2026-11-10) and open gaps
 
-* Is 50 °C the right stormdrive threshold, or should it be "state is Idle/Maintenance" alone?
-* Should a slagged RBMK be storable at all, or should the wreck have to be cleaned up first?
-* Do we want a `ShipStoreAttemptEvent`, or is a direct scan in `FindStoreBlocker` acceptable for two
-  machines?
-* Should `ResetRuntimeCooldowns` own the reactor timers, or should each reactor normalise itself in
-  its own save hook?
+Decided and shipped:
+
+* **50 °C stays** for both engines, and the gate is `>= 50` (exactly 50 is refused). It matches the
+  locale text the console shows.
+* **A slagged RBMK is storable** and stays slagged; a wreck is legitimate cargo.
+* **A direct scan in `FindLiveReactor` is enough** for two engines. `ShipStoreAttemptEvent` is still
+  the cleaner long-term shape if a third engine appears, but it is not needed now.
+* **`ResetRuntimeCooldowns` owns the reactor timers** (via `NormalizeReactorRuntime`), so save and
+  load share one behaviour and a direct `TrySaveShipFile` caller gets it too.
+* **No fuel-rod gate**: a cold, fuelled reactor stores fine; rods are never auto-ejected.
+
+Still open:
+
+* The **stormdrive anomaly rule is not implemented.** `IsLiveReactor` does not look for the
+  `StormdriveAnomalySurge`/`Sheer`/`Squall` entities the unstable core can tear loose. If those are
+  meant to block a store, add a grid scan (or make the anomaly entities carry a marker component) in
+  `FindLiveReactor`. They are inert stock anomalies today, so a stored ship carrying one is not a
+  safety problem - it is a design question.
+* `forcedock --scram` is exercised through `SafeReactors` in tests, not through the console command
+  itself (the command needs a shell/admin session). The command's ordering (scram before the
+  blockers) is by inspection only.

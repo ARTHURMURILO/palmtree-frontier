@@ -837,6 +837,39 @@ so these fail only in CI:
   docking to the *grid it was docked to*). A stripped ship has no station member/bound components, so
   its station-bound machinery and power look "soft-broken" until it is restored.
 
+### Reactors on live grids (2026-11-10)
+
+- A reactor may only be stored **cold and stopped**, and the dock enforces it twice.
+  `BluespaceDockSystem.FindLiveReactor` is the gate (called by `FindStoreBlocker` *and*
+  `TrySaveShipFile`, so the console and a direct caller agree): it refuses a running RBMK, one at or
+  above 50 °C (`>=`, not `>`), or one with `AlertActive`; and a stormdrive outside `Idle`/
+  `Maintenance`, at/above 50 °C, with `ReactorEndTimes` set, or with any `WarningState`. A **slagged
+  RBMK is storable** and stays slagged - a wreck is cargo, not a running engine. Do not add a
+  fuel-rod gate: a cold, fuelled reactor stores correctly and auto-ejecting rods would destroy
+  player property.
+- `BluespaceDockSystem.ResetRuntimeCooldowns` (already the save *and* load cleanup hook) then calls
+  `NormalizeReactorRuntime`: the RBMK's `AlertActive`/`NextTick`/`NextFlicker` and the stormdrive's
+  `ReactorEndTimes`/`MeltdownAt`/`WarningState`/`NextProcess`/`NextAlert`/`NextCountdownAnnounce`/
+  `NextGravityPull`/`DumpingFuel` are cleared. `DumpingFuel` is the one **serialized** toggle this
+  catches; without it a stored drive came back venting its fuel line into the waste pipe with nobody
+  aboard. Permanent state (`VesselIntegrity`, `Slagged`, `DesiredK`, temperature, rod depletion and
+  relative age, control-rod percentage, `ReactorId`) is deliberately untouched.
+- The rod lists are rebuilt by the reactors' **`ComponentStartup`** handlers
+  (`RbmkReactorSystem.OnStartup`, `StormdriveSystem.OnStartup`/`AdoptRods`), because a loaded ship
+  skips MapInit and containers are restored as data without insert events. **Never** re-raise
+  `MapInitEvent` to "restore" them (section 24): `ContainerFill` would run again and duplicate the
+  rods and the rest of the ship's spawn-time contents.
+- Dangling container references (`EntityUid.Invalid` from a legacy file, section 25) must not break
+  the reactor scan: `GetEntitiesOnGrid` skips them, so `FindLiveReactor`, `HasDangerousShipEntities`
+  and `PurgeDangerousShipEntities` are safe. The save path cannot serialize a live container that
+  names an invalid uid - the engine's strict save logs and throws, and the dock's existing resilient
+  fallback drops and re-creates that entity (section 28). That is the documented behaviour, not a
+  crash; `BluespaceDockReactorSaveTest.InvalidContainerReferencesDoNotBreakReactorScansOrSaves`
+  locks it down.
+- Tests: `_PS/BluespaceDockReactorTest.cs` (gate + edge cases),
+  `_PS/BluespaceDockReactorSaveTest.cs` (real save -> load round trips, refusal, rod depletion,
+  dangling refs), `_NSV13/ReactorBaseSliceTest.cs` (spawn-and-tick without acquisition).
+
 ## 29. Programmable circuitry: sensor lookups and pathfinding loops (2026-11)
 
 - **`maxScanResults` is a display cap, not a search cap.** `ScanEntities` originally sorted every
