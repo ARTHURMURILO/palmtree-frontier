@@ -179,6 +179,45 @@ namespace Content.Shared.Atmos
             [Gas.WaterVapor] = Loc.GetString("gas-water-vapor-abbreviation"),
             [Gas.Respiron] = Loc.GetString("gas-respiron-abbreviation"), // Frontier
             [Gas.Helium] = Loc.GetString("gas-helium-abbreviation"), // Frontier
+            [Gas.BZ] = Loc.GetString("gas-bz-abbreviation"),
+            [Gas.Healium] = Loc.GetString("gas-healium-abbreviation"),
+            [Gas.Nitrium] = Loc.GetString("gas-nitrium-abbreviation"),
+            [Gas.Pluoxium] = Loc.GetString("gas-pluoxium-abbreviation"),
+            [Gas.Hydrogen] = Loc.GetString("gas-hydrogen-abbreviation"),
+            [Gas.HyperNoblium] = Loc.GetString("gas-hyper-noblium-abbreviation"),
+            [Gas.ProtoNitrate] = Loc.GetString("gas-proto-nitrate-abbreviation"),
+            [Gas.Zauker] = Loc.GetString("gas-zauker-abbreviation"),
+            [Gas.Halon] = Loc.GetString("gas-halon-abbreviation"),
+            [Gas.AntiNoblium] = Loc.GetString("gas-anti-noblium-abbreviation"),
+        };
+
+        /// <summary>
+        ///     Full display names for <see cref="Gas"/>. Used by UIs that need to name a
+        ///     gas without resolving its prototype, e.g. the HFR console.
+        /// </summary>
+        public static Dictionary<Gas, string> GasNames = new Dictionary<Gas, string>()
+        {
+            [Gas.Ammonia] = Loc.GetString("gases-ammonia"),
+            [Gas.CarbonDioxide] = Loc.GetString("gases-co2"),
+            [Gas.Frezon] = Loc.GetString("gases-frezon"),
+            [Gas.Nitrogen] = Loc.GetString("gases-nitrogen"),
+            [Gas.NitrousOxide] = Loc.GetString("gases-n2o"),
+            [Gas.Oxygen] = Loc.GetString("gases-oxygen"),
+            [Gas.Plasma] = Loc.GetString("gases-plasma"),
+            [Gas.Tritium] = Loc.GetString("gases-tritium"),
+            [Gas.WaterVapor] = Loc.GetString("gases-water-vapor"),
+            [Gas.Respiron] = Loc.GetString("gases-respiron"), // Frontier
+            [Gas.Helium] = Loc.GetString("gases-helium"),
+            [Gas.BZ] = Loc.GetString("gases-bz"),
+            [Gas.Healium] = Loc.GetString("gases-healium"),
+            [Gas.Nitrium] = Loc.GetString("gases-nitrium"),
+            [Gas.Pluoxium] = Loc.GetString("gases-pluoxium"),
+            [Gas.Hydrogen] = Loc.GetString("gases-hydrogen"),
+            [Gas.HyperNoblium] = Loc.GetString("gases-hyper-noblium"),
+            [Gas.ProtoNitrate] = Loc.GetString("gases-proto-nitrate"),
+            [Gas.Zauker] = Loc.GetString("gases-zauker"),
+            [Gas.Halon] = Loc.GetString("gases-halon"),
+            [Gas.AntiNoblium] = Loc.GetString("gases-anti-noblium"),
         };
 
         #region Excited Groups
@@ -208,7 +247,7 @@ namespace Content.Shared.Atmos
         /// <summary>
         ///     Total number of gases. Increase this if you want to add more!
         /// </summary>
-        public const int TotalNumberOfGases = 11; // Frontier: 9<11
+        public const int TotalNumberOfGases = 21; // Frontier: 9<11, Assmos: 11<21
 
         /// <summary>
         ///     This is the actual length of the gases arrays in mixtures.
@@ -377,6 +416,19 @@ namespace Content.Shared.Atmos
         NitrousOxide = 7,
         Frezon = 8,
         Respiron = 9, // Frontier
-        Helium = 10 // Frontier
+        Helium = 10, // Frontier
+
+        // Assmos - /tg/ gases, ported from Funky Station.
+        // Appended after Frontier's gases so the existing ids stay stable.
+        BZ = 11,
+        Healium = 12,
+        Nitrium = 13,
+        Pluoxium = 14,
+        Hydrogen = 15,
+        HyperNoblium = 16,
+        ProtoNitrate = 17,
+        Zauker = 18,
+        Halon = 19,
+        AntiNoblium = 20
     }
 }
