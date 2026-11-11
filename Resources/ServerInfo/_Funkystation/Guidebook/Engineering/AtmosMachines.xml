@@ -1,7 +1,7 @@
 <Document>
   # Atmos Machines
 
-  Three machines extend the ship's gas processing chain. Their circuitboards print from the engineering lathe pack and they are built like any other machine.
+  Three machines extend the ship's gas processing chain. They are researched first — the electrolyzer and crystallizer under **Atmospherics**, the pipe scrubber under **Portable Atmospherics** — and their circuitboards are then printed from a lathe. Electrolyzer and crystallizer boards need an **engineering techfab**; the pipe scrubber board also prints from **autolathes and protolathes**. Cargo sells all three boards cheaply. Build them like any other machine.
 
   <Box>
     <GuideEntityEmbed Entity="Electrolyzer" Caption="electrolyzer"/>

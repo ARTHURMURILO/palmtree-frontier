@@ -8,9 +8,11 @@
     <GuideEntityEmbed Entity="GasTurbineFlatpack" Caption="flatpack"/>
   </Box>
 
-  ## Buying and unpacking
+  ## Buying or building
 
-  Cargo sells the **flatpack** under Engineering for **10,000 credits**. Drag it onto the ship's grid and hit it with a **multitool** to unpack it into a full turbine. It needs floor space and an anchored tile.
+  Research the turbine under **Atmospherics**, then print its **flatpack** from an **engineering techfab** (steel, glass, plasteel and gold). Cargo also sells the flatpack under Engineering for **5,000 credits**.
+
+  Either way, drag the flatpack onto the ship's grid and hit it with a **multitool** to unpack it into a full turbine. It needs floor space and an anchored tile.
 
   ## Piping and wiring
 
