@@ -9,9 +9,11 @@
     <GuideEntityEmbed Entity="CrateEngineeringHFR" Caption="crate"/>
   </Box>
 
-  ## Buying one
+  ## Buying or building one
 
-  The crate is sold by cargo under **Atmospherics** for **10,000 credits**. It contains the core, the console, the three side parts, four corners and a printed quick guide. The HFR is not lathe-printable and does not spawn on ships by default.
+  Cargo sells the complete **crate** under **Atmospherics** for **10,000 credits**. It contains the core, the console, the three side parts, four corners and a printed quick guide.
+
+  To build one instead, research the **Hypertorus Fusion Reactor** node (after **Advanced Atmospherics**) and print the six part boxes from an **engineering techfab**. The HFR does not spawn on ships by default.
 
   ## Assembly
 
