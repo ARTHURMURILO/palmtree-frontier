@@ -616,6 +616,77 @@ public sealed class BluespaceDockReactorSaveTest
     }
 
     /// <summary>
+    /// A store that fails must not change the machine. The save hook clears the reactors' transient
+    /// state before it writes, so every failure path has to put it back: the stormdrive's
+    /// <c>DumpingFuel</c> is a serialized player toggle, and the RBMK's tick/flicker timers are live
+    /// simulation state.
+    /// </summary>
+    [Test]
+    public async Task FailedSaveRestoresReactorTransientState()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var res = server.ResolveDependency<IResourceManager>();
+        var cfg = server.ResolveDependency<IConfigurationManager>();
+
+        await server.WaitAssertion(() =>
+        {
+            var dock = server.System<BluespaceDockSystem>();
+            var grid = testMap.Grid.Owner;
+
+            var drive = entMan.SpawnEntity("StormdriveReactor",
+                new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            var driveComp = entMan.GetComponent<StormdriveComponent>(drive);
+            driveComp.State = StormdriveState.Idle;
+            driveComp.Heat = 0f;
+            driveComp.DumpingFuel = true;
+
+            var reactor = entMan.SpawnEntity("RbmkNuclearReactor",
+                new EntityCoordinates(grid, new Vector2(0.5f, 0.5f)));
+            var rbmk = entMan.GetComponent<RbmkReactorComponent>(reactor);
+            rbmk.IsRunning = false;
+            rbmk.Temperature = 20f;
+            rbmk.NextTick = TimeSpan.FromHours(1);
+            rbmk.NextFlicker = TimeSpan.FromHours(1);
+
+            Assert.That(dock.FindLiveReactor(grid), Is.Null, "sanity: both cores are storable");
+
+            // Make the target path a directory: no file can be written there, so the save fails
+            // before anything is stored.
+            var path = BluespaceDockSystem.GetShipFilePath("failed-save-restores-transients");
+            var blocked = new ResPath($"{BluespaceDockSystem.ShipDirectory}/{path}");
+            res.UserData.CreateDir(blocked);
+
+            // The engine logs the expected write failure at Error level, which the test harness
+            // treats as a test failure unless the failure log level is raised for the duration.
+            var oldFailureLevel = cfg.GetCVar(RTCVars.FailureLogLevel);
+            cfg.SetCVar(RTCVars.FailureLogLevel, LogLevel.Fatal);
+            try
+            {
+                Assert.That(dock.TrySaveShipFile(grid, path, out var error), Is.False,
+                    "sanity: a save into a directory must fail");
+                Assert.That(error, Is.EqualTo("bluespace-dock-error-save-failed"));
+            }
+            finally
+            {
+                cfg.SetCVar(RTCVars.FailureLogLevel, oldFailureLevel);
+                res.UserData.Delete(blocked);
+            }
+
+            Assert.That(driveComp.DumpingFuel, Is.True,
+                "a failed save must not clear the drive's fuel-dump toggle");
+            Assert.That(rbmk.NextTick, Is.EqualTo(TimeSpan.FromHours(1)),
+                "a failed save must not clear the RBMK's tick timer");
+            Assert.That(rbmk.NextFlicker, Is.EqualTo(TimeSpan.FromHours(1)),
+                "a failed save must not clear the RBMK's flicker timer");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
     /// Finds the one entity on a loaded grid that has <typeparamref name="TComp"/>, or null.
     /// </summary>
     private static EntityUid? FindSingle<TComp>(BluespaceDockSystem dock, IEntityManager entMan, EntityUid grid)

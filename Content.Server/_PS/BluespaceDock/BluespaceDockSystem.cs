@@ -674,6 +674,8 @@ public sealed class BluespaceDockSystem : EntitySystem
     /// the file cannot carry) is stripped, so a written file is always loadable.
     /// <paramref name="stripped"/> receives what was removed so the caller can restore it when the
     /// save fails; a caller that does not pass a list leaves the ship stripped.
+    /// The reactors' transient state is normalised before the write and restored on every failure
+    /// path, so a save that does not happen leaves the machines untouched.
     /// </remarks>
     public bool TrySaveShipFile(EntityUid shuttleUid, string relativePath, out string? error,
         List<(EntityUid Ent, EntityUid Station, bool Member, bool Bound)>? stripped = null,
@@ -705,6 +707,11 @@ public sealed class BluespaceDockSystem : EntitySystem
         // back frozen, and a shot left flying in the world would keep pointing at a weapon that
         // goes into the dock with the ship.
         DeleteProjectiles(shuttleUid);
+
+        // The cooldown reset also normalises the reactors' transient state (see
+        // NormalizeReactorRuntime). Copy that state first: the grid is still in the world, and a save
+        // that does not happen must not change it.
+        var reactorRuntime = CaptureReactorRuntime(shuttleUid);
 
         // Cooldowns are absolute round times, and they must not outlive the round they were started
         // in (see ResetRuntimeCooldowns).
@@ -746,6 +753,7 @@ public sealed class BluespaceDockSystem : EntitySystem
                     && !TrySaveGrid(shuttleUid, path, MissingEntityBehaviour.Ignore, EntityExceptionBehaviour.IgnoreEntityAndChildren))
                 {
                     error = "bluespace-dock-error-save-failed";
+                    RestoreReactorRuntime(reactorRuntime);
                     return false;
                 }
 
@@ -771,6 +779,7 @@ public sealed class BluespaceDockSystem : EntitySystem
             if (string.IsNullOrWhiteSpace(text))
             {
                 error = "bluespace-dock-error-save-empty";
+                RestoreReactorRuntime(reactorRuntime);
                 return false;
             }
 
@@ -783,6 +792,7 @@ public sealed class BluespaceDockSystem : EntitySystem
             if (yaml.Documents.Count == 0)
             {
                 error = "bluespace-dock-error-save-empty";
+                RestoreReactorRuntime(reactorRuntime);
                 return false;
             }
 
@@ -797,6 +807,7 @@ public sealed class BluespaceDockSystem : EntitySystem
         {
             _sawmill.Error($"Exception while saving ship {ToPrettyString(shuttleUid)}: {e}");
             error = "bluespace-dock-error-save-failed";
+            RestoreReactorRuntime(reactorRuntime);
             return false;
         }
     }
@@ -2516,6 +2527,93 @@ public sealed class BluespaceDockSystem : EntitySystem
     }
 
     /// <summary>
+    /// One reactor's transient state, plus the action that puts it back.
+    /// </summary>
+    private sealed record ReactorRuntimeSnapshot(EntityUid Reactor, Action Restore);
+
+    /// <summary>
+    /// Palmtree: captures the transient reactor state that <see cref="NormalizeReactorRuntime"/>
+    /// clears, so a failed save can restore it. A store that does not happen must not change the
+    /// machine.
+    /// </summary>
+    private List<ReactorRuntimeSnapshot> CaptureReactorRuntime(EntityUid grid)
+    {
+        var entities = new HashSet<EntityUid>();
+        GetEntitiesOnGrid(grid, entities);
+
+        var snapshots = new List<ReactorRuntimeSnapshot>();
+        foreach (var uid in entities)
+        {
+            if (!Exists(uid))
+                continue;
+
+            if (TryComp<RbmkReactorComponent>(uid, out var rbmk))
+            {
+                var alertActive = rbmk.AlertActive;
+                var nextTick = rbmk.NextTick;
+                var nextFlicker = rbmk.NextFlicker;
+                snapshots.Add(new ReactorRuntimeSnapshot(uid, () =>
+                {
+                    if (!TryComp<RbmkReactorComponent>(uid, out var current))
+                        return;
+
+                    current.AlertActive = alertActive;
+                    current.NextTick = nextTick;
+                    current.NextFlicker = nextFlicker;
+                }));
+            }
+
+            if (TryComp<StormdriveComponent>(uid, out var drive))
+            {
+                var reactorEndTimes = drive.ReactorEndTimes;
+                var meltdownAt = drive.MeltdownAt;
+                var warningState = drive.WarningState;
+                var nextProcess = drive.NextProcess;
+                var nextAlert = drive.NextAlert;
+                var nextCountdownAnnounce = drive.NextCountdownAnnounce;
+                var nextGravityPull = drive.NextGravityPull;
+                var dumpingFuel = drive.DumpingFuel;
+                snapshots.Add(new ReactorRuntimeSnapshot(uid, () =>
+                {
+                    if (!TryComp<StormdriveComponent>(uid, out var current))
+                        return;
+
+                    current.ReactorEndTimes = reactorEndTimes;
+                    current.MeltdownAt = meltdownAt;
+                    current.WarningState = warningState;
+                    current.NextProcess = nextProcess;
+                    current.NextAlert = nextAlert;
+                    current.NextCountdownAnnounce = nextCountdownAnnounce;
+                    current.NextGravityPull = nextGravityPull;
+                    current.DumpingFuel = dumpingFuel;
+                }));
+            }
+        }
+
+        return snapshots;
+    }
+
+    /// <summary>
+    /// Palmtree: puts back the reactor transient state captured by
+    /// <see cref="CaptureReactorRuntime"/> after a save that did not happen.
+    /// </summary>
+    private void RestoreReactorRuntime(List<ReactorRuntimeSnapshot> snapshots)
+    {
+        foreach (var snapshot in snapshots)
+        {
+            try
+            {
+                snapshot.Restore();
+            }
+            catch (Exception e)
+            {
+                _sawmill.Error($"Could not restore the transient state of reactor " +
+                               $"{ToPrettyString(snapshot.Reactor)} after a failed save: {e}");
+            }
+        }
+    }
+
+    /// <summary>
     /// Spawns a fresh copy of every entity the save had to skip (recorded under
     /// <c>droppedEntities</c> in the ship file), at the position, rotation and anchoring it was saved
     /// with. Entities that were inside a container are spawned at that container's tile and inserted
@@ -2978,6 +3076,11 @@ public sealed class BluespaceDockSystem : EntitySystem
 
         _busyShips.Add(shuttleUid);
 
+        // The save normalises the reactors' transient state and keeps it on success; if the store
+        // still fails afterwards (the bank refusal is the real case) the ship stays in the world,
+        // so hold a copy to put back. See CaptureReactorRuntime.
+        var reactorRuntime = CaptureReactorRuntime(shuttleUid);
+
         try
         {
             // Anything alive (or dead but revivable) gets off the ship first: neither the saved file
@@ -3028,6 +3131,7 @@ public sealed class BluespaceDockSystem : EntitySystem
             if (cost > 0 && payer is { } who && !_bank.TryBankWithdraw(who, cost))
             {
                 DeleteShipFile(fileName);
+                RestoreReactorRuntime(reactorRuntime);
                 RestoreStoreFailure(shuttleUid, shipStation, dockedTo, stripped, deed);
                 error = "bluespace-dock-error-insufficient-funds";
                 return false;
@@ -3068,6 +3172,7 @@ public sealed class BluespaceDockSystem : EntitySystem
             // undocked: put it back the way it was instead of leaving its machinery station-less.
             try
             {
+                RestoreReactorRuntime(reactorRuntime);
                 RestoreStoreFailure(shuttleUid, shipStation, dockedTo, stripped, deed);
             }
             catch (Exception restoreException)
