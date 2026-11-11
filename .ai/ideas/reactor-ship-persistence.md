@@ -1,7 +1,7 @@
 # Reactor ship persistence
 
-**Status:** **Implemented (2026-11-06), hardened 2026-11-10.** The data-restore fixes, the policy
-layer and the save/load normalisation all ship on `engines-reactors`:
+**Status:** **Implemented (2026-11-06), hardened 2026-11-10, QA-fixed 2026-11-11.** The data-restore
+fixes, the policy layer and the save/load normalisation all ship on `engines-reactors`:
 
 - `BluespaceDockSystem.FindLiveReactor` / `IsLiveReactor` is the gate; it is wired into both
   `FindStoreBlocker` (so the console refuses early) and `TrySaveShipFile` (the choke point every
@@ -95,7 +95,9 @@ Preserve the permanent facts, normalise the timers and streams:
 * Normalise on save *and* load, in `BluespaceDockSystem.NormalizeReactorRuntime` (called from
   `ResetRuntimeCooldowns`): the RBMK's `AlertActive`/`NextTick`/`NextFlicker`, and the stormdrive's
   `ReactorEndTimes`/`MeltdownAt`/`WarningState`/`NextProcess`/`NextAlert`/`NextCountdownAnnounce`/
-  `NextGravityPull`/`DumpingFuel`. The restored machine is exactly what a normal shutdown produces.
+  `NextGravityPull`/`DumpingFuel`. This clears the transient timers and toggles while preserving the
+  permanent state (`Temperature`, `DesiredK`, rods) - it is **not** the whole machine a normal
+  shutdown leaves behind, because `RbmkReactorSystem.ShutDown` also zeroes `Temperature`/`DesiredK`.
   `DumpingFuel` is the one serialized toggle this catches; the rest are belt-and-braces for the
   gate and for files written by older builds.
 * `AlarmStream`/`OverheatStream` are runtime-only audio handles and are not persisted; a live core
@@ -106,6 +108,12 @@ Preserve the permanent facts, normalise the timers and streams:
   cold, stopped reactor; zeroing the setpoint throws away the player's configuration, and the pipe
   network comes back empty, so a "faithful" hot restore would be a second state machine that can
   disagree with the live one.
+* **A failed save restores what it normalised.** `TrySaveShipFile` captures the transient reactor
+  state (`BluespaceDockSystem.CaptureReactorRuntime`) before `ResetRuntimeCooldowns` and puts it back
+  on every failure return (`RestoreReactorRuntime`). `DumpingFuel` is a player toggle and the timers
+  are live simulation state: a store that does not happen must not change the machine. `TryStoreShip`
+  holds the same snapshot for failures that happen after a successful save (a bank refusal), so the
+  invariant holds for the whole store, not just the write.
 
 ### 2.3 Force dock
 
@@ -115,6 +123,22 @@ state, heat, fuse remaining), exactly like the other blockers. For admin recover
 add an explicit opt-in flag (`--scram`) that calls the reactor's own deactivate path, asserts the
 result, stores, and writes an `AdminLog` line at `LogImpact.High` naming the reactor and the fact that
 a live core was safed.
+
+### 2.4 Files written before the gate (load-time repair)
+
+The gate only controls what *this* build writes. A ship file written before `FindLiveReactor`
+landed - or one edited by hand - can still carry `running: true`/`temperature: 800` on an RBMK, or
+`state: Running`/`heat: 800` on a stormdrive. `TryLoadShipFile` therefore runs `FindLiveReactor`
+again after the transient normalisation: if a core is still live, it calls `SafeReactors` and logs a
+warning naming the ship file and the reactor. The retrieved ship then satisfies the same
+cold-and-stopped invariant as a normal store, and cannot come back live with no gas behind it.
+
+This is deliberately a repair, not a refusal: the file is player property and there is no format
+marker to tell a pre-gate file from a current one. The cost is that a hand-edited live core has its
+setpoint/temperature zeroed by the scram, exactly as `forcedock --scram` would; a slagged wreck is
+not live and is left alone. **The maintainer can revisit this**: once no pre-gate files are expected,
+refusing the load (with the existing live-reactor locale key) or adding a ship-file format marker are
+both defensible alternatives.
 
 ---
 
@@ -155,13 +179,16 @@ are what make a legitimately cold, stopped reactor store and load correctly.
 
 * `Content.IntegrationTests/Tests/_PS/BluespaceDockReactorTest.cs` - the gate and its edges:
   cold/running/hot refusal, scram, temperature exactly at the threshold, `AlertActive` alone,
-  every stormdrive warning state, maintenance while cold/hot, several reactors on one grid, and
-  flatpacks not counting as live cores.
+  every stormdrive warning state, maintenance while cold/hot, several reactors on one grid,
+  flatpacks not counting as live cores, and `SafeReactorsLeavesAlreadyColdStoppedCoresAlone`.
 * `Content.IntegrationTests/Tests/_PS/BluespaceDockReactorSaveTest.cs` - real save -> load round
   trips through `TrySaveShipFile`/`TryLoadShipFile`: a cold fuelled RBMK (5 rods, vessel integrity,
   setpoint, no self-start, no meltdown), a slagged RBMK, a stormdrive with 5 control rods (integrity,
   no fuse/warning, `DumpingFuel` cleared), refusal of a running core and the `--scram` path, rod
-  depletion/age, and the dangling-`EntityUid.Invalid` container-reference crash class.
+  depletion/age, the dangling-`EntityUid.Invalid` container-reference crash class, and the QA
+  cases: `FailedSaveRestoresReactorTransientState`,
+  `LoadPathClearsHandEditedStormdriveTransients` (the load half of the normalisation, proven from a
+  hand-edited file) and `HandEditedLiveReactorLoadsColdAndStopped` (2.4).
 * `Content.IntegrationTests/Tests/_NSV13/ReactorBaseSliceTest.cs` - the reactors-only slice: a
   directly spawned RBMK and stormdrive tick with no flatpack, cargo, research or console.
 * Master's dock-side coverage for the 2026-11-09 crash stays in
@@ -182,6 +209,16 @@ Decided and shipped:
 * **`ResetRuntimeCooldowns` owns the reactor timers** (via `NormalizeReactorRuntime`), so save and
   load share one behaviour and a direct `TrySaveShipFile` caller gets it too.
 * **No fuel-rod gate**: a cold, fuelled reactor stores fine; rods are never auto-ejected.
+* **`SafeReactors` only safes live cores (2026-11-11).** A core that is already cold and stopped
+  (`IsLiveReactor` false) is left alone - its `DesiredK`/temperature are player configuration - and
+  is not counted in the admin log, so `forcedock --scram` no longer reports a cold core as a live
+  reactor it saved.
+* **A failed save restores the transient reactor state (2026-11-11).** The snapshot is taken before
+  the normalisation and replayed on every failure path, including a store that fails after the file
+  was written (bank refusal), so `DumpingFuel` and the timers survive a store that did not happen.
+* **Pre-gate files are repaired on load, not refused (2026-11-11, revisit-able).** A live core in a
+  legacy/hand-edited file is safed and logged (2.4). Refusing the load, or adding a file-format
+  marker, are the alternatives if the maintainer prefers them.
 
 Still open:
 

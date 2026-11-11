@@ -2494,7 +2494,10 @@ public sealed class BluespaceDockSystem : EntitySystem
 
             // Reactors: the gate (FindLiveReactor) already refuses a running or hot core, so this is
             // the belt-and-braces half - the timers and toggles the gate cannot see. It runs on save
-            // and on load, so a retrieved reactor is exactly what a normal shutdown produces.
+            // and on load, so a retrieved reactor has the same transient timers and toggles cleared
+            // as a normal shutdown, while its permanent state (temperature, setpoint, rods) is
+            // preserved. It is deliberately not the whole machine a shutdown leaves behind: ShutDown
+            // also zeroes Temperature/DesiredK.
             NormalizeReactorRuntime(uid);
         }
     }

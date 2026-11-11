@@ -839,7 +839,7 @@ so these fail only in CI:
 
 ### Reactors on live grids (2026-11-10)
 
-- A reactor may only be stored **cold and stopped**, and the dock enforces it twice.
+- A reactor may only be stored **cold and stopped**, and the dock enforces it at three points.
   `BluespaceDockSystem.FindLiveReactor` is the gate (called by `FindStoreBlocker` *and*
   `TrySaveShipFile`, so the console and a direct caller agree): it refuses a running RBMK, one at or
   above 50 °C (`>=`, not `>`), or one with `AlertActive`; and a stormdrive outside `Idle`/
@@ -854,6 +854,21 @@ so these fail only in CI:
   catches; without it a stored drive came back venting its fuel line into the waste pipe with nobody
   aboard. Permanent state (`VesselIntegrity`, `Slagged`, `DesiredK`, temperature, rod depletion and
   relative age, control-rod percentage, `ReactorId`) is deliberately untouched.
+- Load is the third enforcement point: `TryLoadShipFile` runs `FindLiveReactor` after
+  `ResetRuntimeCooldowns` and calls `SafeReactors` if a core is still live, logging a warning that
+  names the ship file and the reactor. That is for files written before the gate existed (or
+  hand-edited ones): they bypass the store gate entirely, and a live core loaded with empty pipes
+  starves and can melt down unattended. Do not remove it on the argument that "the gate makes this
+  impossible" - legacy files are the reason it exists. `.ai/ideas/reactor-ship-persistence.md` §2.4
+  records it as revisit-able policy (refuse instead, or add a file-format marker).
+- A failed save must not change the machine: `TrySaveShipFile` captures the reactors' transient state
+  (`CaptureReactorRuntime`) before `ResetRuntimeCooldowns` and restores it (`RestoreReactorRuntime`)
+  on every failure return; `TryStoreShip` holds the same snapshot for failures after a successful
+  write (the bank refusal). `BluespaceDockReactorSaveTest.FailedSaveRestoresReactorTransientState`
+  locks it in. Without this, a store that fails leaves the drive's serialized `DumpingFuel` cleared.
+- `SafeReactors` only touches cores that `IsLiveReactor` reports: a cold, stopped core keeps its
+  `DesiredK`/temperature and is not counted in `forcedock --scram`'s "safed N live reactor(s)" log.
+  Its comments/docs used to imply it safed every reactor on the grid; it does not.
 - The rod lists are rebuilt by the reactors' **`ComponentStartup`** handlers
   (`RbmkReactorSystem.OnStartup`, `StormdriveSystem.OnStartup`/`AdoptRods`), because a loaded ship
   skips MapInit and containers are restored as data without insert events. **Never** re-raise
