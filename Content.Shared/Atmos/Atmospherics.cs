@@ -273,6 +273,7 @@ namespace Content.Shared.Atmos
         public const float PlasmaUpperTemperature = 700; // Frontier: (1370f+T0C)<700
         public const float PlasmaOxygenFullburn = 10f;
         public const float PlasmaBurnRateDelta = 9f;
+        public const float HydrogenBurnRateDelta = 2f; // Assmos - /tg/ gases
 
         /// <summary>
         ///     This is calculated to help prevent singlecap bombs (Overpowered tritium/oxygen single tank bombs)
@@ -281,6 +282,7 @@ namespace Content.Shared.Atmos
 
         public const float TritiumBurnOxyFactor = 100f;
         public const float TritiumBurnTritFactor = 10f;
+        public const float TritiumBurnFuelRatio = 2f; // Assmos - /tg/ gases
 
         public const float FrezonCoolLowerTemperature = 23.15f;
 
@@ -324,6 +326,95 @@ namespace Content.Shared.Atmos
         ///     Divisor for Ammonia Oxygen reaction so that it doesn't happen instantaneously.
         /// </summary>
         public const float AmmoniaOxygenReactionRate = 10f;
+
+        // Assmos - /tg/ gases.
+        /// <summary>
+        ///     The amount of energy 1 mole of BZ forming from N2O and plasma releases.
+        /// </summary>
+        public const float BZProductionEnergy = 80e3f;
+
+        /// <summary>
+        ///     The amount of energy 1 mol of Healium forming from BZ and frezon releases.
+        /// </summary>
+        public const float HealiumProductionEnergy = 9e3f;
+
+        /// <summary>
+        ///     The amount of energy 1 mol of Nitrium forming from Tritium, Nitrogen and BZ releases.
+        /// </summary>
+        public const float NitriumProductionEnergy = -100e3f;
+
+        /// <summary>
+        ///     The amount of energy 1 mol of Nitrium decomposing into nitrogen and water vapor releases.
+        /// </summary>
+        public const float NitriumDecompositionEnergy = 30e3f;
+
+        /// <summary>
+        ///     The amount of energy 1 mol of Pluoxium forming releases.
+        /// </summary>
+        public const float PluoxiumProductionEnergy = 250;
+
+        /// <summary>
+        ///     The minimum energy released when hydrogen burns.
+        /// </summary>
+        public const float MinimumHydrogenOxyburnEnergy = 143000f;
+
+        public const float HydrogenBurnOxyFactor = 100f;
+        public const float HydrogenBurnH2Factor = 10f;
+
+        /// <summary>
+        ///     The amount of energy 1 mol of hyper-noblium forming from tritium and nitrogen releases.
+        /// </summary>
+        public const float HyperNobliumProductionEnergy = 2e7f;
+
+        /// <summary>
+        ///     Energy released per mol of BZ consumed during halon formation.
+        /// </summary>
+        public const float HalonProductionEnergy = 91232.1f;
+
+        /// <summary>
+        ///     How much energy a mole of halon combusting consumes.
+        /// </summary>
+        public const float HalonCombustionEnergy = -2500f;
+
+        /// <summary>
+        ///     The amount of energy half a mole of zauker forming from hypernoblium and nitrium consumes.
+        /// </summary>
+        public const float ZaukerProductionEnergy = 5000f;
+
+        /// <summary>
+        ///     The temperature scaling factor for zauker formation.
+        /// </summary>
+        public const float ZaukerTemperatureScale = 5e-6f;
+
+        /// <summary>
+        ///     The amount of energy a mole of zauker decomposing in the presence of nitrogen releases.
+        /// </summary>
+        public const float ZaukerDecompositionEnergy = 460f;
+
+        /// <summary>
+        ///     The maximum number of moles of zauker that can decompose per reaction tick.
+        /// </summary>
+        public const float ZaukerDecompositionMaxRate = 20f;
+
+        /// <summary>
+        ///     The amount of energy 2.2 moles of proto-nitrate forming from pluoxium and hydrogen releases.
+        /// </summary>
+        public const float ProtoNitrateProductionEnergy = 650f;
+
+        /// <summary>
+        ///     The temperature scaling factor for proto-nitrate formation.
+        /// </summary>
+        public const float ProtoNitrateTemperatureScale = 5e-3f;
+
+        /// <summary>
+        ///     The amount of energy converting a mole of tritium or hydrogen into the other produces or takes.
+        /// </summary>
+        public const float ProtoNitrateConversionEnergy = 2000f;
+
+        /// <summary>
+        ///     The amount of energy proto-nitrate breaking down a mole of BZ releases.
+        /// </summary>
+        public const float ProtoNitrateBZConversionEnergy = -10000f;
 
         /// <summary>
         ///     Determines at what pressure the ultra-high pressure red icon is displayed.
