@@ -13,9 +13,10 @@
     state: engineering
   - type: MachineBoard
     prototype: Electrolyzer
+    requirements:
+      Capacitor: 4
     stackRequirements:
       Steel: 5
-      Capacitor: 4
       CableHV: 5
       Plasteel: 2
 
@@ -27,12 +28,13 @@
   components:
   - type: MachineBoard
     prototype: Crystallizer
-    stackRequirements:
-      Steel: 5
-      Glass: 5
+    requirements:
       Capacitor: 2
       Manipulator: 4
       MatterBin: 4
+    stackRequirements:
+      Steel: 5
+      Glass: 5
 
 - type: entity
   id: PipeScrubberMachineCircuitBoard
@@ -44,8 +46,9 @@
     state: engineering
   - type: MachineBoard
     prototype: PipeScrubber
-    stackRequirements:
+    requirements:
       MatterBin: 1
       Manipulator: 2
+    stackRequirements:
       Cable: 5
       Glass: 2
