@@ -2,6 +2,7 @@ using System.Linq;
 using System.Numerics;
 using Content.Client.Hands.Systems;
 using Content.Shared.Construction;
+using Content.Shared.Maps;
 using Content.Shared.Construction.Components;
 using Content.Shared.Tools;
 using Content.Shared.Tools.Systems;
@@ -36,6 +37,7 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
     [Dependency] private readonly SharedContainerSystem _containers = default!;
     [Dependency] private readonly AppearanceSystem _appearance = default!;
     [Dependency] private readonly IPrototypeManager _proto = default!;
+    [Dependency] private readonly IMapManager _mapManager = default!;
 
     private static readonly Color ValidColor = new(48, 255, 48, 128);
     private static readonly Color InvalidColor = new(255, 48, 48, 128);
@@ -44,6 +46,7 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
 
     private EntityUid? _ghost;
     private EntProtoId? _ghostEntity;
+    private readonly HashSet<EntityUid> _tileEntities = new();
 
     public override void Update(float frameTime)
     {
@@ -51,41 +54,47 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
 
         if (_player.LocalEntity is not { } player)
         {
-            Clear();
+            Clear("no local player");
             return;
         }
 
         var held = _hands.GetActiveItem(player);
         if (held is not { } tool || !_tool.HasQuality(tool, PulsingQuality.Id))
         {
-            Clear();
+            Clear("no pulsing tool in hand");
             return;
         }
 
         if (!_input.MouseScreenPosition.IsValid)
         {
-            Clear();
+            Clear("invalid mouse position");
             return;
         }
 
         var mouse = _eye.PixelToMap(_input.MouseScreenPosition);
         if (mouse.MapId == MapId.Nullspace)
         {
-            Clear();
+            Clear("mouse not on a map");
             return;
         }
 
         var flatpack = FindFlatpack(mouse);
-        if (flatpack is not { } target || _containers.IsEntityInContainer(target))
+        if (flatpack is not { } target)
         {
-            Clear();
+            Clear("no footprint flatpack under the cursor");
+            return;
+        }
+
+        if (_containers.IsEntityInContainer(target))
+        {
+            Clear("flatpack is in a container");
             return;
         }
 
         var xform = Transform(target);
         if (xform.GridUid is not { } gridUid || !TryComp<MapGridComponent>(gridUid, out var grid))
         {
-            Clear();
+            Clear("flatpack is not on a grid");
             return;
         }
 
@@ -93,7 +102,7 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
             !TryComp<FlatpackComponent>(target, out var flatpackComp) ||
             flatpackComp.Entity is not { } entity)
         {
-            Clear();
+            Clear("flatpack is missing its footprint or target entity");
             return;
         }
 
@@ -107,9 +116,11 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
             ghost = CreateGhost(target, entity, _map.GridTileToLocal(gridUid, grid, position), direction);
             if (ghost == EntityUid.Invalid)
             {
-                Clear();
+                Clear("could not create the ghost sprite");
                 return;
             }
+
+            Log.Debug($"[flatpack-ghost] showing ghost for {entity} at {position}, facing {direction}, valid={valid}");
 
             _ghost = ghost;
             _ghostEntity = entity;
@@ -130,8 +141,19 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
 
     private EntityUid? FindFlatpack(MapCoordinates mouse)
     {
-        var bounds = Box2.CenteredAround(mouse.Position, new Vector2(0.9f, 0.9f));
-        foreach (var ent in _lookup.GetEntitiesIntersecting(mouse.MapId, bounds, LookupFlags.Dynamic | LookupFlags.Static))
+        // The flatpack is a small floor item, so its physics body is much smaller than a tile and
+        // aiming at the sprite is fiddly. Look at every entity on the tile under the cursor instead.
+        if (!_mapManager.TryFindGridAt(mouse, out var gridUid, out var grid))
+            return null;
+
+        var tile = _map.TileIndicesFor(gridUid, grid, mouse);
+        if (!_map.TryGetTileRef(gridUid, grid, tile, out var tileRef))
+            return null;
+
+        _tileEntities.Clear();
+        _lookup.GetEntitiesInTile(tileRef, _tileEntities, LookupFlags.Dynamic | LookupFlags.Static | LookupFlags.Sundries);
+
+        foreach (var ent in _tileEntities)
         {
             if (HasComp<FlatpackFootprintComponent>(ent) && HasComp<FlatpackComponent>(ent))
                 return ent;
@@ -173,8 +195,10 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
         return ghost;
     }
 
-    private void Clear()
+    private void Clear(string reason)
     {
+        if (_ghost != null)
+            Log.Debug($"[flatpack-ghost] hiding ghost: {reason}");
         ClearGhost();
     }
 

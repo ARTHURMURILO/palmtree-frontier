@@ -33,7 +33,7 @@
 
   ## Operating
 
-  1. Open the turbine UI. It requires **Engineering access**.
+  1. Open the turbine UI. It has no access restriction.
   2. Set the **flow rate**: how much gas the turbine pulls per second.
   3. Set the **stator load**: higher load extracts more power but drags the RPM down.
   4. Watch the **RPM** and the temperature. The turbine has a best RPM; overspeeding it and running it too hot both damage the blades.
