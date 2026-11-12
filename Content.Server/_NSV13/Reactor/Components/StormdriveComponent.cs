@@ -241,6 +241,16 @@ public sealed partial class StormdriveComponent : Component
     public float NucleiumModifier = 1f;
     public float RadiationModifier = 1f;
 
+    // Funky Station gases. Each is rolled once on MapInit like the vanilla set above, so two drives
+    // fed the same canister still behave slightly differently.
+    public float HealiumModifier = 1f;
+    public float NitriumModifier = 1f;
+    public float HydrogenModifier = 1f;
+    public float ProtoNitrateModifier = 1f;
+    public float ZaukerModifier = 1f;
+    public float HalonModifier = 1f;
+    public float AntiNobliumModifier = 1f;
+
     #endregion
 
     #region State

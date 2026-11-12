@@ -273,11 +273,14 @@ public sealed class RbmkReactorSystem : EntitySystem
         {
             var moderatorMoles = moderatorAir.TotalMoles;
 
-            // BRANCH NOTE (rbmk branch): constricted plasma is one of the reactor gases and lives on
-            // `engines-all`. The core runs on vanilla plasma and tritium without it.
+            // Funky /tg/ gases. Hydrogen and anti-noblium are reactor fuels in their own right;
+            // the rest are modifiers. The original NSV13 terms for BZ, pluoxium and hyper-noblium
+            // are restored exactly, and the gases NSV13 never had get one clear job each.
             var totalFuelMoles = moderatorAir.GetMoles(Gas.Plasma)
                                  // + moderatorAir.GetMoles(Gas.ConstrictedPlasma) * 2f
-                                 + moderatorAir.GetMoles(Gas.Tritium) * 10f;
+                                 + moderatorAir.GetMoles(Gas.Tritium) * 10f
+                                 + moderatorAir.GetMoles(Gas.Hydrogen) * 4f
+                                 + moderatorAir.GetMoles(Gas.AntiNoblium) * 8f;
 
             var oxygenModifier = Math.Max(moderatorAir.GetMoles(Gas.Oxygen) / moderatorMoles * 10f, 1f);
 
@@ -289,19 +292,30 @@ public sealed class RbmkReactorSystem : EntitySystem
                 powerProduced *= Math.Max(0f, reactor.Power) / 100f;
                 powerProduced *= reactor.BasePowerModifier;
 
-                spice += moderatorAir.GetMoles(Gas.Tritium) / 5f;
+                // Nitrium and proto-nitrate are reaction boosters, not fuel: they make the same
+                // moderator burn hotter. Nitrium is the safer of the two; proto-nitrate also eats
+                // the rods and raises radiation below.
+                var boostMoles = moderatorAir.GetMoles(Gas.Nitrium)
+                                 + moderatorAir.GetMoles(Gas.ProtoNitrate) * 1.5f;
+                powerProduced *= 1f + boostMoles / moderatorMoles * 2f;
 
-                // Palmtree: nucleium is the one reactor gas this branch carries; it is the
-                // core's waste byproduct. The rest of the reactor gases stay commented above.
+                spice += moderatorAir.GetMoles(Gas.Tritium) / 5f;
+                spice += moderatorAir.GetMoles(Gas.Hydrogen) / 4f;
+                spice += moderatorAir.GetMoles(Gas.Nitrium) / 20f;
+                spice += moderatorAir.GetMoles(Gas.ProtoNitrate) / 10f;
+                spice += moderatorAir.GetMoles(Gas.Zauker) / 8f;
+                spice += moderatorAir.GetMoles(Gas.AntiNoblium) * 1.5f;
+                spice -= moderatorAir.GetMoles(Gas.Healium) / 20f;
+                spice -= moderatorAir.GetMoles(Gas.Halon) / 20f;
+
                 if (reactor.Power >= 20f)
                     coolantOutAir.AdjustMoles(Gas.Nucleium, totalFuelMoles / 20f);
             }
 
-            // BRANCH NOTE (rbmk branch): the pluoxium term needs the reactor gases.
             var totalControlMoles = moderatorAir.GetMoles(Gas.Nitrogen)
                                     + moderatorAir.GetMoles(Gas.CarbonDioxide) * 2f
-                                    // + moderatorAir.GetMoles(Gas.Pluoxium) * 3f
-                                    ;
+                                    + moderatorAir.GetMoles(Gas.Pluoxium) * 3f
+                                    + moderatorAir.GetMoles(Gas.Healium) * 1.5f;
 
             if (totalControlMoles >= reactor.MinimumCoolantLevel)
             {
@@ -311,11 +325,10 @@ public sealed class RbmkReactorSystem : EntitySystem
                 spice += moderatorAir.GetMoles(Gas.CarbonDioxide) / 12.5f;
             }
 
-            // BRANCH NOTE (rbmk branch): BZ and hyper-noblium are reactor gases; water vapour is the
-            // permeability gas that survives on this branch.
-            var totalPermeabilityMoles = /* moderatorAir.GetMoles(Gas.BZ) + */
-                                         moderatorAir.GetMoles(Gas.WaterVapor) * 2f
-                                         /* + moderatorAir.GetMoles(Gas.HyperNoblium) * 10f */;
+            var totalPermeabilityMoles = moderatorAir.GetMoles(Gas.BZ)
+                                         + moderatorAir.GetMoles(Gas.WaterVapor) * 2f
+                                         + moderatorAir.GetMoles(Gas.HyperNoblium) * 10f
+                                         + moderatorAir.GetMoles(Gas.Halon) * 4f;
 
             if (totalPermeabilityMoles >= reactor.MinimumCoolantLevel)
             {
@@ -323,11 +336,19 @@ public sealed class RbmkReactorSystem : EntitySystem
                 reactor.GasAbsorptionEffectiveness = reactor.GasAbsorptionConstant + permeabilityBonus;
             }
 
-            // BRANCH NOTE (rbmk branch): nitryl (rod degradation) needs the reactor gases.
-            var totalDegradationMoles = 0f; // moderatorAir.GetMoles(Gas.Nitryl);
+            // Nitryl is not present in this fork; the Funky corrosive gases take its place.
+            // Healium is a negative term: it slows rod depletion and can offset a corrosive feed.
+            var totalDegradationMoles = moderatorAir.GetMoles(Gas.Zauker) * 2f
+                                        + moderatorAir.GetMoles(Gas.ProtoNitrate)
+                                        + moderatorAir.GetMoles(Gas.AntiNoblium) * 5f
+                                        - moderatorAir.GetMoles(Gas.Healium) * 2f
+                                        - moderatorAir.GetMoles(Gas.Halon) * 0.5f;
 
             if (totalDegradationMoles >= reactor.MinimumCoolantLevel * 0.5f)
                 depletionModifier += totalDegradationMoles / 15f;
+
+            depletionModifier = Math.Max(DepletionBase * 0.1f, depletionModifier);
+            spice = Math.Max(0.1f, spice);
 
             // Everything left in the moderator gate is destroyed, used or not.
             moderatorAir.Clear();

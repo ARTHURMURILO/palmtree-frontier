@@ -115,6 +115,13 @@ public sealed class StormdriveSystem : EntitySystem
         comp.StimulumModifier = RollModifier(comp);
         comp.PluoxiumModifier = RollModifier(comp);
         comp.NucleiumModifier = RollModifier(comp);
+        comp.HealiumModifier = RollModifier(comp);
+        comp.NitriumModifier = RollModifier(comp);
+        comp.HydrogenModifier = RollModifier(comp);
+        comp.ProtoNitrateModifier = RollModifier(comp);
+        comp.ZaukerModifier = RollModifier(comp);
+        comp.HalonModifier = RollModifier(comp);
+        comp.AntiNobliumModifier = RollModifier(comp);
 
         // A mapper (or the pre-started prototype) can load the bay through ContainerFill. Adopt
         // whatever is already in the container so those rods count toward efficiency/integrity
@@ -462,9 +469,10 @@ public sealed class StormdriveSystem : EntitySystem
         var slug = air1.Remove(rate * factor);
         var slugScale = 1f / factor;
 
-        // Palmtree: the drive runs on vanilla gases plus nucleium, its own waste. The other /tg/
-        // and NSV13 reactor gases are not part of this change and contribute 0 to the maths below,
-        // exactly as if they had never been there.
+        // The drive runs on the vanilla fuel gases and nucleium, plus the Funky /tg/ gases. Each
+        // Funky gas has one clear job; the coefficients are the original NSV13 ones where the gas
+        // existed there, and new tunings where it did not. The guidebook table is the player-facing
+        // copy of this block.
         var plasma = slug.GetMoles(Gas.Plasma) * slugScale;
         var constricted = 0f; // slug.GetMoles(Gas.ConstrictedPlasma) * slugScale;
         var tritium = slug.GetMoles(Gas.Tritium) * slugScale;
@@ -472,22 +480,38 @@ public sealed class StormdriveSystem : EntitySystem
         var n2 = slug.GetMoles(Gas.Nitrogen) * slugScale;
         var co2 = slug.GetMoles(Gas.CarbonDioxide) * slugScale;
         var h2o = slug.GetMoles(Gas.WaterVapor) * slugScale;
-        var nob = 0f; // slug.GetMoles(Gas.HyperNoblium) * slugScale;
+        var nob = slug.GetMoles(Gas.HyperNoblium) * slugScale;
         var n2o = slug.GetMoles(Gas.NitrousOxide) * slugScale;
         var nitryl = 0f; // slug.GetMoles(Gas.Nitryl) * slugScale;
-        var bz = 0f; // slug.GetMoles(Gas.BZ) * slugScale;
+        var bz = slug.GetMoles(Gas.BZ) * slugScale;
         var stim = 0f; // slug.GetMoles(Gas.Stimulum) * slugScale;
-        var pluox = 0f; // slug.GetMoles(Gas.Pluoxium) * slugScale;
+        var pluox = slug.GetMoles(Gas.Pluoxium) * slugScale;
         var nucleium = slug.GetMoles(Gas.Nucleium) * slugScale;
+        var healium = slug.GetMoles(Gas.Healium) * slugScale;
+        var nitrium = slug.GetMoles(Gas.Nitrium) * slugScale;
+        var hydrogen = slug.GetMoles(Gas.Hydrogen) * slugScale;
+        var proto = slug.GetMoles(Gas.ProtoNitrate) * slugScale;
+        var zauker = slug.GetMoles(Gas.Zauker) * slugScale;
+        var halon = slug.GetMoles(Gas.Halon) * slugScale;
+        var anti = slug.GetMoles(Gas.AntiNoblium) * slugScale;
 
         var rorTotal = plasma * (0.5f * comp.PlasmaModifier)
                        + constricted * (1f * comp.ConstrictedPlasmaModifier)
                        + tritium * (1.5f * comp.TritiumModifier)
                        + n2 * (-0.5f * comp.NitrogenModifier)
                        + h2o * (-0.5f * comp.WaterVaporModifier)
-                       + nob * (-1f * comp.HyperNobliumModifier);
+                       + nob * (-1f * comp.HyperNobliumModifier)
+                       + bz * (-0.15f * comp.BZModifier)
+                       + nitrium * (0.75f * comp.NitriumModifier)
+                       + hydrogen * (1.5f * comp.HydrogenModifier)
+                       + proto * (0.5f * comp.ProtoNitrateModifier)
+                       + zauker * (-0.5f * comp.ZaukerModifier)
+                       + halon * (-0.75f * comp.HalonModifier)
+                       + anti * (2f * comp.AntiNobliumModifier);
 
-        comp.ReactionRateModifier = rorTotal / rate;
+        // A negative reaction-rate modifier would make HandleReactionRate chase a negative target.
+        // The shutdown gases should stop the reaction at "barely ticking", not run it backwards.
+        comp.ReactionRateModifier = Math.Max(0f, rorTotal / rate);
 
         var ipmTotal = rate
                        + tritium * (1.25f * comp.TritiumModifier)
@@ -496,9 +520,14 @@ public sealed class StormdriveSystem : EntitySystem
                        + stim * (2.5f * comp.StimulumModifier)
                        - plasma * (0.85f * comp.PlasmaModifier)
                        - co2 * (0.5f * comp.CarbonDioxideModifier)
-                       - nob * (0.5f * comp.HyperNobliumModifier);
+                       - nob * (0.5f * comp.HyperNobliumModifier)
+                       + bz * (0.4f * comp.BZModifier)
+                       + nitrium * (0.75f * comp.NitriumModifier)
+                       + hydrogen * (1f * comp.HydrogenModifier)
+                       + proto * (1.5f * comp.ProtoNitrateModifier)
+                       + anti * (3f * comp.AntiNobliumModifier);
 
-        comp.InputPowerModifier = ipmTotal / rate;
+        comp.InputPowerModifier = Math.Max(0.05f, ipmTotal / rate);
 
         var coolingTotal = rate
                            + nob * (4f * comp.HyperNobliumModifier)
@@ -507,9 +536,16 @@ public sealed class StormdriveSystem : EntitySystem
                            + co2 * (2.025f * comp.CarbonDioxideModifier)
                            - tritium * (0.75f * comp.TritiumModifier)
                            - nucleium * (0.75f * comp.NucleiumModifier)
-                           - stim * (0.75f * comp.StimulumModifier);
+                           - stim * (0.75f * comp.StimulumModifier)
+                           + healium * (0.75f * comp.HealiumModifier)
+                           + zauker * (1f * comp.ZaukerModifier)
+                           + halon * (2.5f * comp.HalonModifier)
+                           - nitrium * (0.25f * comp.NitriumModifier)
+                           - hydrogen * (0.5f * comp.HydrogenModifier)
+                           - proto * (0.5f * comp.ProtoNitrateModifier)
+                           - anti * (1.5f * comp.AntiNobliumModifier);
 
-        comp.CoolingPowerModifier = coolingTotal / rate;
+        comp.CoolingPowerModifier = Math.Max(0.05f, coolingTotal / rate);
 
         var radiationTotal = rate
                              + tritium * (10f * comp.TritiumModifier)
@@ -517,9 +553,16 @@ public sealed class StormdriveSystem : EntitySystem
                              + nucleium * (5f * comp.NucleiumModifier)
                              + bz * (5f * comp.BZModifier)
                              - stim * (0.75f * comp.StimulumModifier)
-                             - nitryl * (0.75f * comp.NitrylModifier);
+                             - nitryl * (0.75f * comp.NitrylModifier)
+                             - healium * (1f * comp.HealiumModifier)
+                             + nitrium * (1f * comp.NitriumModifier)
+                             + hydrogen * (2f * comp.HydrogenModifier)
+                             + proto * (3f * comp.ProtoNitrateModifier)
+                             + zauker * (2f * comp.ZaukerModifier)
+                             - halon * (2f * comp.HalonModifier)
+                             + anti * (10f * comp.AntiNobliumModifier);
 
-        comp.RadiationModifier = radiationTotal / rate;
+        comp.RadiationModifier = Math.Max(0f, radiationTotal / rate);
 
         // Note: this one is keyed on NITROUS (n2o), not nitryl. The original reuses the
         // `no2_modifier` *name* for nitryl elsewhere, which is why this looks inconsistent.
@@ -529,16 +572,30 @@ public sealed class StormdriveSystem : EntitySystem
                                  + n2o * (1.25f * comp.NitrousOxideModifier)
                                  - nucleium * (0.75f * comp.NucleiumModifier)
                                  - stim * (0.75f * comp.StimulumModifier)
-                                 - bz * (0.75f * comp.BZModifier);
+                                 - bz * (0.75f * comp.BZModifier)
+                                 + halon * (0.75f * comp.HalonModifier)
+                                 - nitrium * (0.25f * comp.NitriumModifier)
+                                 - hydrogen * (0.5f * comp.HydrogenModifier)
+                                 - anti * (1f * comp.AntiNobliumModifier);
 
-        comp.TemperatureModifier = reinforcementTotal / rate;
+        // Anti-noblium is meant to lower the thresholds, not drive them negative and trip the
+        // meltdown check on the next tick.
+        comp.TemperatureModifier = Math.Max(0.1f, reinforcementTotal / rate);
 
         var degradationTotal = rate
                                + n2o * (0.75f * comp.NitrousOxideModifier)
                                + nob * (0.5f * comp.HyperNobliumModifier)
-                               + pluox * (0.75f * comp.PluoxiumModifier);
+                               + pluox * (0.75f * comp.PluoxiumModifier)
+                               + bz * (0.5f * comp.BZModifier)
+                               + nitrium * (0.75f * comp.NitriumModifier)
+                               + hydrogen * (0.25f * comp.HydrogenModifier)
+                               + proto * (0.5f * comp.ProtoNitrateModifier)
+                               + zauker * (1.5f * comp.ZaukerModifier)
+                               - healium * (0.75f * comp.HealiumModifier)
+                               - halon * (0.25f * comp.HalonModifier)
+                               + anti * (2f * comp.AntiNobliumModifier);
 
-        comp.ControlRodDegradationModifier = degradationTotal / rate;
+        comp.ControlRodDegradationModifier = Math.Max(0.05f, degradationTotal / rate);
 
         nucleiumPowerReduction = nucleium * 1000f;
 
@@ -669,7 +726,9 @@ public sealed class StormdriveSystem : EntitySystem
                 continue;
             }
 
-            if (_random.Prob(0.8f * comp.ControlRodDegradationModifier))
+            // A gas-heavy feed can push the modifier above 1; the roll is still a probability.
+            var wearChance = Math.Clamp(0.8f * comp.ControlRodDegradationModifier, 0f, 1f);
+            if (_random.Prob(wearChance))
             {
                 rod.Integrity -= comp.InputPower / 75000f
                                  * comp.ControlRodDegradationModifier

@@ -49,6 +49,16 @@ public sealed partial class StormdriveConsoleWindow : DefaultWindow
         Color.FromHex("#FFFFFF"), // water vapour
         Color.FromHex("#7E90A7"), // nitrous oxide
         Color.FromHex("#A5673F"), // nucleium
+        Color.FromHex("#8E44AD"), // bz
+        Color.FromHex("#2ECC71"), // healium
+        Color.FromHex("#D35400"), // nitrium
+        Color.FromHex("#1F618D"), // pluoxium
+        Color.FromHex("#D6EAF8"), // hydrogen
+        Color.FromHex("#1ABC9C"), // hyper-noblium
+        Color.FromHex("#B7950B"), // proto-nitrate
+        Color.FromHex("#C9E265"), // zauker
+        Color.FromHex("#C39BD3"), // halon
+        Color.FromHex("#566573"), // anti-noblium
     };
 
     private readonly Label[] _gasLabels = new Label[(int) StormdriveConsoleGas.Count];
@@ -424,6 +434,16 @@ public sealed partial class StormdriveConsoleWindow : DefaultWindow
             state.WaterVapor,
             state.NitrousOxide,
             state.Nucleium,
+            state.BZ,
+            state.Healium,
+            state.Nitrium,
+            state.Pluoxium,
+            state.Hydrogen,
+            state.HyperNoblium,
+            state.ProtoNitrate,
+            state.Zauker,
+            state.Halon,
+            state.AntiNoblium,
         };
 
         for (var i = 0; i < values.Length && i < _gasBars.Length; i++)

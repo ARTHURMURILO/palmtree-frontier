@@ -95,6 +95,16 @@ public sealed class StormdriveConsoleBoundUserInterfaceState : BoundUserInterfac
     public float WaterVapor;
     public float NitrousOxide;
     public float Nucleium;
+    public float BZ;
+    public float Healium;
+    public float Nitrium;
+    public float Pluoxium;
+    public float Hydrogen;
+    public float HyperNoblium;
+    public float ProtoNitrate;
+    public float Zauker;
+    public float Halon;
+    public float AntiNoblium;
     public float TotalMoles;
 
     /// <summary>Seconds left before an armed meltdown fires; zero when not armed.</summary>
@@ -120,10 +130,11 @@ public sealed class StormdriveConsoleBoundUserInterfaceState : BoundUserInterfac
 ///     Fuel-line composition rows on the stormdrive console.
 /// </summary>
 /// <remarks>
-///     The NSV13 console listed fourteen gases. This fork has eight of them; the rest would sit at
-///     0.0% forever, so they have no row. The rows stay in the original's relative order. The enum
-///     is an index into the client's colour table and into <see cref="StormdriveConsoleBoundUserInterfaceState.GasHistory"/>,
-///     so the three must move together.
+///     The NSV13 console listed fourteen gases. This fork now has eighteen: the original eight plus
+///     the ten Funky Station /tg/ gases. The rows stay in the original's relative order with the
+///     Funky set appended. The enum is an index into the client's colour table and into
+///     <see cref="StormdriveConsoleBoundUserInterfaceState.GasHistory"/>, so the three must move
+///     together.
 /// </remarks>
 public enum StormdriveConsoleGas
 {
@@ -135,8 +146,18 @@ public enum StormdriveConsoleGas
     WaterVapour = 5,
     NitrousOxide = 6,
     Nucleium = 7,
+    BZ = 8,
+    Healium = 9,
+    Nitrium = 10,
+    Pluoxium = 11,
+    Hydrogen = 12,
+    HyperNoblium = 13,
+    ProtoNitrate = 14,
+    Zauker = 15,
+    Halon = 16,
+    AntiNoblium = 17,
 
-    Count = 8,
+    Count = 18,
 }
 
 [Serializable, NetSerializable]

@@ -543,4 +543,85 @@ public sealed class StormdriveTest
         entMan.System<SharedPhysicsSystem>().SetBodyStatus(particle, physics, BodyStatus.InAir);
         entMan.System<SharedPhysicsSystem>().SetLinearVelocity(particle, new Vector2(0f, -20f), body: physics);
     }
+
+    /// <summary>
+    ///     The Funky /tg/ gases have to reach the reaction maths and the console, not just exist as
+    ///     Gas ids. Anti-noblium is the loudest of them: it should raise power, radiation and rod
+    ///     wear while lowering the temperature thresholds.
+    /// </summary>
+    [Test]
+    public async Task FunkyGasesDriveTheReactionMathAndConsoleRows()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+
+        EntityUid drive = default;
+        EntityUid console = default;
+
+        await server.WaitAssertion(() =>
+        {
+            drive = entMan.SpawnEntity("StormdriveReactorRunning", testMap.GridCoords);
+            console = entMan.SpawnEntity("StormdriveControlConsole", testMap.GridCoords);
+        });
+
+        await pair.RunTicksSync(4);
+
+        await server.WaitAssertion(() =>
+        {
+            var comp = entMan.GetComponent<StormdriveComponent>(drive);
+            var consoleComp = entMan.GetComponent<StormdriveConsoleComponent>(console);
+            var consoleSystem = entMan.System<StormdriveConsoleSystem>();
+
+            Assert.That(consoleSystem.TryLinkReactor(console, consoleComp, drive), Is.True,
+                "the test console should link to its drive");
+
+            var nodes = entMan.GetComponent<NodeContainerComponent>(drive);
+            var fuel = (PipeNode) nodes.Nodes[comp.FuelInputName];
+
+            // One process tick only; 10 s keeps the next tick outside the test window.
+            comp.ProcessInterval = 10f;
+            comp.NextProcess = TimeSpan.Zero;
+            comp.Heat = 200f;
+            comp.ReactionRate = 5f;
+            comp.ControlRodPercent = 33.6f;
+            comp.ReactorStability = 100f;
+
+            fuel.Air.Clear();
+            fuel.Air.AdjustMoles(Gas.Plasma, 25f);
+            fuel.Air.AdjustMoles(Gas.AntiNoblium, 25f);
+            fuel.Air.Temperature = Atmospherics.T20C;
+
+            consoleComp.NextSample = TimeSpan.Zero;
+        });
+
+        await pair.RunTicksSync(4);
+
+        await server.WaitAssertion(() =>
+        {
+            var comp = entMan.GetComponent<StormdriveComponent>(drive);
+            var consoleComp = entMan.GetComponent<StormdriveConsoleComponent>(console);
+
+            Assert.That(comp.InputPowerModifier, Is.GreaterThan(1.5f),
+                "anti-noblium should raise the power multiplier");
+            Assert.That(comp.RadiationModifier, Is.GreaterThan(5f),
+                "anti-noblium should raise radiation");
+            Assert.That(comp.TemperatureModifier, Is.LessThan(0.75f),
+                "anti-noblium should lower the temperature thresholds");
+            Assert.That(comp.ControlRodDegradationModifier, Is.GreaterThan(1.5f),
+                "anti-noblium should wear the rods faster");
+
+            var state = entMan.System<StormdriveConsoleSystem>().GetUiState(console, consoleComp);
+            Assert.That(state.AntiNoblium, Is.GreaterThan(0f),
+                "the console should report the anti-noblium in the fuel line");
+            Assert.That(state.Plasma, Is.GreaterThan(0f),
+                "the console should keep reporting the vanilla rows");
+            Assert.That(state.GasHistory.Count, Is.EqualTo((int) StormdriveConsoleGas.Count),
+                "the graph should have one history series for every gas row");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
 }

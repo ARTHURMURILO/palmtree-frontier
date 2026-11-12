@@ -65,12 +65,37 @@
   past about 1470 PSI, the vessel starts taking damage.
 
   ## Moderator gases
+  The moderator gate burns everything fed to it every cycle, so every gas is a running cost. The
+  core reads the mixture as a whole; a gas is useful because of what it does to the reaction, not
+  because it is "better" than plasma.
+
   - [bold]Plasma:[/bold] fuel. More plasma means more K and more power.
   - [bold]Tritium:[/bold] very hot fuel. Ten times the fuel value of plasma, and it raises radiation;
     use it carefully.
+  - [bold]Hydrogen:[/bold] cheap fusion fuel. Four times the fuel value of plasma, but it raises
+    radiation and instability. A budget alternative to tritium.
+  - [bold]Anti-noblium:[/bold] exotic fuel. Eight times the fuel value of plasma, with severe
+    radiation and rod damage. The core can be made to produce enormous power; it will not survive
+    long doing it.
   - [bold]Oxygen:[/bold] power multiplier. A high-oxygen mix produces more watts from the same fuel.
+  - [bold]Nitrium:[/bold] power booster. Makes the same moderator burn hotter and raises radiation;
+    it is not fuel, so it still needs plasma, tritium, hydrogen or anti-noblium in the gate.
+  - [bold]Proto-nitrate:[/bold] oxidizer. Strong power boost, but it eats fuel rods and raises
+    radiation. Use it in bursts.
   - [bold]Nitrogen / carbon dioxide:[/bold] control gases. They raise control-rod effectiveness, so the
     rods can pull K down faster. Both also raise radiation.
+  - [bold]Pluoxium:[/bold] premium control gas. Three times the control value of nitrogen, and it helps
+    the rods hold a steady K.
+  - [bold]Healium:[/bold] repair gas. Slows fuel-rod depletion, helps the control rods and lowers
+    radiation. The opposite of a corrosive feed.
+  - [bold]BZ:[/bold] permeability gas. Helps the coolant absorb heat from the core, at the cost of
+    radiation.
+  - [bold]Hyper-noblium:[/bold] strong permeability gas. Ten times the effect of BZ and the best way to
+    keep a hot core cool, if you can afford the feed rate.
+  - [bold]Halon:[/bold] fire-suppressant coolant. Adds permeability, lowers radiation and instability,
+    and slightly slows rod wear. A good emergency additive.
+  - [bold]Zauker:[/bold] corrosive gas. Adds permeability and cooling, but heavily depletes fuel rods
+    and raises radiation and instability.
   - [bold]Water vapour:[/bold] permeability. It helps the coolant absorb heat from the core.
   - [bold]Nucleium:[/bold] waste. It is created as the core runs and should be filtered out of the
     coolant.

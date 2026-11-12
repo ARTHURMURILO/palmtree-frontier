@@ -83,6 +83,9 @@
   entirely, which is a different failure path from low stability.
 
   ## Gases
+  Every gas that reaches the fuel line does something. The first eight are the stock reactor gases;
+  the last ten are the /tg/ gases the station now sells.
+
   - [bold]Plasma:[/bold] the standard fuel. It feeds the reaction, but it lowers power per mole.
   - [bold]Tritium:[/bold] high-yield fuel. It feeds the reaction much harder, raises power and raises
     the meltdown threshold, but lowers cooling. Treat it as a hot-rodding option, not a default.
@@ -95,16 +98,39 @@
     faster rod wear.
   - [bold]Nucleium:[/bold] waste. It lowers cooling and the meltdown threshold and reduces power. Vent
     the waste line; do not let it back up into the fuel line.
+  - [bold]BZ:[/bold] neutron poison and dopant. Adds a little power and a lot of radiation, lowers the
+    temperature thresholds, and wears the rods. A dirty power gas.
+  - [bold]Healium:[/bold] repair gas. Slows rod wear, lowers radiation and slightly improves cooling.
+    Pair it with a corrosive gas to keep the rods alive.
+  - [bold]Nitrium:[/bold] overclock. Raises the reaction rate and power, but lowers cooling and the
+    temperature thresholds and wears the rods faster.
+  - [bold]Pluoxium:[/bold] power and headroom. Raises power and all four temperature thresholds, at the
+    cost of faster rod wear. The safe way to run hotter.
+  - [bold]Hydrogen:[/bold] hot fuel additive. Strong reaction-rate and power boost, more radiation, less
+    cooling and lower thresholds. Rich mixtures get dangerous quickly.
+  - [bold]Hyper-noblium:[/bold] premium coolant. Strongly raises cooling and suppresses the reaction and
+    power. The best way to pull a hot core back from the edge, if you can afford it.
+  - [bold]Proto-nitrate:[/bold] oxidizer. Raises power and radiation and eats the rods. Use it in short
+    bursts, not as a steady feed.
+  - [bold]Zauker:[/bold] corrosive coolant. Improves cooling, but eats rods, adds radiation and raises
+    instability. A desperate coolant.
+  - [bold]Halon:[/bold] fire-suppressant coolant. Strong cooling, lowers radiation and reaction rate,
+    and raises the temperature thresholds. The safest additive.
+  - [bold]Anti-noblium:[/bold] exotic superfuel. Huge reaction-rate, power and radiation boost, but it
+    lowers cooling and the meltdown threshold and destroys rods. Treat a canister as a bomb with a
+    valve.
 
   Plasma and nitrogen cancel each other's reaction-rate contribution at a 1:1 ratio. A mix of
   33 % plasma, 33 % oxygen and 33 % nitrogen therefore has a net reaction-rate modifier of zero, and
   the reaction barely runs at low temperature. Use more plasma or less nitrogen if you want power.
+  The same cancellation applies to the new shutdown gases: hyper-noblium, halon, zauker and BZ all
+  pull the reaction down, so do not stack all of them and expect a controllable core.
 
   ## Meltdown
   The core melts down when its temperature passes the meltdown threshold. On a plain plasma mix that
-  is 800 °C; nitrous oxide and tritium raise it, nucleium lowers it. The drive gives you an
-  18-second fuse, but it also destroys every control rod when the fuse starts, so cooling is off for
-  the whole countdown. The only way to survive an armed fuse is to starve the reaction (fuel below
+  is 800 °C; nitrous oxide, tritium, pluoxium and halon raise it, while nucleium, BZ, nitrium,
+  hydrogen and anti-noblium lower it. The drive gives you an 18-second fuse, but it also destroys
+  every control rod when the fuse starts, so cooling is off for the whole countdown. The only way to survive an armed fuse is to starve the reaction (fuel below
   12.5 %), which makes the core lose 5 °C per cycle; if you were barely over the line, that can save
   you.
 

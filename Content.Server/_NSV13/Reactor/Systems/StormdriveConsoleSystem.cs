@@ -181,9 +181,6 @@ public sealed class StormdriveConsoleSystem : EntitySystem
         var total = air.TotalMoles;
 
         Span<float> values = stackalloc float[(int) StormdriveConsoleGas.Count];
-        // Only the gases that exist in this fork get a row. Constricted plasma, hyper-noblium,
-        // nitryl, BZ, stimulum and pluoxium are reactor gases from the `engines-all` branch; there
-        // is no Gas id to sample here, and a row that can only ever read 0.0% is noise.
         if (total > 0f)
         {
             values[(int) StormdriveConsoleGas.Plasma] = air.GetMoles(Gas.Plasma) / total * 100f;
@@ -194,6 +191,16 @@ public sealed class StormdriveConsoleSystem : EntitySystem
             values[(int) StormdriveConsoleGas.WaterVapour] = air.GetMoles(Gas.WaterVapor) / total * 100f;
             values[(int) StormdriveConsoleGas.NitrousOxide] = air.GetMoles(Gas.NitrousOxide) / total * 100f;
             values[(int) StormdriveConsoleGas.Nucleium] = air.GetMoles(Gas.Nucleium) / total * 100f;
+            values[(int) StormdriveConsoleGas.BZ] = air.GetMoles(Gas.BZ) / total * 100f;
+            values[(int) StormdriveConsoleGas.Healium] = air.GetMoles(Gas.Healium) / total * 100f;
+            values[(int) StormdriveConsoleGas.Nitrium] = air.GetMoles(Gas.Nitrium) / total * 100f;
+            values[(int) StormdriveConsoleGas.Pluoxium] = air.GetMoles(Gas.Pluoxium) / total * 100f;
+            values[(int) StormdriveConsoleGas.Hydrogen] = air.GetMoles(Gas.Hydrogen) / total * 100f;
+            values[(int) StormdriveConsoleGas.HyperNoblium] = air.GetMoles(Gas.HyperNoblium) / total * 100f;
+            values[(int) StormdriveConsoleGas.ProtoNitrate] = air.GetMoles(Gas.ProtoNitrate) / total * 100f;
+            values[(int) StormdriveConsoleGas.Zauker] = air.GetMoles(Gas.Zauker) / total * 100f;
+            values[(int) StormdriveConsoleGas.Halon] = air.GetMoles(Gas.Halon) / total * 100f;
+            values[(int) StormdriveConsoleGas.AntiNoblium] = air.GetMoles(Gas.AntiNoblium) / total * 100f;
         }
 
         for (var i = 0; i < (int) StormdriveConsoleGas.Count; i++)
@@ -217,7 +224,7 @@ public sealed class StormdriveConsoleSystem : EntitySystem
         _ui.SetUiState(uid, StormdriveConsoleUiKey.Key, GetUiState(uid, console));
     }
 
-    private StormdriveConsoleBoundUserInterfaceState GetUiState(EntityUid uid, StormdriveConsoleComponent console)
+    public StormdriveConsoleBoundUserInterfaceState GetUiState(EntityUid uid, StormdriveConsoleComponent console)
     {
         var state = new StormdriveConsoleBoundUserInterfaceState
         {
@@ -273,6 +280,16 @@ public sealed class StormdriveConsoleSystem : EntitySystem
         state.Nitrogen = air.GetMoles(Gas.Nitrogen);
         state.NitrousOxide = air.GetMoles(Gas.NitrousOxide);
         state.Nucleium = air.GetMoles(Gas.Nucleium);
+        state.BZ = air.GetMoles(Gas.BZ);
+        state.Healium = air.GetMoles(Gas.Healium);
+        state.Nitrium = air.GetMoles(Gas.Nitrium);
+        state.Pluoxium = air.GetMoles(Gas.Pluoxium);
+        state.Hydrogen = air.GetMoles(Gas.Hydrogen);
+        state.HyperNoblium = air.GetMoles(Gas.HyperNoblium);
+        state.ProtoNitrate = air.GetMoles(Gas.ProtoNitrate);
+        state.Zauker = air.GetMoles(Gas.Zauker);
+        state.Halon = air.GetMoles(Gas.Halon);
+        state.AntiNoblium = air.GetMoles(Gas.AntiNoblium);
         state.TotalMoles = air.TotalMoles;
 
         // fuel_mix is the same two positive contributors the ignition check counts in full.

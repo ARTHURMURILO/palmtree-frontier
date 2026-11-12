@@ -28,12 +28,14 @@ public sealed class RbmkSmokeTest
 
         await server.WaitAssertion(() =>
         {
-            // Every gas the RBMK maths touches must resolve by its numeric id. This branch carries
-            // nucleium as the core's waste gas; the other reactor gases stay on `engines-all`.
+            // Every gas the RBMK maths touches must resolve by its numeric id. Nucleium is the
+            // core's waste; the Funky gases are the moderator additives added by the atmos port.
             foreach (var gas in new[]
                      {
                          Gas.Plasma, Gas.Tritium, Gas.Oxygen, Gas.Nitrogen, Gas.CarbonDioxide,
-                         Gas.WaterVapor, Gas.Nucleium,
+                         Gas.WaterVapor, Gas.Nucleium, Gas.BZ, Gas.Healium, Gas.Nitrium,
+                         Gas.Pluoxium, Gas.Hydrogen, Gas.HyperNoblium, Gas.ProtoNitrate,
+                         Gas.Zauker, Gas.Halon, Gas.AntiNoblium,
                      })
             {
                 Assert.DoesNotThrow(() => protoMan.Index<Content.Shared.Atmos.Prototypes.GasPrototype>(((int) gas).ToString()),
