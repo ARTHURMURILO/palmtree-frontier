@@ -119,8 +119,6 @@ public sealed class RbmkGasEffectsTest
         await server.WaitAssertion(() =>
         {
             var containers = entMan.System<SharedContainerSystem>();
-            var plasmaRods = entMan.GetComponent<RbmkReactorComponent>(plasmaReactor);
-            var healiumRods = entMan.GetComponent<RbmkReactorComponent>(healiumReactor);
 
             Assert.That(containers.TryGetContainer(plasmaReactor, RbmkReactorComponent.FuelContainer, out var plasmaBay),
                 Is.True);
