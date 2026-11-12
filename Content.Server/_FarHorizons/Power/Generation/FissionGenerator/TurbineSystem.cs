@@ -17,7 +17,6 @@ using Content.Shared.Administration.Logs;
 using Content.Shared.Atmos;
 using Content.Shared.Database;
 using Content.Shared.Explosion.Components;
-using Content.Shared.Jittering;
 using Content.Shared.Popups;
 using Robust.Server.GameObjects;
 using Robust.Shared.Audio;
@@ -46,7 +45,6 @@ public sealed class TurbineSystem : SharedTurbineSystem
     [Dependency] private readonly TransformSystem _transformSystem = default!;
     [Dependency] private readonly UserInterfaceSystem _uiSystem = null!;
     [Dependency] private readonly DeviceLinkSystem _signal = default!;
-    [Dependency] private readonly SharedJitteringSystem _jittering = default!;
 
     private readonly List<string> _damageSoundList = [
         "/Audio/_FarHorizons/Effects/engine_grump1.ogg",
@@ -313,22 +311,32 @@ public sealed class TurbineSystem : SharedTurbineSystem
     }
 
     /// <summary>
-    ///     Shake only the turbine sprite while it is overspeeding. The jitter system animates
-    ///     <see cref="SpriteComponent.Offset"/>, not the transform, so the machine (and the ship it
-    ///     is bolted to) stays put while the model rattles.
+    ///     Shake only the turbine sprite while it is seriously overspeeding. The client-side
+    ///     <see cref="TurbineShakeSystem"/> animates <see cref="SpriteComponent.Offset"/>, not the
+    ///     transform, so the machine (and the ship it is bolted to) stays put while the model
+    ///     rattles. The threshold is deliberately above the 1.2 overspeed warning.
     /// </summary>
     private void UpdateOverspeedShake(EntityUid uid, TurbineComponent comp)
     {
-        var shaking = HasComp<JitteringComponent>(uid);
+        var ratio = comp.BestRPM > 0f ? comp.RPM / comp.BestRPM : 0f;
+        var shaking = ratio > comp.ShakeThreshold;
 
-        if (comp.Overspeed)
+        if (!shaking)
         {
-            if (!shaking)
-                _jittering.AddJitter(uid, amplitude: 30f, frequency: 6f);
+            if (HasComp<TurbineShakeComponent>(uid))
+                RemCompDeferred<TurbineShakeComponent>(uid);
+            return;
         }
-        else if (shaking)
+
+        // Ramp from a barely visible rattle just over the threshold to a violent one at ~1.85x.
+        var intensity = Math.Clamp((ratio - comp.ShakeThreshold) / 0.5f, 0f, 1f);
+        var shake = EnsureComp<TurbineShakeComponent>(uid);
+        var value = 0.15f + 0.85f * intensity;
+
+        if (MathF.Abs(shake.Intensity - value) > 0.01f)
         {
-            RemCompDeferred<JitteringComponent>(uid);
+            shake.Intensity = value;
+            Dirty(uid, shake);
         }
     }
 

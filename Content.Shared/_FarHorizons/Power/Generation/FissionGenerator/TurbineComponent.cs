@@ -53,10 +53,17 @@ public sealed partial class TurbineComponent : Component
     public float TurbineMass = 1000;
 
     /// <summary>
-    /// Most efficient power generation at this value, overspeed at 1.2*this
+    /// Most efficient power generation at this value, overspeed at 1.2*this.
     /// </summary>
     [DataField]
     public float BestRPM = 600;
+
+    /// <summary>
+    /// Fraction of <see cref="BestRPM"/> at which the turbine starts visibly shaking. Higher than
+    /// the 1.2 overspeed warning so the red lamp is a warning, not the start of the failure effect.
+    /// </summary>
+    [DataField]
+    public float ShakeThreshold = 1.35f;
 
     /// <summary>
     /// RPM the animation is playing at
