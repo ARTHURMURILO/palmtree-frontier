@@ -33,7 +33,7 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
              * Pre-checks
              */
 
-            //core.AreaPower = GetAreaCellPercent(coreUid);
+            core.AreaPower = GetAreaCellPercent(coreUid);
             HandleSoundLoop(coreUid, core);
 
             // Run the reaction if it is either live or being started

@@ -16,6 +16,7 @@
     ShipyardRCD: 10 # Frontier
     ShipyardRCDAmmo: 20 # Frontier
     RPD: 5 # Palmtree
+    ConstructionChalkBox: 3 # Funky
     RCDAmmo: 10 # Palmtree
     DoorRemoteShipyard: 5 # Frontier
     ClothingHeadHatCone: 10 # Frontier: 4<10

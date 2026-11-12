@@ -13,6 +13,7 @@ using Content.Server.Power.EntitySystems;
 using System.Linq;
 using Content.Server.Chat.Systems;
 using Content.Server.Administration.Logs;
+using Content.Shared.Database;
 using Robust.Shared.Timing;
 using Robust.Shared.Random;
 using Content.Server.Radio.EntitySystems;
@@ -436,8 +437,18 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
         */
         public float GetAreaCellPercent(EntityUid coreUid)
         {
-            // TODO: Figure this out
-            return 100f;
+            if (!TryComp<HFRCoreComponent>(coreUid, out var core) ||
+                core.ConsoleUid is not { } consoleUid ||
+                !TryComp<ApcPowerReceiverComponent>(consoleUid, out var receiver) ||
+                receiver.Provider is not { } provider ||
+                !TryComp<PowerNetworkBatteryComponent>(provider.Owner, out var battery) ||
+                battery.NetworkBattery.Capacity <= 0f)
+            {
+                return 0f;
+            }
+
+            var charge = battery.NetworkBattery.CurrentStorage / battery.NetworkBattery.Capacity * 100f;
+            return Math.Clamp(charge, 0f, 100f);
         }
 
         /**
@@ -484,7 +495,8 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
             {
                 message = $"{core.EmergencyAlert} Integrity: {integrity}%";
                 global = true;
-                // TODO: Add admin log here
+                _logSystem.Add(LogType.AtmosDeviceSetting, LogImpact.High,
+                    $"{ToPrettyString(coreUid)} reached emergency containment at {integrity}% integrity");
                 core.HasReachedEmergency = true;
             }
             else if (core.HasReachedEmergency && core.CriticalThresholdProximity > core.LastWarningThresholdProximity + 40f && warningDelayOver)

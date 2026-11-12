@@ -24,7 +24,9 @@ using Robust.Shared.Random;
 using Content.Server.NodeContainer.Nodes;
 using Content.Shared.DeviceLinking.Events;
 using Content.Server.DeviceLinking.Systems;
+using Content.Shared.Effects;
 using Robust.Shared.Physics;
+using Robust.Shared.Player;
 
 namespace Content.Server._FarHorizons.Power.Generation.FissionGenerator;
 
@@ -44,8 +46,7 @@ public sealed class TurbineSystem : SharedTurbineSystem
     [Dependency] private readonly TransformSystem _transformSystem = default!;
     [Dependency] private readonly UserInterfaceSystem _uiSystem = null!;
     [Dependency] private readonly DeviceLinkSystem _signal = default!;
-
-    public event Action<string>? TurbineRepairMessage;
+    [Dependency] private readonly SharedColorFlashEffectSystem _colorFlash = default!;
 
     private readonly float _threshold = 0.5f;
     private float _accumulator = 0f;
@@ -245,7 +246,7 @@ public sealed class TurbineSystem : SharedTurbineSystem
             // Damage the turbines during overspeed, linear increase from 18% to 45% then stays at 45%
             if (comp.Overspeed && _random.NextFloat() < 0.15 * Math.Min(comp.RPM / comp.BestRPM, 3))
             {
-                // TODO: damage flash
+                _colorFlash.RaiseEffect(Color.Red, new List<EntityUid> { uid }, Filter.Pvs(uid, entityManager: EntityManager));
                 _audio.PlayPvs(new SoundPathSpecifier(_damageSoundList[_random.Next(0, _damageSoundList.Count)]), uid, AudioParams.Default.WithVariation(0.25f).WithVolume(-1));
                 comp.BladeHealth--;
                 UpdateHealthIndicators(uid, comp);

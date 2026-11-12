@@ -46,7 +46,6 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
 
     private EntityUid? _ghost;
     private EntProtoId? _ghostEntity;
-    private string _lastNote = string.Empty;
 
     public override void Update(float frameTime)
     {
@@ -54,47 +53,46 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
 
         if (_player.LocalEntity is not { } player)
         {
-            Clear("no local player");
+            Clear();
             return;
         }
 
         if (FindPulsingTool(player) == null)
         {
-            var active = _hands.GetActiveItem(player);
-            Clear($"no pulsing tool in any hand (active item: {(active is { } a ? ToPrettyString(a) : "none")})");
+            Clear();
             return;
         }
 
         if (!_input.MouseScreenPosition.IsValid)
         {
-            Clear("invalid mouse position");
+            Clear();
             return;
         }
 
         var mouse = _eye.PixelToMap(_input.MouseScreenPosition);
         if (mouse.MapId == MapId.Nullspace)
         {
-            Clear("mouse not on a map");
+            Clear();
             return;
         }
 
         var flatpack = FindFlatpack(mouse);
         if (flatpack is not { } target)
         {
-            Clear("no footprint flatpack under the cursor");
+            Clear();
             return;
         }
 
         if (_containers.IsEntityInContainer(target))
         {
-            Clear("flatpack is in a container");
+            Clear();
             return;
         }
 
         var xform = Transform(target);
         if (xform.GridUid is not { } gridUid || !TryComp<MapGridComponent>(gridUid, out var grid))
         {
-            Clear("flatpack is not on a grid");
+            Clear();
             return;
         }
 
@@ -102,7 +100,7 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
             !TryComp<FlatpackComponent>(target, out var flatpackComp) ||
             flatpackComp.Entity is not { } entity)
         {
-            Clear("flatpack is missing its footprint or target entity");
+            Clear();
             return;
         }
 
@@ -116,11 +114,9 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
             ghost = CreateGhost(target, entity, _map.GridTileToLocal(gridUid, grid, position), direction);
             if (ghost == EntityUid.Invalid)
             {
-                Clear("could not create the ghost sprite");
+                Clear();
                 return;
             }
-
-            Note($"show: {entity} at {position}, facing {direction}, valid={valid}");
 
             _ghost = ghost;
             _ghostEntity = entity;
@@ -207,22 +203,9 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
         return ghost;
     }
 
-    /// <summary>
-    ///     Logs the ghost state only when it changes, so a flickering ghost produces a readable
-    ///     alternation of show/hide lines in the client log without spamming every frame.
-    /// </summary>
-    private void Note(string state)
-    {
-        if (state == _lastNote)
-            return;
 
-        _lastNote = state;
-        Log.Debug($"[flatpack-ghost] {state}");
-    }
-
-    private void Clear(string reason)
+    private void Clear()
     {
-        Note($"hide: {reason}");
         ClearGhost();
     }
 
