@@ -112,9 +112,14 @@ public sealed partial class TurbineWindow : FancyWindow
     {
         _entity = entity;
 
-        this.SetInfoFromEntity(_entityManager, _entity);
+        // The BUI can open on the tick the turbine spawns, before the client has received the
+        // entity's component state. The fancy-window helpers throw on the missing metadata; the
+        // sprite view already tolerates it and resolves the entity once the state arrives.
+        if (_entityManager.TryGetComponent<MetaDataComponent>(entity, out _))
+            this.SetInfoFromEntity(_entityManager, entity);
 
-        EntityView.SetEntity(entity);
+        // Keep the net entity so the sprite view resolves the turbine once its state arrives.
+        EntityView.SetEntity(_entityManager.GetNetEntity(entity));
     }
 
     [MemberNotNull(nameof(_speedMeter))]
