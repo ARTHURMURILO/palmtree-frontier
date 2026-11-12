@@ -24,6 +24,7 @@ using Robust.Shared.Random;
 using Content.Server.NodeContainer.Nodes;
 using Content.Shared.DeviceLinking.Events;
 using Content.Server.DeviceLinking.Systems;
+using System.Numerics;
 using Content.Shared.Effects;
 using Robust.Shared.Physics;
 using Robust.Shared.Player;
@@ -109,6 +110,33 @@ public sealed class TurbineSystem : SharedTurbineSystem
         QueueDel(comp.OutletEnt);
     }
 
+    /// <summary>
+    ///     Reuse a pipe stub that was saved with the grid instead of spawning another one on top of
+    ///     it. The stub entities are children of the turbine and survive a map save/load, but the
+    ///     runtime UID fields do not, so without this every reload doubled the pipe nodes.
+    /// </summary>
+    private EntityUid FindOrSpawnPipe(EntityUid uid, Vector2 offset, float rotation)
+    {
+        EntityUid? found = null;
+        var children = Transform(uid).ChildEnumerator;
+        while (children.MoveNext(out var child))
+        {
+            if (MetaData(child).EntityPrototype?.ID != "TurbineGasPipe")
+                continue;
+
+            if ((Transform(child).LocalPosition - offset).LengthSquared() > 0.01f)
+                continue;
+
+            if (found == null)
+                found = child;
+            else
+                QueueDel(child);
+        }
+
+        children.Dispose();
+        return found ?? SpawnAttachedTo("TurbineGasPipe", new(uid, offset), rotation: Angle.FromDegrees(rotation));
+    }
+
     #region Main Loop
     private void OnUpdate(EntityUid uid, TurbineComponent comp, ref AtmosDeviceUpdateEvent args)
     {
@@ -118,9 +146,9 @@ public sealed class TurbineSystem : SharedTurbineSystem
         supplier.MaxSupply = comp.LastGen;
 
         if (!comp.InletEnt.HasValue || EntityManager.Deleted(comp.InletEnt.Value))
-            comp.InletEnt = SpawnAttachedTo("TurbineGasPipe", new(uid, comp.InletPos), rotation: Angle.FromDegrees(comp.InletRot));
+            comp.InletEnt = FindOrSpawnPipe(uid, comp.InletPos, comp.InletRot);
         if (!comp.OutletEnt.HasValue || EntityManager.Deleted(comp.OutletEnt.Value))
-            comp.OutletEnt = SpawnAttachedTo("TurbineGasPipe", new(uid, comp.OutletPos), rotation: Angle.FromDegrees(comp.OutletRot));
+            comp.OutletEnt = FindOrSpawnPipe(uid, comp.OutletPos, comp.OutletRot);
 
         CheckAnchoredPipes(uid, comp);
 
@@ -238,8 +266,11 @@ public sealed class TurbineSystem : SharedTurbineSystem
             // Calculate power generation
             comp.LastGen = comp.PowerMultiplier * comp.StatorLoad * (comp.RPM / 30) * (float)(1 / Math.Cosh(0.01 * (comp.RPM - comp.BestRPM)));
 
-            if (float.IsNaN(comp.LastGen))
-                throw new NotFiniteNumberException("Turbine made NaN power");
+            if (!float.IsFinite(comp.LastGen))
+            {
+                Log.Error($"Turbine {ToPrettyString(uid)} produced non-finite power; resetting generation.");
+                comp.LastGen = 0f;
+            }
 
             comp.Overspeed = comp.RPM > comp.BestRPM * 1.2;
 

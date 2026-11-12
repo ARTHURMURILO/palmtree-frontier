@@ -78,7 +78,11 @@ public sealed class TurbineAssemblySystem : EntitySystem
                 if (!_map.TryGetTileRef(gridUid, grid, pos, out var tileRef))
                     continue;
 
-                assembly.Floors.Add((pos, tileRef.Tile));
+                assembly.Floors.Add(new TurbineFloorRestore
+                {
+                    Position = pos,
+                    OriginalTileType = tileRef.Tile.TypeId,
+                });
                 _map.SetTile(gridUid, grid, pos, new Tile(floor.TileId));
             }
         }
@@ -90,7 +94,8 @@ public sealed class TurbineAssemblySystem : EntitySystem
                 if (HasHvCable(gridUid, grid, pos))
                     continue;
 
-                assembly.Parts.Add(Spawn("CableHV", _map.GridTileToLocal(gridUid, grid, pos)));
+                assembly.CableTiles.Add(pos);
+                Spawn("CableHV", _map.GridTileToLocal(gridUid, grid, pos));
             }
         }
     }
@@ -124,6 +129,15 @@ public sealed class TurbineAssemblySystem : EntitySystem
         }
 
         return false;
+    }
+
+    private void RemoveHvCableAt(EntityUid gridUid, MapGridComponent grid, Vector2i pos)
+    {
+        foreach (var anchored in _map.GetAnchoredEntities((gridUid, grid), pos))
+        {
+            if (TryComp<CableComponent>(anchored, out var cable) && cable.CableType == CableType.HighVoltage)
+                QueueDel(anchored);
+        }
     }
 
     private void OnGetVerbs(Entity<TurbineAssemblyComponent> ent, ref GetVerbsEvent<Verb> args)
@@ -202,22 +216,23 @@ public sealed class TurbineAssemblySystem : EntitySystem
 
         PackPipes(ent.Comp);
 
-        foreach (var part in assembly.Parts)
-        {
-            if (!TerminatingOrDeleted(part))
-                QueueDel(part);
-        }
-        assembly.Parts.Clear();
-
         if (xform.GridUid is { } gridUid && TryComp<MapGridComponent>(gridUid, out var grid))
         {
-            foreach (var (pos, original) in assembly.Floors)
+            foreach (var pos in assembly.CableTiles)
+                RemoveHvCableAt(gridUid, grid, pos);
+
+            foreach (var floor in assembly.Floors)
             {
                 // Only restore the deck the flatpack itself laid; leave crew changes alone.
-                if (_map.TryGetTileRef(gridUid, grid, pos, out var tileRef) && tileRef.Tile.TypeId == assembly.FloorTile)
-                    _map.SetTile(gridUid, grid, pos, original);
+                if (_map.TryGetTileRef(gridUid, grid, floor.Position, out var tileRef) &&
+                    tileRef.Tile.TypeId == assembly.FloorTile)
+                {
+                    _map.SetTile(gridUid, grid, floor.Position, new Tile(floor.OriginalTileType));
+                }
             }
         }
+
+        assembly.CableTiles.Clear();
         assembly.Floors.Clear();
 
         var flatpack = Spawn(assembly.Flatpack, coords);

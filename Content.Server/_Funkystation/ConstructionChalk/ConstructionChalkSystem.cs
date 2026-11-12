@@ -6,10 +6,12 @@ using System.Linq;
 using Content.Server.Construction;
 using Content.Shared._Funkystation.ConstructionChalk;
 using Content.Shared.Construction.Prototypes;
+using Content.Shared.Construction.Steps;
 using Content.Shared.Hands.EntitySystems;
 using Content.Shared.Interaction;
 using Content.Shared.Interaction.Events;
 using Robust.Shared.Audio.Systems;
+using Robust.Shared.Timing;
 using Robust.Shared.Map;
 using Robust.Shared.Physics;
 using Robust.Shared.Physics.Systems;
@@ -27,6 +29,7 @@ public sealed partial class ConstructionChalkSystem : SharedConstructionChalkSys
     [Dependency] private SharedAudioSystem _audio = null!;
     [Dependency] private SharedPhysicsSystem _physics = null!;
     [Dependency] private EntityLookupSystem _lookup = null!;
+    [Dependency] private IGameTiming _timing = null!;
 
     private const string ChalkMarkPrototype = "ConstructionChalkMark";
 
@@ -52,15 +55,22 @@ public sealed partial class ConstructionChalkSystem : SharedConstructionChalkSys
         if (args.SenderSession.AttachedEntity is not { Valid: true } user)
             return;
 
-        var chalkUid = GetEntity(ev.Chalk);
-        if (!TryComp<ConstructionChalkComponent>(chalkUid, out var chalkComp) ||
-            !_hands.IsHolding(user, chalkUid))
+        if (!TryGetEntity(ev.Chalk, out var chalkUid) ||
+            !TryComp<ConstructionChalkComponent>(chalkUid.Value, out var chalkComp) ||
+            !_hands.IsHolding(user, chalkUid.Value))
         {
             return;
         }
 
+        if (_timing.CurTime < chalkComp.NextPlace)
+            return;
+
+        chalkComp.NextPlace = _timing.CurTime + TimeSpan.FromSeconds(0.25);
+
         var coords = GetCoordinates(ev.Coordinates);
         var mapPos = _transform.ToMapCoordinates(coords);
+        if (mapPos.MapId == MapId.Nullspace)
+            return;
 
         if (!IsChalkableRecipe(ev.ConstructionPrototype, chalkComp.Mode) ||
             !_proto.TryIndex<ConstructionPrototype>(ev.ConstructionPrototype, out var recipe))
@@ -101,11 +111,42 @@ public sealed partial class ConstructionChalkSystem : SharedConstructionChalkSys
 
     private void OnMarkInteractUsing(Entity<ConstructionChalkMarkComponent> ent, ref InteractUsingEvent args)
     {
-        if (args.Handled)
+        if (args.Handled || !IsValidBuildItem(ent.Comp, args.Used))
             return;
 
         args.Handled = true;
         TryBuildFromMark(ent, args.User);
+    }
+
+    private bool IsValidBuildItem(ConstructionChalkMarkComponent mark, EntityUid used)
+    {
+        if (mark.ConstructionPrototype is not { } protoId ||
+            !_proto.TryIndex(protoId, out var recipe) ||
+            !_proto.TryIndex(recipe.Graph, out var graph))
+        {
+            return false;
+        }
+
+        var start = graph.Nodes[recipe.StartNode];
+        var target = graph.Nodes[recipe.TargetNode];
+        var path = graph.Path(start.Name, target.Name);
+        if (path == null || path.Length == 0)
+            return false;
+
+        var edge = start.GetEdge(path[0].Name);
+        if (edge == null)
+            return false;
+
+        foreach (var step in edge.Steps)
+        {
+            if (step is EntityInsertConstructionGraphStep insert &&
+                insert.EntityValid(used, EntityManager, Factory))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private async void TryBuildFromMark(Entity<ConstructionChalkMarkComponent> mark, EntityUid user)

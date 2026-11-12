@@ -28,27 +28,22 @@ public sealed class HFRConsoleBoundUserInterface : BoundUserInterface
         // Toggle buttons
         _menu.TogglePowerButton.OnPressed += _ =>
         {
-            _menu.SetActive(!_menu.Active);
             SendMessage(new HFRConsoleTogglePowerMessage());
         };
         _menu.ToggleCoolingButton.OnPressed += _ =>
         {
-            _menu.SetCooling(!_menu.Cooling);
             SendMessage(new HFRConsoleToggleCoolingMessage());
         };
         _menu.ToggleFuelInjectionButton.OnPressed += _ =>
         {
-            _menu.SetFuelInjecting(!_menu.FuelInjecting);
             SendMessage(new HFRConsoleToggleFuelInjectionMessage());
         };
         _menu.ToggleModeratorInjectionButton.OnPressed += _ =>
         {
-            _menu.SetModeratorInjecting(!_menu.ModeratorInjecting);
             SendMessage(new HFRConsoleToggleModeratorInjectionMessage());
         };
         _menu.ToggleWasteRemoveButton.OnPressed += _ =>
         {
-            _menu.SetWasteRemoving(!_menu.WasteRemoving);
             SendMessage(new HFRConsoleToggleWasteRemoveMessage());
         };
 

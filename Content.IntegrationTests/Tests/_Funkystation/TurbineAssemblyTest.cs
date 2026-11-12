@@ -80,7 +80,7 @@ public sealed class TurbineAssemblyTest
 
             Assert.That(assembly.Deployed, Is.True, "unpacking should make the turbine packable");
             Assert.That(assembly.Floors, Has.Count.EqualTo(footprintTiles.Count));
-            Assert.That(assembly.Parts, Has.Count.EqualTo(footprintTiles.Count));
+            Assert.That(assembly.CableTiles, Has.Count.EqualTo(footprintTiles.Count));
 
             var reinforced = tiles["FloorReinforced"];
             foreach (var pos in footprintTiles)

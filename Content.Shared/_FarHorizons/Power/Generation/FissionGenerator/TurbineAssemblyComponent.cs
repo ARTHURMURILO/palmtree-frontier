@@ -44,20 +44,31 @@ public sealed partial class TurbineAssemblyComponent : Component
     public bool Deployed;
 
     /// <summary>
-    ///     Entities the flatpack spawned around the turbine (the HV cables), removed again when packing up.
+    ///     Tiles the flatpack laid an HV cable on, removed again when packing up. Stored as tiles
+    ///     rather than entity UIDs so the site works survive a map save/load.
     /// </summary>
-    [ViewVariables]
-    public readonly List<EntityUid> Parts = new();
+    [DataField]
+    public List<Vector2i> CableTiles = new();
 
     /// <summary>
-    ///     Tiles replaced by the flatpack, with the tiles that were there before.
+    ///     Tiles replaced by the flatpack, with the floor that was there before.
     /// </summary>
-    [ViewVariables]
-    public readonly List<(Vector2i Position, Tile Original)> Floors = new();
+    [DataField]
+    public List<TurbineFloorRestore> Floors = new();
 
     /// <summary>
     ///     The floor tile the flatpack laid down, used to avoid restoring a deck the crew has since changed.
     /// </summary>
-    [ViewVariables]
+    [DataField]
     public int FloorTile;
+}
+
+[DataDefinition]
+public sealed partial class TurbineFloorRestore
+{
+    [DataField]
+    public Vector2i Position;
+
+    [DataField]
+    public int OriginalTileType;
 }

@@ -25,6 +25,7 @@
   - type: Appearance
   - type: InteractionOutline
   - type: Anchorable
+  - type: BindToStation # Frontier
   - type: Rotatable
   - type: ActivatableUI
     key: enum.HFRConsoleUiKey.Key
@@ -72,6 +73,7 @@
   - type: Appearance
   - type: InteractionOutline
   - type: Anchorable
+  - type: BindToStation # Frontier
   - type: Rotatable
   - type: AtmosDevice
   - type: NodeContainer
@@ -133,6 +135,7 @@
   - type: Appearance
   - type: InteractionOutline
   - type: Anchorable
+  - type: BindToStation # Frontier
   - type: Rotatable
   - type: NodeContainer
     nodes:
@@ -179,6 +182,7 @@
   - type: Appearance
   - type: InteractionOutline
   - type: Anchorable
+  - type: BindToStation # Frontier
   - type: Rotatable
   - type: NodeContainer
     nodes:
@@ -225,6 +229,7 @@
   - type: Appearance
   - type: InteractionOutline
   - type: Anchorable
+  - type: BindToStation # Frontier
   - type: Rotatable
   - type: NodeContainer
     nodes:
@@ -267,6 +272,7 @@
   - type: Appearance
   - type: InteractionOutline
   - type: Anchorable
+  - type: BindToStation # Frontier
   - type: Rotatable
   - type: Fixtures
     fixtures:
@@ -418,7 +424,7 @@
 
       [head=3]Warnings[/head]
       - The machine cannot be dismantled or powered off if the power level is above 0.
-      - Waste gases cannot be disposed of if the power level is above 5.
+      - Waste gases cannot be disposed of at power level 5 or above.
       - Only helium and antinoblium can be removed from the fusion mix.
       - Hypernoblium significantly reduces the power of the mix.
       - Antinoblium significantly increases the power of the mix.

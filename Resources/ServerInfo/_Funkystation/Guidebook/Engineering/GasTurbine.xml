@@ -29,7 +29,7 @@
 
   ## Piping and wiring
 
-  The turbine creates two pipe stubs when it is anchored: an [bold]inlet[/bold] on its west side and an [bold]outlet[/bold] on its east side. Pipe your hot gas into the inlet and run the outlet to a waste line or space. The cable under the turbine already reaches its HV output; connect the HV run from the edge of the footprint to the ship's power net.
+  The turbine creates two pipe stubs when it is anchored. On the large turbine the [bold]inlet[/bold] is on its west side and the [bold]outlet[/bold] on its east side; the small turbine is mirrored, with its inlet east and its outlet west. Pipe your hot gas into the inlet and run the outlet to a waste line or space. The cable under the turbine already reaches its HV output; connect the HV run from the edge of the footprint to the ship's power net.
 
   ## Packing up
 

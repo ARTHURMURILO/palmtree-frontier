@@ -260,20 +260,16 @@ public sealed partial class HFRCoreComponent : Component
     public float TemperaturePeriod = 1;
 
     // Meltdown
-    [DataField("finalCountdown")]
     [ViewVariables(VVAccess.ReadWrite)]
     public bool FinalCountdown;
 
-    [DataField("countdownStartTime")]
     [ViewVariables(VVAccess.ReadWrite)]
     public TimeSpan CountdownStartTime;
 
-    [DataField("lastCountdownUpdate")]
     [ViewVariables(VVAccess.ReadWrite)]
     public TimeSpan LastCountdownUpdate;
 
     // Sound
-    [DataField("lastAccentSound")]
     [ViewVariables(VVAccess.ReadWrite)]
     public TimeSpan LastAccentSound;
 
@@ -287,15 +283,12 @@ public sealed partial class HFRCoreComponent : Component
     public SoundSpecifier? CurrentSoundLoop;
 
     // Timings
-    [DataField("nextGravityPulse")]
     [ViewVariables(VVAccess.ReadWrite)]
     public TimeSpan NextGravityPulse;
 
-    [DataField("nextZap")]
     [ViewVariables(VVAccess.ReadWrite)]
     public TimeSpan NextZap;
 
-    [DataField("lastTick")]
     [ViewVariables(VVAccess.ReadWrite)]
     public TimeSpan LastTick;
 }

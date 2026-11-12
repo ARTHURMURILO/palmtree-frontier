@@ -20,4 +20,10 @@ public sealed partial class ConstructionChalkComponent : Component
 
     [ViewVariables]
     public bool IsStatusControlUpdateRequired;
+
+    /// <summary>
+    ///     Server-side rate limit for network placement requests.
+    /// </summary>
+    [ViewVariables]
+    public TimeSpan NextPlace;
 }
