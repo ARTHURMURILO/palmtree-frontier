@@ -2,7 +2,6 @@ using System.Linq;
 using System.Numerics;
 using Content.Client.Hands.Systems;
 using Content.Shared.Construction;
-using Content.Shared.Maps;
 using Content.Shared.Construction.Components;
 using Content.Shared.Tools;
 using Content.Shared.Tools.Systems;
@@ -37,7 +36,6 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
     [Dependency] private readonly SharedContainerSystem _containers = default!;
     [Dependency] private readonly AppearanceSystem _appearance = default!;
     [Dependency] private readonly IPrototypeManager _proto = default!;
-    [Dependency] private readonly IMapManager _mapManager = default!;
 
     private static readonly Color ValidColor = new(48, 255, 48, 128);
     private static readonly Color InvalidColor = new(255, 48, 48, 128);
@@ -46,7 +44,7 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
 
     private EntityUid? _ghost;
     private EntProtoId? _ghostEntity;
-    private readonly HashSet<EntityUid> _tileEntities = new();
+    private string _lastNote = string.Empty;
 
     public override void Update(float frameTime)
     {
@@ -120,7 +118,7 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
                 return;
             }
 
-            Log.Debug($"[flatpack-ghost] showing ghost for {entity} at {position}, facing {direction}, valid={valid}");
+            Note($"show: {entity} at {position}, facing {direction}, valid={valid}");
 
             _ghost = ghost;
             _ghostEntity = entity;
@@ -141,19 +139,8 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
 
     private EntityUid? FindFlatpack(MapCoordinates mouse)
     {
-        // The flatpack is a small floor item, so its physics body is much smaller than a tile and
-        // aiming at the sprite is fiddly. Look at every entity on the tile under the cursor instead.
-        if (!_mapManager.TryFindGridAt(mouse, out var gridUid, out var grid))
-            return null;
-
-        var tile = _map.TileIndicesFor(gridUid, grid, mouse);
-        if (!_map.TryGetTileRef(gridUid, grid, tile, out var tileRef))
-            return null;
-
-        _tileEntities.Clear();
-        _lookup.GetEntitiesInTile(tileRef, _tileEntities, LookupFlags.Dynamic | LookupFlags.Static | LookupFlags.Sundries);
-
-        foreach (var ent in _tileEntities)
+        var bounds = Box2.CenteredAround(mouse.Position, new Vector2(0.9f, 0.9f));
+        foreach (var ent in _lookup.GetEntitiesIntersecting(mouse.MapId, bounds, LookupFlags.Dynamic | LookupFlags.Static))
         {
             if (HasComp<FlatpackFootprintComponent>(ent) && HasComp<FlatpackComponent>(ent))
                 return ent;
@@ -195,10 +182,22 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
         return ghost;
     }
 
+    /// <summary>
+    ///     Logs the ghost state only when it changes, so a flickering ghost produces a readable
+    ///     alternation of show/hide lines in the client log without spamming every frame.
+    /// </summary>
+    private void Note(string state)
+    {
+        if (state == _lastNote)
+            return;
+
+        _lastNote = state;
+        Log.Debug($"[flatpack-ghost] {state}");
+    }
+
     private void Clear(string reason)
     {
-        if (_ghost != null)
-            Log.Debug($"[flatpack-ghost] hiding ghost: {reason}");
+        Note($"hide: {reason}");
         ClearGhost();
     }
 
