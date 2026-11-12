@@ -1,0 +1,39 @@
+<Document>
+  # Atmos Machines
+
+  Three machines extend the ship's gas processing chain. They are researched first — the electrolyzer and crystallizer under [bold]Atmospherics[/bold], the pipe scrubber under [bold]Portable Atmospherics[/bold] — and their circuitboards are then printed from a lathe. Electrolyzer and crystallizer boards need an [bold]engineering techfab[/bold]; the pipe scrubber board also prints from [bold]autolathes and protolathes[/bold]. Cargo sells all three boards cheaply. Build them like any other machine.
+
+  <Box>
+    <GuideEntityEmbed Entity="Electrolyzer" Caption="electrolyzer"/>
+    <GuideEntityEmbed Entity="Crystallizer" Caption="crystallizer"/>
+    <GuideEntityEmbed Entity="PipeScrubber" Caption="pipe scrubber"/>
+  </Box>
+
+  ## Electrolyzer
+
+  The electrolyzer splits gases on its tile using a fuel sheet and power. Insert a [bold]plasma[/bold] or [bold]uranium[/bold] sheet into its fuel slot; plasma is the cheaper fuel, uranium lasts longer.
+
+  - [bold]Water vapor[/bold] is split into oxygen and hydrogen. The reaction is faster when the gas is hot; above about 1123 K it runs at full efficiency.
+  - [bold]Hyper-noblium[/bold] below 150 K decays into anti-noblium.
+  - [bold]BZ[/bold] breaks down into oxygen, halon and heat.
+
+  It only works on the gas mixture on its own tile, so pipe the mix into the room or use it inside a sealed chamber.
+
+  ## Crystallizer
+
+  The crystallizer turns a gas mix into solid products. It has an [bold]inlet[/bold] and a [bold]regulator[/bold] pipe; the inlet carries the recipe gas, the regulator carries the gas that sets the temperature.
+
+  Open the UI, pick a [bold]recipe[/bold], set the [bold]gas input[/bold] rate, and keep the mix at the recipe's temperature and pressure. The UI shows the recipe's gas requirements in real time. Products include metal hydrogen, gas crystals, a single-use crystal power cell, diamond and plasma sheets.
+
+  The selected recipe and the input rate are saved with the machine, so a crystallizer resumes its job after a round restart.
+
+  ## Pipe scrubber
+
+  The portable pipe scrubber attaches to a pipe network and sucks gas into its internal tank. Turn it on to scrub the connected net; when it is full it stops accepting gas, and when it is turned off it pushes the stored gas back into the net. It holds up to 9000 kPa and moves about 50 L/s.
+
+  Use it to empty a contaminated line into a canister, or to buffer a gas you do not want in the loop yet.
+
+  ## See also
+
+  [textlink="Atmospherics" link="Atmospherics"], [textlink="Hypertorus Fusion Reactor" link="HypertorusFusionReactor"]
+</Document>

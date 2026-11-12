@@ -158,7 +158,7 @@ public sealed class DirectionalWindowPlacementTest
 
             var coords = new EntityCoordinates(grid.Owner, new Vector2(0.5f, 0.5f));
             var user = entMan.SpawnEntity("MobHuman", coords);
-            var window = entMan.SpawnEntity("WindowDirectional", coords);
+            entMan.SpawnEntity("WindowDirectional", coords);
             var tileRef = mapSystem.GetTileRef(grid.Owner, grid.Comp, Vector2i.Zero);
 
             var rpd = entMan.SpawnEntity("RPD", coords);
@@ -167,7 +167,7 @@ public sealed class DirectionalWindowPlacementTest
 
             Assert.That(
                 rcdSystem.IsRCDOperationStillValid(rpd, rpdComp, grid.Owner, grid.Comp, tileRef, Vector2i.Zero,
-                    null, user, false, AtmosPipeLayer.Primary),
+                    null, user, false, AtmosPipeLayer.Primary, Direction.South),
                 Is.True,
                 "The RPD should be able to place a pipe under a directional window.");
 
@@ -177,7 +177,7 @@ public sealed class DirectionalWindowPlacementTest
 
             Assert.That(
                 rcdSystem.IsRCDOperationStillValid(rcd, rcdComp, grid.Owner, grid.Comp, tileRef, Vector2i.Zero,
-                    null, user, false, AtmosPipeLayer.Primary),
+                    null, user, false, AtmosPipeLayer.Primary, Direction.South),
                 Is.False,
                 "The RCD should not place a wall over a directional window.");
 
@@ -185,7 +185,7 @@ public sealed class DirectionalWindowPlacementTest
 
             Assert.That(
                 rcdSystem.IsRCDOperationStillValid(rcd, rcdComp, grid.Owner, grid.Comp, tileRef, Vector2i.Zero,
-                    null, user, false, AtmosPipeLayer.Primary),
+                    null, user, false, AtmosPipeLayer.Primary, Direction.South),
                 Is.False,
                 "The RCD should not place a full window over a directional window.");
 
@@ -193,7 +193,7 @@ public sealed class DirectionalWindowPlacementTest
 
             Assert.That(
                 rcdSystem.IsRCDOperationStillValid(rcd, rcdComp, grid.Owner, grid.Comp, tileRef, Vector2i.Zero,
-                    null, user, false, AtmosPipeLayer.Primary),
+                    null, user, false, AtmosPipeLayer.Primary, Direction.South),
                 Is.False,
                 "The RCD should not place an airlock over a directional window.");
 
@@ -201,7 +201,7 @@ public sealed class DirectionalWindowPlacementTest
 
             Assert.That(
                 rcdSystem.IsRCDOperationStillValid(rcd, rcdComp, grid.Owner, grid.Comp, tileRef, Vector2i.Zero,
-                    null, user, false, AtmosPipeLayer.Primary),
+                    null, user, false, AtmosPipeLayer.Primary, Direction.South),
                 Is.False,
                 "The RCD should not place a firelock over a directional window.");
 
@@ -209,17 +209,13 @@ public sealed class DirectionalWindowPlacementTest
 
             Assert.That(
                 rcdSystem.IsRCDOperationStillValid(rcd, rcdComp, grid.Owner, grid.Comp, tileRef, Vector2i.Zero,
-                    null, user, false, AtmosPipeLayer.Primary),
+                    null, user, false, AtmosPipeLayer.Primary, Direction.South),
                 Is.False,
                 "A second directional window on the same edge should be rejected by the RCD.");
 
-            // The RCD builds towards its current ConstructionDirection (south by default). Turn the
-            // existing window to the east so a new one would land on a different edge.
-            entMan.GetComponent<TransformComponent>(window).LocalRotation = Direction.East.ToAngle();
-
             Assert.That(
                 rcdSystem.IsRCDOperationStillValid(rcd, rcdComp, grid.Owner, grid.Comp, tileRef, Vector2i.Zero,
-                    null, user, false, AtmosPipeLayer.Primary),
+                    null, user, false, AtmosPipeLayer.Primary, Direction.East),
                 Is.True,
                 "A perpendicular directional window should be allowed by the RCD.");
         });

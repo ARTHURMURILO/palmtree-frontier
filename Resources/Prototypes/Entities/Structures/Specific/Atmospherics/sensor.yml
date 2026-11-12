@@ -28,6 +28,16 @@
       Respiron: ignore # Frontier
       Helium: stationHe # Frontier
       Nucleium: ignore # NSV13 - reactor waste, inert
+      BZ: stationBZ # Funky - /tg/ gases
+      Healium: stationHealium # Funky - /tg/ gases
+      Nitrium: danger # Funky - /tg/ gases
+      Pluoxium: stationPluoxium # Funky - /tg/ gases
+      Hydrogen: danger # Funky - /tg/ gases
+      HyperNoblium: stationHyperNoblium # Funky - /tg/ gases
+      ProtoNitrate: danger # Funky - /tg/ gases
+      Zauker: danger # Funky - /tg/ gases
+      Halon: danger # Funky - /tg/ gases
+      AntiNoblium: danger # Funky - /tg/ gases
   - type: Tag
     tags:
       - AirSensor

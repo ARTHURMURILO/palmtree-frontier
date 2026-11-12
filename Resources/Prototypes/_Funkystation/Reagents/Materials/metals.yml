@@ -1,0 +1,17 @@
+# Funky atmos - /tg/ gases
+
+- type: material
+  id: MetalHydrogen
+  stackEntity: MetalHydrogen1
+  name: materials-metal-hydrogen
+  unit: materials-unit-bar
+  icon: { sprite: Objects/Materials/ingots.rsi, state: hydrogen }
+  price: 2.50 # 250 per unit
+
+- type: material
+  id: Zaukerite
+  stackEntity: Zaukerite1
+  name: materials-zaukerite
+  unit: materials-unit-bar
+  icon: { sprite: _Funkystation/Objects/Materials/zaukerite.rsi, state: zaukerite }
+  price: 5.00 # 500 per unit

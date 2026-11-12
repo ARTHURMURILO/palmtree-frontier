@@ -1,0 +1,62 @@
+<Document>
+  # Gas Turbines
+
+  The gas turbine turns hot gas into electrical power. It is the cheap half of the ship's engine room: it needs no fuel mix of its own, only a hot gas feed from something else — a burn chamber, a fusion reactor's waste line, or any other hot loop.
+
+  There are two sizes. The [bold]small turbine[/bold] is a 3x2 machine for tight engine rooms; the [bold]large turbine[/bold] is a 3x5 machine with more than twice the throughput.
+
+  <Box>
+    <GuideEntityEmbed Entity="TurbineSmall" Caption="small gas turbine"/>
+    <GuideEntityEmbed Entity="Turbine" Caption="large gas turbine"/>
+  </Box>
+  <Box>
+    <GuideEntityEmbed Entity="SmallGasTurbineFlatpack" Caption="small flatpack"/>
+    <GuideEntityEmbed Entity="GasTurbineFlatpack" Caption="large flatpack"/>
+  </Box>
+
+  ## Research and building
+
+  - [bold]Small turbine:[/bold] research [bold]Atmospherics[/bold] and print the small flatpack from an [bold]engineering techfab[/bold]. Cargo sells it under Engineering for [bold]1,500 credits[/bold].
+  - [bold]Large turbine:[/bold] research [bold]Advanced Atmospherics[/bold] and print the large flatpack from an [bold]engineering techfab[/bold]. Cargo sells it under Engineering for [bold]5,000 credits[/bold].
+
+  The large flatpack costs four times the materials of the small one. Both are printed from steel, glass, plasteel and gold.
+
+  ## Placing one safely
+
+  Turbines are multi-tile machines: the small one covers [bold]3x2 tiles[/bold] and the large one [bold]3x5 tiles[/bold], counted from the tile the flatpack sits on. The flatpack refuses to unpack if any of those tiles has no floor, or if a wall, machine, crate, atmos device or [bold]primary-layer pipe[/bold] is in the way. Cables and pipes on lower layers are fine — they keep working under the machine.
+
+  Stand near the flatpack with a [bold]multitool[/bold] in hand and hover the flatpack: a green ghost means the footprint fits, red means something is in the way. Rotate the flatpack with [bold]R[/bold] to turn the ghost, then use the multitool on the flatpack. Unpacking takes a few seconds. The turbine arrives bolted down, sitting on [bold]reinforced plating[/bold] with an [bold]HV cable run[/bold] across the whole footprint. There is no wrench interaction: the only way to move it again is to pack it up.
+
+  ## Piping and wiring
+
+  The turbine creates two pipe stubs when it is anchored. On the large turbine the [bold]inlet[/bold] is on its west side and the [bold]outlet[/bold] on its east side; the small turbine is mirrored, with its inlet east and its outlet west. Pipe your hot gas into the inlet and run the outlet to a waste line or space. The cable under the turbine already reaches its HV output; connect the HV run from the edge of the footprint to the ship's power net.
+
+  ## Packing up
+
+  A turbine deployed from a flatpack can be packed back into it once it has stopped. Right-click it, choose [bold]Pack up the turbine[/bold] and wait for the work to finish. The blades must not be spinning, or the verb is greyed out.
+
+  Packing up spills any gas left in the inlet and outlet stubs onto the deck, removes the cables and plating the flatpack laid, and restores the floor that was there before. The turbine's condition and settings travel with the flatpack, so unpacking it again does not repair damaged blades or reset the stator load.
+
+  ## Operating
+
+  1. Open the turbine UI. It has no access restriction.
+  2. Set the [bold]flow rate[/bold]: how much gas the turbine pulls per second.
+  3. Set the [bold]stator load[/bold]: higher load extracts more power but drags the RPM down.
+  4. Watch the [bold]RPM[/bold] and the temperature. The turbine has a best RPM; overspeeding it and running it too hot both damage the blades.
+
+  The turbine reports [bold]overspeed[/bold], [bold]overtemperature[/bold], [bold]stalling[/bold] and [bold]undertemperature[/bold] states in its UI. A damaged blade set still turns, but it loses efficiency and eventually fails.
+
+  ## Repair
+
+  Weld the turbine with a welding tool to repair blade damage. Each repair costs welding fuel and time; the repair dialogue and the blade health are shown in the UI.
+
+  ## Tips
+
+  - The turbine is most efficient with a steady, hot gas supply. A reactor's waste line is a good match: the turbine turns the leftover heat into power instead of venting it.
+  - Do not feed it cold gas — it will stall.
+  - The stator load can be automated with the two signal ports (increase/decrease).
+
+  ## See also
+
+  [textlink="Hypertorus Fusion Reactor" link="HypertorusFusionReactor"], [textlink="Atmospherics" link="Atmospherics"]
+</Document>

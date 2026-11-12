@@ -91,6 +91,7 @@ nf-research-technology-hardsuits-experimental-protection = Experimental Protecti
 nf-research-technology-hardsuits-field = Industrial Hardsuits
 nf-research-technology-hardsuits-medical = Medical Hardsuits
 nf-research-technology-hologram-communication = Hologram Communications
+nf-research-technology-hypertorus-fusion-reactor = Hypertorus Fusion Reactor
 nf-research-technology-honk-mech = H.O.N.K. Mech
 nf-research-technology-horn-robotics-equipment = Mechanized Clowning
 nf-research-technology-industrial-cutter = Mechanical Material Cutting

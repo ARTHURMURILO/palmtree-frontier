@@ -137,6 +137,8 @@
   - type: ContainerContainer
     containers:
       rbmk_fuel: !type:Container
+      machine_board: !type:Container
+      machine_parts: !type:Container
   # `supplyRampRate` is load-bearing: the solver only ever moves SupplyRampPosition towards the
   # target by rate * frameTime, so a rate of zero pins the actual supply at 0 W no matter what the
   # tick sets MaxSupply to. 5 MW/s means a cold reactor is at full output three seconds after it

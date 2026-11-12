@@ -1,0 +1,14 @@
+- type: guideEntry
+  id: HypertorusFusionReactor
+  name: guide-entry-hypertorus-fusion-reactor
+  text: "/ServerInfo/_Funkystation/Guidebook/Engineering/HypertorusFusionReactor.xml"
+
+- type: guideEntry
+  id: GasTurbine
+  name: guide-entry-gas-turbine
+  text: "/ServerInfo/_Funkystation/Guidebook/Engineering/GasTurbine.xml"
+
+- type: guideEntry
+  id: AtmosMachines
+  name: guide-entry-atmos-machines
+  text: "/ServerInfo/_Funkystation/Guidebook/Engineering/AtmosMachines.xml"

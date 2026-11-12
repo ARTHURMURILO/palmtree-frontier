@@ -578,6 +578,13 @@ public sealed class RCDSystem : EntitySystem
         var isWindow = prototype.ConstructionRules.Contains(RcdConstructionRule.IsWindow);
         var isCatwalk = prototype.ConstructionRules.Contains(RcdConstructionRule.IsCatwalk);
 
+        // Palmtree: directional windows only cover one edge of their tile. Everything that does not
+        // need the whole tile (pipes, grilles, tables, wallmounts) may share it; walls, airlocks and
+        // full windows still need the tile to themselves.
+        var buildsFullTile = (prototype.CollisionMask & CollisionGroup.FullTileMask) == CollisionGroup.FullTileMask;
+        var buildsWindow = false;
+        var buildsDirectionalWindow = false;
+
         // Palmtree: resolve the prototype that FinalizeRCDOperation will actually spawn. Mirror
         // flips and the RPD's layer variants change the pipe nodes, so the overlap check below must
         // inspect the same entity the placement will build.
@@ -599,13 +606,6 @@ public sealed class RCDSystem : EntitySystem
 
             _protoManager.TryIndex<EntityPrototype>(builtProtoId, out builtProto);
         }
-
-        // Palmtree: directional windows only cover one edge of their tile. Everything that does not
-        // need the whole tile (pipes, grilles, tables, wallmounts) may share it; walls, airlocks and
-        // full windows still need the tile to themselves.
-        var buildsFullTile = (prototype.CollisionMask & CollisionGroup.FullTileMask) == CollisionGroup.FullTileMask;
-        var buildsWindow = false;
-        var buildsDirectionalWindow = false;
 
         // Palmtree: atmos pipes/devices carry no fixtures, so the collision check below cannot see
         // them. `Unstackable` blocks a second device on the same atmos layer; plain pipes are not
@@ -689,7 +689,8 @@ public sealed class RCDSystem : EntitySystem
                 if (buildsDirectionalWindow)
                 {
                     var existingDirection = Transform(ent).LocalRotation.GetCardinalDir();
-                    if (existingDirection != component.ConstructionDirection)
+                    var buildDirection = direction ?? component.ConstructionDirection;
+                    if (existingDirection != buildDirection)
                         continue;
                 }
                 else if (!buildsWindow && !buildsFullTile)

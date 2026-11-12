@@ -1,0 +1,9 @@
+- files: ["alarm_beep.ogg"]
+  license: "CC0-1.0"
+  copyright: "Created by JW_Audio, clipped and converted Mono and .ogg by Jhrushbe"
+  source: https://freesound.org/people/JW_Audio/sounds/816661/
+
+- files: ["alarm_buzzer.ogg"]
+  license: "CC-BY-4.0"
+  copyright: "Created by NoahBangs, clipped and converted Mono and .ogg by Jhrushbe"
+  source: https://freesound.org/people/NoahBangs/sounds/587950/

@@ -1,0 +1,31 @@
+- type: entity
+  parent: BaseFlatpack # Frontier: dropped BaseEngineeringContraband
+  id: GasTurbineFlatpack
+  name: large gas turbine flatpack
+  description: A flatpack used for constructing a large gas turbine. It takes up a lot of floor space; check the footprint before unpacking. Unfolding lays reinforced plating and HV cabling under the machine.
+  components:
+  - type: Sprite
+    layers:
+    - state: ame-part
+  - type: Flatpack
+    entity: Turbine
+    unpackDelay: 4
+  - type: FlatpackFootprint
+    footprint: 3,5
+    offset: -1,-2
+
+- type: entity
+  parent: BaseFlatpack # Frontier: dropped BaseEngineeringContraband
+  id: SmallGasTurbineFlatpack
+  name: small gas turbine flatpack
+  description: A flatpack used for constructing a small gas turbine. Unfolding lays reinforced plating and HV cabling under the machine.
+  components:
+  - type: Sprite
+    layers:
+    - state: ame-part
+  - type: Flatpack
+    entity: TurbineSmall
+    unpackDelay: 2
+  - type: FlatpackFootprint
+    footprint: 3,2
+    offset: -1,-1
