@@ -122,7 +122,10 @@ public abstract class SharedFlatpackSystem : EntitySystem
         // TODO FLATPAK
         // Make this logic smarter. This should eventually allow for shit like building microwaves on tables and such.
         // Also: make it ignore ghosts
-        if (_entityLookup.AnyEntitiesIntersecting(coords, LookupFlags.Dynamic | LookupFlags.Static))
+        // Multi-tile flatpacks run their own footprint check instead, which also covers this tile
+        // and deliberately allows cables and lower-layer pipes underneath the machine.
+        if (!HasComp<FlatpackFootprintComponent>(uid) &&
+            _entityLookup.AnyEntitiesIntersecting(coords, LookupFlags.Dynamic | LookupFlags.Static))
         {
             // this popup is on the server because the predicts on the intersection is crazy
             if (_net.IsServer)
