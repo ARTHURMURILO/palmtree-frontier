@@ -1,4 +1,5 @@
 using Content.Client.Construction;
+using Content.Client._Funkystation.Placement;
 using Content.Shared.Atmos.Components;
 using Content.Shared.Atmos.EntitySystems;
 using Content.Shared.Construction.Prototypes;
@@ -34,6 +35,7 @@ public sealed class AlignAtmosPipeLayers : SnapgridCenter
     private readonly SharedTransformSystem _transformSystem;
     private readonly SharedAtmosPipeLayersSystem _pipeLayersSystem;
     private readonly SpriteSystem _spriteSystem;
+    private readonly ConstructionSystem _constructionSystem;
 
     private const float SearchBoxSize = 2f;
     private EntityCoordinates _unalignedMouseCoords = default;
@@ -51,6 +53,7 @@ public sealed class AlignAtmosPipeLayers : SnapgridCenter
         _transformSystem = _entityManager.System<SharedTransformSystem>();
         _pipeLayersSystem = _entityManager.System<SharedAtmosPipeLayersSystem>();
         _spriteSystem = _entityManager.System<SpriteSystem>();
+        _constructionSystem = _entityManager.System<ConstructionSystem>();
     }
 
     /// <inheritdoc/>
@@ -125,17 +128,18 @@ public sealed class AlignAtmosPipeLayers : SnapgridCenter
 
     private void UpdateHijackedPlacer(AtmosPipeLayer layer, ScreenCoordinates mouseScreen)
     {
-        // Try to get alternative prototypes from the construction prototype
-        var constructionSystem = (pManager.Hijack as ConstructionPlacementHijack)?.CurrentConstructionSystem;
-        var altPrototypes = (pManager.Hijack as ConstructionPlacementHijack)?.CurrentPrototype?.AlternativePrototypes;
-
-        if (constructionSystem == null || altPrototypes == null || (int)layer >= altPrototypes.Length)
+        if (pManager.Hijack is not IAtmosPipeLayerHijack hijack ||
+            hijack.CurrentPrototype is not { } currentPrototype ||
+            (int) layer >= currentPrototype.AlternativePrototypes.Length)
+        {
             return;
+        }
 
-        var newProtoId = altPrototypes[(int)layer];
-
-        if (!_protoManager.TryIndex(newProtoId, out var newProto))
+        if (!_protoManager.TryIndex(currentPrototype.AlternativePrototypes[(int) layer], out ConstructionPrototype? newProto) ||
+            newProto.ID == currentPrototype.ID)
+        {
             return;
+        }
 
         if (newProto.Type != ConstructionType.Structure)
         {
@@ -143,21 +147,22 @@ public sealed class AlignAtmosPipeLayers : SnapgridCenter
             return;
         }
 
-        if (newProto.ID == (pManager.Hijack as ConstructionPlacementHijack)?.CurrentPrototype?.ID)
-            return;
+        var current = pManager.CurrentPermission;
 
         // Start placing
         pManager.BeginPlacing(new PlacementInformation()
         {
             IsTile = false,
             PlacementOption = newProto.PlacementMode,
-        }, new ConstructionPlacementHijack(constructionSystem, newProto));
+            Range = current?.Range ?? 0,
+            UseEditorContext = current?.UseEditorContext ?? true,
+        }, hijack.WithPrototype(newProto));
 
         if (pManager.CurrentMode is AlignAtmosPipeLayers { } newMode)
             newMode.RefreshGrid(mouseScreen);
 
         // Update construction guide
-        constructionSystem.GetGuide(newProto);
+        _constructionSystem.GetGuide(newProto);
     }
 
     private void UpdatePlacer(AtmosPipeLayer layer)
