@@ -2,12 +2,15 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+using System.Linq;
 using System.Numerics;
 using Content.Shared._Funkystation.ConstructionChalk;
 using Content.Shared.Construction.Prototypes;
 using Content.Shared.Hands.EntitySystems;
 using Content.Shared.Interaction;
+using Content.Shared.Storage;
 using NUnit.Framework;
+using Robust.Server.Containers;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Maths;
@@ -22,6 +25,29 @@ namespace Content.IntegrationTests.Tests._Funkystation;
 [TestFixture]
 public sealed class ConstructionChalkTest
 {
+    [Test]
+    public async Task ChalkBoxContainsThreeChalk()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
+        var server = pair.Server;
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var containers = server.System<ContainerSystem>();
+        var testMap = await pair.CreateTestMap();
+
+        await server.WaitAssertion(() =>
+        {
+            var box = entMan.SpawnEntity("ConstructionChalkBox", testMap.GridCoords);
+            Assert.That(containers.TryGetContainer(box, StorageComponent.ContainerId, out var storage), Is.True,
+                "the chalk box should have a storage container");
+            Assert.That(storage!.ContainedEntities.Count, Is.EqualTo(3),
+                "the chalk box should spawn with three pieces of chalk");
+            Assert.That(storage.ContainedEntities.All(entMan.HasComponent<ConstructionChalkComponent>), Is.True,
+                "everything in the chalk box should be construction chalk");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
     [Test]
     public async Task ChalkMarkBuildsPlannedStructure()
     {
