@@ -38,6 +38,7 @@
   - type: Physics
     bodyType: Static
   - type: InteractionOutline
+  - type: BindToStation # Frontier
   - type: Rotatable
   - type: Fixtures
     fixtures:
@@ -108,6 +109,11 @@
   - type: Sprite
     sprite: _FarHorizons/Structures/Power/Generation/FissionGenerator/small_turbine.rsi
     offset: 0, -0.5
+  - type: PowerMonitoringDevice
+    group: Generator
+    loadNode: output
+    sprite: _FarHorizons/Structures/Power/Generation/FissionGenerator/small_turbine.rsi
+    state: static
   - type: Fixtures
     fixtures:
       fix1:

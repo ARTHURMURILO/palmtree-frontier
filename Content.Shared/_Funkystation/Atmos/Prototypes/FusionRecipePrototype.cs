@@ -41,12 +41,12 @@ namespace Content.Shared._Funkystation.Atmos.Prototypes
         public HypertorusFlags MeltdownFlags { get; set; }
 
         [DataField("requirements")]
-        public List<string> Requirements { get; set; } = default!;
+        public List<string> Requirements { get; set; } = [];
 
         [DataField("primaryProducts")]
-        public List<string> PrimaryProducts { get; set; } = default!;
+        public List<string> PrimaryProducts { get; set; } = [];
 
         [DataField("secondaryProducts")]
-        public List<string> SecondaryProducts { get; set; } = default!;
+        public List<string> SecondaryProducts { get; set; } = [];
     }
 }

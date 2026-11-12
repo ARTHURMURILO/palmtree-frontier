@@ -26,6 +26,7 @@
   placement:
     mode: SnapgridCenter
   components:
+  - type: BindToStation # Frontier
   - type: Sprite
     sprite: _Funkystation/Structures/Machines/crystallizer.rsi
     drawdepth: Mobs

@@ -8,6 +8,7 @@ using Content.Client.Items;
 using Content.Client.UserInterface.Controls;
 using Content.Shared._Funkystation.ConstructionChalk;
 using Content.Shared.Construction.Prototypes;
+using Content.Shared.Interaction;
 using Content.Shared.Interaction.Events;
 using Robust.Client.GameObjects;
 using Robust.Client.Placement;
@@ -122,6 +123,8 @@ public sealed partial class ConstructionChalkSystem : SharedConstructionChalkSys
         {
             IsTile = false,
             PlacementOption = placementMode,
+            Range = (int) SharedInteractionSystem.InteractionRange,
+            UseEditorContext = false,
         },
         hijack);
     }

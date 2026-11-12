@@ -106,8 +106,11 @@ public sealed class HFRCoreSystem : EntitySystem
                             wasteComp.CoreUid = null;
                         }
                     }
-                    setField(core, null);
                 }
+
+                // Clear stale references even when the part has already been deleted. Leaving a
+                // dead UID here makes the core think its console is still present and powered.
+                setField(core, null);
             }
 
             foreach (var cornerUid in core.CornerUids.ToList())
@@ -198,6 +201,9 @@ public sealed class HFRCoreSystem : EntitySystem
             outputTemperature = wastePipe.Air.Temperature;
             outputTemperatureArchived = outputTemperature;
         }
+
+        if (!_userInterfaceSystem.IsUiOpen(core.ConsoleUid.Value, HFRConsoleUiKey.Key))
+            return;
 
         _userInterfaceSystem.ServerSendUiMessage(core.ConsoleUid.Value, HFRConsoleUiKey.Key,
             new HFRConsoleUpdateReactorMessage(

@@ -332,6 +332,12 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
             // Each recipe provides a tier list of output gases.
             // Which gases are produced depend on what the fusion level is.
             var tier = fuel.SecondaryProducts;
+            if (tier.Count < 6)
+            {
+                Log.Error($"Fusion recipe {fuel.ID} needs at least six secondary products, has {tier.Count}; skipping secondary production.");
+                return;
+            }
+
             switch (core.PowerLevel)
             {
                 case 1:
@@ -797,6 +803,7 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
         {
             // Gases can be removed from the moderator internal by using the interface.
             if (!isWasteRemoving
+                || core.PowerLevel >= 5
                 || core.WasteOutputUid == null
                 || !_nodeContainer.TryGetNode(core.WasteOutputUid.Value, "pipe", out PipeNode? wastePipe)
                 || wastePipe.Air.TotalMoles > 5000f)

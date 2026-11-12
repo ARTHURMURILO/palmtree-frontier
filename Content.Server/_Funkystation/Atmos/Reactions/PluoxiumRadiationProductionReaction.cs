@@ -99,16 +99,11 @@ public sealed partial class PluoxiumRadiationProductionReaction : IGasReactionEf
     {
         bool hadReceiver = entityManager.HasComponent<RadiationReceiverComponent>(entity);
         var receiverComp = entityManager.EnsureComponent<RadiationReceiverComponent>(entity);
+        var timerComp = entityManager.EnsureComponent<RadiationReceiverTimerComponent>(entity);
+        timerComp.TimerExpiresAt = gameTiming.CurTime + TimerDuration;
 
         if (!hadReceiver)
-        {
-            var timerComp = entityManager.EnsureComponent<RadiationReceiverTimerComponent>(entity);
-            timerComp.TimerExpiresAt = gameTiming.CurTime + TimerDuration;
-        }
-        else if (entityManager.TryGetComponent<RadiationReceiverTimerComponent>(entity, out var timerComp))
-        {
-            timerComp.TimerExpiresAt = gameTiming.CurTime + TimerDuration;
-        }
+            timerComp.RemoveReceiver = true;
 
         return receiverComp.CurrentRadiation;
     }
@@ -119,6 +114,11 @@ public sealed partial class PluoxiumRadiationProductionReaction : IGasReactionEf
 public sealed partial class RadiationReceiverTimerComponent : Component
 {
     public TimeSpan TimerExpiresAt { get; set; } = TimeSpan.Zero;
+
+    /// <summary>
+    ///     Whether this timer added the radiation receiver and should remove it again.
+    /// </summary>
+    public bool RemoveReceiver;
 }
 
 public sealed partial class RadiationTimerSystem : EntitySystem
@@ -135,7 +135,8 @@ public sealed partial class RadiationTimerSystem : EntitySystem
             var uid = timer.Owner; 
             if (_timing.CurTime >= timer.TimerExpiresAt)
             {
-                entityManager.RemoveComponent<RadiationReceiverComponent>(uid);
+                if (timer.RemoveReceiver)
+                    entityManager.RemoveComponent<RadiationReceiverComponent>(uid);
                 entityManager.RemoveComponent<RadiationReceiverTimerComponent>(uid);
             }
         }

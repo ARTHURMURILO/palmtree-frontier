@@ -100,8 +100,7 @@ namespace Content.Server._Funkystation.Atmos.Systems
             if (!Resolve(uid, ref crystallizer, ref ui, false))
                 return;
 
-            ApcPowerReceiverComponent? powerReceiver = null;
-            if (!Resolve(uid, ref powerReceiver))
+            if (!TryComp<ApcPowerReceiverComponent>(uid, out var powerReceiver))
                 return;
 
             _userInterfaceSystem.SetUiState(uid, CrystallizerUiKey.Key,
@@ -116,7 +115,8 @@ namespace Content.Server._Funkystation.Atmos.Systems
 
         private void UpdateGasMixtureUI(EntityUid uid, CrystallizerComponent? crystallizer, UserInterfaceComponent? ui = null)
         {
-            if (!Resolve(uid, ref crystallizer, ref ui, false))
+            if (!Resolve(uid, ref crystallizer, ref ui, false) ||
+                !_userInterfaceSystem.IsUiOpen(uid, CrystallizerUiKey.Key))
                 return;
 
             _userInterfaceSystem.ServerSendUiMessage(uid, CrystallizerUiKey.Key,
@@ -125,7 +125,8 @@ namespace Content.Server._Funkystation.Atmos.Systems
 
         private void UpdateProgressBarUI(EntityUid uid, CrystallizerComponent? crystallizer, UserInterfaceComponent? ui = null)
         {
-            if (!Resolve(uid, ref crystallizer, ref ui, false))
+            if (!Resolve(uid, ref crystallizer, ref ui, false) ||
+                !_userInterfaceSystem.IsUiOpen(uid, CrystallizerUiKey.Key))
                 return;
 
             _userInterfaceSystem.ServerSendUiMessage(uid, CrystallizerUiKey.Key,

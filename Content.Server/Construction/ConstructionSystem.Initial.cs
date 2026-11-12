@@ -448,6 +448,13 @@ namespace Content.Server.Construction
                 return;
             }
 
+            if (!PrototypeManager.TryIndex(constructionPrototype.Graph, out _))
+            {
+                Log.Error($"Invalid construction graph '{constructionPrototype.Graph}' in recipe '{ev.PrototypeName}'!");
+                RaiseNetworkEvent(new AckStructureConstructionMessage(ev.Ack));
+                return;
+            }
+
             if (_beingBuilt.TryGetValue(args.SenderSession, out var set))
             {
                 if (!set.Add(ev.Ack))
