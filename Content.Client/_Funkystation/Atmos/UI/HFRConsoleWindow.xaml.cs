@@ -78,7 +78,9 @@ public sealed partial class HFRConsoleWindow : FancyWindow
             return null;
         }
 
-        return Color.FromHex(prototype.Color);
+        // GasPrototype.Color is stored without the leading # (e.g. "FF3300").
+        var hex = prototype.Color.StartsWith('#') ? prototype.Color : $"#{prototype.Color}";
+        return Color.FromHex(hex, Color.White);
     }
 
     private static readonly List<string> OrderedRecipeIds = new()
