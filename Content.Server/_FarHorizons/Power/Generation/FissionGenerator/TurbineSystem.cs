@@ -17,6 +17,7 @@ using Content.Shared.Administration.Logs;
 using Content.Shared.Atmos;
 using Content.Shared.Database;
 using Content.Shared.Explosion.Components;
+using Content.Shared.Jittering;
 using Content.Shared.Popups;
 using Robust.Server.GameObjects;
 using Robust.Shared.Audio;
@@ -25,9 +26,7 @@ using Content.Server.NodeContainer.Nodes;
 using Content.Shared.DeviceLinking.Events;
 using Content.Server.DeviceLinking.Systems;
 using System.Numerics;
-using Content.Shared.Effects;
 using Robust.Shared.Physics;
-using Robust.Shared.Player;
 
 namespace Content.Server._FarHorizons.Power.Generation.FissionGenerator;
 
@@ -47,10 +46,7 @@ public sealed class TurbineSystem : SharedTurbineSystem
     [Dependency] private readonly TransformSystem _transformSystem = default!;
     [Dependency] private readonly UserInterfaceSystem _uiSystem = null!;
     [Dependency] private readonly DeviceLinkSystem _signal = default!;
-    [Dependency] private readonly SharedColorFlashEffectSystem _colorFlash = default!;
-
-    private readonly float _threshold = 0.5f;
-    private float _accumulator = 0f;
+    [Dependency] private readonly SharedJitteringSystem _jittering = default!;
 
     private readonly List<string> _damageSoundList = [
         "/Audio/_FarHorizons/Effects/engine_grump1.ogg",
@@ -139,6 +135,21 @@ public sealed class TurbineSystem : SharedTurbineSystem
 
     #region Main Loop
     private void OnUpdate(EntityUid uid, TurbineComponent comp, ref AtmosDeviceUpdateEvent args)
+    {
+        // Recomputed every tick; a return before the reaction block still stops a stale shake.
+        comp.Overspeed = false;
+
+        try
+        {
+            UpdateTurbine(uid, comp, args);
+        }
+        finally
+        {
+            UpdateOverspeedShake(uid, comp);
+        }
+    }
+
+    private void UpdateTurbine(EntityUid uid, TurbineComponent comp, AtmosDeviceUpdateEvent args)
     {
         var supplier = Comp<PowerSupplierComponent>(uid);
         comp.SupplierMaxSupply = supplier.MaxSupply;
@@ -277,7 +288,6 @@ public sealed class TurbineSystem : SharedTurbineSystem
             // Damage the turbines during overspeed, linear increase from 18% to 45% then stays at 45%
             if (comp.Overspeed && _random.NextFloat() < 0.15 * Math.Min(comp.RPM / comp.BestRPM, 3))
             {
-                _colorFlash.RaiseEffect(Color.Red, new List<EntityUid> { uid }, Filter.Pvs(uid, entityManager: EntityManager));
                 _audio.PlayPvs(new SoundPathSpecifier(_damageSoundList[_random.Next(0, _damageSoundList.Count)]), uid, AudioParams.Default.WithVariation(0.25f).WithVolume(-1));
                 comp.BladeHealth--;
                 UpdateHealthIndicators(uid, comp);
@@ -302,6 +312,26 @@ public sealed class TurbineSystem : SharedTurbineSystem
         UpdateUI(uid, comp);
     }
 
+    /// <summary>
+    ///     Shake only the turbine sprite while it is overspeeding. The jitter system animates
+    ///     <see cref="SpriteComponent.Offset"/>, not the transform, so the machine (and the ship it
+    ///     is bolted to) stays put while the model rattles.
+    /// </summary>
+    private void UpdateOverspeedShake(EntityUid uid, TurbineComponent comp)
+    {
+        var shaking = HasComp<JitteringComponent>(uid);
+
+        if (comp.Overspeed)
+        {
+            if (!shaking)
+                _jittering.AddJitter(uid, amplitude: 30f, frequency: 6f);
+        }
+        else if (shaking)
+        {
+            RemCompDeferred<JitteringComponent>(uid);
+        }
+    }
+
     private float CalculateTransferVolume(TurbineComponent comp, PipeNode inlet, PipeNode outlet, float dt)
     {
         var wantToTransfer = comp.FlowRate * _atmosphereSystem.PumpSpeedup() * dt;
@@ -321,6 +351,7 @@ public sealed class TurbineSystem : SharedTurbineSystem
         _adminLogger.Add(LogType.Explosion, LogImpact.High, $"{ToPrettyString(uid)} destroyed by overspeeding for too long");
         comp.Ruined = true;
         comp.RPM = 0;
+        comp.Overspeed = false;
         UpdateAppearance(uid, comp);
     }
 

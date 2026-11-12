@@ -1,41 +1,23 @@
 {
   "version": 1,
   "license": "CC-BY-SA-3.0",
-  "copyright": "Frontier Station canister states; /tg/ gas states derived from /tg/station 13",
+  "copyright": "Frontier Station canister states, recoloured for the /tg/ gases; shared overlay states from Frontier Station",
   "size": {
     "x": 32,
     "y": 32
   },
   "states": [
     {
-      "name": "can-connector"
-    },
-    {
-      "name": "can-open"
-    },
-    {
-      "name": "can-o0"
-    },
-    {
-      "name": "can-o1"
-    },
-    {
-      "name": "can-o2"
-    },
-    {
-      "name": "can-o3"
-    },
-    {
-      "name": "locked"
-    },
-    {
-      "name": "unlocked"
-    },
-    {
       "name": "purple"
     },
     {
       "name": "purple-1"
+    },
+    {
+      "name": "healium"
+    },
+    {
+      "name": "healium-1"
     },
     {
       "name": "brown"
@@ -54,12 +36,6 @@
     },
     {
       "name": "white-1"
-    },
-    {
-      "name": "healium"
-    },
-    {
-      "name": "healium-1"
     },
     {
       "name": "nob"
@@ -90,6 +66,36 @@
     },
     {
       "name": "antinob-1"
+    },
+    {
+      "name": "can-connector"
+    },
+    {
+      "name": "can-open"
+    },
+    {
+      "name": "can-o0",
+      "delays": [
+        [
+          0.2,
+          0.2
+        ]
+      ]
+    },
+    {
+      "name": "can-o1"
+    },
+    {
+      "name": "can-o2"
+    },
+    {
+      "name": "can-o3"
+    },
+    {
+      "name": "locked"
+    },
+    {
+      "name": "unlocked"
     }
   ]
 }
