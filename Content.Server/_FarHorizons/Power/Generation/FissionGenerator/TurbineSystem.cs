@@ -24,7 +24,6 @@ using Robust.Shared.Random;
 using Content.Server.NodeContainer.Nodes;
 using Content.Shared.DeviceLinking.Events;
 using Content.Server.DeviceLinking.Systems;
-using Content.Shared.Construction.Components;
 using Robust.Shared.Physics;
 
 namespace Content.Server._FarHorizons.Power.Generation.FissionGenerator;
@@ -45,7 +44,6 @@ public sealed class TurbineSystem : SharedTurbineSystem
     [Dependency] private readonly TransformSystem _transformSystem = default!;
     [Dependency] private readonly UserInterfaceSystem _uiSystem = null!;
     [Dependency] private readonly DeviceLinkSystem _signal = default!;
-    [Dependency] private readonly SharedTransformSystem _transform = default!;
 
     public event Action<string>? TurbineRepairMessage;
 
@@ -72,7 +70,6 @@ public sealed class TurbineSystem : SharedTurbineSystem
         SubscribeLocalEvent<TurbineComponent, SignalReceivedEvent>(OnSignalReceived);
 
         SubscribeLocalEvent<TurbineComponent, AnchorStateChangedEvent>(OnAnchorChanged);
-        SubscribeLocalEvent<TurbineComponent, UnanchorAttemptEvent>(OnUnanchorAttempt);
     }
 
     private void OnInit(EntityUid uid, TurbineComponent comp, ref ComponentInit args)
@@ -351,15 +348,6 @@ public sealed class TurbineSystem : SharedTurbineSystem
             CleanUp(comp);
     }
 
-    private void OnUnanchorAttempt(EntityUid uid, TurbineComponent comp, ref UnanchorAttemptEvent args)
-    {
-        if (comp.RPM>1)
-        {
-            _popupSystem.PopupEntity(Loc.GetString("turbine-unanchor-warning"), args.User, args.User, PopupType.LargeCaution);
-            args.Cancel();
-        }
-    }
-
     private void CheckAnchoredPipes(EntityUid uid, TurbineComponent comp)
     {
         if (comp.InletEnt == null || comp.OutletEnt == null)
@@ -367,9 +355,10 @@ public sealed class TurbineSystem : SharedTurbineSystem
 
         if (!Transform(comp.InletEnt.Value).Anchored || !Transform(comp.OutletEnt.Value).Anchored)
         {
+            // The turbine is bolted down and has no wrench interaction; packing it up is the only
+            // way to move it. Re-spawn the stubs instead of unanchoring the machine.
             _popupSystem.PopupEntity(Loc.GetString("turbine-anchor-warning"), uid, PopupType.MediumCaution);
             CleanUp(comp);
-            _transform.Unanchor(uid);
         }
     }
 

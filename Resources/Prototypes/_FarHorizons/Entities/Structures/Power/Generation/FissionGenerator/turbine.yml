@@ -50,7 +50,6 @@
         - MachineMask
         layer:
         - MachineLayer
-  - type: Anchorable
   - type: NodeContainer
     examinable: true
     nodes:
@@ -76,6 +75,7 @@
     maxIntensity: 70
     repeatable: true
   - type: Turbine
+  - type: TurbineAssembly
   - type: DeviceNetwork
     deviceNetId: Wireless
     receiveFrequencyId: BasicDevice
@@ -127,6 +127,9 @@
     outletPos: -1, -1
     outletRot: 0 
     arrowPrototype: TurbineSmallFlowArrow
+  - type: TurbineAssembly
+    flatpack: SmallGasTurbineFlatpack
+    packDelay: 5
   
 # Arrow to indicate flow
 - type: entity

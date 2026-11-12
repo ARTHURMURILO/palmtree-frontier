@@ -32,9 +32,14 @@ turbine-repair = You repair some of the damage to the {$target} using the {$tool
 turbine-no-damage = There is no damage to repair on the {$target} using the {$tool}.
 turbine-show-damage = BladeHealth {$health}, BladeHealthMax {$healthMax}.
 
-# Anchoring warnings
-turbine-unanchor-warning = You cannot unanchor the gas turbine while it's spinning!
+# Placement warnings
 turbine-anchor-warning = Invalid anchor position.
+
+# Packing up
+turbine-pack-verb = Pack up the turbine
+turbine-pack-running = The turbine is still spinning. Stop it before packing it up.
+turbine-pack-done = You pack the turbine into its flatpack.
+turbine-pack-invalid = This turbine cannot be packed up.
 
 ### UI
 

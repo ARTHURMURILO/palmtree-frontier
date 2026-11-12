@@ -36,8 +36,7 @@ public sealed class FlatpackPlacementSystem : EntitySystem
         if (!HasComp<FlatpackFootprintComponent>(args.Flatpack) || TerminatingOrDeleted(args.Spawned))
             return;
 
-        // Multi-tile machines are placed as a unit, so they arrive anchored. A wrench still lets
-        // the crew move one after unpacking.
+        // Multi-tile machines are placed as a unit, so they arrive anchored.
         var xform = Transform(args.Spawned);
         if (!xform.Anchored)
             _transform.AnchorEntity(args.Spawned);
