@@ -1,18 +1,31 @@
 <Document>
-  # Gas Turbine
+  # Gas Turbines
 
   The gas turbine turns hot gas into electrical power. It is the cheap half of the ship's engine room: it needs no fuel mix of its own, only a hot gas feed from something else — a burn chamber, a fusion reactor's waste line, or any other hot loop.
 
+  There are two sizes. The **small turbine** is a 3x2 machine for tight engine rooms; the **large turbine** is a 3x5 machine with more than twice the throughput.
+
   <Box>
-    <GuideEntityEmbed Entity="Turbine" Caption="turbine"/>
-    <GuideEntityEmbed Entity="GasTurbineFlatpack" Caption="flatpack"/>
+    <GuideEntityEmbed Entity="TurbineSmall" Caption="small gas turbine"/>
+    <GuideEntityEmbed Entity="Turbine" Caption="large gas turbine"/>
+  </Box>
+  <Box>
+    <GuideEntityEmbed Entity="SmallGasTurbineFlatpack" Caption="small flatpack"/>
+    <GuideEntityEmbed Entity="GasTurbineFlatpack" Caption="large flatpack"/>
   </Box>
 
-  ## Buying or building
+  ## Research and building
 
-  Research the turbine under **Atmospherics**, then print its **flatpack** from an **engineering techfab** (steel, glass, plasteel and gold). Cargo also sells the flatpack under Engineering for **5,000 credits**.
+  - **Small turbine:** research **Atmospherics** and print the small flatpack from an **engineering techfab**. Cargo sells it under Engineering for **1,500 credits**.
+  - **Large turbine:** research **Advanced Atmospherics** and print the large flatpack from an **engineering techfab**. Cargo sells it under Engineering for **5,000 credits**.
 
-  Either way, drag the flatpack onto the ship's grid and hit it with a **multitool** to unpack it into a full turbine. It needs floor space and an anchored tile.
+  The large flatpack costs four times the materials of the small one. Both are printed from steel, glass, plasteel and gold.
+
+  ## Placing one safely
+
+  Turbines are multi-tile machines: the small one covers **3x2 tiles** and the large one **3x5 tiles**, counted from the tile the flatpack sits on. The flatpack refuses to unpack if any of those tiles has no floor, or if a wall, machine, crate, atmos device or **primary-layer pipe** is in the way. Cables and pipes on lower layers are fine — they keep working under the machine.
+
+  Stand near the flatpack with a **multitool** in hand and hover the flatpack: a green ghost means the footprint fits, red means something is in the way. Rotate the flatpack with **R** to turn the ghost, then use the multitool on the flatpack. Unpacking takes a few seconds, and the turbine anchors itself when it unfolds.
 
   ## Piping and wiring
 

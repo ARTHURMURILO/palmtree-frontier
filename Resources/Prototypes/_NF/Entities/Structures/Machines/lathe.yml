@@ -203,7 +203,6 @@
     - CSPlumbingStatic # Palmtree: showers, sinks, drains
     dynamicPacks:
     - NFAtmosMachineryEngineering # Funky
-    - NFAtmosMachineryHFR # Funky
 
   - type: BlueprintReceiver
     whitelist:
