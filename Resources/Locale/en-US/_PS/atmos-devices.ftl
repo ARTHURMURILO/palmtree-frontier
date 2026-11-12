@@ -35,7 +35,7 @@ gas-temperature-pump-ui-rate = Transfer rate
 gas-temperature-pump-ui-set = Set
 gas-temperature-pump-ui-set-max = Max
 gas-temperature-pump-ui-heat-moved = Heat moved:
-gas-temperature-pump-ui-heat-unit = W
+gas-temperature-pump-ui-heat-unit = kW
 
 gas-temperature-pump-examined-status = The pump is [color={$statusColor}]{$enabled ->
 [true] running
