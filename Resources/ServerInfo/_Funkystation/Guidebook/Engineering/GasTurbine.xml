@@ -25,11 +25,17 @@
 
   Turbines are multi-tile machines: the small one covers **3x2 tiles** and the large one **3x5 tiles**, counted from the tile the flatpack sits on. The flatpack refuses to unpack if any of those tiles has no floor, or if a wall, machine, crate, atmos device or **primary-layer pipe** is in the way. Cables and pipes on lower layers are fine — they keep working under the machine.
 
-  Stand near the flatpack with a **multitool** in hand and hover the flatpack: a green ghost means the footprint fits, red means something is in the way. Rotate the flatpack with **R** to turn the ghost, then use the multitool on the flatpack. Unpacking takes a few seconds, and the turbine anchors itself when it unfolds.
+  Stand near the flatpack with a **multitool** in hand and hover the flatpack: a green ghost means the footprint fits, red means something is in the way. Rotate the flatpack with **R** to turn the ghost, then use the multitool on the flatpack. Unpacking takes a few seconds. The turbine arrives bolted down, sitting on **reinforced plating** with an **HV cable run** across the whole footprint. There is no wrench interaction: the only way to move it again is to pack it up.
 
   ## Piping and wiring
 
-  The turbine creates two pipe stubs when it is anchored: an **inlet** on its west side and an **outlet** on its east side. Pipe your hot gas into the inlet and run the outlet to a waste line or space. Connect the turbine's HV output to the ship's power net.
+  The turbine creates two pipe stubs when it is anchored: an **inlet** on its west side and an **outlet** on its east side. Pipe your hot gas into the inlet and run the outlet to a waste line or space. The cable under the turbine already reaches its HV output; connect the HV run from the edge of the footprint to the ship's power net.
+
+  ## Packing up
+
+  A turbine deployed from a flatpack can be packed back into it once it has stopped. Right-click it, choose **Pack up the turbine** and wait for the work to finish. The blades must not be spinning, or the verb is greyed out.
+
+  Packing up spills any gas left in the inlet and outlet stubs onto the deck, removes the cables and plating the flatpack laid, and restores the floor that was there before. The turbine's condition and settings travel with the flatpack, so unpacking it again does not repair damaged blades or reset the stator load.
 
   ## Operating
 
