@@ -4,6 +4,7 @@ using Content.Server._NSV13.Reactor.Components;
 using Content.Server.NodeContainer.Nodes;
 using Content.Shared.Atmos;
 using Content.Shared.NodeContainer;
+using Robust.Shared.Containers;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
 
@@ -88,4 +89,54 @@ public sealed class RbmkGasEffectsTest
         moderator.Air.AdjustMoles(gas, 20f);
         moderator.Air.Temperature = Atmospherics.T20C;
     }
+    [Test]
+    public async Task HealiumSlowsRodDepletion()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+
+        EntityUid plasmaReactor = default;
+        EntityUid healiumReactor = default;
+
+        await server.WaitAssertion(() =>
+        {
+            plasmaReactor = entMan.SpawnEntity("RbmkNuclearReactorRunning", testMap.GridCoords);
+            healiumReactor = entMan.SpawnEntity("RbmkNuclearReactorRunning", testMap.GridCoords);
+        });
+
+        await pair.RunTicksSync(4);
+
+        await server.WaitAssertion(() =>
+        {
+            Configure(entMan, plasmaReactor, Gas.Plasma);
+            Configure(entMan, healiumReactor, Gas.Healium);
+        });
+
+        await pair.RunTicksSync(2);
+
+        await server.WaitAssertion(() =>
+        {
+            var containers = entMan.System<SharedContainerSystem>();
+            var plasmaRods = entMan.GetComponent<RbmkReactorComponent>(plasmaReactor);
+            var healiumRods = entMan.GetComponent<RbmkReactorComponent>(healiumReactor);
+
+            Assert.That(containers.TryGetContainer(plasmaReactor, RbmkReactorComponent.FuelContainer, out var plasmaBay),
+                Is.True);
+            Assert.That(containers.TryGetContainer(healiumReactor, RbmkReactorComponent.FuelContainer, out var healiumBay),
+                Is.True);
+            Assert.That(plasmaBay!.ContainedEntities, Is.Not.Empty);
+            Assert.That(healiumBay!.ContainedEntities, Is.Not.Empty);
+
+            var plasmaRod = entMan.GetComponent<RbmkFuelRodComponent>(plasmaBay.ContainedEntities[0]);
+            var healiumRod = entMan.GetComponent<RbmkFuelRodComponent>(healiumBay.ContainedEntities[0]);
+
+            Assert.That(healiumRod.Depletion, Is.LessThan(plasmaRod.Depletion),
+                "healium should slow fuel-rod depletion, not just cancel a corrosive feed");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
 }

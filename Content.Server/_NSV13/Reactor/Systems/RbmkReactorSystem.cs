@@ -328,7 +328,8 @@ public sealed class RbmkReactorSystem : EntitySystem
             var totalPermeabilityMoles = moderatorAir.GetMoles(Gas.BZ)
                                          + moderatorAir.GetMoles(Gas.WaterVapor) * 2f
                                          + moderatorAir.GetMoles(Gas.HyperNoblium) * 10f
-                                         + moderatorAir.GetMoles(Gas.Halon) * 4f;
+                                         + moderatorAir.GetMoles(Gas.Halon) * 4f
+                                         + moderatorAir.GetMoles(Gas.Zauker);
 
             if (totalPermeabilityMoles >= reactor.MinimumCoolantLevel)
             {
@@ -337,15 +338,19 @@ public sealed class RbmkReactorSystem : EntitySystem
             }
 
             // Nitryl is not present in this fork; the Funky corrosive gases take its place.
-            // Healium is a negative term: it slows rod depletion and can offset a corrosive feed.
-            var totalDegradationMoles = moderatorAir.GetMoles(Gas.Zauker) * 2f
-                                        + moderatorAir.GetMoles(Gas.ProtoNitrate)
-                                        + moderatorAir.GetMoles(Gas.AntiNoblium) * 5f
-                                        - moderatorAir.GetMoles(Gas.Healium) * 2f
-                                        - moderatorAir.GetMoles(Gas.Halon) * 0.5f;
+            // The corrosive and healing halves are applied separately: a negative combined total
+            // would never pass the corrosive threshold, which used to make pure healium/halon
+            // silently do nothing.
+            var corrosiveMoles = moderatorAir.GetMoles(Gas.Zauker) * 2f
+                                 + moderatorAir.GetMoles(Gas.ProtoNitrate)
+                                 + moderatorAir.GetMoles(Gas.AntiNoblium) * 5f;
 
-            if (totalDegradationMoles >= reactor.MinimumCoolantLevel * 0.5f)
-                depletionModifier += totalDegradationMoles / 15f;
+            if (corrosiveMoles >= reactor.MinimumCoolantLevel * 0.5f)
+                depletionModifier += corrosiveMoles / 15f;
+
+            var healingMoles = moderatorAir.GetMoles(Gas.Healium) * 2f
+                               + moderatorAir.GetMoles(Gas.Halon) * 0.5f;
+            depletionModifier -= healingMoles / 15f;
 
             depletionModifier = Math.Max(DepletionBase * 0.1f, depletionModifier);
             spice = Math.Max(0.1f, spice);

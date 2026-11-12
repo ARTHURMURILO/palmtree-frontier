@@ -128,7 +128,10 @@ public sealed partial class StormdriveConsoleWindow : DefaultWindow
         {
             var label = new Label
             {
-                Text = Loc.GetString($"stormdrive-console-gas-{(StormdriveConsoleGas) i}"),
+                // The real percentage arrives with the first state; the placeholder keeps the
+                // Fluent call valid while the console has no reactor linked.
+                Text = Loc.GetString($"stormdrive-console-gas-{(StormdriveConsoleGas) i}",
+                    ("percent", "0.0")),
                 HorizontalExpand = true,
             };
 
