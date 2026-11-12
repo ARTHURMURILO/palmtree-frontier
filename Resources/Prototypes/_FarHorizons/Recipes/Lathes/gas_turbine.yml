@@ -2,12 +2,23 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+# The large turbine costs exactly four times the small one.
+- type: latheRecipe
+  id: SmallGasTurbineFlatpack
+  result: SmallGasTurbineFlatpack
+  completetime: 5
+  materials:
+    Steel: 600
+    Glass: 150
+    Plasteel: 250
+    Gold: 50
+
 - type: latheRecipe
   id: GasTurbineFlatpack
   result: GasTurbineFlatpack
   completetime: 10
   materials:
-    Steel: 2500
-    Glass: 500
+    Steel: 2400
+    Glass: 600
     Plasteel: 1000
     Gold: 200

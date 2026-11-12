@@ -1513,7 +1513,7 @@
   - GasRecyclerMachineCircuitboard
   - ElectrolyzerMachineCircuitboard # Funky
   - CrystallizerMachineCircuitboard # Funky
-  - GasTurbineFlatpack # Funky
+  - SmallGasTurbineFlatpack # Funky
   position: 0, 34
 
 - type: technology
@@ -1558,6 +1558,7 @@
   - HeatPumpMachineCircuitBoard # Palmtree
   - TegCirculatorFlatpack # Palmtree
   - TegCenterFlatpack # Palmtree
+  - GasTurbineFlatpack # Funky
   technologyPrerequisites:
   - NFAtmosphericTech
   position: 1, 34
@@ -1568,7 +1569,7 @@
   entityIcon: HFRCore
   discipline: NFEngineering
   tier: 2
-  cost: 15000
+  cost: 7500
   recipeUnlocks:
   - HFRCoreBox
   - HFRCornerBox

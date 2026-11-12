@@ -130,19 +130,10 @@
   recipes:
   - ElectrolyzerMachineCircuitboard # Funky
   - CrystallizerMachineCircuitboard # Funky
+  - SmallGasTurbineFlatpack # Funky
   - GasTurbineFlatpack # Funky
 
 - type: latheRecipePack
   id: NFAtmosMachineryGeneral
   recipes:
   - PipeScrubberMachineCircuitBoard # Funky
-
-- type: latheRecipePack
-  id: NFAtmosMachineryHFR
-  recipes:
-  - HFRCoreBox # Funky
-  - HFRCornerBox # Funky
-  - HFRFuelBox # Funky
-  - HFRModeratorBox # Funky
-  - HFRWasteBox # Funky
-  - HFRConsoleBox # Funky

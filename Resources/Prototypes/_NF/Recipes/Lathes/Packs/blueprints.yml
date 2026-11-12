@@ -137,6 +137,13 @@
   - AlertsComputerCircuitboard
   - AtmosMonitoringComputerCircuitboard
   - SupermatterComputerCircuitboard # Palmtree
+  # HypertorusFusionReactor (Funky)
+  - HFRCoreBox
+  - HFRCornerBox
+  - HFRFuelBox
+  - HFRModeratorBox
+  - HFRWasteBox
+  - HFRConsoleBox
   # AdvancedToolsTechnology
   - WelderExperimental
   - PowerDrill
