@@ -3,6 +3,7 @@ using System.Numerics;
 using Content.Client.Hands.Systems;
 using Content.Shared.Construction;
 using Content.Shared.Construction.Components;
+using Content.Shared.Hands.Components;
 using Content.Shared.Tools;
 using Content.Shared.Tools.Systems;
 using Robust.Client.GameObjects;
@@ -13,6 +14,7 @@ using Robust.Shared.Containers;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Prototypes;
+using Robust.Shared.Timing;
 
 namespace Content.Client._Funkystation.Construction;
 
@@ -36,6 +38,7 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
     [Dependency] private readonly SharedContainerSystem _containers = default!;
     [Dependency] private readonly AppearanceSystem _appearance = default!;
     [Dependency] private readonly IPrototypeManager _proto = default!;
+    [Dependency] private readonly IGameTiming _timing = default!;
 
     private static readonly Color ValidColor = new(48, 255, 48, 128);
     private static readonly Color InvalidColor = new(255, 48, 48, 128);
@@ -45,6 +48,7 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
     private EntityUid? _ghost;
     private EntProtoId? _ghostEntity;
     private string _lastNote = string.Empty;
+    private TimeSpan _nextHoverNote;
 
     public override void Update(float frameTime)
     {
@@ -56,10 +60,10 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
             return;
         }
 
-        var held = _hands.GetActiveItem(player);
-        if (held is not { } tool || !_tool.HasQuality(tool, PulsingQuality.Id))
+        if (FindPulsingTool(player) == null)
         {
-            Clear("no pulsing tool in hand");
+            var active = _hands.GetActiveItem(player);
+            Clear($"no pulsing tool in any hand (active item: {(active is { } a ? ToPrettyString(a) : "none")})");
             return;
         }
 
@@ -137,6 +141,25 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
         ClearGhost();
     }
 
+    /// <summary>
+    ///     Finds a pulsing tool in any hand, not just the active one: the ghost is a preview, and
+    ///     players often keep the multitool in the off-hand while lining a flatpack up.
+    /// </summary>
+    private EntityUid? FindPulsingTool(EntityUid player)
+    {
+        if (!TryComp<HandsComponent>(player, out var hands))
+            return null;
+
+        foreach (var hand in hands.Hands.Keys)
+        {
+            var held = _hands.GetHeldItem((player, hands), hand);
+            if (held is { } item && _tool.HasQuality(item, PulsingQuality.Id))
+                return item;
+        }
+
+        return null;
+    }
+
     private EntityUid? FindFlatpack(MapCoordinates mouse)
     {
         var bounds = Box2.CenteredAround(mouse.Position, new Vector2(0.9f, 0.9f));
@@ -145,6 +168,33 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
             if (HasComp<FlatpackFootprintComponent>(ent) && HasComp<FlatpackComponent>(ent))
                 return ent;
         }
+
+        // Diagnostic: while the cursor misses, report how far the nearest footprint flatpack is.
+        // Throttled because the distance changes every frame while the mouse moves.
+        var now = _timing.CurTime;
+        if (now < _nextHoverNote)
+            return null;
+
+        _nextHoverNote = now + TimeSpan.FromSeconds(1);
+        var nearest = float.MaxValue;
+        EntityUid? nearestEnt = null;
+        foreach (var ent in _lookup.GetEntitiesIntersecting(mouse.MapId,
+                     Box2.CenteredAround(mouse.Position, new Vector2(5f, 5f)),
+                     LookupFlags.Dynamic | LookupFlags.Static))
+        {
+            if (!HasComp<FlatpackFootprintComponent>(ent) || !HasComp<FlatpackComponent>(ent))
+                continue;
+
+            var dist = (Transform(ent).WorldPosition - mouse.Position).Length();
+            if (dist >= nearest)
+                continue;
+
+            nearest = dist;
+            nearestEnt = ent;
+        }
+
+        if (nearestEnt is { } found)
+            Note($"hover miss: cursor {mouse.Position.X:0.00},{mouse.Position.Y:0.00}, nearest flatpack {ToPrettyString(found)} at {Transform(found).WorldPosition.X:0.00},{Transform(found).WorldPosition.Y:0.00}, distance {nearest:0.00}");
 
         return null;
     }
