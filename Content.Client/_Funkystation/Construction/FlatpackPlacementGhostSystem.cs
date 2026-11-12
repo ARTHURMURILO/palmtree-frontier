@@ -162,8 +162,10 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
     {
         // Use the sprite tree rather than physics: the flatpack is a small floor item whose physics
         // fixture can go to sleep, and the sprite tree is what the client uses to click things.
-        var bounds = Box2.CenteredAround(mouse.Position, new Vector2(1f, 1f));
-        foreach (var entry in _spriteTree.QueryAabb(mouse.MapId, bounds))
+        // Query a point, not a tile-sized box: a 1x1 box would trigger in the whole 3x3 around the
+        // flatpack. With approximate bounds off, only sprites actually under the cursor match.
+        var bounds = Box2.CenteredAround(mouse.Position, new Vector2(0.05f, 0.05f));
+        foreach (var entry in _spriteTree.QueryAabb(mouse.MapId, bounds, approx: false))
         {
             if (HasComp<FlatpackFootprintComponent>(entry.Uid) && HasComp<FlatpackComponent>(entry.Uid))
                 return entry.Uid;
