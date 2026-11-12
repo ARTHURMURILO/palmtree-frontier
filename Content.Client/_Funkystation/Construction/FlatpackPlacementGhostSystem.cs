@@ -9,12 +9,12 @@ using Content.Shared.Tools.Systems;
 using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.Input;
+using Robust.Client.ComponentTrees;
 using Robust.Client.Player;
 using Robust.Shared.Containers;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Prototypes;
-using Robust.Shared.Timing;
 
 namespace Content.Client._Funkystation.Construction;
 
@@ -29,7 +29,7 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
     [Dependency] private readonly IInputManager _input = default!;
     [Dependency] private readonly IEyeManager _eye = default!;
     [Dependency] private readonly HandsSystem _hands = default!;
-    [Dependency] private readonly EntityLookupSystem _lookup = default!;
+    [Dependency] private readonly SpriteTreeSystem _spriteTree = default!;
     [Dependency] private readonly SharedMapSystem _map = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
     [Dependency] private readonly SpriteSystem _sprite = default!;
@@ -38,7 +38,6 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
     [Dependency] private readonly SharedContainerSystem _containers = default!;
     [Dependency] private readonly AppearanceSystem _appearance = default!;
     [Dependency] private readonly IPrototypeManager _proto = default!;
-    [Dependency] private readonly IGameTiming _timing = default!;
 
     private static readonly Color ValidColor = new(48, 255, 48, 128);
     private static readonly Color InvalidColor = new(255, 48, 48, 128);
@@ -48,7 +47,6 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
     private EntityUid? _ghost;
     private EntProtoId? _ghostEntity;
     private string _lastNote = string.Empty;
-    private TimeSpan _nextHoverNote;
 
     public override void Update(float frameTime)
     {
@@ -162,39 +160,14 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
 
     private EntityUid? FindFlatpack(MapCoordinates mouse)
     {
-        var bounds = Box2.CenteredAround(mouse.Position, new Vector2(0.9f, 0.9f));
-        foreach (var ent in _lookup.GetEntitiesIntersecting(mouse.MapId, bounds, LookupFlags.Dynamic | LookupFlags.Static))
+        // Use the sprite tree rather than physics: the flatpack is a small floor item whose physics
+        // fixture can go to sleep, and the sprite tree is what the client uses to click things.
+        var bounds = Box2.CenteredAround(mouse.Position, new Vector2(1f, 1f));
+        foreach (var entry in _spriteTree.QueryAabb(mouse.MapId, bounds))
         {
-            if (HasComp<FlatpackFootprintComponent>(ent) && HasComp<FlatpackComponent>(ent))
-                return ent;
+            if (HasComp<FlatpackFootprintComponent>(entry.Uid) && HasComp<FlatpackComponent>(entry.Uid))
+                return entry.Uid;
         }
-
-        // Diagnostic: while the cursor misses, report how far the nearest footprint flatpack is.
-        // Throttled because the distance changes every frame while the mouse moves.
-        var now = _timing.CurTime;
-        if (now < _nextHoverNote)
-            return null;
-
-        _nextHoverNote = now + TimeSpan.FromSeconds(1);
-        var nearest = float.MaxValue;
-        EntityUid? nearestEnt = null;
-        foreach (var ent in _lookup.GetEntitiesIntersecting(mouse.MapId,
-                     Box2.CenteredAround(mouse.Position, new Vector2(5f, 5f)),
-                     LookupFlags.Dynamic | LookupFlags.Static))
-        {
-            if (!HasComp<FlatpackFootprintComponent>(ent) || !HasComp<FlatpackComponent>(ent))
-                continue;
-
-            var dist = (Transform(ent).WorldPosition - mouse.Position).Length();
-            if (dist >= nearest)
-                continue;
-
-            nearest = dist;
-            nearestEnt = ent;
-        }
-
-        if (nearestEnt is { } found)
-            Note($"hover miss: cursor {mouse.Position.X:0.00},{mouse.Position.Y:0.00}, nearest flatpack {ToPrettyString(found)} at {Transform(found).WorldPosition.X:0.00},{Transform(found).WorldPosition.Y:0.00}, distance {nearest:0.00}");
 
         return null;
     }
