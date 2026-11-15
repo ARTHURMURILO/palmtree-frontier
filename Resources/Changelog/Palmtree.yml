@@ -2171,3 +2171,12 @@ Entries:
         use_item, interact, trigger and inject.
   id: 90143
   time: '2026-11-11T02:33:27.0000000+00:00'
+- author: ARTHURMURILO
+  changes:
+    - type: Fix
+      message: >-
+        Supermatter alarm and silence sound sets are no longer offered as
+        character voice barks.
+  id: 90144
+  time: '2026-11-15T20:55:05.0000000+00:00'
+  url: https://github.com/xTheLifex/palmtree-frontier/pull/11
