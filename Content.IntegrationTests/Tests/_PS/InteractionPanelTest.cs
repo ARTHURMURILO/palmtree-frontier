@@ -12,6 +12,7 @@ using Content.Shared._PS.Interactions;
 using Content.Shared._PS.Organs;
 using Content.Shared.Humanoid;
 using Content.Shared.Humanoid.Markings;
+using Content.Shared.Humanoid.Prototypes;
 using Content.Shared.Preferences;
 using Content.Shared.Preferences.Loadouts;
 using Robust.Client.GameObjects;
@@ -651,6 +652,42 @@ public sealed class InteractionPanelTest
             .Count(d => d.Decal.Id.StartsWith("SemenDrip") &&
                         MathF.Floor(d.Decal.Coordinates.X + 0.5f) == MathF.Floor(position.X) &&
                         MathF.Floor(d.Decal.Coordinates.Y + 0.5f) == MathF.Floor(position.Y));
+    }
+
+    /// <summary>
+    /// Palmtree: every playable species must expose the interaction panel UI. Species that define
+    /// their own UserInterface component replace the inherited interface dictionary, so they must
+    /// list the interaction key explicitly (slimes and harpies used to lose it this way).
+    /// </summary>
+    [Test]
+    public async Task AllPlayableSpeciesHaveInteractionPanel()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+
+        await server.WaitAssertion(() =>
+        {
+            var proto = server.ResolveDependency<IPrototypeManager>();
+            var ui = server.System<SharedUserInterfaceSystem>();
+            var missing = new List<string>();
+
+            foreach (var species in proto.EnumeratePrototypes<SpeciesPrototype>().Where(s => s.RoundStart))
+            {
+                var mob = entMan.SpawnEntity(species.Prototype, testMap.GridCoords.Offset(new Vector2(0.5f, 0.5f)));
+
+                if (!entMan.HasComponent<InteractionPanelComponent>(mob) || !ui.HasUi(mob, InteractionUiKey.Key))
+                    missing.Add(species.ID);
+
+                entMan.DeleteEntity(mob);
+            }
+
+            Assert.That(missing, Is.Empty,
+                $"Playable species without the interaction panel UI: {string.Join(", ", missing)}");
+        });
+
+        await pair.CleanReturnAsync();
     }
 
     [Test]

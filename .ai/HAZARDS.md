@@ -286,6 +286,10 @@ value line.
 
 - **Species Head/Chest base sprites require sex-morph variants** (`HeadMale`/`HeadFemale`/
   `TorsoMale`/`TorsoFemale`) or they render wrong/invisible.
+- **Child `UserInterface` components replace the inherited `interfaces` dictionary.** Any mob that
+  declares its own `UserInterface` (slime storage, harpy instrument) must also list
+  `enum.InteractionUiKey.Key`, or the interaction panel silently refuses to open. Regression test:
+  `AllPlayableSpeciesHaveInteractionPanel`.
 - **`MarkingPoints.Required` is effectively unused.**
 - **Dungeon rooms are copied by prototype ID only** — atlas entity DataFields are lost.
 - **Salvage-magnet asteroid configs are commented out** while code still references them; only debris
@@ -566,7 +570,7 @@ so these fail only in CI:
   leaves `EntityUid.Invalid` behind, so any traversal that calls `MetaData`/`Transform` on every
   entity throws `Entity 0 does not have a component of type MetaDataComponent` (the 2026-11-09 dock
   crash: `HasDangerousShipEntities`/`PurgeDangerousShipEntities`, which made `RefreshState` blank to
-  "INSERT ID" and broke `forcedock`). Rules:
+  "INSERT ID" and broke `bsforcedock`). Rules:
   - `GetEntitiesOnGrid` skips `!IsValid() || !Exists` uids and `IsDangerousShipEntity` re-checks.
   - Ship-file writes prune undeclared/invalid `ContainerContainer` (`ents`/`ent`) and `Storage`
     (`storedItems`) references, and `PruneInvalidComponentReferences` nulls/removes every remaining

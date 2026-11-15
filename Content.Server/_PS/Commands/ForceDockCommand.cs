@@ -22,7 +22,7 @@ public sealed class ForceDockCommand : IConsoleCommand
     [Dependency] private readonly IEntityManager _entMan = default!;
     [Dependency] private readonly ISharedPlayerManager _player = default!;
 
-    public string Command => "forcedock";
+    public string Command => "bsforcedock";
     public string Description => "Stores a player's ship in the bluespace dock without requiring it to be docked.";
     public string Help => $"{Command} <ship name | grid uid> [owner]";
 
