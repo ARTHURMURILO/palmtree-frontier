@@ -48,20 +48,31 @@ namespace Content.Server._Funkystation.Atmos.Portable
 
         private void OnDeviceUpdate(EntityUid uid, PipeScrubberComponent comp, ref AtmosDeviceUpdateEvent args)
         {
-            if (!_nodeContainer.TryGetNode(uid, comp.PortName, out PortablePipeNode? portNode) ||
-                !portNode.ConnectionsEnabled)
+            if (!_nodeContainer.TryGetNode(uid, comp.PortName, out PortablePipeNode? portNode))
             {
                 UpdateAppearance(uid, comp, IsFull(comp), false, false, false);
                 return;
             }
 
             var isFull = IsFull(comp);
+            var powered = _power.IsPowered(uid);
 
             // An enabled scrubber needs APC power. An unpowered one is left disconnected so it
             // neither scrubs nor silently drains its tank back into the net.
-            if (comp.Enabled && !_power.IsPowered(uid))
+            if (comp.Enabled && !powered)
             {
                 portNode.ConnectionsEnabled = false;
+                UpdateAppearance(uid, comp, isFull, false, false, false);
+                return;
+            }
+
+            // A scrubber disconnected by a power loss reconnects when power returns; one
+            // disconnected because its tank is full stays disconnected until it is emptied.
+            if (!portNode.ConnectionsEnabled && comp.Enabled && powered && !isFull)
+                portNode.ConnectionsEnabled = true;
+
+            if (!portNode.ConnectionsEnabled)
+            {
                 UpdateAppearance(uid, comp, isFull, false, false, false);
                 return;
             }

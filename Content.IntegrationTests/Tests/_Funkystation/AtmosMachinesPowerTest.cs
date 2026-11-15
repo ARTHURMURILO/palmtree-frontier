@@ -154,7 +154,6 @@ public sealed class AtmosMachinesPowerTest
         await server.WaitAssertion(() =>
         {
             entMan.GetComponent<ApcPowerReceiverComponent>(scrubber).Powered = true;
-            port.ConnectionsEnabled = true;
 
             Raise(entMan, scrubber);
 
