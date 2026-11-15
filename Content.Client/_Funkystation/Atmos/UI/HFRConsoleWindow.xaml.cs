@@ -664,6 +664,7 @@ public sealed partial class HFRConsoleWindow : FancyWindow
                 message.OutputMoles);
 
         PowerLevel = message.PowerLevel;
+        UpdateButtonStates();
 
         UpdateModeratorGasesContent(_currentState);
 
