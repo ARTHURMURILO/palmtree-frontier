@@ -1013,6 +1013,7 @@ public sealed partial class HFRConsoleWindow : FancyWindow
         ToggleCoolingButton.Disabled = !Active || FuelInjecting || ModeratorInjecting;
         ToggleFuelInjectionButton.Disabled = !Active || !Cooling || _currentState?.SelectedRecipeId == null;
         ToggleModeratorInjectionButton.Disabled = !Active || !Cooling;
+        ToggleWasteRemoveButton.Disabled = PowerLevel >= 5;
         TogglePowerButton.Disabled = PowerLevel > 0 && Active;
     }
 

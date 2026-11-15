@@ -8,6 +8,7 @@
 using Content.Server.Atmos.EntitySystems;
 using Content.Server.Atmos.Piping.Components;
 using Content.Server.Popups;
+using Content.Server.Power.EntitySystems;
 using Content.Shared.Atmos;
 using Content.Shared.Materials;
 using Content.Shared._Funkystation.Atmos.Visuals;
@@ -35,6 +36,7 @@ public sealed class ElectrolyzerSystem : EntitySystem
     [Dependency] private readonly StackSystem _stackSystem = default!;
     [Dependency] private readonly HandsSystem _handsSystem = default!;
     [Dependency] private readonly AudioSystem _audio = default!;
+    [Dependency] private readonly PowerReceiverSystem _power = default!;
     private const float WorkingPower = 2f;
     private const float PowerEfficiency = 1f;
 
@@ -114,6 +116,10 @@ public sealed class ElectrolyzerSystem : EntitySystem
     private void OnDeviceUpdated(EntityUid uid, ElectrolyzerComponent electrolyzer, ref AtmosDeviceUpdateEvent args)
     {
         if (!Transform(uid).Anchored || !electrolyzer.IsPowered)
+            return;
+
+        // The fuel sheet is only one half of the machine: it also needs APC power.
+        if (!_power.IsPowered(uid))
             return;
 
         if (electrolyzer.CurrentFuel <= 0f)
@@ -334,6 +340,15 @@ public sealed class ElectrolyzerSystem : EntitySystem
             {
                 _popup.PopupEntity(Loc.GetString("electrolyzer-must-be-anchored"), uid, user.Value);
             }
+            return;
+        }
+
+        if (!_power.IsPowered(uid))
+        {
+            if (user != null)
+                _popup.PopupEntity(Loc.GetString("electrolyzer-no-power"), uid, user.Value);
+            else
+                _popup.PopupEntity(Loc.GetString("electrolyzer-no-power"), uid);
             return;
         }
 

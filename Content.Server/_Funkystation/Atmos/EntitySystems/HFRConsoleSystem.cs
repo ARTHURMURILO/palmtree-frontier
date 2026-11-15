@@ -181,7 +181,10 @@ public sealed class HFRConsoleSystem : EntitySystem
     {
         if (component.CoreUid != null && TryComp<HFRCoreComponent>(component.CoreUid, out var coreComp))
         {
-            coreComp.IsWasteRemoving = !coreComp.IsWasteRemoving;
+            // The processing loop refuses to dump waste at power level 5+, so do not let the
+            // console pretend the toggle did anything there.
+            if (coreComp.PowerLevel < 5)
+                coreComp.IsWasteRemoving = !coreComp.IsWasteRemoving;
             DirtyUI(uid, component);
         }
     }

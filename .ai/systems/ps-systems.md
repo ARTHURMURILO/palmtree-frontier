@@ -717,7 +717,7 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
 - **Store feedback (2026-10-22)**: every store denial from the console is a popup *and* a red server
   message in that player's chat (`Deny` -> `WarnChat`, private `DispatchServerMessage`), and a store
   that had to skip items also warns in chat with `bluespace-dock-warning-skipped` (and in the server
-  log). `forcedock` prints the same reason via `shell.WriteError` and the skip count as an error line
+  log). `bsforcedock` prints the same reason via `shell.WriteError` and the skip count as an error line
   in the admin console.
 - **Failed stores restore the ship (2026-10-22)**: the store strips station references, the deed and
   the docking *before* saving, so any failure after that point must undo it. The `TryStoreShip`
@@ -857,16 +857,16 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
 - CVars (in `Content.Shared/_NF/CCVar/NFCCVars.cs`, marked Palmtree): `nf14.bluespace_dock.enabled`,
   `.store_tax`, `.retrieve_tax`, `.stored_sell_rate`, `.max_ships` (0 = unlimited).
 
-### Admin tool: orphaned ships (`restoreorphanship`)
+### Admin tool: orphaned ships (`bsdockmenu`)
 
 `Content.Server/_PS/BluespaceDock/RestoreOrphanShipEui.cs` + `Content.Client/_PS/BluespaceDock/` (window
-`RestoreOrphanShipWindow`), opened by the `restoreorphanship` admin command (`AdminFlags.Admin`,
+`RestoreOrphanShipWindow`), opened by the `bsdockmenu` admin command (`AdminFlags.Admin`,
 `Content.Server/_PS/Commands/RestoreOrphanShipCommand.cs`). "Orphaned" means a ship file in
 `UserData/bluespace_dock/` that no registry entry points at (retrieval keeps the file on purpose, and
 a crash can leave files behind). The tool:
 
-- lists orphans with their save time, newest first (`BluespaceDockSystem.GetOrphanedFiles`,
-  `TryDeleteOrphanedFile`, `TryMoveFile`),
+- lists orphans with the ship's in-file grid name, the `.yml` file name, and save time, newest
+  first (`BluespaceDockSystem.GetOrphanedFiles`, `TryDeleteOrphanedFile`, `TryMoveFile`),
 - previews one with `TryLoadOrphanedFile`, which loads it onto a **paused** map and opens the normal
   `ShipPreviewEui`; the grid and map are deleted when the preview window closes, when another file is
   previewed, when the tool closes, or after one minute as a safety net (`ShipPreviewEui` takes an
@@ -896,14 +896,14 @@ a crash can leave files behind). The tool:
   name-keyed entry can be used, since an ID card does not carry a ckey; renaming one of those still
   requires fixing `OwnerName` in `registry.yml`.
 
-### Admin tools: player ships (`manageships`, `forcedock`)
+### Admin tools: player ships (`manageships`, `bsforcedock`)
 
 - `manageships` (`Content.Server/_PS/Commands/ManageShipsCommand.cs`, EUI `ManageShipsEui` + client
   `ManageShipsWindow`) lists **player ships by deed** - not by connected player, so ships whose owner
   is offline are included - in a dropdown (`BluespaceDockSystem.GetDeedShips`, with owner and docked
   state), previews one with the live ship camera and deletes one (`TryDeleteShip`, which clears every
   deed pointing at the grid).
-- `forcedock <ship name | grid uid> [owner]` (`ForceDockCommand`) stores a ship in the dock without
+- `bsforcedock <ship name | grid uid> [owner]` (`ForceDockCommand`) stores a ship in the dock without
   requiring it to be docked **and without caring about its ship category** (or whether it has a
   vessel identity at all). Living things are moved off instead of blocking the store; every other
   check still runs (`FindStoreBlocker`) and failures are printed to the console. The owner

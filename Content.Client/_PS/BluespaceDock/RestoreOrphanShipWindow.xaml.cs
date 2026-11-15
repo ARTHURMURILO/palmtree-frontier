@@ -123,6 +123,13 @@ public sealed partial class RestoreOrphanShipWindow : FancyWindow
                 HorizontalExpand = true,
             };
 
+            row.AddChild(new Label
+            {
+                Text = ship.ShipName,
+                MinWidth = 160,
+                ClipText = true,
+            });
+
             var select = new Button
             {
                 Text = ship.Name,

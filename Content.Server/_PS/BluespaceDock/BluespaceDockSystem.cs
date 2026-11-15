@@ -357,7 +357,7 @@ public sealed class BluespaceDockSystem : EntitySystem
     /// A ship file with no registry entry: a leftover from a retrieval (files are kept on purpose)
     /// or from a crash. The admin restore tool lists, previews, restores and deletes these.
     /// </summary>
-    public readonly record struct OrphanedShipFile(string Name, DateTime? Modified);
+    public readonly record struct OrphanedShipFile(string Name, string ShipName, DateTime? Modified);
 
     /// <summary>
     /// Lists ship files that no registry entry points at.
@@ -379,10 +379,62 @@ public sealed class BluespaceDockSystem : EntitySystem
             if (_resource.UserData.IsDir(path) || Registry.FindByFile(name) != null)
                 continue;
 
-            result.Add(new OrphanedShipFile(name, GetFileModified(name)));
+            result.Add(new OrphanedShipFile(name, GetOrphanShipName(name), GetFileModified(name)));
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// The grid name stored at the top of a ship file, without loading the map. Ship files put the
+    /// grid entity first, so only the header (well under a kilobyte) has to be read; parsing the
+    /// whole 1-6 MB file just to populate the orphan list would be wasteful.
+    /// </summary>
+    private string GetOrphanShipName(string fileName)
+    {
+        try
+        {
+            var path = new ResPath($"{ShipDirectory}/{fileName}");
+            using var reader = _resource.UserData.OpenText(path);
+            var entities = false;
+            var metadata = false;
+
+            for (var lineNumber = 0; lineNumber < 256 && reader.ReadLine() is { } line; lineNumber++)
+            {
+                if (!entities)
+                {
+                    if (line == "entities:")
+                        entities = true;
+                    continue;
+                }
+
+                if (!metadata)
+                {
+                    if (line.TrimStart().StartsWith("- type: MetaData", StringComparison.Ordinal))
+                        metadata = true;
+                    continue;
+                }
+
+                var trimmed = line.TrimStart();
+                if (!trimmed.StartsWith("name:", StringComparison.Ordinal))
+                    continue;
+
+                var name = trimmed["name:".Length..].Trim();
+                if (name.Length >= 2
+                    && ((name[0] == '"' && name[^1] == '"') || (name[0] == '\'' && name[^1] == '\'')))
+                {
+                    name = name[1..^1];
+                }
+
+                return name;
+            }
+        }
+        catch (Exception e)
+        {
+            _sawmill.Warning($"Could not read the grid name from orphaned ship file {fileName}: {e}");
+        }
+
+        return Path.GetFileNameWithoutExtension(fileName);
     }
 
     /// <summary>

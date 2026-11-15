@@ -16,6 +16,7 @@ using Content.Shared.Examine;
 using Content.Shared.Interaction;
 using Content.Server.Atmos.Piping.Unary.EntitySystems;
 using Content.Server.Popups;
+using Content.Server.Power.EntitySystems;
 using Content.Shared._Funkystation.Atmos.Visuals;
 
 namespace Content.Server._Funkystation.Atmos.Portable
@@ -29,6 +30,7 @@ namespace Content.Server._Funkystation.Atmos.Portable
         [Dependency] private readonly AmbientSoundSystem _ambientSound = default!;
         [Dependency] private readonly IAdminLogManager _adminLogger = default!;
         [Dependency] private readonly PopupSystem _popup = default!;
+        [Dependency] private readonly PowerReceiverSystem _power = default!;
 
         public override void Initialize()
         {
@@ -54,6 +56,15 @@ namespace Content.Server._Funkystation.Atmos.Portable
             }
 
             var isFull = IsFull(comp);
+
+            // An enabled scrubber needs APC power. An unpowered one is left disconnected so it
+            // neither scrubs nor silently drains its tank back into the net.
+            if (comp.Enabled && !_power.IsPowered(uid))
+            {
+                portNode.ConnectionsEnabled = false;
+                UpdateAppearance(uid, comp, isFull, false, false, false);
+                return;
+            }
 
             // Drain / merge when off (push to net)
             if (!comp.Enabled && portNode.NodeGroup is PipeNet { NodeCount: > 1 } net)
@@ -119,6 +130,13 @@ namespace Content.Server._Funkystation.Atmos.Portable
         {
             if (args.Handled)
                 return;
+
+            if (!comp.Enabled && !_power.IsPowered(uid))
+            {
+                _popup.PopupEntity(Loc.GetString("pipe-scrubber-no-power"), uid, args.User);
+                args.Handled = true;
+                return;
+            }
 
             comp.Enabled = !comp.Enabled;
 
