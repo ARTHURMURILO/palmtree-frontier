@@ -1,6 +1,6 @@
 # Funky atmos - /tg/ gases
 # Crystallizer recipes. The minimumRequirements arrays follow the Gas enum in
-# Content.Shared/Atmos/Atmospherics.cs (Nucleium at 11, Frontier's Respiron/Helium at 9/10).
+# Content.Shared/Atmos/Atmospherics.cs (Nucleium last at 21, Frontier's Respiron/Helium at 9/10).
 
 - type: crystallizerRecipe
   id: metalHydrogenRecipe
@@ -23,7 +23,6 @@
   - 0 # frezon
   - 0 # respiron
   - 0 # helium
-  - 0 # nucleium (NSV13, reserved)
   - 50 # bz
   - 0 # healium
   - 0 # nitrium
@@ -34,6 +33,7 @@
   - 0 # zauker
   - 0 # halon
   - 0 # anti-noblium
+  - 0 # nucleium (NSV13, reserved)
 
 - type: crystallizerRecipe
   id: healiumCrystalRecipe
@@ -56,7 +56,6 @@
   - 0 # frezon
   - 0 # respiron
   - 0 # helium
-  - 0 # nucleium (NSV13, reserved)
   - 0 # bz
   - 100 # healium
   - 0 # nitrium
@@ -67,6 +66,7 @@
   - 0 # zauker
   - 0 # halon
   - 0 # anti-noblium
+  - 0 # nucleium (NSV13, reserved)
 
 - type: crystallizerRecipe
   id: protoNitrateCrystalRecipe
@@ -89,7 +89,6 @@
   - 0 # frezon
   - 0 # respiron
   - 0 # helium
-  - 0 # nucleium (NSV13, reserved)
   - 0 # bz
   - 0 # healium
   - 0 # nitrium
@@ -100,6 +99,7 @@
   - 0 # zauker
   - 0 # halon
   - 0 # anti-noblium
+  - 0 # nucleium (NSV13, reserved)
 
 - type: crystallizerRecipe
   id: ammoniaCrystalRecipe
@@ -122,7 +122,6 @@
   - 0 # frezon
   - 0 # respiron
   - 0 # helium
-  - 0 # nucleium (NSV13, reserved)
   - 0 # bz
   - 0 # healium
   - 0 # nitrium
@@ -133,6 +132,7 @@
   - 0 # zauker
   - 0 # halon
   - 0 # anti-noblium
+  - 0 # nucleium (NSV13, reserved)
 
 - type: crystallizerRecipe
   id: nitrousOxideCrystalRecipe
@@ -155,7 +155,6 @@
   - 0 # frezon
   - 0 # respiron
   - 0 # helium
-  - 0 # nucleium (NSV13, reserved)
   - 30 # bz
   - 0 # healium
   - 0 # nitrium
@@ -166,6 +165,7 @@
   - 0 # zauker
   - 0 # halon
   - 0 # anti-noblium
+  - 0 # nucleium (NSV13, reserved)
 
 - type: crystallizerRecipe
   id: diamondRecipe
@@ -188,7 +188,6 @@
   - 0 # frezon
   - 0 # respiron
   - 0 # helium
-  - 0 # nucleium (NSV13, reserved)
   - 0 # bz
   - 0 # healium
   - 0 # nitrium
@@ -199,6 +198,7 @@
   - 0 # zauker
   - 0 # halon
   - 0 # anti-noblium
+  - 0 # nucleium (NSV13, reserved)
 
 - type: crystallizerRecipe
   id: plasmaSheetRecipe
@@ -221,7 +221,6 @@
   - 0 # frezon
   - 0 # respiron
   - 0 # helium
-  - 0 # nucleium (NSV13, reserved)
   - 0 # bz
   - 0 # healium
   - 0 # nitrium
@@ -232,6 +231,7 @@
   - 0 # zauker
   - 0 # halon
   - 0 # anti-noblium
+  - 0 # nucleium (NSV13, reserved)
 
 - type: crystallizerRecipe
   id: crystalCellRecipe
@@ -254,7 +254,6 @@
   - 0 # frezon
   - 0 # respiron
   - 100 # helium
-  - 0 # nucleium (NSV13, reserved)
   - 50 # bz
   - 0 # healium
   - 0 # nitrium
@@ -265,6 +264,7 @@
   - 0 # zauker
   - 0 # halon
   - 0 # anti-noblium
+  - 0 # nucleium (NSV13, reserved)
 
 - type: crystallizerRecipe
   id: zaukeriteRecipe
@@ -287,7 +287,6 @@
   - 0 # frezon
   - 0 # respiron
   - 0 # helium
-  - 0 # nucleium (NSV13, reserved)
   - 7.5 # bz
   - 0 # healium
   - 0 # nitrium
@@ -298,3 +297,4 @@
   - 20 # zauker
   - 0 # halon
   - 5 # anti-noblium
+  - 0 # nucleium (NSV13, reserved)

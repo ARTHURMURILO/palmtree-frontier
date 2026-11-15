@@ -1,7 +1,7 @@
 # NSV13 - the reactor's waste gas. Only nucleium is carried over: constricted plasma, nitryl,
 # hyper-noblium and stimulum are not part of this change.
 - type: gas
-  id: 11
+  id: 21
   name: gases-nucleium
   gasOverlaySprite: /Textures/_NSV13/Effects/reactor_gases.rsi
   gasOverlayState: nucleium

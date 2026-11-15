@@ -251,7 +251,7 @@ namespace Content.Shared.Atmos
         /// <summary>
         ///     Total number of gases. Increase this if you want to add more!
         /// </summary>
-        // Frontier: 9<11 | NSV13: 11<12 (nucleium) | Assmos: 12<22
+        // Frontier: 9<11 | Assmos: 11<21 | NSV13: 21<22 (nucleium)
         public const int TotalNumberOfGases = 22;
 
         /// <summary>
@@ -513,19 +513,23 @@ namespace Content.Shared.Atmos
         Frezon = 8,
         Respiron = 9, // Frontier
         Helium = 10, // Frontier
-        Nucleium = 11, // NSV13 - reactor waste
 
         // Assmos - /tg/ gases, ported from Funky Station.
-        // Appended after Nucleium so the NSV13 reactor keeps its gas id.
-        BZ = 12,
-        Healium = 13,
-        Nitrium = 14,
-        Pluoxium = 15,
-        Hydrogen = 16,
-        HyperNoblium = 17,
-        ProtoNitrate = 18,
-        Zauker = 19,
-        Halon = 20,
-        AntiNoblium = 21
+        // Appended after Frontier's gases so the existing ids stay stable.
+        BZ = 11,
+        Healium = 12,
+        Nitrium = 13,
+        Pluoxium = 14,
+        Hydrogen = 15,
+        HyperNoblium = 16,
+        ProtoNitrate = 17,
+        Zauker = 18,
+        Halon = 19,
+        AntiNoblium = 20,
+
+        // NSV13 - reactor waste. Appended after the Assmos gases: this branch lands on top of the
+        // Funky port, and renumbering an already-merged gas id would reinterpret every saved
+        // mixture and map that contains it.
+        Nucleium = 21
     }
 }

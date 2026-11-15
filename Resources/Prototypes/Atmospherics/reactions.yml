@@ -124,7 +124,6 @@
   - 0 # frezon
   - 0 # respiron
   - 0 # helium
-  - 0 # nucleium (NSV13, reserved)
   - 0 # bz
   - 0 # healium
   - 0 # nitrium
@@ -135,6 +134,7 @@
   - 0 # zauker
   - 0 # halon
   - 0 # anti-noblium
+  - 0 # nucleium (NSV13, reserved)
   effects:
   - !type:BZProductionReaction {}
 
@@ -155,7 +155,6 @@
   - 5 # frezon
   - 0 # respiron
   - 0 # helium
-  - 0 # nucleium (NSV13, reserved)
   - 5 # bz
   - 0 # healium
   - 0 # nitrium
@@ -166,6 +165,7 @@
   - 0 # zauker
   - 0 # halon
   - 0 # anti-noblium
+  - 0 # nucleium (NSV13, reserved)
   effects:
   - !type:HealiumProductionReaction {}
 
@@ -185,7 +185,6 @@
   - 0 # frezon
   - 0 # respiron
   - 0 # helium
-  - 0 # nucleium (NSV13, reserved)
   - 5 # bz
   - 0 # healium
   - 0 # nitrium
@@ -196,6 +195,7 @@
   - 0 # zauker
   - 0 # halon
   - 0 # anti-noblium
+  - 0 # nucleium (NSV13, reserved)
   effects:
   - !type:NitriumProductionReaction {}
 
@@ -215,7 +215,6 @@
   - 0 # frezon
   - 0 # respiron
   - 0 # helium
-  - 0 # nucleium (NSV13, reserved)
   - 0 # bz
   - 0 # healium
   - 0.01 # nitrium
@@ -226,6 +225,7 @@
   - 0 # zauker
   - 0 # halon
   - 0 # anti-noblium
+  - 0 # nucleium (NSV13, reserved)
   effects:
   - !type:NitriumDecompositionReaction {}
 
@@ -246,7 +246,6 @@
   - 0 # frezon
   - 0 # respiron
   - 0 # helium
-  - 0 # nucleium (NSV13, reserved)
   - 0 # bz
   - 0 # healium
   - 0 # nitrium
@@ -257,6 +256,7 @@
   - 0 # zauker
   - 0 # halon
   - 0 # anti-noblium
+  - 0 # nucleium (NSV13, reserved)
   effects:
   - !type:PluoxiumTritiumProductionReaction {}
 
@@ -277,7 +277,6 @@
   - 0 # frezon
   - 0 # respiron
   - 0 # helium
-  - 0 # nucleium (NSV13, reserved)
   - 0 # bz
   - 0 # healium
   - 0 # nitrium
@@ -288,6 +287,7 @@
   - 0 # zauker
   - 0 # halon
   - 0 # anti-noblium
+  - 0 # nucleium (NSV13, reserved)
   effects:
   - !type:PluoxiumRadiationProductionReaction {}
 
@@ -307,7 +307,6 @@
   - 0 # frezon
   - 0 # respiron
   - 0 # helium
-  - 0 # nucleium (NSV13, reserved)
   - 50 # bz
   - 0 # healium
   - 0 # nitrium
@@ -318,6 +317,7 @@
   - 0 # zauker
   - 0 # halon
   - 0 # anti-noblium
+  - 0 # nucleium (NSV13, reserved)
   effects:
   - !type:MetalHydrogenReaction {}
 
@@ -337,7 +337,6 @@
   - 0 # frezon
   - 0 # respiron
   - 0 # helium
-  - 0 # nucleium (NSV13, reserved)
   - 0 # bz
   - 0 # healium
   - 0 # nitrium
@@ -348,6 +347,7 @@
   - 0 # zauker
   - 0 # halon
   - 0 # anti-noblium
+  - 0 # nucleium (NSV13, reserved)
   effects:
   - !type:HydrogenFireReaction {}
 
@@ -368,7 +368,6 @@
   - 0 # frezon
   - 0 # respiron
   - 0 # helium
-  - 0 # nucleium (NSV13, reserved)
   - 0 # bz
   - 0 # healium
   - 0 # nitrium
@@ -379,6 +378,7 @@
   - 0 # zauker
   - 0 # halon
   - 0 # anti-noblium
+  - 0 # nucleium (NSV13, reserved)
   effects:
   - !type:HyperNobliumProductionReaction {}
 
@@ -398,7 +398,6 @@
   - 0 # frezon
   - 0 # respiron
   - 0 # helium
-  - 0 # nucleium (NSV13, reserved)
   - 0 # bz
   - 0 # healium
   - 0 # nitrium
@@ -409,6 +408,7 @@
   - 0 # zauker
   - 0.01 # halon
   - 0 # anti-noblium
+  - 0 # nucleium (NSV13, reserved)
   effects:
   - !type:HalonOxygenAbsorptionReaction {}
 
@@ -429,7 +429,6 @@
   - 0 # frezon
   - 0 # respiron
   - 0 # helium
-  - 0 # nucleium (NSV13, reserved)
   - 0 # bz
   - 0 # healium
   - 0.01 # nitrium
@@ -440,6 +439,7 @@
   - 0 # zauker
   - 0 # halon
   - 0 # anti-noblium
+  - 0 # nucleium (NSV13, reserved)
   effects:
   - !type:ZaukerProductionReaction {}
 
@@ -458,7 +458,6 @@
   - 0 # frezon
   - 0 # respiron
   - 0 # helium
-  - 0 # nucleium (NSV13, reserved)
   - 0 # bz
   - 0 # healium
   - 0 # nitrium
@@ -469,6 +468,7 @@
   - 0.01 # zauker
   - 0 # halon
   - 0 # anti-noblium
+  - 0 # nucleium (NSV13, reserved)
   effects:
   - !type:ZaukerDecompositionReaction {}
 
@@ -489,7 +489,6 @@
   - 0 # frezon
   - 0 # respiron
   - 0 # helium
-  - 0 # nucleium (NSV13, reserved)
   - 0 # bz
   - 0 # healium
   - 0 # nitrium
@@ -500,6 +499,7 @@
   - 0 # zauker
   - 0 # halon
   - 0 # anti-noblium
+  - 0 # nucleium (NSV13, reserved)
   effects:
   - !type:ProtoNitrateProductionReaction {}
 
@@ -518,7 +518,6 @@
   - 0 # frezon
   - 0 # respiron
   - 0 # helium
-  - 0 # nucleium (NSV13, reserved)
   - 0 # bz
   - 0 # healium
   - 0 # nitrium
@@ -529,6 +528,7 @@
   - 0 # zauker
   - 0 # halon
   - 0 # anti-noblium
+  - 0 # nucleium (NSV13, reserved)
   effects:
   - !type:ProtoNitrateConversionReaction {}
 
@@ -549,7 +549,6 @@
   - 0 # frezon
   - 0 # respiron
   - 0 # helium
-  - 0 # nucleium (NSV13, reserved)
   - 0.01 # bz
   - 0 # healium
   - 0 # nitrium
@@ -560,6 +559,7 @@
   - 0 # zauker
   - 0 # halon
   - 0 # anti-noblium
+  - 0 # nucleium (NSV13, reserved)
   effects:
   - !type:ProtoNitrateBZConversionReaction {}
 

@@ -27,7 +27,6 @@
       - 0 # frezon
       - 0 # respiron
       - 0 # helium
-      - 0 # nucleium (NSV13, reserved)
       - 2807.565765 # bz
       - 0 # healium
       - 0 # nitrium
@@ -38,6 +37,7 @@
       - 0 # zauker
       - 0 # halon
       - 0 # anti-noblium
+      - 0 # nucleium (NSV13, reserved)
       temperature: 293.15
   - type: Destructible
     thresholds:
@@ -87,7 +87,6 @@
       - 0 # frezon
       - 0 # respiron
       - 0 # helium
-      - 0 # nucleium (NSV13, reserved)
       - 0 # bz
       - 2807.565765 # healium
       - 0 # nitrium
@@ -98,6 +97,7 @@
       - 0 # zauker
       - 0 # halon
       - 0 # anti-noblium
+      - 0 # nucleium (NSV13, reserved)
       temperature: 293.15
   - type: Destructible
     thresholds:
@@ -147,7 +147,6 @@
       - 0 # frezon
       - 0 # respiron
       - 0 # helium
-      - 0 # nucleium (NSV13, reserved)
       - 0 # bz
       - 0 # healium
       - 2807.565765 # nitrium
@@ -158,6 +157,7 @@
       - 0 # zauker
       - 0 # halon
       - 0 # anti-noblium
+      - 0 # nucleium (NSV13, reserved)
       temperature: 293.15
   - type: Destructible
     thresholds:
@@ -207,7 +207,6 @@
       - 0 # frezon
       - 0 # respiron
       - 0 # helium
-      - 0 # nucleium (NSV13, reserved)
       - 0 # bz
       - 0 # healium
       - 0 # nitrium
@@ -218,6 +217,7 @@
       - 0 # zauker
       - 0 # halon
       - 0 # anti-noblium
+      - 0 # nucleium (NSV13, reserved)
       temperature: 293.15
   - type: Destructible
     thresholds:
@@ -267,7 +267,6 @@
       - 0 # frezon
       - 0 # respiron
       - 0 # helium
-      - 0 # nucleium (NSV13, reserved)
       - 0 # bz
       - 0 # healium
       - 0 # nitrium
@@ -278,6 +277,7 @@
       - 0 # zauker
       - 0 # halon
       - 0 # anti-noblium
+      - 0 # nucleium (NSV13, reserved)
       temperature: 293.15
   - type: Destructible
     thresholds:
@@ -327,7 +327,6 @@
       - 0 # frezon
       - 0 # respiron
       - 0 # helium
-      - 0 # nucleium (NSV13, reserved)
       - 0 # bz
       - 0 # healium
       - 0 # nitrium
@@ -338,6 +337,7 @@
       - 0 # zauker
       - 0 # halon
       - 0 # anti-noblium
+      - 0 # nucleium (NSV13, reserved)
       temperature: 293.15
   - type: Destructible
     thresholds:
@@ -387,7 +387,6 @@
       - 0 # frezon
       - 0 # respiron
       - 0 # helium
-      - 0 # nucleium (NSV13, reserved)
       - 0 # bz
       - 0 # healium
       - 0 # nitrium
@@ -398,6 +397,7 @@
       - 0 # zauker
       - 0 # halon
       - 0 # anti-noblium
+      - 0 # nucleium (NSV13, reserved)
       temperature: 293.15
   - type: Destructible
     thresholds:
@@ -447,7 +447,6 @@
       - 0 # frezon
       - 0 # respiron
       - 0 # helium
-      - 0 # nucleium (NSV13, reserved)
       - 0 # bz
       - 0 # healium
       - 0 # nitrium
@@ -458,6 +457,7 @@
       - 2807.565765 # zauker
       - 0 # halon
       - 0 # anti-noblium
+      - 0 # nucleium (NSV13, reserved)
       temperature: 293.15
   - type: Destructible
     thresholds:
@@ -507,7 +507,6 @@
       - 0 # frezon
       - 0 # respiron
       - 0 # helium
-      - 0 # nucleium (NSV13, reserved)
       - 0 # bz
       - 0 # healium
       - 0 # nitrium
@@ -518,6 +517,7 @@
       - 0 # zauker
       - 2807.565765 # halon
       - 0 # anti-noblium
+      - 0 # nucleium (NSV13, reserved)
       temperature: 293.15
   - type: Destructible
     thresholds:
@@ -567,7 +567,6 @@
       - 0 # frezon
       - 0 # respiron
       - 0 # helium
-      - 0 # nucleium (NSV13, reserved)
       - 0 # bz
       - 0 # healium
       - 0 # nitrium
@@ -578,6 +577,7 @@
       - 0 # zauker
       - 0 # halon
       - 2807.565765 # anti-noblium
+      - 0 # nucleium (NSV13, reserved)
       temperature: 293.15
   - type: Destructible
     thresholds:
