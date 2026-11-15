@@ -1,4 +1,5 @@
 restore-orphan-title = ORPHANED SHIPS
+restore-orphan-column-ship = Ship
 restore-orphan-column-file = File
 restore-orphan-column-modified = Saved
 restore-orphan-column-options = Options
