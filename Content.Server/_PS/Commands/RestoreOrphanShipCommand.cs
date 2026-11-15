@@ -7,15 +7,16 @@ using Robust.Shared.Console;
 namespace Content.Server._PS.Commands;
 
 /// <summary>
-/// Palmtree: opens the admin tool for orphaned ship files (ship files with no dock entry). It lists
-/// them, previews one on a frozen map, restores one into a character's dock or deletes it.
+/// Palmtree: opens the Bluespace Dock admin menu for orphaned ship files (ship files with no dock
+/// entry). It lists them, previews one on a frozen map, restores one into a character's dock or
+/// deletes it.
 /// </summary>
 [AdminCommand(AdminFlags.Admin)]
 public sealed class RestoreOrphanShipCommand : IConsoleCommand
 {
     [Dependency] private readonly EuiManager _eui = default!;
 
-    public string Command => "restoreorphanship";
+    public string Command => "bsdockmenu";
     public string Description => "Lists orphaned ship files and lets you preview, restore (into a character's dock) or delete them.";
     public string Help => Command;
 

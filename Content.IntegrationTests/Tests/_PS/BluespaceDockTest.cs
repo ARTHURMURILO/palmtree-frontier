@@ -395,10 +395,13 @@ public sealed class BluespaceDockTest
             dock.ReloadRegistry();
 
             // A ship file with no registry entry is an orphan.
+            var shipName = entMan.GetComponent<MetaDataComponent>(testMap.Grid.Owner).EntityName;
             var file = BluespaceDockSystem.GetShipFilePath("orphan");
             Assert.That(dock.TrySaveShipFile(testMap.Grid.Owner, file, out _), Is.True);
-            Assert.That(dock.GetOrphanedFiles().Any(o => o.Name == file), Is.True,
-                "A ship file with no entry must be listed as an orphan.");
+            var orphan = dock.GetOrphanedFiles().FirstOrDefault(o => o.Name == file);
+            Assert.That(orphan.Name, Is.EqualTo(file), "A ship file with no entry must be listed as an orphan.");
+            Assert.That(orphan.ShipName, Is.EqualTo(shipName),
+                "The orphan list must show the ship's in-file grid name, not only the .yml file name.");
             Assert.That(dock.GetOrphanedFiles().Any(o => o.Name == BluespaceDockSystem.RegistryFileName), Is.False,
                 "The registry file is not an orphan.");
             Assert.That(dock.TryDeleteOrphanedFile(BluespaceDockSystem.RegistryFileName), Is.False,

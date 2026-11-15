@@ -425,12 +425,12 @@
       [head=3]Warnings[/head]
       - The machine cannot be dismantled or powered off if the power level is above 0.
       - Waste gases cannot be disposed of at power level 5 or above.
-      - Only helium and antinoblium can be removed from the fusion mix.
+      - The moderator filter drains the selected gases from the moderator loop; the fusion mix vents its primary products through the waste output.
       - Hypernoblium significantly reduces the power of the mix.
       - Antinoblium significantly increases the power of the mix.
       - High heat capacity gases are harder to heat or cool.
       - Low heat capacity gases are easier to heat or cool.
-      - The machine consumes 100 KW of power when running, so prepare the station power accordingly before turning on the HFR.
+      - The machine consumes 100 kW of power when running, so prepare the station power accordingly before turning on the HFR.
       - Setting up multiple power generators is highly recommended before running the HFR.
       - In a power shortage, the fusion reaction continues, but cooling stops.
       - In the event of a sustained power outage, cut all power to the HFR until power issues are sorted.

@@ -261,6 +261,8 @@ public sealed class GenitalRenderTest
 
                 Assert.That(buttLayer, Is.LessThan(underwearLayer),
                     "bottom organs must render under back undergarments");
+                Assert.That(breastLayer, Is.GreaterThan(buttLayer),
+                    "breasts must render above the butt facing east or west");
 
                 Assert.That(spriteSystem.LayerMapTryGet(
                     (mob.Value, sprite),
@@ -308,6 +310,9 @@ public sealed class GenitalRenderTest
 
                 Assert.That(neckLayer, Is.GreaterThan(southBreastLayer),
                     "neck clothing must render above breasts facing south");
+
+                Assert.That(southBreastLayer, Is.GreaterThan(southButtLayer),
+                    "breasts must render above the butt facing south");
 
                 Assert.That(spriteSystem.LayerMapTryGet(
                     (mob.Value, sprite),
