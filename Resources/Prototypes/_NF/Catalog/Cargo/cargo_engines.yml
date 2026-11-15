@@ -27,3 +27,46 @@
   cost: 4000
   category: cargoproduct-category-name-engineering
   group: market
+
+# NSV13/Palmtree: reactor flatpacks. The crate carries the reactor and its console board; the rods
+# that run it are sold separately, in the crates at the bottom of this file.
+- type: cargoProduct
+  id: EngineRbmkReactor
+  icon:
+    sprite: _NF/Objects/Devices/flatpack.rsi
+    state: power_generator
+  product: CrateRbmkReactor
+  cost: 40000
+  category: cargoproduct-category-name-engineering
+  group: market
+
+- type: cargoProduct
+  id: EngineStormdriveReactor
+  icon:
+    sprite: _NF/Objects/Devices/flatpack.rsi
+    state: power_generator
+  product: CrateStormdriveReactor
+  cost: 30000
+  category: cargoproduct-category-name-engineering
+  group: market
+
+# NSV13/Palmtree: reactor consumables. Five rods to a crate - one full load for either machine.
+- type: cargoProduct
+  id: EngineReactorControlRods
+  icon:
+    sprite: _NSV13/Objects/Materials/control_rod.rsi
+    state: normal
+  product: CrateReactorControlRods
+  cost: 8000
+  category: cargoproduct-category-name-engineering
+  group: market
+
+- type: cargoProduct
+  id: EngineRbmkFuelRods
+  icon:
+    sprite: _NSV13/Objects/Materials/control_rod.rsi
+    state: irradiated
+  product: CrateRbmkFuelRods
+  cost: 10000
+  category: cargoproduct-category-name-engineering
+  group: market

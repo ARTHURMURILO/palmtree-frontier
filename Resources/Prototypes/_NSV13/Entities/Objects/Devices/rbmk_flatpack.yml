@@ -1,0 +1,42 @@
+# NSV13/Palmtree: the RBMK flatpack.
+#
+# The flatpack also lays the reactor's site works: a reinforced footing, an HV cable across the
+# footprint, and a straight pipe stub on each of the three ports. Deconstruction returns the same
+# flatpack.
+- type: entity
+  parent: BaseFlatpack
+  id: RbmkReactorFlatpack
+  name: RBMK reactor flatpack
+  description: A flatpack used for constructing an RBMK nuclear reactor, complete with its reinforced footing, HV cabling and pipe stubs.
+  components:
+  - type: Sprite
+    sprite: _NF/Objects/Devices/flatpack.rsi
+    layers:
+    - state: power_generator
+  - type: Flatpack
+    entity: RbmkNuclearReactor
+    unpackDelay: 10
+  - type: ReactorFlatpack
+    footprint: 3,3
+    floor: FloorReinforced
+    cableOnFootprint: true
+    pipesOnPorts: true
+    deconstructDelay: 30
+    coldLimit: 100
+  - type: StaticPrice
+    price: 20000
+  - type: GuideHelp
+    guides:
+    - Rbmk
+
+# Cargo bundle: the reactor flatpack plus the console board that controls it.
+- type: entity
+  parent: CrateEngineering
+  id: CrateRbmkReactor
+  name: RBMK reactor crate
+  description: An RBMK reactor flatpack and the control console board that talks to it.
+  components:
+  - type: StorageFill
+    contents:
+    - id: RbmkReactorFlatpack
+    - id: RbmkConsoleCircuitboard

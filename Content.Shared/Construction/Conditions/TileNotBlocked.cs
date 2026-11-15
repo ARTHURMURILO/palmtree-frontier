@@ -40,9 +40,11 @@ public sealed partial class TileNotBlocked : IConstructionCondition
             return false;
         }
 
-        // Palmtree: directional windows are ignored unless this particular build needs the whole tile.
+        // Palmtree: construction blockers let a soft machine footprint reserve its tiles, and
+        // directional windows are ignored unless this particular build needs the whole tile.
         return !turfSystem.IsTileBlocked(tileRef.Value,
             _filterMobs ? CollisionGroup.MobMask : CollisionGroup.Impassable,
+            includeConstructionBlockers: true,
             ignoreDirectionalWindows: !_blockDirectionalWindows);
     }
 

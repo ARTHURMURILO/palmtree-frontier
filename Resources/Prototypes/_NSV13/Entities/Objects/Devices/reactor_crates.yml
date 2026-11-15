@@ -1,0 +1,27 @@
+# NSV13/Palmtree: cargo crates of reactor consumables.
+#
+# The flatpacks are machines; the rods that run them are consumables and are not included. Both
+# machines have five rod bays, so a crate carries five rods - enough for a full load, with no spare
+# to lose on the first SCRAM. Cargo sells them; the techfab still prints them cheaper from materials.
+
+- type: entity
+  parent: CrateEngineering
+  id: CrateReactorControlRods
+  name: reactor control rod crate
+  description: Five nanocarbon reactor control rods, enough to load one reactor's rod bay.
+  components:
+  - type: StorageFill
+    contents:
+    - id: ControlRod
+      amount: 5
+
+- type: entity
+  parent: CrateEngineering
+  id: CrateRbmkFuelRods
+  name: RBMK fuel rod crate
+  description: Five uranium-238 fuel rods, enough for one full RBMK load.
+  components:
+  - type: StorageFill
+    contents:
+    - id: RbmkFuelRodUranium
+      amount: 5

@@ -1,0 +1,48 @@
+# NSV13 - research for the ported reactors.
+#
+# This fork's live tech tree is `Resources/Prototypes/_NF/Research/techtree.yml` (the older
+# `Resources/Prototypes/Research/*.yml` files are marked IGNORED on the Frontier), so these nodes join
+# the `NFEngineering` tree with explicit grid positions rather than a separate tree of their own.
+#
+# The split is by purpose, not by machine:
+#   * Fission Basics holds the consumables needed to run and repair either reactor.
+#   * Nuclear Fission holds both reactors themselves and their consoles.
+#
+# Neither node lists a power technology as a prerequisite. A reactor is useless without a power net,
+# so every route to actually using one already passes through power generation; the extra edge only
+# drew a line across the tree.
+
+- type: technology
+  id: NFReactorControlRods
+  name: research-technology-fission-basics
+  entityIcon: ControlRod
+  discipline: NFEngineering
+  tier: 2
+  cost: 5000
+  recipeUnlocks:
+  - ControlRodInferior
+  - ReactorSealant
+  - RbmkFuelRodUranium
+  - StormdriveCore
+  # Particle emission comes first: the handheld particle emitter is the field ignition tool for
+  # these reactors, so the reactor branch follows Portable Particle Emission (2, 30), directly
+  # above this node.
+  technologyPrerequisites:
+  - NFParticleDecelerator
+  position: 2, 29
+
+- type: technology
+  id: NFStormdriveMachinery
+  name: research-technology-nuclear-fission
+  entityIcon: StormdriveReactor
+  discipline: NFEngineering
+  tier: 3
+  cost: 15000
+  recipeUnlocks:
+  - RbmkReactorFlatpack
+  - RbmkConsoleCircuitboard
+  - StormdriveReactorFlatpack
+  - StormdriveConsoleCircuitboard
+  technologyPrerequisites:
+  - NFReactorControlRods
+  position: 3, 29

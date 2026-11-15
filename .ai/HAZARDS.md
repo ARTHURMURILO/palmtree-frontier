@@ -841,6 +841,63 @@ so these fail only in CI:
   docking to the *grid it was docked to*). A stripped ship has no station member/bound components, so
   its station-bound machinery and power look "soft-broken" until it is restored.
 
+### Reactors on live grids (2026-11-10)
+
+- A reactor may only be stored **cold and stopped**, and the dock enforces it at three points.
+  `BluespaceDockSystem.FindLiveReactor` is the gate (called by `FindStoreBlocker` *and*
+  `TrySaveShipFile`, so the console and a direct caller agree): it refuses a running RBMK, one at or
+  above 50 °C (`>=`, not `>`), or one with `AlertActive`; and a stormdrive outside `Idle`/
+  `Maintenance`, at/above 50 °C, with `ReactorEndTimes` set, or with any `WarningState`. A **slagged
+  RBMK is storable** and stays slagged - a wreck is cargo, not a running engine. Do not add a
+  fuel-rod gate: a cold, fuelled reactor stores correctly and auto-ejecting rods would destroy
+  player property.
+- `BluespaceDockSystem.ResetRuntimeCooldowns` (already the save *and* load cleanup hook) then calls
+  `NormalizeReactorRuntime`: the RBMK's `AlertActive`/`NextTick`/`NextFlicker` and the stormdrive's
+  `ReactorEndTimes`/`MeltdownAt`/`WarningState`/`NextProcess`/`NextAlert`/`NextCountdownAnnounce`/
+  `NextGravityPull`/`DumpingFuel` are cleared. `DumpingFuel` is the one **serialized** toggle this
+  catches; without it a stored drive came back venting its fuel line into the waste pipe with nobody
+  aboard. Permanent state (`VesselIntegrity`, `Slagged`, `DesiredK`, temperature, rod depletion and
+  relative age, control-rod percentage, `ReactorId`) is deliberately untouched.
+- Load is the third enforcement point: `TryLoadShipFile` runs `FindLiveReactor` after
+  `ResetRuntimeCooldowns` and calls `SafeReactors` if a core is still live, logging a warning that
+  names the ship file and the reactor. That is for files written before the gate existed (or
+  hand-edited ones): they bypass the store gate entirely, and a live core loaded with empty pipes
+  starves and can melt down unattended. Do not remove it on the argument that "the gate makes this
+  impossible" - legacy files are the reason it exists. `.ai/ideas/reactor-ship-persistence.md` §2.4
+  records it as revisit-able policy (refuse instead, or add a file-format marker).
+- A failed save must not change the machine: `TrySaveShipFile` captures the reactors' transient state
+  (`CaptureReactorRuntime`) before `ResetRuntimeCooldowns` and restores it (`RestoreReactorRuntime`)
+  on every failure return; `TryStoreShip` holds the same snapshot for failures after a successful
+  write (the bank refusal). `BluespaceDockReactorSaveTest.FailedSaveRestoresReactorTransientState`
+  locks it in. Without this, a store that fails leaves the drive's serialized `DumpingFuel` cleared.
+- `SafeReactors` only touches cores that `IsLiveReactor` reports: a cold, stopped core keeps its
+  `DesiredK`/temperature and is not counted in `forcedock --scram`'s "safed N live reactor(s)" log.
+  Its comments/docs used to imply it safed every reactor on the grid; it does not.
+- `SafeReactors` runs each core in its own try/catch (`SafeReactors` is used by the load path): a
+  legacy core whose `ShutDown`/`Deactivate` throws is logged at Error, left in whatever partial
+  state the call reached, and **not counted** as safed; the other cores on the grid are still
+  safed and the ship still loads. Do not move the loop back under one try/catch - that is how a
+  single malformed core used to reject the whole file. The load warning's "safed N" number is
+  therefore the number that actually succeeded.
+- The RBMK fuel-handling lockout lives on `RbmkReactorComponent.MaxPowerForFuelHandling` (default
+  20) and has **two deliberate comparisons**: insertion and repair refuse at `>=` (rbmk.dm E10/E12),
+  console ejection refuses at `>` (E11). They differ in the original; do not "unify" the operator.
+- The rod lists are rebuilt by the reactors' **`ComponentStartup`** handlers
+  (`RbmkReactorSystem.OnStartup`, `StormdriveSystem.OnStartup`/`AdoptRods`), because a loaded ship
+  skips MapInit and containers are restored as data without insert events. **Never** re-raise
+  `MapInitEvent` to "restore" them (section 24): `ContainerFill` would run again and duplicate the
+  rods and the rest of the ship's spawn-time contents.
+- Dangling container references (`EntityUid.Invalid` from a legacy file, section 25) must not break
+  the reactor scan: `GetEntitiesOnGrid` skips them, so `FindLiveReactor`, `HasDangerousShipEntities`
+  and `PurgeDangerousShipEntities` are safe. The save path cannot serialize a live container that
+  names an invalid uid - the engine's strict save logs and throws, and the dock's existing resilient
+  fallback drops and re-creates that entity (section 28). That is the documented behaviour, not a
+  crash; `BluespaceDockReactorSaveTest.InvalidContainerReferencesDoNotBreakReactorScansOrSaves`
+  locks it down.
+- Tests: `_PS/BluespaceDockReactorTest.cs` (gate + edge cases),
+  `_PS/BluespaceDockReactorSaveTest.cs` (real save -> load round trips, refusal, rod depletion,
+  dangling refs), `_NSV13/ReactorBaseSliceTest.cs` (spawn-and-tick without acquisition).
+
 ## 29. Programmable circuitry: sensor lookups and pathfinding loops (2026-11)
 
 - **`maxScanResults` is a display cap, not a search cap.** `ScanEntities` originally sorted every

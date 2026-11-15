@@ -4,12 +4,15 @@ using Content.Server.Cargo.Components;
 using Content.Server._PS.Construction.Components;
 using Content.Shared.Cargo.Components;
 using Content.Shared.Cargo.Prototypes;
+using Content.Shared.Construction;
 using Content.Shared.Construction.Components;
+using Content.Shared.Interaction;
 using Content.Shared._PS.Construction;
 using Content.Shared.DoAfter;
 using Content.Shared.Prototypes;
 using Content.Shared.Research.Prototypes;
 using Content.Shared.Storage.EntitySystems;
+using Robust.Shared.Audio.Components;
 using Robust.Shared.Containers;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Maths;
@@ -181,6 +184,72 @@ public sealed class TegFlatpackTest
             var flatpack = flatpacks[0].Owner;
             Assert.That(entMan.GetComponent<TransformComponent>(flatpack).LocalRotation.GetCardinalDir(),
                 Is.EqualTo(Direction.East), "the flatpack should keep the part's facing");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    ///     The shared unpack handler was rewritten for the reactor deployment flatpacks (do-after
+    ///     path, placement veto, split TryUnpack). This drives a real ordinary flatpack interaction
+    ///     through it: a TEG flatpack has no delay and no deployment veto, so it must still spawn
+    ///     exactly one machine and still play its unpack sound.
+    /// </summary>
+    [Test]
+    public async Task OrdinaryFlatpackStillUnpacksAndPlaysItsSound()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+
+        EntityUid flatpack = default;
+
+        await server.WaitAssertion(() =>
+        {
+            flatpack = entMan.SpawnEntity("TegCenterFlatpack", testMap.GridCoords);
+            var tool = entMan.SpawnEntity("Multitool", testMap.GridCoords);
+            var user = entMan.SpawnEntity("MobHuman", testMap.GridCoords);
+
+            var comp = entMan.GetComponent<FlatpackComponent>(flatpack);
+            Assert.That(comp.UnpackDelay, Is.EqualTo(TimeSpan.Zero),
+                "sanity: the TEG flatpack is an ordinary instant flatpack");
+
+            int AudioOnMap()
+            {
+                return entMan.EntityQuery<AudioComponent>()
+                    .Count(audio => entMan.GetComponent<TransformComponent>(audio.Owner).MapID == testMap.MapId);
+            }
+
+            var audioBefore = AudioOnMap();
+
+            var interact = new InteractUsingEvent(user, tool, flatpack,
+                entMan.GetComponent<TransformComponent>(flatpack).Coordinates);
+            entMan.EventBus.RaiseLocalEvent(flatpack, interact);
+
+            Assert.That(interact.Handled, Is.True, "the ordinary flatpack interaction must be consumed");
+            Assert.That(entMan.IsQueuedForDeletion(flatpack), Is.True,
+                "the unpacked flatpack must be consumed");
+            Assert.That(AudioOnMap(), Is.EqualTo(audioBefore + 1),
+                "the unpack must create its sound");
+        });
+
+        // The audio entity must survive the flatpack's deletion: it is parented to the grid, not to
+        // the deleted item. (When the sound source was the flatpack itself it was cut off instantly.)
+        await pair.RunTicksSync(1);
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(entMan.EntityExists(flatpack), Is.False, "the flatpack should be gone after unpacking");
+
+            var spawned = entMan.EntityQuery<MetaDataComponent>()
+                .Count(meta => meta.EntityPrototype?.ID == "TegCenterFlatpacked");
+            Assert.That(spawned, Is.EqualTo(1), "one ordinary flatpack must spawn exactly one machine");
+
+            var audio = entMan.EntityQuery<AudioComponent>()
+                .Count(a => entMan.GetComponent<TransformComponent>(a.Owner).MapID == testMap.MapId);
+            Assert.That(audio, Is.GreaterThan(0),
+                "the unpack sound must outlive the flatpack entity it was played at");
         });
 
         await pair.CleanReturnAsync();

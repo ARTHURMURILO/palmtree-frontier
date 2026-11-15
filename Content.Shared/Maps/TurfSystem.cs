@@ -60,8 +60,9 @@ public sealed class TurfSystem : EntitySystem
     ///     Returns true if a given tile is blocked by physics-enabled entities.
     /// </summary>
     public bool IsTileBlocked(TileRef turf, CollisionGroup mask, float minIntersectionArea = 0.1f,
-        bool ignoreDirectionalWindows = false)
+        bool includeConstructionBlockers = false, bool ignoreDirectionalWindows = false)
         => IsTileBlocked(turf.GridUid, turf.GridIndices, mask, minIntersectionArea: minIntersectionArea,
+            includeConstructionBlockers: includeConstructionBlockers,
             ignoreDirectionalWindows: ignoreDirectionalWindows);
 
     /// <summary>
@@ -73,6 +74,11 @@ public sealed class TurfSystem : EntitySystem
     /// <param name="grid">Grid component</param>
     /// <param name="gridXform">Grid's transform</param>
     /// <param name="minIntersectionArea">Minimum area that must be covered for a tile to be considered blocked</param>
+    /// <param name="includeConstructionBlockers">
+    ///     Palmtree: also count entities carrying <see cref="Content.Shared.Construction.Components.ConstructionBlockerComponent"/>,
+    ///     even when their fixtures are not hard. Used by construction to reserve a machine's footprint
+    ///     without making it solid.
+    /// </param>
     /// <param name="ignoreDirectionalWindows">
     ///     Palmtree: do not count <c>DirectionalWindow</c> entities as tile-filling obstacles. Their fixtures
     ///     only cover one edge of the tile, so normal furniture, machinery and pipes can share it.
@@ -83,7 +89,7 @@ public sealed class TurfSystem : EntitySystem
         MapGridComponent? grid = null,
         TransformComponent? gridXform = null,
         float minIntersectionArea = 0.1f,
-        bool ignoreDirectionalWindows = false)
+        bool includeConstructionBlockers = false, bool ignoreDirectionalWindows = false)
     {
         if (!Resolve(gridUid, ref grid, ref gridXform))
             return false;
@@ -102,7 +108,14 @@ public sealed class TurfSystem : EntitySystem
 
         var intersectionArea = 0f;
         var fixtureQuery = GetEntityQuery<FixturesComponent>();
-        foreach (var ent in _entityLookup.GetEntitiesIntersecting(gridUid, worldBox, LookupFlags.Dynamic | LookupFlags.Static))
+
+        // Palmtree: soft fixtures are normally excluded from lookups; construction blockers need
+        // them, or a walk-over machine's footprint is invisible to this check.
+        var flags = LookupFlags.Dynamic | LookupFlags.Static;
+        if (includeConstructionBlockers)
+            flags |= LookupFlags.Sensors;
+
+        foreach (var ent in _entityLookup.GetEntitiesIntersecting(gridUid, worldBox, flags))
         {
             // A directional window only occupies the edge it was built on, not the whole tile.
             if (ignoreDirectionalWindows && _tags.HasTag(ent, DirectionalWindowTag))
@@ -118,13 +131,20 @@ public sealed class TurfSystem : EntitySystem
 
             var xform = new Transform(pos, (float)rot.Theta);
 
+            // Palmtree: a construction blocker reserves its whole fixture footprint, hard or not.
+            var isConstructionBlocker = includeConstructionBlockers
+                                        && HasComp<Content.Shared.Construction.Components.ConstructionBlockerComponent>(ent);
+
             foreach (var fixture in fixtures.Fixtures.Values)
             {
-                if (!fixture.Hard)
-                    continue;
+                if (!isConstructionBlocker)
+                {
+                    if (!fixture.Hard)
+                        continue;
 
-                if ((fixture.CollisionLayer & (int)mask) == 0)
-                    continue;
+                    if ((fixture.CollisionLayer & (int)mask) == 0)
+                        continue;
+                }
 
                 for (var i = 0; i < fixture.Shape.ChildCount; i++)
                 {

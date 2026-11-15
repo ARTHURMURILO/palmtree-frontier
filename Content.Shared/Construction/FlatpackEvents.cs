@@ -3,6 +3,9 @@ using Robust.Shared.Map;
 using Robust.Shared.Maths;
 using Robust.Shared.Serialization;
 
+// Palmtree: shared events for the reactor deployment flatpacks. They live in the core construction
+// namespace so Content.Server/_NSV13 can veto a multi-entity unpack before it spawns anything and
+// receive the freshly spawned machine afterwards. Upstream only had the instant-unpack path.
 namespace Content.Shared.Construction;
 
 /// <summary>

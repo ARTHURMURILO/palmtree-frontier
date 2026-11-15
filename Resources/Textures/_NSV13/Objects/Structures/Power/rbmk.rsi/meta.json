@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "license": "CC-BY-SA-3.0",
+  "copyright": "NSV13 (BeeStation) - nsv13/icons/obj/machinery/rbmk.dmi, CC-BY-SA-3.0",
+  "size": {
+    "x": 96,
+    "y": 96
+  },
+  "states": [
+    {
+      "name": "reactor_off"
+    },
+    {
+      "name": "reactor_on",
+      "delays": [
+        [
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ]
+      ]
+    },
+    {
+      "name": "reactor_hot",
+      "delays": [
+        [
+          0.3,
+          0.3,
+          0.3
+        ]
+      ]
+    },
+    {
+      "name": "reactor_veryhot",
+      "delays": [
+        [
+          0.15,
+          0.15,
+          0.15
+        ]
+      ]
+    },
+    {
+      "name": "reactor_overheat",
+      "delays": [
+        [
+          0.15,
+          0.15,
+          0.15
+        ]
+      ]
+    },
+    {
+      "name": "reactor_meltdown",
+      "delays": [
+        [
+          0.1,
+          0.1,
+          0.1
+        ]
+      ]
+    },
+    {
+      "name": "reactor_slagged",
+      "delays": [
+        [
+          1.0,
+          0.1,
+          0.5
+        ]
+      ]
+    },
+    {
+      "name": "reactor_map",
+      "directions": 4
+    }
+  ]
+}

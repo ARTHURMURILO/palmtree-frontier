@@ -181,6 +181,7 @@ namespace Content.Shared.Atmos
             [Gas.WaterVapor] = Loc.GetString("gas-water-vapor-abbreviation"),
             [Gas.Respiron] = Loc.GetString("gas-respiron-abbreviation"), // Frontier
             [Gas.Helium] = Loc.GetString("gas-helium-abbreviation"), // Frontier
+            [Gas.Nucleium] = Loc.GetString("gas-nucleium-abbreviation"), // NSV13 - reactor waste
             [Gas.BZ] = Loc.GetString("gas-bz-abbreviation"),
             [Gas.Healium] = Loc.GetString("gas-healium-abbreviation"),
             [Gas.Nitrium] = Loc.GetString("gas-nitrium-abbreviation"),
@@ -210,6 +211,7 @@ namespace Content.Shared.Atmos
             [Gas.WaterVapor] = Loc.GetString("gases-water-vapor"),
             [Gas.Respiron] = Loc.GetString("gases-respiron"), // Frontier
             [Gas.Helium] = Loc.GetString("gases-helium"),
+            [Gas.Nucleium] = Loc.GetString("gases-nucleium"), // NSV13
             [Gas.BZ] = Loc.GetString("gases-bz"),
             [Gas.Healium] = Loc.GetString("gases-healium"),
             [Gas.Nitrium] = Loc.GetString("gases-nitrium"),
@@ -249,7 +251,8 @@ namespace Content.Shared.Atmos
         /// <summary>
         ///     Total number of gases. Increase this if you want to add more!
         /// </summary>
-        public const int TotalNumberOfGases = 21; // Frontier: 9<11, Assmos: 11<21
+        // Frontier: 9<11 | Assmos: 11<21 | NSV13: 21<22 (nucleium)
+        public const int TotalNumberOfGases = 22;
 
         /// <summary>
         ///     This is the actual length of the gases arrays in mixtures.
@@ -522,6 +525,11 @@ namespace Content.Shared.Atmos
         ProtoNitrate = 17,
         Zauker = 18,
         Halon = 19,
-        AntiNoblium = 20
+        AntiNoblium = 20,
+
+        // NSV13 - reactor waste. Appended after the Assmos gases: this branch lands on top of the
+        // Funky port, and renumbering an already-merged gas id would reinterpret every saved
+        // mixture and map that contains it.
+        Nucleium = 21
     }
 }

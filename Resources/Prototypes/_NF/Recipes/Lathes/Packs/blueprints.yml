@@ -182,6 +182,16 @@
   # PersonalPropulsion
   - JetpackBlue
   - JetpackCaptain
+  # Fission Basics (Palmtree/NSV13)
+  - ControlRodInferior
+  - ReactorSealant
+  - RbmkFuelRodUranium
+  - StormdriveCore
+  # Nuclear Fission (Palmtree/NSV13)
+  - RbmkReactorFlatpack
+  - RbmkConsoleCircuitboard
+  - StormdriveReactorFlatpack
+  - StormdriveConsoleCircuitboard
 
 # region Medical
 - type: latheRecipePack

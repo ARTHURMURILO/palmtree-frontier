@@ -1,0 +1,210 @@
+{
+  "version": 1,
+  "license": "CC-BY-SA-3.0",
+  "copyright": "NSV13 (BeeStation) - goonstation reactor.dmi, CC-BY-SA-3.0",
+  "size": {
+    "x": 64,
+    "y": 32
+  },
+  "states": [
+    {
+      "name": "broken",
+      "delays": [
+        [
+          0.2,
+          0.2,
+          0.2,
+          0.2,
+          0.2,
+          0.2,
+          0.2
+        ]
+      ]
+    },
+    {
+      "name": "repair-1",
+      "delays": [
+        [
+          0.5,
+          0.5
+        ]
+      ]
+    },
+    {
+      "name": "reinforce-2",
+      "delays": [
+        [
+          2.0,
+          0.3,
+          0.2,
+          0.3,
+          0.2,
+          0.3,
+          0.2,
+          0.3,
+          0.2,
+          0.3
+        ]
+      ]
+    },
+    {
+      "name": "refit-3",
+      "delays": [
+        [
+          1.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "name": "meltdown",
+      "delays": [
+        [
+          0.1,
+          0.1,
+          0.1,
+          0.1,
+          0.1,
+          0.1,
+          0.1,
+          1.0
+        ]
+      ]
+    },
+    {
+      "name": "reactor_off"
+    },
+    {
+      "name": "reactor_maintenance"
+    },
+    {
+      "name": "reactor_starting",
+      "delays": [
+        [
+          0.1,
+          0.1,
+          0.1,
+          0.1,
+          0.1
+        ]
+      ]
+    },
+    {
+      "name": "reactor_on",
+      "delays": [
+        [
+          0.1,
+          0.1,
+          0.1,
+          0.1,
+          0.1,
+          0.1,
+          0.1,
+          0.1,
+          0.1
+        ]
+      ]
+    },
+    {
+      "name": "reactor_hot",
+      "delays": [
+        [
+          0.06999999999999999,
+          0.06999999999999999,
+          0.06999999999999999,
+          0.06999999999999999,
+          0.06999999999999999,
+          0.06999999999999999,
+          0.06999999999999999,
+          0.06999999999999999,
+          0.06999999999999999
+        ]
+      ]
+    },
+    {
+      "name": "reactor_overheat",
+      "delays": [
+        [
+          0.08,
+          0.08,
+          0.08,
+          0.08,
+          0.08,
+          0.08
+        ]
+      ]
+    },
+    {
+      "name": "rods_5_1"
+    },
+    {
+      "name": "rods_4_1"
+    },
+    {
+      "name": "rods_3_1"
+    },
+    {
+      "name": "rods_2_1"
+    },
+    {
+      "name": "rods_1_1"
+    },
+    {
+      "name": "rods_0_1"
+    },
+    {
+      "name": "rods_5_2"
+    },
+    {
+      "name": "rods_4_2"
+    },
+    {
+      "name": "rods_3_2"
+    },
+    {
+      "name": "rods_2_2"
+    },
+    {
+      "name": "rods_1_2"
+    },
+    {
+      "name": "rods_0_2"
+    },
+    {
+      "name": "rods_5_3"
+    },
+    {
+      "name": "rods_4_3"
+    },
+    {
+      "name": "rods_3_3"
+    },
+    {
+      "name": "rods_2_3"
+    },
+    {
+      "name": "rods_1_3"
+    },
+    {
+      "name": "rods_0_3"
+    },
+    {
+      "name": "rods_5_4"
+    },
+    {
+      "name": "rods_4_4"
+    },
+    {
+      "name": "rods_3_4"
+    },
+    {
+      "name": "rods_2_4"
+    },
+    {
+      "name": "rods_1_4"
+    },
+    {
+      "name": "rods_0_4"
+    }
+  ]
+}

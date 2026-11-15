@@ -1,0 +1,96 @@
+<DefaultWindow xmlns="https://spacestation14.io"
+               xmlns:ui="clr-namespace:Content.Client._NSV13.Reactor.UI"
+               Title="{Loc 'rbmk-console-title'}"
+               SetSize="780 680"
+               MinSize="780 680"
+               Resizable="False">
+    <BoxContainer Orientation="Vertical" Margin="6" SeparationOverride="4">
+
+        <Label Name="StatusLabel"
+               Text="{Loc 'rbmk-console-no-reactor'}"
+               StyleClasses="LabelKeyText" />
+
+        <TabContainer Name="Tabs" VerticalExpand="True">
+
+            <!-- Every tab scrolls: the window cannot be resized, so a larger UI scale (or a
+                 translated string that wraps) must never clip the bottom row again. -->
+
+            <!-- ============ Control rod management (NSV13 RbmkControlRods) ============ -->
+            <ScrollContainer HScrollEnabled="False">
+                <BoxContainer Orientation="Vertical" Margin="8" SeparationOverride="6">
+                    <Label Text="{Loc 'rbmk-console-rods-header'}" StyleClasses="LabelHeading" />
+
+                    <Label Text="{Loc 'rbmk-console-insertion'}" />
+                    <ProgressBar Name="InsertionBar" MinValue="0" MaxValue="1" SetHeight="24">
+                        <Label Name="InsertionText" Margin="4 0" Text="--" />
+                    </ProgressBar>
+
+                    <Label Text="{Loc 'rbmk-console-k'}" />
+                    <ProgressBar Name="KBar" MinValue="0" MaxValue="1" SetHeight="24">
+                        <Label Name="KText" Margin="4 0" Text="--" />
+                    </ProgressBar>
+
+                    <Label Text="{Loc 'rbmk-console-target'}" />
+                    <Slider Name="RodSlider" MinValue="0" MaxValue="3" HorizontalExpand="True" />
+                    <Label Name="TargetText" Text="--" />
+                </BoxContainer>
+            </ScrollContainer>
+
+            <!-- ============ Statistics (NSV13 RbmkStats) ============ -->
+            <ScrollContainer HScrollEnabled="False">
+                <BoxContainer Orientation="Vertical" Margin="8 8 24 8" SeparationOverride="6">
+                    <Label Text="{Loc 'rbmk-console-legend'}" StyleClasses="LabelHeading" />
+
+                    <Label Text="{Loc 'rbmk-console-legend-power'}" />
+                    <ProgressBar Name="PowerBar" MinValue="0" MaxValue="100" SetHeight="22">
+                        <Label Name="PowerText" Margin="4 0" Text="--" />
+                    </ProgressBar>
+
+                    <Label Text="{Loc 'rbmk-console-legend-pressure'}" />
+                    <ProgressBar Name="PressureBar" MinValue="0" MaxValue="2000" SetHeight="22">
+                        <Label Name="PressureText" Margin="4 0" Text="--" />
+                    </ProgressBar>
+
+                    <Label Text="{Loc 'rbmk-console-legend-coolant'}" />
+                    <ProgressBar Name="CoolantInBar" MinValue="-273" MaxValue="1227" SetHeight="22">
+                        <Label Name="CoolantInText" Margin="4 0" Text="--" />
+                    </ProgressBar>
+
+                    <Label Text="{Loc 'rbmk-console-legend-outlet'}" />
+                    <ProgressBar Name="CoolantOutBar" MinValue="-273" MaxValue="1227" SetHeight="22">
+                        <Label Name="CoolantOutText" Margin="4 0" Text="--" />
+                    </ProgressBar>
+
+                    <PanelContainer StyleClasses="Inset" SetHeight="220">
+                        <ui:ReactorChart Name="StatsChart" Margin="4" />
+                    </PanelContainer>
+
+                    <GridContainer Columns="4" HSeparationOverride="12" VSeparationOverride="4">
+                        <Label Text="{Loc 'rbmk-console-temperature'}" StyleClasses="LabelSubText" />
+                        <Label Name="TemperatureLabel" Text="--" />
+                        <Label Text="{Loc 'rbmk-console-integrity'}" StyleClasses="LabelSubText" />
+                        <Label Name="IntegrityLabel" Text="--" />
+
+                        <Label Text="{Loc 'rbmk-console-radiation'}" StyleClasses="LabelSubText" />
+                        <Label Name="RadiationLabel" Text="--" />
+                        <Label Text="{Loc 'rbmk-console-fuel-rods'}" StyleClasses="LabelSubText" />
+                        <Label Name="FuelRodsLabel" Text="--" />
+                    </GridContainer>
+
+                    <Label Name="IntegrityDiagnosisLabel" Text="" StyleClasses="LabelSubText" />
+                </BoxContainer>
+            </ScrollContainer>
+
+            <!-- ============ Fuel management (NSV13 fuel console) ============ -->
+            <BoxContainer Orientation="Vertical" Margin="8" SeparationOverride="6">
+                <Label Text="{Loc 'rbmk-console-mounted-rods'}" StyleClasses="LabelHeading" />
+                <ScrollContainer HScrollEnabled="False" VerticalExpand="True">
+                    <BoxContainer Name="RodList" Orientation="Vertical" SeparationOverride="4" Margin="0 0 16 0" />
+                </ScrollContainer>
+            </BoxContainer>
+
+        </TabContainer>
+
+        <Label Name="MessageLabel" Text="" />
+    </BoxContainer>
+</DefaultWindow>
