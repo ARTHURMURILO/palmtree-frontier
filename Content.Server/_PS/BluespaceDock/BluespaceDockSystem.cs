@@ -28,6 +28,8 @@ using Content.Server._PS.ShipCombat;
 using Content.Server.Access.Systems;
 using Content.Server.Administration.Logs;
 using Content.Server.Popups;
+using Content.Server._NSV13.Reactor.Components;
+using Content.Server._NSV13.Reactor.Systems;
 using Content.Server.Radio.EntitySystems;
 using Content.Server.Preferences.Managers;
 using Content.Server.Power.Components;
@@ -162,6 +164,11 @@ public sealed class BluespaceDockSystem : EntitySystem
     [Dependency] private readonly ThrusterSystem _thruster = default!;
     [Dependency] private readonly GameTicker _gameTicker = default!;
     [Dependency] private readonly UserInterfaceSystem _ui = default!;
+
+    // Palmtree: the ship reactors, so the dock can refuse to store a live core and (for the admin
+    // force-dock path) safe one first. See FindLiveReactor / SafeReactors.
+    [Dependency] private readonly RbmkReactorSystem _rbmk = default!;
+    [Dependency] private readonly StormdriveSystem _stormdrive = default!;
 
     /// <summary>Name of the registry file. It lives next to the ship files, so anything that walks
     /// that folder has to skip it.</summary>
@@ -719,6 +726,8 @@ public sealed class BluespaceDockSystem : EntitySystem
     /// the file cannot carry) is stripped, so a written file is always loadable.
     /// <paramref name="stripped"/> receives what was removed so the caller can restore it when the
     /// save fails; a caller that does not pass a list leaves the ship stripped.
+    /// The reactors' transient state is normalised before the write and restored on every failure
+    /// path, so a save that does not happen leaves the machines untouched.
     /// </remarks>
     public bool TrySaveShipFile(EntityUid shuttleUid, string relativePath, out string? error,
         List<(EntityUid Ent, EntityUid Station, bool Member, bool Bound)>? stripped = null,
@@ -735,12 +744,26 @@ public sealed class BluespaceDockSystem : EntitySystem
             return false;
         }
 
+        // Palmtree: a running or hot reactor may not be stored either. Its state is serialized but
+        // the gas behind it is not, so it would come back live and starve. The admin force-dock
+        // path safes the cores first (`forcedock --scram`), after which this check passes.
+        if (FindLiveReactor(shuttleUid) is not null)
+        {
+            error = "bluespace-dock-error-live-reactor-aboard";
+            return false;
+        }
+
         var path = new ResPath($"{ShipDirectory}/{relativePath}");
 
         // In-flight projectiles are runtime state and are never saved: a stored bolt would come
         // back frozen, and a shot left flying in the world would keep pointing at a weapon that
         // goes into the dock with the ship.
         DeleteProjectiles(shuttleUid);
+
+        // The cooldown reset also normalises the reactors' transient state (see
+        // NormalizeReactorRuntime). Copy that state first: the grid is still in the world, and a save
+        // that does not happen must not change it.
+        var reactorRuntime = CaptureReactorRuntime(shuttleUid);
 
         // Cooldowns are absolute round times, and they must not outlive the round they were started
         // in (see ResetRuntimeCooldowns).
@@ -782,6 +805,7 @@ public sealed class BluespaceDockSystem : EntitySystem
                     && !TrySaveGrid(shuttleUid, path, MissingEntityBehaviour.Ignore, EntityExceptionBehaviour.IgnoreEntityAndChildren))
                 {
                     error = "bluespace-dock-error-save-failed";
+                    RestoreReactorRuntime(reactorRuntime);
                     return false;
                 }
 
@@ -807,6 +831,7 @@ public sealed class BluespaceDockSystem : EntitySystem
             if (string.IsNullOrWhiteSpace(text))
             {
                 error = "bluespace-dock-error-save-empty";
+                RestoreReactorRuntime(reactorRuntime);
                 return false;
             }
 
@@ -819,6 +844,7 @@ public sealed class BluespaceDockSystem : EntitySystem
             if (yaml.Documents.Count == 0)
             {
                 error = "bluespace-dock-error-save-empty";
+                RestoreReactorRuntime(reactorRuntime);
                 return false;
             }
 
@@ -833,6 +859,7 @@ public sealed class BluespaceDockSystem : EntitySystem
         {
             _sawmill.Error($"Exception while saving ship {ToPrettyString(shuttleUid)}: {e}");
             error = "bluespace-dock-error-save-failed";
+            RestoreReactorRuntime(reactorRuntime);
             return false;
         }
     }
@@ -1750,6 +1777,20 @@ public sealed class BluespaceDockSystem : EntitySystem
             // ship must never come back with its buttons, switches or tools "on cooldown".
             ResetRuntimeCooldowns(shuttleUid.Value);
 
+            // Palmtree: everything this build writes is cold and stopped (FindLiveReactor is the
+            // store gate), but a file written before the gate existed - or a hand-edited one - can
+            // still carry a running or hot core. The transient flags were just normalised; what is
+            // left is the running/temperature state, so restore the gate's invariant here instead of
+            // letting a retrieved ship come back live with no gas behind it. This is defensive
+            // policy for pre-gate files; see .ai/ideas/reactor-ship-persistence.md.
+            if (FindLiveReactor(shuttleUid.Value) is { } liveReactor)
+            {
+                var safed = SafeReactors(shuttleUid.Value);
+                _sawmill.Warning($"Ship file {relativePath} contains a live reactor " +
+                                 $"({ToPrettyString(liveReactor)}); safed {safed} live reactor(s) on load " +
+                                 "so the retrieved ship is cold and stopped");
+            }
+
             // A stored ship is saved from a live grid, so every entity in the file carries
             // `mapInit: true` and the engine deliberately **skips MapInitEvent** when loading them
             // (it only bumps their life stage - that is what makes a re-loaded live save keep its
@@ -2502,6 +2543,142 @@ public sealed class BluespaceDockSystem : EntitySystem
 
             if (TryComp<MaterialReclaimerMagnetPickupComponent>(uid, out var reclaimerMagnet))
                 reclaimerMagnet.NextScan = TimeSpan.Zero;
+
+            // Reactors: the gate (FindLiveReactor) already refuses a running or hot core, so this is
+            // the belt-and-braces half - the timers and toggles the gate cannot see. It runs on save
+            // and on load, so a retrieved reactor has the same transient timers and toggles cleared
+            // as a normal shutdown, while its permanent state (temperature, setpoint, rods) is
+            // preserved. It is deliberately not the whole machine a shutdown leaves behind: ShutDown
+            // also zeroes Temperature/DesiredK.
+            NormalizeReactorRuntime(uid);
+        }
+    }
+
+    /// <summary>
+    /// Palmtree: clears the transient half of a reactor's state before a ship file is written, and
+    /// again after one is loaded.
+    /// </summary>
+    /// <remarks>
+    /// This is not the store gate: <see cref="FindLiveReactor"/> still refuses a running or hot core,
+    /// and a slagged RBMK stays a slagged RBMK. It covers the state the gate cannot see and the
+    /// toggles that would make a retrieved machine behave differently from a stored one:
+    /// <list type="bullet">
+    /// <item>the RBMK alert flag and its absolute-round-clock tick/flicker timers;</item>
+    /// <item>the stormdrive meltdown fuse, warning flag, process/alert/gravity/countdown timers, and
+    /// the player-facing <c>DumpingFuel</c> toggle (a stored drive must not come back venting its
+    /// fuel line into the waste pipe with nobody aboard).</item>
+    /// </list>
+    /// Permanent facts are deliberately untouched: <c>VesselIntegrity</c>, <c>Slagged</c>,
+    /// <c>DesiredK</c>, fuel-rod depletion and age, control-rod percentages, <c>ReactorId</c>. The
+    /// loaded fuel/control rod lists are rebuilt by the reactors' own <c>ComponentStartup</c>
+    /// handlers, not here.
+    /// </remarks>
+    private void NormalizeReactorRuntime(EntityUid uid)
+    {
+        if (TryComp<RbmkReactorComponent>(uid, out var rbmk))
+        {
+            rbmk.AlertActive = false;
+            rbmk.NextTick = TimeSpan.Zero;
+            rbmk.NextFlicker = TimeSpan.Zero;
+        }
+
+        if (TryComp<StormdriveComponent>(uid, out var drive))
+        {
+            drive.ReactorEndTimes = false;
+            drive.MeltdownAt = TimeSpan.Zero;
+            drive.WarningState = StormdriveWarning.None;
+            drive.NextProcess = TimeSpan.Zero;
+            drive.NextAlert = TimeSpan.Zero;
+            drive.NextCountdownAnnounce = TimeSpan.Zero;
+            drive.NextGravityPull = TimeSpan.Zero;
+            drive.DumpingFuel = false;
+        }
+    }
+
+    /// <summary>
+    /// One reactor's transient state, plus the action that puts it back.
+    /// </summary>
+    private sealed record ReactorRuntimeSnapshot(EntityUid Reactor, Action Restore);
+
+    /// <summary>
+    /// Palmtree: captures the transient reactor state that <see cref="NormalizeReactorRuntime"/>
+    /// clears, so a failed save can restore it. A store that does not happen must not change the
+    /// machine.
+    /// </summary>
+    private List<ReactorRuntimeSnapshot> CaptureReactorRuntime(EntityUid grid)
+    {
+        var entities = new HashSet<EntityUid>();
+        GetEntitiesOnGrid(grid, entities);
+
+        var snapshots = new List<ReactorRuntimeSnapshot>();
+        foreach (var uid in entities)
+        {
+            if (!Exists(uid))
+                continue;
+
+            if (TryComp<RbmkReactorComponent>(uid, out var rbmk))
+            {
+                var alertActive = rbmk.AlertActive;
+                var nextTick = rbmk.NextTick;
+                var nextFlicker = rbmk.NextFlicker;
+                snapshots.Add(new ReactorRuntimeSnapshot(uid, () =>
+                {
+                    if (!TryComp<RbmkReactorComponent>(uid, out var current))
+                        return;
+
+                    current.AlertActive = alertActive;
+                    current.NextTick = nextTick;
+                    current.NextFlicker = nextFlicker;
+                }));
+            }
+
+            if (TryComp<StormdriveComponent>(uid, out var drive))
+            {
+                var reactorEndTimes = drive.ReactorEndTimes;
+                var meltdownAt = drive.MeltdownAt;
+                var warningState = drive.WarningState;
+                var nextProcess = drive.NextProcess;
+                var nextAlert = drive.NextAlert;
+                var nextCountdownAnnounce = drive.NextCountdownAnnounce;
+                var nextGravityPull = drive.NextGravityPull;
+                var dumpingFuel = drive.DumpingFuel;
+                snapshots.Add(new ReactorRuntimeSnapshot(uid, () =>
+                {
+                    if (!TryComp<StormdriveComponent>(uid, out var current))
+                        return;
+
+                    current.ReactorEndTimes = reactorEndTimes;
+                    current.MeltdownAt = meltdownAt;
+                    current.WarningState = warningState;
+                    current.NextProcess = nextProcess;
+                    current.NextAlert = nextAlert;
+                    current.NextCountdownAnnounce = nextCountdownAnnounce;
+                    current.NextGravityPull = nextGravityPull;
+                    current.DumpingFuel = dumpingFuel;
+                }));
+            }
+        }
+
+        return snapshots;
+    }
+
+    /// <summary>
+    /// Palmtree: puts back the reactor transient state captured by
+    /// <see cref="CaptureReactorRuntime"/> after a save that did not happen.
+    /// </summary>
+    private void RestoreReactorRuntime(List<ReactorRuntimeSnapshot> snapshots)
+    {
+        foreach (var snapshot in snapshots)
+        {
+            try
+            {
+                snapshot.Restore();
+            }
+            catch (Exception e)
+            {
+                _sawmill.Error($"Could not restore the transient state of reactor " +
+                               $"{ToPrettyString(snapshot.Reactor)} after a failed save: {e}");
+            }
         }
     }
 
@@ -2900,6 +3077,11 @@ public sealed class BluespaceDockSystem : EntitySystem
         if (!allowDangerousEngines && HasDangerousShipEntities(shuttleUid))
             return "bluespace-dock-error-dangerous-engine-aboard";
 
+        // Palmtree: no live reactor leaves the dock. This is not skippable by the admin flags above:
+        // force-dock safes the cores first (`forcedock --scram`), it does not smuggle them out.
+        if (FindLiveReactor(shuttleUid) is not null)
+            return "bluespace-dock-error-live-reactor-aboard";
+
         if (!allowOrganics && FoundOrganics(shuttleUid) is not null)
             return "bluespace-dock-error-organic-aboard";
 
@@ -2963,6 +3145,11 @@ public sealed class BluespaceDockSystem : EntitySystem
 
         _busyShips.Add(shuttleUid);
 
+        // The save normalises the reactors' transient state and keeps it on success; if the store
+        // still fails afterwards (the bank refusal is the real case) the ship stays in the world,
+        // so hold a copy to put back. See CaptureReactorRuntime.
+        var reactorRuntime = CaptureReactorRuntime(shuttleUid);
+
         try
         {
             // Anything alive (or dead but revivable) gets off the ship first: neither the saved file
@@ -3013,6 +3200,7 @@ public sealed class BluespaceDockSystem : EntitySystem
             if (cost > 0 && payer is { } who && !_bank.TryBankWithdraw(who, cost))
             {
                 DeleteShipFile(fileName);
+                RestoreReactorRuntime(reactorRuntime);
                 RestoreStoreFailure(shuttleUid, shipStation, dockedTo, stripped, deed);
                 error = "bluespace-dock-error-insufficient-funds";
                 return false;
@@ -3053,6 +3241,7 @@ public sealed class BluespaceDockSystem : EntitySystem
             // undocked: put it back the way it was instead of leaving its machinery station-less.
             try
             {
+                RestoreReactorRuntime(reactorRuntime);
                 RestoreStoreFailure(shuttleUid, shipStation, dockedTo, stripped, deed);
             }
             catch (Exception restoreException)
@@ -3658,6 +3847,112 @@ public sealed class BluespaceDockSystem : EntitySystem
         // The sliver and the small discharge balls do not carry the full engine components.
         var prototype = MetaData(uid).EntityPrototype?.ID;
         return prototype is "SupermatterSliver" or "TeslaMiniEnergyBall" or "SupermatterZapBall";
+    }
+
+    /// <summary>Temperature below which a reactor counts as cold enough to store, in Celsius.</summary>
+    private const float ReactorStorageMaxTemperature = 50f;
+
+    /// <summary>
+    /// Palmtree: the first reactor on the grid that is not safe to store, or null when they all are.
+    /// </summary>
+    /// <remarks>
+    /// A reactor's running state and temperature are serialized, but the gas behind it is not: a
+    /// live core comes back live with an empty pipe network, starves, starts eating its own vessel
+    /// integrity, and can melt down with nobody watching. A slagged RBMK is deliberately allowed -
+    /// a wreck is legitimate cargo.
+    /// </remarks>
+    public EntityUid? FindLiveReactor(EntityUid gridUid)
+    {
+        var entities = new HashSet<EntityUid>();
+        GetEntitiesOnGrid(gridUid, entities);
+
+        foreach (var uid in entities)
+        {
+            if (IsLiveReactor(uid))
+                return uid;
+        }
+
+        return null;
+    }
+
+    private bool IsLiveReactor(EntityUid uid)
+    {
+        if (TryComp<RbmkReactorComponent>(uid, out var rbmk))
+        {
+            // A slagged core is a wreck, not a running engine.
+            if (rbmk.Slagged)
+                return false;
+
+            return rbmk.IsRunning || rbmk.Temperature >= ReactorStorageMaxTemperature || rbmk.AlertActive;
+        }
+
+        if (TryComp<StormdriveComponent>(uid, out var drive))
+        {
+            if (drive.State is not (StormdriveState.Idle or StormdriveState.Maintenance))
+                return true;
+
+            return drive.Heat >= ReactorStorageMaxTemperature
+                   || drive.ReactorEndTimes
+                   || drive.WarningState != StormdriveWarning.None;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Palmtree: shut every live reactor on the grid down and bring it to storage temperature.
+    /// </summary>
+    /// <remarks>
+    /// Used by <c>forcedock --scram</c>. The ordinary store path refuses instead of doing this
+    /// (<see cref="FindLiveReactor"/>), so a live core is never silently safed behind the crew's
+    /// back: an admin has to ask for it, and the command logs it. A core that is already cold and
+    /// stopped is not live and is left exactly as it is: its setpoint and temperature are player
+    /// configuration, not something a store needs to erase.
+    /// </remarks>
+    /// <returns>How many live reactors were safed.</returns>
+    public int SafeReactors(EntityUid gridUid)
+    {
+        var entities = new HashSet<EntityUid>();
+        GetEntitiesOnGrid(gridUid, entities);
+
+        var safed = 0;
+        foreach (var uid in entities)
+        {
+            if (!IsLiveReactor(uid))
+                continue;
+
+            // Palmtree: isolate each core. A malformed legacy entity that throws in ShutDown or
+            // Deactivate must not abort the whole load (the same rule as
+            // RestoreMapInitRegistration); it is logged and the rest of the grid is still safed.
+            try
+            {
+                if (TryComp<RbmkReactorComponent>(uid, out var rbmk))
+                {
+                    _rbmk.ShutDown(uid, rbmk);
+                    rbmk.Temperature = Math.Min(rbmk.Temperature, 20f);
+                    rbmk.AlertActive = false;
+                    safed++;
+                    continue;
+                }
+
+                if (TryComp<StormdriveComponent>(uid, out var drive))
+                {
+                    _stormdrive.Deactivate(uid, drive);
+                    drive.Heat = Math.Min(drive.Heat, 20f);
+                    drive.ReactorEndTimes = false;
+                    drive.MeltdownAt = default;
+                    drive.WarningState = StormdriveWarning.None;
+                    safed++;
+                }
+            }
+            catch (Exception e)
+            {
+                _sawmill.Error($"Bluespace dock: failed to safe reactor {ToPrettyString(uid)} on a loaded ship; " +
+                               $"continuing with the rest of the grid: {e}");
+            }
+        }
+
+        return safed;
     }
 
     #endregion Ship state helpers
