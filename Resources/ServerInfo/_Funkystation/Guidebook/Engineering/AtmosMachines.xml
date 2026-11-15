@@ -23,7 +23,7 @@
 
   The crystallizer turns a gas mix into solid products. It has an [bold]inlet[/bold] and a [bold]regulator[/bold] pipe; the inlet carries the recipe gas, the regulator carries the gas that sets the temperature.
 
-  Open the UI, pick a [bold]recipe[/bold], set the [bold]gas input[/bold] rate, and keep the mix at the recipe's temperature and pressure. The UI shows the recipe's gas requirements in real time. Products include metal hydrogen, gas crystals, a single-use crystal power cell, diamond and plasma sheets.
+  Open the UI, pick a [bold]recipe[/bold], set the [bold]gas input[/bold] rate, and keep the mix at the recipe's temperature. The UI shows the recipe's gas requirements in real time. Products include metal hydrogen, gas crystals, a single-use crystal power cell, diamond and plasma sheets.
 
   The selected recipe and the input rate are saved with the machine, so a crystallizer resumes its job after a round restart.
 
