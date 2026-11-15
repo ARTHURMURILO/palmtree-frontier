@@ -2180,3 +2180,12 @@ Entries:
   id: 90144
   time: '2026-11-15T20:55:05.0000000+00:00'
   url: https://github.com/xTheLifex/palmtree-frontier/pull/11
+- author: ARTHURMURILO
+  changes:
+    - type: Fix
+      message: >-
+        The heat pump circuit board can now be printed on the circuit imprinter
+        and other lathes that can print the thermomachine freezer board.
+  id: 90145
+  time: '2026-11-15T20:55:14.0000000+00:00'
+  url: https://github.com/xTheLifex/palmtree-frontier/pull/12
