@@ -154,8 +154,6 @@ undershirts) so hiding a parent hides its sublayers.
      (`DirectionalLayerOrderSystem`) rebuilds the sprite when the cardinal or side-facing state
      changes. Uncovered breast markings are inserted below the neck clothing layer in every
      direction, so scarves/cloaks cover breasts while hair and the head remain above the cloak.
-     South-facing butt markings are anchored below the breast/neck group so breasts draw over the
-     butt; other directions keep the existing organ order.
      Under-clothing genital insertions anchor to stable layers, not `jumpsuit`/`outerClothing`:
      bottom organs (butt, vagina, balls, penis, belly) anchor above `LLeg` so they render below
      `UndergarmentBottom`, while breast markings anchor above `UndergarmentBottom` so they render

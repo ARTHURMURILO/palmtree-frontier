@@ -131,8 +131,6 @@ queries).
    every direction (south included); without one, south keeps the genitals-over-hair rule.
    The client also inserts uncovered breast markings below the neck clothing layer in every
    direction, so scarves and cloaks cover breasts while hair and the head remain above the cloak.
-   South-facing butt markings are anchored below that breast/neck group so breasts draw over the
-   butt; other directions keep the existing organ order.
 
 ## Cum, drip and washing
 

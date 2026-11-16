@@ -310,7 +310,6 @@ public sealed class GenitalOrganSystem : EntitySystem
                 OtherCanToggleVisible = false,
                 RenderOverClothing = organ.Visibility == GenitalVisibility.NeverHidden,
                 RenderUnderTopUndergarment = organ.GenitalType == GenitalType.Breasts,
-                RenderBelowNeck = organ.GenitalType == GenitalType.Butt,
             };
 
             if (organ.Offset != Vector2.Zero)
