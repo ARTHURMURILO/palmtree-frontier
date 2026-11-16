@@ -2202,3 +2202,13 @@ Entries:
         instead of silently attempting an invalid shot.
   id: 90146
   time: '2026-11-15T21:13:43.0000000+00:00'
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: Fixed leg markings rendering above the butt and genitals.
+    - type: Fix
+      message: Breasts now render above exposed butt markings when facing south.
+  id: 90147
+  time: '2026-11-16T03:57:21.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/c6a3cc004ad71f07289a15888560b624c77458f2
