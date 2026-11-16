@@ -48,7 +48,10 @@ using Robust.Shared.Prototypes;
 using Robust.Shared.Random;
 using Robust.Shared.Timing;
 using Content.Shared.DeviceLinking;
+using Content.Shared.Construction.Components;
 using Content.Shared.Tag; // Coyote: Tag for the trash check
+using Content.Shared.Tools.Components;
+using Content.Shared.Tools.Systems;
 
 namespace Content.Server._EE.Supermatter.Systems;
 
@@ -76,6 +79,7 @@ public sealed partial class SupermatterSystem : EntitySystem
     [Dependency] private IGameTiming _timing = default!;
     [Dependency] private IRobustRandom _random = default!;
     [Dependency] private TagSystem _tag = default!; // Coyote: Tag for the trash check
+    [Dependency] private SharedToolSystem _tool = default!; // Palmtree: anchoring the shard
     [Dependency] private ShipEventSystem _shipEvent = default!;
     [Dependency] private IAdminManager _admin = default!;
     [Dependency] private UserInterfaceSystem _ui = default!;
@@ -238,6 +242,16 @@ public sealed partial class SupermatterSystem : EntitySystem
             HasComp<GodmodeComponent>(item))
             return;
         // Triad: dropped a duplicated immune/godmode check that repeated the two conditions above
+
+        // Palmtree: bolting a shard down is a legitimate interaction with the machine, not an
+        // offering to it. Without this the crystal eats the wrench before the anchor do-after can
+        // finish, so a shard could never be secured by hand - and touching it woke it up.
+        if (TryComp<AnchorableComponent>(uid, out var anchorable) &&
+            TryComp<ToolComponent>(item, out var tool) &&
+            _tool.HasQuality(item, anchorable.Tool, tool))
+        {
+            return;
+        }
 
         sm.Activated = true;
 
