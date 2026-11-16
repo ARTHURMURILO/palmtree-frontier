@@ -51,6 +51,8 @@
     FacialHair: MobHumanoidAnyMarking
     Snout: MobHumanoidAnyMarking
     Genital: MobHumanoidAnyMarking
+    GenitalUnder: MobHumanoidAnyMarking
+    GenitalLow: MobHumanoidAnyMarking
     RArmExtension: MobHumanoidAnyMarking # Adds Wing Slot, this will look weird as fuck
     # End Coyote
 

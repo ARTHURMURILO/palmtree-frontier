@@ -131,6 +131,11 @@ queries).
    every direction (south included); without one, south keeps the genitals-over-hair rule.
    The client also inserts uncovered breast markings below the neck clothing layer in every
    direction, so scarves and cloaks cover breasts while hair and the head remain above the cloak.
+   `GenitalUnder` sits immediately before `neck`; exposed south-facing butt markings go there so
+   breasts draw over the butt without dropping it onto the leg/body layers. `GenitalLow` sits after
+   `LLeg` and before `UndergarmentBottom`; under-clothing bottom organs anchor there so leg markings
+   cannot draw over them. See `marking-and-appearance.md` for the option-3 explicit render-priority
+   design if this needs to be replaced.
 
 ## Cum, drip and washing
 

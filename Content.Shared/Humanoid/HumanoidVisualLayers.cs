@@ -45,5 +45,7 @@ namespace Content.Shared.Humanoid
         UndershirtUnderclothes, // Palmtree/Floof
         UndershirtOverclothes, // Palmtree/Floof
         Disregard, // Palmtree/Floof: used as a null target for base-layer conversions
+        GenitalUnder, // Palmtree: genital sublayer below the neck/breast group but above body markings
+        GenitalLow, // Palmtree: genital sublayer below clothing but above body/leg markings
     }
 }

@@ -53,6 +53,8 @@
     UndergarmentTop: MobHumanoidAnyMarking
     UndergarmentBottom: MobHumanoidAnyMarking
     Genital: MobHumanoidAnyMarking
+    GenitalUnder: MobHumanoidAnyMarking
+    GenitalLow: MobHumanoidAnyMarking
     NeckFluff: MobHumanoidAnyMarking
 
 - type: markingPoints

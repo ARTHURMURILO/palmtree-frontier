@@ -15,6 +15,8 @@
   id: MobSlimeSprites
   sprites:
     Genital: MobHumanoidAnyMarking
+    GenitalUnder: MobHumanoidAnyMarking
+    GenitalLow: MobHumanoidAnyMarking
     Special: MobHumanoidAnyMarking # Palmtree: cat ears and other special markings must render
     Tail: MobHumanoidAnyMarking # Palmtree: tails (the layer existed only as TailBehind/TailOversuit)
     TailBehind: MobHumanoidAnyMarking

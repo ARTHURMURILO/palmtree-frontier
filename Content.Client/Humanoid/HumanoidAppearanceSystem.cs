@@ -430,7 +430,7 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
                 {
                     // Palmtree/Coyote: swap the marking for its alternate-leg-style version if one exists.
                     markingPrototype = GetMarkingForLegStyle(humanoid, markingPrototype);
-                    ApplyMarking(markingPrototype, marking.MarkingColors, marking.Visible, entity, marking.MarkingScale, marking.MarkingOffset, marking.MarkingGlow, marking.RenderOverClothing, marking.RenderUnderTopUndergarment);
+                    ApplyMarking(markingPrototype, marking.MarkingColors, marking.Visible, entity, marking.MarkingScale, marking.MarkingOffset, marking.MarkingGlow, marking.RenderOverClothing, marking.RenderUnderTopUndergarment, marking.RenderBelowNeck);
                     if (markingPrototype.BodyPart == HumanoidVisualLayers.UndergarmentTop)
                         applyUndergarmentTop = false;
                     else if (markingPrototype.BodyPart == HumanoidVisualLayers.UndergarmentBottom)
@@ -536,7 +536,8 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
         Vector2? offset = null,
         IReadOnlyList<float>? glowLevels = null,
         bool renderOverClothing = false,
-        bool renderUnderTopUndergarment = false)
+        bool renderUnderTopUndergarment = false,
+        bool renderBelowNeck = false)
         // Palmtree/Coyote End
     {
         var humanoid = entity.Comp1;
@@ -617,6 +618,19 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
                 && markingPrototype.Layering.TryGetValue(rsi.RsiState, out var parsedLayer))
             {
                 layerSlot = parsedLayer;
+            }
+
+            // Palmtree: exposed south-facing butt markings go to the dedicated sublayer below the
+            // breast/neck group, keeping them above body/leg markings. Clothed or covered butts keep
+            // the normal Genital layer and its under-clothing clamp.
+            if (layerSlot == HumanoidVisualLayers.Genital
+                && renderBelowNeck
+                && !renderOverClothing
+                && screenDirection == RsiDirection.South
+                && !HasCoveringClothing(entity.Owner)
+                && !HasVisibleUndergarment(humanoid, MarkingCategories.UndergarmentBottom))
+            {
+                layerSlot = HumanoidVisualLayers.GenitalUnder;
             }
 
             if (!_sprite.LayerMapTryGet((entity.Owner, sprite), layerSlot, out var targetLayer, false))
@@ -710,7 +724,9 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
                     }
                     else
                     {
-                        if (_sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.LLeg, out var leftLegLayer, false))
+                        if (_sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.GenitalLow, out var genitalLowLayer, false))
+                            layerAnchor = genitalLowLayer + 1;
+                        else if (_sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.LLeg, out var leftLegLayer, false))
                             layerAnchor = leftLegLayer + 1;
                         else if (_sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.RLeg, out var rightLegLayer, false))
                             layerAnchor = rightLegLayer + 1;
@@ -892,7 +908,7 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
             foreach (var marking in markingList)
             {
                 if (_markingManager.TryGetMarking(marking, out var markingPrototype) && markingPrototype.BodyPart == layer)
-                    ApplyMarking(markingPrototype, marking.MarkingColors, marking.Visible, (ent, ent.Comp, sprite), marking.MarkingScale, marking.MarkingOffset, marking.MarkingGlow, marking.RenderOverClothing, marking.RenderUnderTopUndergarment);
+                    ApplyMarking(markingPrototype, marking.MarkingColors, marking.Visible, (ent, ent.Comp, sprite), marking.MarkingScale, marking.MarkingOffset, marking.MarkingGlow, marking.RenderOverClothing, marking.RenderUnderTopUndergarment, marking.RenderBelowNeck);
             }
         }
     }

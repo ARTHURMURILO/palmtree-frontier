@@ -118,9 +118,9 @@ characters).
 
 ## Layers
 
-`HumanoidVisualLayers` now includes the Floof layers: `Genital`, `TailBehind`, `TailOversuit`,
-`NeckFluff`, `RLegBehind`/`LLegBehind`, `RFootBehind`/`LFootBehind`, `UndershirtUnderclothes`,
-`UndershirtOverclothes`, `TailExtras`, `Disregard`.
+`HumanoidVisualLayers` now includes the Floof layers: `Genital`, `GenitalUnder`, `GenitalLow`,
+`TailBehind`, `TailOversuit`, `NeckFluff`, `RLegBehind`/`LLegBehind`, `RFootBehind`/`LFootBehind`,
+`UndershirtUnderclothes`, `UndershirtOverclothes`, `TailExtras`, `Disregard`.
 
 Layer maps must exist in two places for a species to render a marking on that layer:
 
@@ -161,6 +161,11 @@ undershirts) so hiding a parent hides its sublayers.
      so multi-sprite markings (e.g. breast + nipple, butt front + mid) stay ordered. If a visible
      relevant undergarment is worn, this clamp applies in every direction (so panties cover the
      butt even when facing south); without one, south keeps the exposed-genitals-over-hair rule.
+     `GenitalUnder` is a dedicated sublayer immediately before `neck` (above body/leg markings but
+     below breasts/neck clothing). Exposed south-facing butt markings are routed there so breasts
+     render above the butt without dropping it onto the leg/body layers. `GenitalLow` sits after
+     `LLeg` and before `UndergarmentBottom`; clamped bottom organs anchor there so leg markings stay
+     below them while clothing still covers them.
      When a color's glow is > 0 it also creates a companion `<markingId>-<state>-glow` layer with the
      `unshaded` shader, splitting alpha so the composed alpha is preserved.
    - Base markings (`Base*` categories) add their target layer to `HiddenBaseLayers` via
@@ -169,6 +174,23 @@ undershirts) so hiding a parent hides its sublayers.
    parts).
 5. Genital markings are hidden by default (`AddMarking` sets `Visible = false` for the Genital
    category) and toggled at runtime through `ModifyUndies`.
+
+## Design note: explicit genital render priority (option 3)
+
+If the `GenitalUnder` approach proves insufficient, the next option is an explicit per-marking
+render sort key instead of relying on insertion anchors:
+
+- Add a transient `Marking.RenderPriority` (int) set by `GenitalOrganSystem.SyncRender` from
+  `GenitalType`: butt = 0, vagina = 1, balls = 2, penis = 3, belly = 4, breasts = 5 (current
+  reverse-priority add order already encodes this).
+- In `ApplyMarkingSet`, collect genital render layers, then insert them in a direction-aware order:
+  south = butt < breasts < other organs; north = breasts < butt; east/west = breasts < butt (current
+  clamped order).
+- Always insert the group at the `GenitalUnder`/`Genital` region above body markings, never at the
+  `LLeg` undergarment anchor, so leg/body markings cannot draw over genitals.
+- Keep the per-sprite offset for multi-sprite organs and test all four directions plus covered
+  (jumpsuit/undergarment) cases.
+
 
 ## ModifyUndies (marking toggle verbs)
 

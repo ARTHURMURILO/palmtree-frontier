@@ -32,6 +32,8 @@
     UndergarmentTop: MobHumanoidAnyMarking
     UndergarmentBottom: MobHumanoidAnyMarking
     Genital: MobHumanoidAnyMarking
+    GenitalUnder: MobHumanoidAnyMarking
+    GenitalLow: MobHumanoidAnyMarking
     Tail: MobHumanoidAnyMarking
     Eyes: MobHumanoidEyes
     LArm: MobRodentiaLArm

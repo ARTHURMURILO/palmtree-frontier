@@ -26,6 +26,8 @@
     UndershirtUnderclothes: MobHumanoidAnyMarking # Palmtree/Floof
     UndershirtOverclothes: MobHumanoidAnyMarking # Palmtree/Floof
     Genital: MobHumanoidAnyMarking
+    GenitalUnder: MobHumanoidAnyMarking
+    GenitalLow: MobHumanoidAnyMarking
     Chest: MobOviniaTorso
     NeckFluff: MobHumanoidAnyMarking
     Hair: MobHumanoidAnyMarking

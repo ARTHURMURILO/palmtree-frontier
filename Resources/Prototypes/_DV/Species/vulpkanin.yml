@@ -19,6 +19,8 @@
   id: MobVulpkaninSprites
   sprites:
     Genital: MobHumanoidAnyMarking
+    GenitalUnder: MobHumanoidAnyMarking
+    GenitalLow: MobHumanoidAnyMarking
     TailBehind: MobHumanoidAnyMarking
     Head: MobVulpkaninHead
     Hair: MobHumanoidAnyMarking
