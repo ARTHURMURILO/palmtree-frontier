@@ -8,6 +8,9 @@
   name: Uzi
   description: A lightweight, burst-fire submachine gun, for when you really want someone dead. Uses 9mm rounds.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/Uzi.rsi
   - type: Clothing
@@ -35,6 +38,9 @@
   name: American180
   description: An integrally suppressed submachinegun chambered in the common .22 long rifle. Top loaded drum magazine.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/American180.rsi
   - type: Clothing
@@ -62,6 +68,9 @@
   name: P90
   description: The Fabrique Nationale P90c was just coming into use at the time of the war. The weapon's bullpup layout and compact design make it easy to control. Chambered in 10mm.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/P90.rsi
   - type: Clothing
@@ -120,6 +129,9 @@
   name: MP5
   description: A lightweight submachine gun that earned its place as one of the most popular SMGs in the world.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/MP5.rsi
   - type: Clothing
@@ -147,6 +159,9 @@
   name: PPSh
   description: An extremely fast firing, inaccurate submachine gun from World War 2. Low muzzle velocity. Uses 9mm rounds.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/PPSh.rsi
   - type: Clothing

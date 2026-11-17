@@ -3,7 +3,7 @@
   id: NFWardrobePrison
   parent: WardrobeBase
   name: prisoner wardrobe
-  description: It's a storage unit for Space Law compliant prisoner garb.
+  description: It's a storage unit for Frontier Sector Code compliant prisoner garb.
   components:
   - type: Appearance
   - type: EntityStorageVisuals

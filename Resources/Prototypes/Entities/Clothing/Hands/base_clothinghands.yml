@@ -30,14 +30,21 @@
   - type: PirateBountyItem # Frontier
     id: ClothingHandsGloves # Frontier
   - type: RingHolder # Palmtree: rings can be attached to gloves
-    ringSlot:
-      whitelist:
-        tags:
-        - Ring
-      insertSound: null
-      ejectSound: null
-      swap: false
-      ejectOnBreak: true
+  # The ring slot is declared here instead of being created at runtime: components added on spawn make
+  # PrototypeSaveTest.UninitializedSaveTest flag every glove as gaining ItemSlots/ContainerContainer.
+  - type: ItemSlots
+    slots:
+      ring0:
+        whitelist:
+          tags:
+          - Ring
+        insertSound: null
+        ejectSound: null
+        swap: false
+        ejectOnBreak: true
+  - type: ContainerContainer
+    containers:
+      ring0: !type:ContainerSlot {}
 
 - type: entity
   abstract: true

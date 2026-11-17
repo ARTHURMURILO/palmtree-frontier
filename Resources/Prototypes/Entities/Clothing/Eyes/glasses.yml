@@ -272,7 +272,7 @@
       - WhitelistChameleon
 
 - type: entity
-  parent: [ClothingEyesBase, BaseC3Contraband, ContrabandClothing] # Frontier: BaseMajorContraband<BaseC3Contraband added ContrabandClothing as parent
+  parent: [ClothingEyesBase, BaseC5ContrabandUnredeemable, ContrabandClothing] # Frontier: BaseMajorContraband<BaseC5ContrabandUnredeemable added ContrabandClothing as parent
   id: ClothingEyesVisorNinja
   name: ninja visor
   description: An advanced visor protecting a ninja's eyes from flashing lights.

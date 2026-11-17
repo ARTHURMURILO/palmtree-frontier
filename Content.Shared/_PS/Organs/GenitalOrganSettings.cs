@@ -21,7 +21,7 @@ public sealed partial class GenitalOrganSettings
 {
     public const int DefaultSemenVolume = 30;
     public const int MinSemenVolume = 1;
-    public const int MaxSemenVolume = 300;
+    public const int MaxSemenVolume = 500;
 
     public const float MinScale = 0.25f;
     public const float MaxScale = 3f;

@@ -788,6 +788,9 @@
   name: organic space suit
   description: A spaceworthy biomass of pressure and temperature resistant tissue.
   components:
+  - type: Contraband
+    severity: Class5
+    allowedDepartments: []
   - type: Sprite
     sprite: Clothing/OuterClothing/Hardsuits/lingspacesuit.rsi
   - type: Clothing

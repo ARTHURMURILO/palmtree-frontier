@@ -337,8 +337,8 @@
 - type: entity
   id: BookSpaceLaw
   parent: BaseGuidebook
-  name: space law
-  description: A set of Nanotrasen guidelines for keeping law and order on their space stations.
+  name: frontier sector code
+  description: The Frontier Sector Code, the in-character law of the Frontier Sector.
   components:
   - type: Sprite
     layers:
@@ -347,9 +347,10 @@
       color: "#87011c"
     - state: icon_law
       color: "#f7d61a"
-  # - type: GuideHelp # Frontier
-  #   guides: # Frontier
-  #   - SpaceLaw # Frontier
+  - type: GuideHelp
+    openOnActivation: true
+    guides:
+    - FrontierCode
 
 - type: entity
   parent: BookBase

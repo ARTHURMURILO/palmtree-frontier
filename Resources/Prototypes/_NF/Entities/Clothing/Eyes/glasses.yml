@@ -4,6 +4,9 @@
   parent: [ ClothingEyesBase, BaseC3ContrabandNoValue, ContrabandClothing ]
   description: A visor produced by Arcadia Industries, with some high tech optics systems built in.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _NF/Clothing/Eyes/Glasses/arcadia.rsi
   - type: Clothing

@@ -75,6 +75,9 @@ public sealed class InteractionBoundUserInterfaceState : BoundUserInterfaceState
     public bool UseMoaningMultiplier;
     public double MoaningMultiplier = 25;
 
+    /// <summary>Palmtree: character draw-depth relative to the normal mob layer.</summary>
+    public CharacterLayerMode LayerMode = CharacterLayerMode.Default;
+
     public string? ActiveAutoInteraction;
     public float AutoPace = 1f;
 
@@ -154,4 +157,11 @@ public sealed class InteractionSetMoaningMultiplierMessage(bool use, double valu
 {
     public readonly bool Use = use;
     public readonly double Value = value;
+}
+
+/// <summary>Set the character's draw-depth preference (below/default/above mobs).</summary>
+[NetSerializable, Serializable]
+public sealed class InteractionSetLayerModeMessage(CharacterLayerMode mode) : BoundUserInterfaceMessage
+{
+    public readonly CharacterLayerMode Mode = mode;
 }

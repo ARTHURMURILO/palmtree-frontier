@@ -138,7 +138,7 @@
     maxContactWalkSlowdown: 0.7
 
 - type: entity
-  parent: [ClothingShoesBaseButcherable, BaseC3Contraband, ContrabandClothing ] # Frontier: BaseMajorContraband<BaseC3Contraband, added ContrabandClothing
+  parent: [ClothingShoesBaseButcherable, BaseC5ContrabandUnredeemable, ContrabandClothing ] # Frontier: BaseMajorContraband<BaseC5ContrabandUnredeemable, added ContrabandClothing
   id: ClothingShoesSpaceNinja
   name: space ninja shoes
   description: A pair of nano-enhanced boots with built-in magnetic suction cups.

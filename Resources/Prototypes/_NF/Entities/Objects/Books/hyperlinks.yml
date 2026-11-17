@@ -14,15 +14,17 @@
 - type: entity
   parent: BaseHyperlinkBook
   id: NFHyperlinkBookSpaceLaw
-  name: space law
-  description: A big book of laws for space courts.
+  name: frontier sector code
+  description: The complete Frontier Sector Code, including the General Part and Penal Framework.
   components:
   - type: Sprite
     sprite: _NF/Objects/Misc/books.rsi
     layers:
     - state: law_space
-  - type: HyperlinkBook
-    url: https://frontierstation.wiki.gg/wiki/Space_Law
+  - type: GuideHelp
+    openOnActivation: true
+    guides:
+    - FrontierCode
   - type: Tag
     tags:
     - Book

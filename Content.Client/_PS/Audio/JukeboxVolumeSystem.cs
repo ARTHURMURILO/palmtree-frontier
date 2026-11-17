@@ -26,6 +26,12 @@ public sealed class JukeboxVolumeSystem : EntitySystem
     public override void Initialize()
     {
         base.Initialize();
+
+        // Audio streams are started during the audio system's frame update. Run before it so a new
+        // stream never gets a frame of full-volume playback before the slider is applied. Frame
+        // updates also run outside prediction, so SetVolume does not dirty the networked component.
+        UpdatesBefore.Add(typeof(Robust.Client.Audio.AudioSystem));
+
         Subs.CVar(_cfg, PSCVars.JukeboxVolume, OnVolumeChanged, true);
         SubscribeLocalEvent<EntityTerminatingEvent>(OnEntityTerminating);
     }
@@ -36,9 +42,9 @@ public sealed class JukeboxVolumeSystem : EntitySystem
         ApplyVolume();
     }
 
-    public override void Update(float frameTime)
+    public override void FrameUpdate(float frameTime)
     {
-        base.Update(frameTime);
+        base.FrameUpdate(frameTime);
         ApplyVolume();
     }
 
@@ -62,7 +68,7 @@ public sealed class JukeboxVolumeSystem : EntitySystem
                 _baseVolumes[stream] = baseVolume;
             }
 
-            // SetVolume is a no-op when the value is unchanged, so this is safe to call every tick.
+            // SetVolume is a no-op when the value is unchanged, so this is safe to call every frame.
             _audio.SetVolume(stream, baseVolume + _volumeOffset, audio);
         }
     }

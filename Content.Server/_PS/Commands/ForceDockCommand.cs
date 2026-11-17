@@ -25,7 +25,7 @@ public sealed class ForceDockCommand : IConsoleCommand
     /// <summary>Safes every reactor on the ship before the store checks run.</summary>
     private const string ScramFlag = "--scram";
 
-    public string Command => "forcedock";
+    public string Command => "bsforcedock";
     public string Description => "Stores a player's ship in the bluespace dock without requiring it to be docked.";
     public string Help => $"{Command} <ship name | grid uid> [owner] [--scram]";
 

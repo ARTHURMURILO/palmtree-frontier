@@ -26,8 +26,13 @@ public sealed class RestoreOrphanShipEuiState(
 /// One orphaned ship file.
 /// </summary>
 [Serializable, NetSerializable]
-public sealed class OrphanShipEntry(string name, string modified)
+public sealed class OrphanShipEntry(string name, string shipName, string modified)
 {
+    /// <summary>Ship file name (the .yml file).</summary>
     public readonly string Name = name;
+
+    /// <summary>Grid name stored inside the ship file.</summary>
+    public readonly string ShipName = shipName;
+
     public readonly string Modified = modified;
 }

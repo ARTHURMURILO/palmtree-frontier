@@ -57,7 +57,7 @@ public sealed class AlignRPDAtmosPipeLayers : PlacementMode
 
     private EntityCoordinates _mouseCoordsRaw = default;
     private AtmosPipeLayer _currentLayer = AtmosPipeLayer.Primary;
-    private float? _currentEyeRotation;
+    private AtmosPipeLayer? _sentLayer;
     private readonly Color _guideColor = new(0, 0, 0.5785f);
 
     public AlignRPDAtmosPipeLayers(PlacementManager pMan) : base(pMan)
@@ -143,7 +143,7 @@ public sealed class AlignRPDAtmosPipeLayers : PlacementMode
                 : AtmosPipeLayer.Tertiary;
         }
 
-        // Only track the layer / forward the eye rotation when the player is in range and holding an RPD
+        // Only track the layer / forward it when the player is in range and holding an RPD
         if (_playerManager.LocalSession?.AttachedEntity is { } player &&
             _entityManager.TryGetComponent<TransformComponent>(player, out var xform) &&
             _transformSystem.InRange(xform.Coordinates, MouseCoords, SharedInteractionSystem.InteractionRange) &&
@@ -151,23 +151,23 @@ public sealed class AlignRPDAtmosPipeLayers : PlacementMode
             _entityManager.HasComponent<RCDComponent>(heldEntity))
         {
             _currentLayer = newLayer;
-            UpdateEyeRotation(heldEntity, _eyeManager.CurrentEye.Rotation);
+            UpdateSentLayer(heldEntity, _currentLayer);
         }
 
         UpdatePlacer(_currentLayer);
     }
 
     /// <summary>
-    /// The player's eye rotation is not networked, but the server needs it to resolve the same
-    /// pipe layer the client is previewing, so forward it whenever it changes.
+    /// The server cannot derive the layer from the snapped click location, so send the layer the
+    /// ghost is previewing whenever it changes.
     /// </summary>
-    private void UpdateEyeRotation(EntityUid heldEntity, Angle eyeRotation)
+    private void UpdateSentLayer(EntityUid heldEntity, AtmosPipeLayer layer)
     {
-        if (_currentEyeRotation == eyeRotation.Theta)
+        if (_sentLayer == layer)
             return;
 
-        _currentEyeRotation = (float) eyeRotation.Theta;
-        _entityNetwork.SendSystemNetworkMessage(new RPDEyeRotationEvent(_entityManager.GetNetEntity(heldEntity), _currentEyeRotation));
+        _sentLayer = layer;
+        _entityNetwork.SendSystemNetworkMessage(new RPDLayerEvent(_entityManager.GetNetEntity(heldEntity), layer));
     }
 
     private void UpdatePlacer(AtmosPipeLayer layer)

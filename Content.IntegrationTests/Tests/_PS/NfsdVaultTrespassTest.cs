@@ -1,11 +1,14 @@
 using System.Numerics;
 using Content.IntegrationTests.Pair;
 using Content.Server._NF.SectorServices;
+using Content.Server._PS.Circuitry.Components;
+using Content.Server._PS.Circuitry.Systems;
 using Content.Server._PS.Security;
 using Content.Server.StationRecords;
 using Content.Server.StationRecords.Systems;
 using Content.Shared._PS.Security;
 using Content.Shared.CriminalRecords;
+using Content.Shared.Containers.ItemSlots;
 using Content.Shared.Hands.EntitySystems;
 using Content.Shared.Humanoid;
 using Content.Shared.Preferences;
@@ -103,6 +106,57 @@ public sealed class NfsdVaultTrespassTest
             {
                 Assert.Fail("Expected a criminal record for the trespasser.");
             }
+        });
+
+        // Also prove the Lua-facing identity APIs can read the same record and reason.
+        EntityUid assembly = default;
+        await server.WaitPost(() =>
+        {
+            assembly = entMan.SpawnEntity("CircuitAssembly", testMap.GridCoords.Offset(new Vector2(-0.5f, 0f)));
+            var cpu = entMan.SpawnEntity("CircuitCpuBasic", testMap.GridCoords);
+            var cell = entMan.SpawnEntity("PowerCellSmall", testMap.GridCoords);
+            var sensor = entMan.SpawnEntity("CircuitSensor", testMap.GridCoords);
+
+            var slots = entMan.System<ItemSlotsSystem>();
+            Assert.Multiple(() =>
+            {
+                Assert.That(slots.TryInsert(assembly, "cpu", cpu, null), Is.True);
+                Assert.That(slots.TryInsert(assembly, "cell", cell, null), Is.True);
+                Assert.That(slots.TryInsert(assembly, "sensor", sensor, null), Is.True);
+            });
+
+            entMan.GetComponent<CircuitCpuComponent>(cpu).Source = """
+                function main()
+                    local who = robot.find("Wanted Walker", 4)
+                    if not who then
+                        log("wanted", "missing")
+                        return
+                    end
+
+                    log("job", tostring(robot.has_job(who, "Contractor")))
+                    local status = robot.wanted_status(who)
+                    log("wanted", status.status, tostring(status.wanted), tostring(status.reason))
+                end
+                """;
+        });
+
+        await pair.RunTicksSync(2);
+        var brain = entMan.System<LuaBrainSystem>();
+        await server.WaitPost(() => Assert.That(brain.Start(assembly), Is.True));
+        await pair.RunTicksSync(30);
+
+        await server.WaitAssertion(() =>
+        {
+            var runtime = brain.GetRuntime(assembly);
+            Assert.That(runtime, Is.Not.Null);
+
+            var log = string.Join("\n", runtime!.Program.Log);
+            Assert.Multiple(() =>
+            {
+                Assert.That(runtime.Program.LastError, Is.Null, log);
+                Assert.That(log, Does.Contain("job\ttrue"), log);
+                Assert.That(log, Does.Contain($"wanted\tWanted\ttrue\t{Loc.GetString("nfsd-vault-trespass-reason")}"), log);
+            });
         });
 
         await pair.CleanReturnAsync();

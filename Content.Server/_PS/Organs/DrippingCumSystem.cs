@@ -58,9 +58,6 @@ public sealed class DrippingCumSystem : EntitySystem
     /// <summary>How far the mob has to move between drip checks for it to count as activity.</summary>
     private const float MovementThreshold = 0.06f;
 
-    /// <summary>Semen inside a vagina above this amount overflows with a floor decal on each pulse.</summary>
-    public const double WombOverflowThreshold = 60;
-
     public override void Update(float frameTime)
     {
         base.Update(frameTime);

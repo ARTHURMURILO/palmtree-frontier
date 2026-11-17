@@ -29,11 +29,14 @@
 
 - type: entity
   id: NFWeaponRifleAssaultLecter
-  parent: [ BaseC2ContrabandUnredeemable, NFBaseWeaponRifleAssaultChamber20, NFBaseWeaponFrameRifleAssaultNanotrasen ]
+  parent: [ BaseC3Contraband, NFBaseWeaponRifleAssaultChamber20, NFBaseWeaponFrameRifleAssaultNanotrasen ]
   name: Lecter
   description: |-
     A medium end military grade assault rifle. On the receiver is a label that says 'for authorized use only.'
   components: &lecterComponents
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Clothing
     sprite: _NF/Objects/Weapons/Guns/Rifles/lecter.rsi
   - type: Sprite
@@ -83,7 +86,7 @@
 #region WizDen: Rubber
 - type: entity
   id: NFWeaponRifleAssaultLecterLessLethal
-  parent: [ BaseC2ContrabandUnredeemable, NFBaseWeaponRifleAssaultChamber20Rubber, NFBaseWeaponFrameRifleAssaultNanotrasen ]
+  parent: [ BaseC3Contraband, NFBaseWeaponRifleAssaultChamber20Rubber, NFBaseWeaponFrameRifleAssaultNanotrasen ]
   name: Lecter
   description: |-
     A medium end military grade assault rifle. On the receiver is a label that says 'for authorized use only.'
@@ -98,6 +101,9 @@
   description: |-
     One of the heaviest small arms to grace Security's armory, this rifle is a modern take on a classic, informally dubbed the "Right Arm of the Free World".
   components: &vulcanComponents
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _DV/Objects/Weapons/Guns/Rifles/vulcan.rsi
   - type: Clothing
@@ -114,6 +120,9 @@
   description: |-
     The beginning of the end is heralded by the song of a Jackdaw.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _DV/Objects/Weapons/Guns/Rifles/jackdaw.rsi
   - type: Clothing
@@ -163,6 +172,9 @@
   description: |-
     An old burst-fire rifle designed by Silver Industries that never left trials.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _NF/Objects/Weapons/Guns/Rifles/gestio.rsi
   - type: Clothing
@@ -186,6 +198,9 @@
   description: |-
     A civilian grade semi-automatic rifle with an internal magazine.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _NF/Objects/Weapons/Guns/Rifles/novalitec1.rsi
   - type: Clothing

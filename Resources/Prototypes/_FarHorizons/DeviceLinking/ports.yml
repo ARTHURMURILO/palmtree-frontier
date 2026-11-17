@@ -1,0 +1,20 @@
+# Gas Turbine
+- type: sourcePort
+  id: TurbineSpeedHigh
+  name: signal-port-name-gas-turbine-speed-high
+  description: signal-port-description-gas-turbine-speed-high
+
+- type: sourcePort
+  id: TurbineSpeedLow
+  name: signal-port-name-gas-turbine-speed-low
+  description: signal-port-description-gas-turbine-speed-low
+
+- type: sinkPort
+  id: IncreaseStatorLoad
+  name: signal-port-name-gas-turbine-receiver-increase
+  description: signal-port-description-gas-turbine-receiver-increase
+
+- type: sinkPort
+  id: DecreaseStatorLoad
+  name: signal-port-name-gas-turbine-receiver-decrease
+  description: signal-port-description-gas-turbine-receiver-decrease

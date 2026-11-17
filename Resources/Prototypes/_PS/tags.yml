@@ -4,3 +4,7 @@
 # Palmtree: entities the RCD/RPD must never be able to remove, even in admin mode.
 - type: Tag
   id: RCDUnDeconstructable
+
+# Palmtree: marks a plain atmos pipe segment, so the RCD/RPD can keep two of them off one layer.
+- type: Tag
+  id: AtmosPipeSegment

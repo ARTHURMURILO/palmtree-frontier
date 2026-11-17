@@ -1,6 +1,6 @@
 - type: entity
   name: NFSD energy shield
-  parent: [BaseC2ContrabandUnredeemable, EnergyShield]
+  parent: [BaseC5ContrabandUnredeemable, EnergyShield]
   id: EnergyShieldNfsd
   components:
   - type: Sprite
@@ -51,7 +51,7 @@
 
 - type: entity
   id: NFShieldBallistic
-  parent: [ BaseC1Contraband, RiotBulletShield ]
+  parent: [ BaseC2Contraband, RiotBulletShield ]
   name: bullet resistant shield
   components:
   - type: Sprite

@@ -51,6 +51,9 @@
   - AtmosTools
   - Gasses
   - OffshoreGasMining # Frontier
+  - HypertorusFusionReactor # Funky
+  - GasTurbine # Funky
+  - AtmosMachines # Funky
 
 - type: guideEntry
   id: GasManipulation

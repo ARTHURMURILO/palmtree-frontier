@@ -8,6 +8,9 @@
   name: ColtSAA
   description: A Colt Single Action Army, chambered in the archaic .45 Long Colt cartridge.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/ColtSAA.rsi
   - type: Clothing
@@ -30,6 +33,9 @@
   name: Revolver44
   description: A .44 Magnum single-action revolver. There on his hip was a moderately sized iron...
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/Revolver44.rsi
   - type: Clothing
@@ -52,6 +58,9 @@
   name: TaurusJudge
   description: A Taurus manufactured Judge. This model specifically takes 3 shotgun shells, useful for unloading hell upon the enemy. Do they feel lucky?
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/TaurusJudge.rsi
   - type: Clothing
@@ -74,6 +83,9 @@
   name: SW45
   description: Smith and Wesson revolver firing .45 from a seven round cylinder.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/SW45.rsi
   - type: Clothing

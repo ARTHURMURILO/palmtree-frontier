@@ -525,6 +525,11 @@ client-side preference that scales every jukebox stream, separate from master vo
   `AudioComponent.Volume` every audio frame, so setting the live volume does not stick. The system
   stores each stream's server-provided base volume (copy the `AudioParams` struct out before reading
   `.Volume`, or the access analyzer flags it as an execute access) and reapplies base + offset.
+- The work runs in `FrameUpdate`, ordered `UpdatesBefore` the engine `AudioSystem`, not in `Update`.
+  `Update` runs during prediction: dirtying the networked `AudioComponent` there makes the client
+  reset it to the server state (full volume) and a new stream can play a frame or two before the
+  slider is applied. Frame updates run before audio processing and outside prediction, so the first
+  audible frame is already at the user's volume.
 - UI: `SliderVolumeJukebox` in `Content.Client/Options/UI/Tabs/AudioTab.xaml(.cs)`; locale in
   `Resources/Locale/en-US/_PS/audio.ftl`.
 
@@ -615,10 +620,13 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
 | Locale | `Resources/Locale/en-US/_PS/bluespace-dock.ftl` |
 
 - **Persistence**: `UserData/bluespace_dock/registry.yml` is the authoritative list of stored ships
-  (`BluespaceDockEntry`: ship id, file, owner ckey + character name, vessel prototype id, model,
-  full name, suffix, recorded value, timestamp); `UserData/bluespace_dock/<shipId>.yml` is the ship
-  payload written by `MapLoaderSystem.TrySaveGrid`. Ownership is per **character** (ckey *and* ID
-  card name must match), so another character of the same player does not see the ship. Both writes
+  (`BluespaceDockEntry`: ship id, file, owner ckey + character name + character slot, vessel
+  prototype id, model, full name, suffix, recorded value, timestamp);
+  `UserData/bluespace_dock/<shipId>.yml` is the ship
+  payload written by `MapLoaderSystem.TrySaveGrid`. Ownership is per **character**: entries store
+  the ckey and the character slot index (which survives a rename), so another character of the same
+  player does not see the ship. Legacy entries without a slot fall back to the ckey, so a renamed
+  character keeps ships stored before the slot field existed. Both writes
   happen synchronously at store time (`TrySaveGrid` and `SaveRegistry` write straight to `UserData`)
   and the original grid is deleted only afterwards, so a crash cannot lose a stored ship and nothing
   waits for a round end. The registry is cached per round, re-read on round restart, and
@@ -709,7 +717,7 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
 - **Store feedback (2026-10-22)**: every store denial from the console is a popup *and* a red server
   message in that player's chat (`Deny` -> `WarnChat`, private `DispatchServerMessage`), and a store
   that had to skip items also warns in chat with `bluespace-dock-warning-skipped` (and in the server
-  log). `forcedock` prints the same reason via `shell.WriteError` and the skip count as an error line
+  log). `bsforcedock` prints the same reason via `shell.WriteError` and the skip count as an error line
   in the admin console.
 - **Failed stores restore the ship (2026-10-22)**: the store strips station references, the deed and
   the docking *before* saving, so any failure after that point must undo it. The `TryStoreShip`
@@ -849,16 +857,16 @@ Two admin/SR consoles that give player-built ships a persistence path, plus a li
 - CVars (in `Content.Shared/_NF/CCVar/NFCCVars.cs`, marked Palmtree): `nf14.bluespace_dock.enabled`,
   `.store_tax`, `.retrieve_tax`, `.stored_sell_rate`, `.max_ships` (0 = unlimited).
 
-### Admin tool: orphaned ships (`restoreorphanship`)
+### Admin tool: orphaned ships (`bsdockmenu`)
 
 `Content.Server/_PS/BluespaceDock/RestoreOrphanShipEui.cs` + `Content.Client/_PS/BluespaceDock/` (window
-`RestoreOrphanShipWindow`), opened by the `restoreorphanship` admin command (`AdminFlags.Admin`,
+`RestoreOrphanShipWindow`), opened by the `bsdockmenu` admin command (`AdminFlags.Admin`,
 `Content.Server/_PS/Commands/RestoreOrphanShipCommand.cs`). "Orphaned" means a ship file in
 `UserData/bluespace_dock/` that no registry entry points at (retrieval keeps the file on purpose, and
 a crash can leave files behind). The tool:
 
-- lists orphans with their save time, newest first (`BluespaceDockSystem.GetOrphanedFiles`,
-  `TryDeleteOrphanedFile`, `TryMoveFile`),
+- lists orphans with the ship's in-file grid name, the `.yml` file name, and save time, newest
+  first (`BluespaceDockSystem.GetOrphanedFiles`, `TryDeleteOrphanedFile`, `TryMoveFile`),
 - previews one with `TryLoadOrphanedFile`, which loads it onto a **paused** map and opens the normal
   `ShipPreviewEui`; the grid and map are deleted when the preview window closes, when another file is
   previewed, when the tool closes, or after one minute as a safety net (`ShipPreviewEui` takes an
@@ -880,20 +888,22 @@ a crash can leave files behind). The tool:
   required in the console slot, because the **deed** (Frontier's ship ownership document) is written
   onto an ID and read from there by the shipyard and the dock - that is a Frontier mechanic, not the
   dock's storage.
-- **Ownership matching** (`BluespaceDockSystem.EntryBelongsToCharacter`): a normal entry needs the
-  ckey *and* the character name to match, so another character of the same player does not see it. An
-  entry with an **empty ckey** (written before a player could be picked, or by hand) matches by
-  character name alone - that is the only way a name-keyed entry can ever be used, since an ID card
-  does not carry a ckey.
+- **Ownership matching** (`BluespaceDockSystem.EntryBelongsToCharacter`): new entries match the
+  ckey **and character slot index**, so a character rename keeps access while another character of
+  the same player does not see the ship. Legacy entries written before `OwnerSlot` existed (slot
+  -1) fall back to the ckey, which also survives a rename. An entry with an **empty ckey** (written
+  by hand or by an admin restore by name) matches by character name alone - that is the only way a
+  name-keyed entry can be used, since an ID card does not carry a ckey; renaming one of those still
+  requires fixing `OwnerName` in `registry.yml`.
 
-### Admin tools: player ships (`manageships`, `forcedock`)
+### Admin tools: player ships (`manageships`, `bsforcedock`)
 
 - `manageships` (`Content.Server/_PS/Commands/ManageShipsCommand.cs`, EUI `ManageShipsEui` + client
   `ManageShipsWindow`) lists **player ships by deed** - not by connected player, so ships whose owner
   is offline are included - in a dropdown (`BluespaceDockSystem.GetDeedShips`, with owner and docked
   state), previews one with the live ship camera and deletes one (`TryDeleteShip`, which clears every
   deed pointing at the grid).
-- `forcedock <ship name | grid uid> [owner]` (`ForceDockCommand`) stores a ship in the dock without
+- `bsforcedock <ship name | grid uid> [owner]` (`ForceDockCommand`) stores a ship in the dock without
   requiring it to be docked **and without caring about its ship category** (or whether it has a
   vessel identity at all). Living things are moved off instead of blocking the store; every other
   check still runs (`FindStoreBlocker`) and failures are printed to the console. The owner
@@ -1033,9 +1043,10 @@ Small features that did not get their own section yet:
   `.../_PS/RCD/rcd.yml`, textures under `Resources/Textures/_PS/...`, locale
   `Resources/Locale/en-US/_PS/rcd.ftl`. A follow-up pass added diagonal solid/shuttle wall modes
   and mining walls, a per-tool `speedMultiplier` (the RCD ships at 2x), and node-aware per-layer
-  anti-stacking (a vent/pump may share a tile with the pipe that feeds it; only same-layer
-  direction conflicts are rejected, and the placement ghost previews those conflicts through a
-  networked pipe-node summary plus a cached ghost-prototype lookup). The RPD also treats one
+  anti-stacking (a vent/pump may share a tile with the pipe that feeds it; pipe segments cannot
+  share a layer because their sprites z-fight, and remaining direction conflicts are rejected;
+  the placement ghost previews those through a networked pipe-node summary plus a cached
+  ghost-prototype lookup). The RPD also treats one
   compressed-matter charge as two tool charges, so one 30-charge cartridge fills its 60-charge
   tank; the RCD keeps the normal 1:1, 30-charge behaviour. Details:
   `.ai/PORTING.md` §24-24b; traps: `.ai/HAZARDS.md` §26. The RPD deconstruct whitelist (`rpd: true`)
@@ -1062,10 +1073,11 @@ Copyrighted jukebox tracks live outside the git history. `Resources/Prototypes/_
 local `attributions.yml` in the audio folder records the YouTube source of every file.
 
 - Track definitions: `Resources/Prototypes/_PS/Jukebox/Standard.yml`; the record prototypes
-  (`PalmtreeRecord`, shown as "Palm Record", and `StarjunkRecord`) are
+  (`PalmtreeRecord` shown as "Palm Record", `StarjunkRecord`, `TunesOfAnarchyRecord`,
+  `PeopleOfEarthRecord`, `EclecticBoogalooRecord` and `DrSteelRecord`) are
   `Resources/Prototypes/_PS/Jukebox/records.yml`.
 - `Content.Server/_PS/Audio/JukeboxLocalTracksSystem.cs` injects `PalmtreeRecord` into every
-  jukebox on map init and adds `StarjunkRecord` to the `NFJukeboxRecordSpawner` dungeon loot pool,
+  jukebox on map init and adds the other records to the `NFJukeboxRecordSpawner` dungeon loot pool,
   but only when the local prototypes are present, so clean checkouts and CI never reference missing
   audio.
 - Audio is downloaded with `dlx`, converted with `convertall` and re-encoded to mono Vorbis

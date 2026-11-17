@@ -8,6 +8,9 @@
   name: M1Garand
   description: The WWII American classic. Still has that satisfying ping.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/M1Garand.rsi
   - type: Clothing
@@ -35,6 +38,9 @@
   name: M1A1
   description: The M1A1 carbine is an improvement of the original, with this particular model having a folding stock allowing for greater mobility. Chambered in 10mm.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/M1A1.rsi
   - type: Clothing
@@ -61,6 +67,9 @@
   name: ScarL
   description: A Scar-L assault rifle, manufactured by FN Herstal in the early 2100s. Versatile, functional, and good. Chambered in 5mm.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/ScarL.rsi
   - type: Clothing
@@ -88,6 +97,9 @@
   name: Steyr AUGA10
   description: An AUG A10 assault rifle, manufactured by Steyr in the 2100s. This rifle saw extensive usage by the Pre-Fall Austrian forces. Comes with a built in scope. Chambered in 5mm.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/AUGA10.rsi
   - type: Clothing
@@ -143,6 +155,9 @@
   name: Mosin
   description: A rusty old Russian bolt action chambered in 7.62x54R.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/Mosin.rsi
   - type: Clothing
@@ -165,6 +180,9 @@
   name: SKS
   description: An old, semi-automatic rifle of communist origin. Still, it packs a punch and has a bayonet lug.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _CS/Objects/Weapons/Guns/Fallout/SKS.rsi
   - type: Clothing

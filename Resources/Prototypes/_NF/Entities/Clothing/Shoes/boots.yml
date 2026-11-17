@@ -11,7 +11,7 @@
   - type: Matchbox
 
 - type: entity
-  parent: [BaseC2ContrabandUnredeemable, ClothingShoesBootsCombat]
+  parent: [BaseC5ContrabandUnredeemable, ClothingShoesBootsCombat]
   id: ClothingShoesBootsNfsdBrown
   name: NFSD brown boots
   description: Stylish boots for running in circles on a deck during emergencies.

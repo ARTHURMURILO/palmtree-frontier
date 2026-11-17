@@ -998,6 +998,9 @@
   id: NoConsoleSound
 
 - type: Tag
+  id: NoRecharge # Funky atmos - crystallizer cell
+
+- type: Tag
   id: NozzleBackTank
 
 - type: Tag

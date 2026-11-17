@@ -178,6 +178,7 @@
     - id: MetalFoamGrenade
     - id: ShipyardRCD # Frontier
     - id: ShipyardRCDAmmo # Frontier
+    - id: ConstructionChalkBox # Funky
     - id: trayScanner # Frontier
 
 # Hardsuit table, used for suit storage as well

@@ -1,6 +1,6 @@
 - type: entity
   id: MobileEmpGenerator
-  parent: [BaseStructureDisableToolUse, BaseC2ContrabandUnredeemable, BaseMachinePowered, ConstructibleMachine]
+  parent: [BaseStructureDisableToolUse, BaseC4ContrabandUnredeemable, BaseMachinePowered, ConstructibleMachine]
   name: mobile EMP generator
   description: Creates giant EMP blasts to disable shuttles.
   placement:

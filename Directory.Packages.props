@@ -8,6 +8,8 @@
     <PackageVersion Remove="Microsoft.EntityFrameworkCore.Design" />
     <PackageVersion Include="CsvHelper" Version="33.0.1" />
     <PackageVersion Include="ImGui.NET" Version="1.87.3" />
+    <!-- Palmtree: Lua-based circuitry CPU runtime. -->
+    <PackageVersion Include="MoonSharp" Version="2.0.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

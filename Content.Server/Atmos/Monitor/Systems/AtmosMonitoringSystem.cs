@@ -422,6 +422,10 @@ public sealed class AtmosMonitorSystem : EntitySystem
                 if (gas == null || monitor.GasThresholds == null)
                     return;
 
+                // A monitor saved before a gas was added to the game may not track it yet.
+                if (!monitor.GasThresholds.ContainsKey((Gas) gas))
+                    return;
+
                 logPrefix = ((Gas) gas).ToString();
                 logValueSuffix = "kPa";
                 monitor.GasThresholds.TryGetValue((Gas) gas, out logPreviousThreshold);
@@ -479,7 +483,13 @@ public sealed class AtmosMonitorSystem : EntitySystem
         SetThreshold(uid, AtmosMonitorThresholdType.Pressure, allThresholdData.PressureThreshold);
         foreach (var gas in Enum.GetValues<Gas>())
         {
-            SetThreshold(uid, AtmosMonitorThresholdType.Gas, allThresholdData.GasThresholds[gas], gas);
+            // Only copy thresholds the source actually carries; a sensor saved before a
+            // gas existed will not have one, and SetThreshold ignores gases the target
+            // does not track.
+            if (!allThresholdData.GasThresholds.TryGetValue(gas, out var threshold))
+                continue;
+
+            SetThreshold(uid, AtmosMonitorThresholdType.Gas, threshold, gas);
         }
     }
 }

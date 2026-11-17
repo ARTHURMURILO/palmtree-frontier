@@ -37,10 +37,13 @@
 
 - type: entity
   id: NFWeaponSubMachineGunDrozd
-  parent: [ BaseC2ContrabandUnredeemable, NFBaseWeaponSubMachineGunChamber35, NFBaseWeaponFrameSubMachineGunNanotrasen ]
+  parent: [ BaseC3Contraband, NFBaseWeaponSubMachineGunChamber35, NFBaseWeaponFrameSubMachineGunNanotrasen ]
   name: Drozd
   description: A fully automatic SMG.
   components: &drozdComponents
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Gun
     soundGunshot:
       path: /Audio/Weapons/Guns/Gunshots/atreides.ogg
@@ -59,11 +62,14 @@
 
 - type: entity
   id: NFWeaponSubMachineGunWt550
-  parent: [ BaseC2ContrabandUnredeemable, NFBaseWeaponSubMachineGunChamber35TopMounted, NFBaseWeaponFrameSubMachineGunNanotrasen ]
+  parent: [ BaseC3Contraband, NFBaseWeaponSubMachineGunChamber35TopMounted, NFBaseWeaponFrameSubMachineGunNanotrasen ]
   name: WT-550
   description: |-
     An excellent SMG. On the receiver is a label that says 'for authorized use only.'
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _NF/Objects/Weapons/Guns/SMGs/wt550.rsi
     layers:
@@ -94,6 +100,9 @@
   description: |-
     A modern take on the classic design used by mobsters throughout space and time.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: Gun
     soundGunshot:
       path: /Audio/_DV/Weapons/Guns/Gunshots/typewriter.ogg

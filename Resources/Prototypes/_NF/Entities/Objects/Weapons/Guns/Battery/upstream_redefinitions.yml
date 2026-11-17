@@ -3,6 +3,9 @@
   parent: WeaponBehonkerLaser
   id: NFWeaponBehonkerLaser
   components:
+  - type: Contraband
+    severity: Class4
+    allowedDepartments: [ Security, Command ]
   - type: HitscanBatteryAmmoProvider
     proto: NFRedMediumLaser
 

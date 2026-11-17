@@ -77,7 +77,7 @@
     damageCoefficient: 0.60
 
 - type: entity
-  parent: [ ClothingOuterBaseLarge, BaseC2ContrabandUnredeemable ]
+  parent: [ ClothingOuterBaseLarge, BaseC5ContrabandUnredeemable ]
   id: ClothingOuterArmorNfsd
   name: NFSD armor
   description: Get shot, maybe survive?

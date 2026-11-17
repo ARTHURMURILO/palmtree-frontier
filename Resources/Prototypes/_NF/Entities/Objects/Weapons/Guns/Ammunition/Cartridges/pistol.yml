@@ -51,6 +51,9 @@
   name: cartridge (.35 pistol, overpressure)
   parent: NFBaseCartridgePistol35
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: NFBulletPistol35Overpressure
   - type: Sprite
@@ -66,6 +69,9 @@
   name: cartridge (.35 pistol, incendiary)
   parent: NFBaseCartridgePistol35
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: NFBulletPistol35Incendiary
   - type: Sprite
@@ -81,6 +87,9 @@
   name: cartridge (.35 pistol, uranium)
   parent: NFBaseCartridgePistol35
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: NFBulletPistol35Uranium
   - type: Sprite
@@ -113,6 +122,9 @@
   name: cartridge (.35 pistol, EMP)
   parent: NFBaseCartridgePistol35
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: NFBulletPistol35Emp
   - type: EmpDescription
@@ -164,6 +176,9 @@
   name: cartridge (.45 pistol, overpressure)
   parent: NFBaseCartridgePistol45
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: NFBulletPistol45Overpressure
   - type: Sprite
@@ -179,6 +194,9 @@
   name: cartridge (.45 pistol, incendiary)
   parent: NFBaseCartridgePistol45
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: NFBulletPistol45Incendiary
   - type: Sprite
@@ -194,6 +212,9 @@
   name: cartridge (.45 pistol, uranium)
   parent: NFBaseCartridgePistol45
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: NFBulletPistol45Uranium
   - type: Sprite
@@ -226,6 +247,9 @@
   name: cartridge (.45 pistol, EMP)
   parent: NFBaseCartridgePistol45
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: NFBulletPistol45Emp
   - type: EmpDescription

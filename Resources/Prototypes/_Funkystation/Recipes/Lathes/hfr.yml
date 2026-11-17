@@ -1,0 +1,61 @@
+# SPDX-FileCopyrightText: 2025 Steve <marlumpy@gmail.com>
+# SPDX-FileCopyrightText: 2025 taydeo <td12233@gmail.com>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later AND MIT
+
+# Hypertorus fusion reactor parts. Building the multiblock consumes one box per tile,
+# so the material cost is kept close to the cargo crate price.
+- type: latheRecipe
+  id: HFRCoreBox
+  result: HFRCoreBox
+  completetime: 15
+  materials:
+    Steel: 2000
+    Glass: 500
+    Plasteel: 1000
+    Silver: 250
+    Gold: 150
+
+- type: latheRecipe
+  id: HFRCornerBox
+  result: HFRCornerBox
+  completetime: 8
+  materials:
+    Steel: 1000
+    Plasteel: 500
+
+- type: latheRecipe
+  id: HFRFuelBox
+  result: HFRFuelBox
+  completetime: 8
+  materials:
+    Steel: 1000
+    Glass: 250
+    Plasteel: 250
+
+- type: latheRecipe
+  id: HFRModeratorBox
+  result: HFRModeratorBox
+  completetime: 8
+  materials:
+    Steel: 1000
+    Glass: 250
+    Plasteel: 250
+
+- type: latheRecipe
+  id: HFRWasteBox
+  result: HFRWasteBox
+  completetime: 8
+  materials:
+    Steel: 1000
+    Glass: 250
+    Plasteel: 250
+
+- type: latheRecipe
+  id: HFRConsoleBox
+  result: HFRConsoleBox
+  completetime: 6
+  materials:
+    Steel: 500
+    Glass: 500
+    Silver: 100

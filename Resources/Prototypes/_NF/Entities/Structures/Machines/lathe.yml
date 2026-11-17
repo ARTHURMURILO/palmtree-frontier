@@ -201,6 +201,8 @@
     - NFInflatablesStatic
     - NFEngineeringArchetypeStatic
     - CSPlumbingStatic # Palmtree: showers, sinks, drains
+    dynamicPacks:
+    - NFAtmosMachineryEngineering # Funky
 
   - type: BlueprintReceiver
     whitelist:

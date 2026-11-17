@@ -56,6 +56,12 @@ Additional repositories with ported code without Namespaces (denoted by comments
 | Space Station 14 ("Wizden"/"Upstream") | https://github.com/space-wizards/space-station-14 | MIT |
 | White Dream | https://github.com/WWhiteDreamProject/wwdpublic | AGPL 3.0 |
 
+## Third-party libraries
+
+| Library | License | Use |
+|---------|---------|-----|
+| [MoonSharp](https://github.com/moonsharp-devs/moonsharp) | [BSD-3-Clause](https://github.com/moonsharp-devs/moonsharp/blob/master/LICENSE) | Lua interpreter used by the server-side circuitry runtime. |
+
 ## Warranty
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

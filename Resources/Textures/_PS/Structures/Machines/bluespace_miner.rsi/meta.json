@@ -1,0 +1,45 @@
+{
+    "version": 1,
+    "license": "CC-BY-SA-3.0",
+    "copyright": "Taken from the SPLURT/Nova Sector bluespace miner module (modular_skyrat/modular_nova), sprite by Jake Park.",
+    "size": {
+        "x": 32,
+        "y": 32
+    },
+    "states": [
+        {
+            "name": "miner"
+        },
+        {
+            "name": "miner_open"
+        },
+        {
+            "name": "miner_on",
+            "delays": [
+                [
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1
+                ]
+            ]
+        },
+        {
+            "name": "miner_error"
+        },
+        {
+            "name": "miner_proximity"
+        },
+        {
+            "name": "miner_phigh"
+        },
+        {
+            "name": "miner_plow"
+        },
+        {
+            "name": "miner_hot"
+        }
+    ]
+}

@@ -164,7 +164,7 @@
       sprite: Clothing/Back/Duffels/salvage.rsi
 
 - type: entity
-  parent: [NFClothingDuffel, BaseC3Contraband, ContrabandClothing] # Frontier: BaseSyndicateContraband<BaseC3Contraband, added ContrabandClothing as parent
+  parent: [NFClothingDuffel, BaseC5ContrabandUnredeemable, ContrabandClothing] # Frontier: BaseSyndicateContraband<BaseC5ContrabandUnredeemable, added ContrabandClothing as parent
   id: ClothingBackpackDuffelSyndicate
   name: syndicate duffel bag
   description: A large duffel bag for holding various traitor goods.

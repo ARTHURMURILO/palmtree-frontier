@@ -1,0 +1,8 @@
+# A client-side sprite holder for the flatpack placement preview. The client system copies the
+# unpacked machine's sprite onto it and tints it green or red.
+- type: entity
+  id: FlatpackPlacementGhost
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    color: '#30FF3080'

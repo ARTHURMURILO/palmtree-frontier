@@ -53,6 +53,21 @@ public sealed class WantedStatusSystem : EntitySystem
         return true;
     }
 
+    /// <summary>Criminal record for the character, if one can be found.</summary>
+    public bool TryGetCriminalRecord(EntityUid mob, out CriminalRecord record)
+    {
+        record = default!;
+
+        if (!TryGetRecordKey(mob, out var key) ||
+            !_records.TryGetRecord<CriminalRecord>(key, out var found))
+        {
+            return false;
+        }
+
+        record = found;
+        return true;
+    }
+
     /// <summary>True when the character's criminal record is flagged as wanted.</summary>
     public bool IsWanted(EntityUid mob)
     {

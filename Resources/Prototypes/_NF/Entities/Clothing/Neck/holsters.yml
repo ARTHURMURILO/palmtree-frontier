@@ -110,7 +110,7 @@
     sprite: _NF/Clothing/Neck/Misc/holster_thigh.rsi
 
 - type: entity
-  parent: [ BaseC2ContrabandUnredeemable, NFBaseClothingNeckHolsterThigh ]
+  parent: [ BaseC5ContrabandUnredeemable, NFBaseClothingNeckHolsterThigh ]
   id: NFBaseClothingNeckHolsterThighNfsd
   name: nfsd drop leg holster
   components:
@@ -162,7 +162,7 @@
     sprite: _NF/Clothing/Neck/Misc/holster_thigh_sheath.rsi
 
 - type: entity
-  parent: [ BaseC2ContrabandUnredeemable, NFBaseClothingNeckSheathThigh ]
+  parent: [ BaseC5ContrabandUnredeemable, NFBaseClothingNeckSheathThigh ]
   id: NFBaseClothingNeckSheathThighNfsd
   name: nfsd drop leg sheath
   components:

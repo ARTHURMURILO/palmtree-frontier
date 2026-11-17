@@ -1,6 +1,7 @@
 using System.Linq;
 using Content.Client._PS.Humanoid;
-using Content.Client.Humanoid;using Content.Shared.Humanoid;
+using Content.Client.Humanoid;
+using Content.Shared.Humanoid;
 using Content.Shared.Humanoid.Markings;
 using Content.Shared.Preferences;
 using Robust.Client.GameObjects;
@@ -8,6 +9,7 @@ using Robust.Server.Player;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Graphics.RSI;
 using Robust.Shared.IoC;
+using Robust.Shared.Maths;
 
 namespace Content.IntegrationTests.Tests._PS;
 
@@ -88,7 +90,17 @@ public sealed class SnoutLayerOrderTest
             Assert.That(overSnoutLayer, Is.GreaterThan(overHairLayer),
                 "snouts must render above hair when the option is enabled");
 
+            // Diagonal side views must behave like east/west, not fall back to the south frame.
             clientEntMan.RemoveComponent<HumanoidLayerDirectionComponent>(attached.Value);
+            client.System<SharedTransformSystem>().SetLocalRotation(attached.Value, Direction.SouthWest.ToAngle());
+            appearance.RefreshSprite(attached.Value);
+
+            Assert.That(spriteSystem.LayerMapTryGet((attached.Value, sprite),
+                "SnoutCanidAlt2-snout_canid_alt2", out var diagonalSnoutLayer, false), Is.True);
+            Assert.That(spriteSystem.LayerMapTryGet((attached.Value, sprite),
+                "HumanHairBob-bob", out var diagonalHairLayer, false), Is.True);
+            Assert.That(diagonalSnoutLayer, Is.GreaterThan(diagonalHairLayer),
+                "diagonal side views must also render snouts above hair");
         });
 
         await pair.CleanReturnAsync();

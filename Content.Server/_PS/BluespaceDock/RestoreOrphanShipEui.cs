@@ -99,7 +99,8 @@ public sealed partial class RestoreOrphanShipEui : BaseEui
                      .OrderByDescending(orphan => orphan.Modified ?? DateTime.MinValue))
         {
             var modified = orphan.Modified?.ToString("yyyy-MM-dd HH:mm") ?? "?";
-            ships.Add(new OrphanShipEntry(orphan.Name, modified));
+            var shipName = string.IsNullOrWhiteSpace(orphan.ShipName) ? "?" : orphan.ShipName;
+            ships.Add(new OrphanShipEntry(orphan.Name, shipName, modified));
         }
 
         var players = new List<ShipOwnerOption>();

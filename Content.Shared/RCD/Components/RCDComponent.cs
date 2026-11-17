@@ -1,3 +1,4 @@
+using Content.Shared.Atmos.Components;
 using Content.Shared.RCD.Systems;
 using Robust.Shared.Audio;
 using Robust.Shared.GameStates;
@@ -83,16 +84,16 @@ public sealed partial class RCDComponent : Component
     public string PipeColorKey = "default";
 
     /// <summary>
-    /// The player eye rotation, forwarded by the RPD placement mode whenever it changes.
-    /// Eye rotation is not networked, so the server needs it to work out which pipe layer
-    /// a click on a tile was aimed at.
+    /// Palmtree: the atmos pipe layer the RPD player is currently aiming at. The client sends it
+    /// whenever its cursor crosses a layer boundary; the server's click location is snapped to the
+    /// tile centre, so it cannot reproduce the client's offset on its own.
     /// </summary>
     /// <remarks>
     /// Server-only working state: it is never dirtied, so it deliberately stays out of the
-    /// component state. The client recomputes the layer locally in AlignRPDAtmosPipeLayers.
+    /// component state.
     /// </remarks>
     [ViewVariables(VVAccess.ReadOnly)]
-    public float? LastKnownEyeRotation { get; set; }
+    public AtmosPipeLayer LastKnownPipeLayer { get; set; } = AtmosPipeLayer.Primary;
     // Palmtree end
 
     /// <summary>

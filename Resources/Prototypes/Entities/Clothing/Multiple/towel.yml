@@ -735,7 +735,7 @@
 - type: entity
   id: TowelColorSyndicate
   name: syndicate towel
-  parent: [ BaseTowel, BaseC3ContrabandNoValue ] # Frontier: BaseSyndicateContraband<BaseC3ContrabandNoValue
+  parent: [ BaseTowel, BaseC5ContrabandUnredeemable ] # Frontier: BaseSyndicateContraband<BaseC5ContrabandUnredeemable
   components:
   - type: Sprite
     layers:

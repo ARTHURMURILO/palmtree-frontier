@@ -181,6 +181,8 @@
   - type: ContainerContainer
     containers:
       stormdrive_rods: !type:Container
+      machine_board: !type:Container
+      machine_parts: !type:Container
   - type: ActivatableUI
     key: enum.StormdriveRodsUiKey.Key
   - type: UserInterface

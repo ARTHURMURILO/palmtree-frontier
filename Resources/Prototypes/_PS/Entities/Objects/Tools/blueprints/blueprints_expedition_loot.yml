@@ -6,6 +6,9 @@
   name: prototype pulse rifle blueprint
   description: A blueprint with a schematic for a prototype pulse rifle. It can be inserted into a mercenary or NFSD techfab.
   components:
+  - type: Contraband
+    severity: Class5
+    allowedDepartments: []
   - type: Blueprint
     providedRecipes:
     - WeaponPrototypePulseLaser

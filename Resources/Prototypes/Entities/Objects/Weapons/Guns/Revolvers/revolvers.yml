@@ -55,7 +55,7 @@
 - type: entity
   categories: [ HideSpawnMenu ] # Frontier
   name: Deckard
-  parent: [BaseWeaponRevolver, BaseC1Contraband] # Frontier: BaseSecurityCommandContraband<BaseC1Contraband
+  parent: [BaseWeaponRevolver, BaseC2Contraband] # Frontier: BaseSecurityCommandContraband<BaseC2Contraband
   id: WeaponRevolverDeckard
   description: A beautifully machined, custom-built revolver. Used when there is no time for the Voight-Kampff test. Loads 5 rounds of .45 magnum.
   components:

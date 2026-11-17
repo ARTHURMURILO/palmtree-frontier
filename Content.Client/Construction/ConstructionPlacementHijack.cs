@@ -1,4 +1,5 @@
 using System.Linq;
+using Content.Client._Funkystation.Placement;
 using Content.Shared.Construction.Prototypes;
 using Robust.Client.GameObjects;
 using Robust.Client.Placement;
@@ -8,7 +9,7 @@ using Robust.Shared.Prototypes;
 
 namespace Content.Client.Construction
 {
-    public sealed class ConstructionPlacementHijack : PlacementHijack
+    public sealed class ConstructionPlacementHijack : PlacementHijack, IAtmosPipeLayerHijack
     {
         private readonly ConstructionSystem _constructionSystem;
         private readonly ConstructionPrototype? _prototype;
@@ -23,6 +24,11 @@ namespace Content.Client.Construction
             _constructionSystem = constructionSystem;
             _prototype = prototype;
             CanRotate = prototype?.CanRotate ?? true;
+        }
+
+        public PlacementHijack WithPrototype(ConstructionPrototype newPrototype)
+        {
+            return new ConstructionPlacementHijack(_constructionSystem, newPrototype);
         }
 
         /// <inheritdoc />

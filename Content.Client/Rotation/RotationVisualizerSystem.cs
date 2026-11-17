@@ -2,6 +2,7 @@ using Content.Shared.Rotation;
 using Robust.Client.Animations;
 using Robust.Client.GameObjects;
 using Robust.Shared.Animations;
+using Robust.Shared.GameStates;
 
 namespace Content.Client.Rotation;
 
@@ -16,6 +17,15 @@ public sealed class RotationVisualizerSystem : SharedRotationVisualsSystem
         base.Initialize();
 
         SubscribeLocalEvent<RotationVisualsComponent, AppearanceChangeEvent>(OnAppearanceChange);
+        SubscribeLocalEvent<RotationVisualsComponent, AfterAutoHandleStateEvent>(OnHandleState);
+    }
+
+    private void OnHandleState(Entity<RotationVisualsComponent> ent, ref AfterAutoHandleStateEvent args)
+    {
+        if (!TryComp<SpriteComponent>(ent.Owner, out var sprite))
+            return;
+
+        ApplyRotation(ent.Owner, ent.Comp, sprite);
     }
 
     private void OnAppearanceChange(EntityUid uid, RotationVisualsComponent component, ref AppearanceChangeEvent args)
@@ -23,16 +33,21 @@ public sealed class RotationVisualizerSystem : SharedRotationVisualsSystem
         if (args.Sprite == null)
             return;
 
-        if (!_appearance.TryGetData<RotationState>(uid, RotationVisuals.RotationState, out var state, args.Component))
+        ApplyRotation(uid, component, args.Sprite);
+    }
+
+    private void ApplyRotation(EntityUid uid, RotationVisualsComponent component, SpriteComponent spriteComp)
+    {
+        if (!_appearance.TryGetData<RotationState>(uid, RotationVisuals.RotationState, out var state))
             state = RotationState.Vertical;
 
         switch (state)
         {
             case RotationState.Vertical:
-                AnimateSpriteRotation(uid, args.Sprite, component.VerticalRotation, component.AnimationTime);
+                AnimateSpriteRotation(uid, spriteComp, component.VerticalRotation, component.AnimationTime);
                 break;
             case RotationState.Horizontal:
-                AnimateSpriteRotation(uid, args.Sprite, component.HorizontalRotation, component.AnimationTime);
+                AnimateSpriteRotation(uid, spriteComp, component.HorizontalRotation, component.AnimationTime);
                 break;
         }
     }

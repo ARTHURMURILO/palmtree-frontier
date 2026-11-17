@@ -1,7 +1,7 @@
 # Station Representative Forms
 # Sources: https://discord.com/channels/1123826877245694004/1182366744266932224/1182366744266932224
 #          https://docs.google.com/document/d/1jDX9numj-VHKBJ2FiiEo1GIlHESffOUIHIIXaqhEnls/edit?pli=1#heading=h.ru93r8n0fb7m
-# These forms should be kept up-to-date with changes to Space Law.
+# These forms should be kept up-to-date with changes to the Frontier Sector Code.
 
 # Filled Folder
 - type: entity
@@ -172,7 +172,7 @@
 
 - type: entity # Based on form made by Blumbee (Aki Suboshi)
   id: PaperWrittenFrontierShuttleDerelict
-  name: declaration of salvage
+  name: notice of unresponsive vessel
   parent: Paper
   categories: [ HideSpawnMenu ]
   components:
@@ -180,15 +180,15 @@
     content: |2
       [color=#000f89]◥[bold]N[/bold]◣ [bold]Frontier Outpost Command[/bold][/color]
       [color=#000f89]‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾[/color]
-      [head=2]Declaration of Salvage[/head]
+      [head=2]Notice of Unresponsive Vessel[/head]
 
       [bold]Vessel IFF:[/bold] [color=#2200BD][/color] [form]
       [bold]Time of First Hail:[/bold] [color=#2200BD][/color] [form]
       [bold]Shift Time:[/bold] [color=#2200BD][/color] [form]
 
-      This is a formal declaration from Frontier's Station Traffic Controller, hereby declaring the above vessel to be abandoned by its captain, and recognized as salvage. This vessel has been unresponsive on both radio and fax for over twenty (20) minutes.
+      This is a formal notice from Frontier's Station Traffic Controller regarding the above vessel. The vessel has been unresponsive on both radio and fax for over twenty (20) minutes. This notice does not declare the vessel abandoned or salvageable.
 
-      Pursuant to Space Law §6.3, this vessel will be moved out to three hundred (300) meters from Frontier Station by an agent representing Frontier Station or the NFSD, and will be salvageable by any other vessel operating within the sector.
+      Pursuant to Article 29 of the Frontier Sector Code, a vessel with a valid deed is not abandoned merely because it is unattended or unresponsive. It may be declared salvage only if it has been left unpowered in space for more than four days. Frontier Station or the NFSD may move the vessel to three hundred (300) meters for traffic safety, but it remains the property of its deedholder.
 
       Neither Frontier Station nor the Frontier Administration will reimburse any party affiliated with this vessel for losses incurred.
 
@@ -290,7 +290,7 @@
       [bold][color=#ff0000]Tier 5 contraband is strictly military hardware and completely illegal. It cannot be permitted, and possession of tier 5 contraband is always a criminal offense.[/color][/bold]
 
       Non-compliance with a Contraband Amnesty agreement voids this Permit.
-      Refer to §5.3 of Space Law for the definition of contraband tiers.
+      Refer to Article 49 and Appendix A of the Frontier Sector Code for the definition of contraband tiers.
 
 
 

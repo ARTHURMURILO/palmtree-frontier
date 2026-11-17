@@ -159,6 +159,7 @@
     - id: MedkitOxygenFilled
     - id: HolofanProjector
     - id: RPD # Palmtree
+    - id: ConstructionChalkBox # Funky
     # - id: RCD # Frontier
     # - id: RCDAmmo # Frontier
     - id: AirGrenade
@@ -206,6 +207,7 @@
     - id: ClothingHandsGlovesColorYellow
     - id: ClothingMaskGas
     - id: trayScanner
+    - id: ConstructionChalkBox # Funky
     # - id: RCD # Frontier
     # - id: RCDAmmo # Frontier
     - id: MetalFoamGrenade

@@ -318,6 +318,9 @@
   name: arcadia beret
   description: A beret produced by Arcadia Industries.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _NF/Clothing/Head/Hats/beret_arcadia.rsi
   - type: Clothing

@@ -1,0 +1,62 @@
+# Palmtree: port of the SPLURT bluespace miner, adapted to feed a linked ore silo.
+# The mining rate, amount and ore weights are all View Variables editable at runtime.
+- type: entity
+  id: PSBluespaceMiner
+  parent: [ BaseMachinePowered, ConstructibleMachine ]
+  name: bluespace miner
+  description: Through the power of bluespace, it is capable of producing materials. Link it to an ore silo to deposit its output.
+  suffix: Palmtree
+  components:
+  - type: Sprite
+    sprite: _PS/Structures/Machines/bluespace_miner.rsi
+    snapCardinals: true
+    layers:
+    - state: miner
+      map: ["base"]
+    - state: miner_on
+      map: ["active"]
+      shader: unshaded
+      visible: false
+    - state: miner_open
+      map: ["enum.WiresVisualLayers.MaintenancePanel"]
+      visible: false
+  - type: Appearance
+  - type: GenericVisualizer
+    visuals:
+      enum.PowerDeviceVisuals.Powered:
+        active:
+          True: { visible: true }
+          False: { visible: false }
+  - type: ApcPowerReceiver
+    powerLoad: 300
+  - type: BindToStation
+    enabled: false # Palmtree: should be movable between ships/stations
+  - type: BluespaceMiner
+  - type: OreSiloClient
+  - type: MaterialStorage
+    storageLimit: 5000
+    whitelist:
+      tags:
+      - Sheet
+      - RawMaterial
+      - Ingot
+      - Ore
+  - type: WiresVisuals
+  - type: WiresPanel
+  - type: Machine
+    board: PSBluespaceMinerCircuitboard
+  - type: Destructible
+    thresholds:
+    - trigger:
+        !type:DamageTrigger
+        damage: 300
+      behaviors:
+      - !type:PlaySoundBehavior
+        sound:
+          collection: MetalBreak
+      - !type:ChangeConstructionNodeBehavior
+        node: machineFrame
+      - !type:DoActsBehavior
+        acts: ["Destruction"]
+  - type: StaticPrice
+    price: 300

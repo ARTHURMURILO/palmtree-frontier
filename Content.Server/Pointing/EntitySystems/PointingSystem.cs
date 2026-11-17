@@ -307,6 +307,50 @@ namespace Content.Server.Pointing.EntitySystems
             return true;
         }
 
+        /// <summary>
+        /// Palmtree: lets a non-session entity (for example a circuit assembly) create the same
+        /// pointing arrow without a player session. No popup text is sent; the arrow is the
+        /// observable result.
+        /// </summary>
+        public bool TryPoint(EntityUid pointer, EntityCoordinates coordsPointed, EntityUid pointed)
+        {
+            if (!coordsPointed.IsValid(EntityManager) ||
+                HasComp<PointingArrowComponent>(pointed) ||
+                !CanPoint(pointer) ||
+                !InRange(pointer, coordsPointed))
+            {
+                return false;
+            }
+
+            var mapCoordsPointed = _transform.ToMapCoordinates(coordsPointed);
+            _rotateToFaceSystem.TryFaceCoordinates(pointer, mapCoordsPointed.Position);
+
+            var arrow = Spawn("PointingArrow", coordsPointed);
+
+            if (TryComp<PointingArrowComponent>(arrow, out var pointing))
+            {
+                pointing.StartPosition = _transform.ToCoordinates(
+                    (arrow, Transform(arrow)),
+                    _transform.ToMapCoordinates(Transform(pointer).Coordinates)).Position;
+                pointing.EndTime = _gameTiming.CurTime + PointDuration;
+                Dirty(arrow, pointing);
+            }
+
+            if (EntityQuery<PointingArrowAngeringComponent>().FirstOrDefault() != null &&
+                TryComp<PointingArrowComponent>(arrow, out var pointingArrowComponent))
+            {
+                pointingArrowComponent.Rogue = true;
+            }
+
+            if (TryComp(pointer, out VisibilityComponent? pointerVisibility))
+            {
+                var arrowVisibility = EnsureComp<VisibilityComponent>(arrow);
+                _visibilitySystem.SetLayer((arrow, arrowVisibility), pointerVisibility.Layer);
+            }
+
+            return true;
+        }
+
         public override void Initialize()
         {
             base.Initialize();

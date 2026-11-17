@@ -524,3 +524,248 @@
         - !type:ReagentThreshold
           reagent: Frezon
           min: 1
+
+# Assmos - /tg/ gases. Ported from Funky Station.
+# Funky's original blocks gate several effects on Impstation organ types (slimes,
+# thaven) which this fork does not have; those conditions were dropped.
+
+- type: reagent
+  id: BZ
+  name: reagent-name-bz
+  desc: reagent-desc-bz
+  physicalDesc: reagent-physical-desc-gaseous
+  flavor: bitter
+  color: "#9370db"
+  metabolisms:
+    Gas:
+      effects:
+      - !type:Emote
+        conditions:
+        - !type:ReagentThreshold
+          reagent: BZ
+          min: 0.2
+        emote: Cough
+        showInChat: true
+        probability: 0.1
+      - !type:HealthChange
+        conditions:
+        - !type:ReagentThreshold
+          reagent: BZ
+          min: 0.3
+        scaleByQuantity: true
+        ignoreResistances: true
+        damage:
+          types:
+            Cellular: 0.005
+      - !type:ModifyStatusEffect
+        conditions:
+        - !type:ReagentThreshold
+          reagent: BZ
+          min: 0.2
+        effectProto: StatusEffectSeeingRainbow
+        type: Add
+        time: 9
+        refresh: false
+
+- type: reagent
+  id: Healium
+  name: reagent-name-healium
+  desc: reagent-desc-healium
+  physicalDesc: reagent-physical-desc-gaseous
+  flavor: strange
+  color: "#90560b"
+  metabolisms:
+    Gas:
+      effects:
+      - !type:HealthChange
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Healium
+          max: 24
+        scaleByQuantity: true
+        ignoreResistances: true
+        damage:
+          groups:
+            Burn: -2
+            Toxin: -5
+            Brute: -2
+      - !type:HealthChange
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Healium
+          min: 24
+        ignoreResistances: true
+        damage:
+          groups:
+            Burn: -20
+            Toxin: -50
+            Brute: -20
+      - !type:ModifyStatusEffect
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Healium
+          min: 8
+        effectProto: StatusEffectForcedSleeping
+        type: Add
+        time: 1
+      - !type:Drunk
+        boozePower: 35
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Healium
+          min: 4
+    Medicine:
+      effects:
+      - !type:HealthChange
+        damage:
+          groups:
+            Burn: -0.1
+            Toxin: -0.1
+            Brute: -0.1
+      - !type:ModifyStatusEffect
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Healium
+          min: 6
+        effectProto: StatusEffectForcedSleeping
+        type: Add
+        time: 3
+      - !type:Drunk
+        boozePower: 150
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Healium
+          min: 3
+
+- type: reagent
+  id: Nitrium
+  name: reagent-name-nitrium
+  desc: reagent-desc-nitrium
+  physicalDesc: reagent-physical-desc-gaseous
+  flavor: sour
+  color: "#90560B"
+  metabolisms:
+    Gas:
+      effects:
+      - !type:MovespeedModifier
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Nitrium
+          min: 1
+          max: 8
+        walkSpeedModifier: 1.25
+        sprintSpeedModifier: 1.25
+        statusLifetime: 6
+      - !type:MovespeedModifier
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Nitrium
+          min: 8
+          max: 12
+        walkSpeedModifier: 1.4
+        sprintSpeedModifier: 1.4
+        statusLifetime: 6
+      - !type:MovespeedModifier
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Nitrium
+          min: 12
+        walkSpeedModifier: 1.6
+        sprintSpeedModifier: 1.6
+        statusLifetime: 6
+      - !type:HealthChange
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Nitrium
+          min: 10
+        ignoreResistances: true
+        damage:
+          types:
+            Asphyxiation: 15
+
+- type: reagent
+  id: Pluoxium
+  name: reagent-name-pluoxium
+  desc: reagent-desc-pluoxium
+  physicalDesc: reagent-physical-desc-gaseous
+  flavor: bitter
+  color: "#7b68ee"
+  metabolisms:
+    Gas:
+      effects:
+      - !type:Oxygenate
+        factor: 8
+      # Convert Pluoxium into CO2.
+      - !type:ModifyLungGas
+        ratios:
+          CarbonDioxide: 1.0
+          Pluoxium: -1.0
+
+- type: reagent
+  id: Hyper-Noblium
+  name: reagent-name-hyper-noblium
+  desc: reagent-desc-hyper-noblium
+  physicalDesc: reagent-physical-desc-gaseous
+  flavor: bitter
+  color: "#33cccc"
+
+- type: reagent
+  id: Proto-Nitrate
+  name: reagent-name-proto-nitrate
+  desc: reagent-desc-proto-nitrate
+  physicalDesc: reagent-physical-desc-gaseous
+  flavor: bitter
+  color: "#009933"
+
+- type: reagent
+  id: Zauker
+  name: reagent-name-zauker
+  desc: reagent-desc-zauker
+  physicalDesc: reagent-physical-desc-gaseous
+  flavor: bitter
+  color: "#1c1a1a"
+  metabolisms:
+    Gas:
+      effects:
+      - !type:HealthChange
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Zauker
+          min: 0.25
+          max: 12
+        scaleByQuantity: true
+        ignoreResistances: true
+        damage:
+          types:
+            Slash: 6
+            Heat: 2
+            Poison: 2
+            Bloodloss: 1
+      - !type:HealthChange
+        conditions:
+        - !type:ReagentThreshold
+          reagent: Zauker
+          min: 12
+        ignoreResistances: true
+        damage:
+          types:
+            Slash: 30
+            Heat: 10
+            Poison: 10
+            Bloodloss: 5
+
+- type: reagent
+  id: Halon
+  name: reagent-name-halon
+  desc: reagent-desc-halon
+  physicalDesc: reagent-physical-desc-gaseous
+  flavor: bitter
+  color: "#e3574d"
+
+- type: reagent
+  id: Anti-Noblium
+  name: reagent-name-anti-noblium
+  desc: reagent-desc-anti-noblium
+  physicalDesc: reagent-physical-desc-gaseous
+  flavor: bitter
+  color: "#525151"

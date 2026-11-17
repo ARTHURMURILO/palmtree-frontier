@@ -38,6 +38,7 @@ public sealed class InteractionBoundUserInterface : BoundUserInterface
             SendMessage(new InteractionGenitalArouseMessage(type, aroused));
         _window.OnGenitalVisibilityChanged += (type, visibility) =>
             SendMessage(new InteractionGenitalSetVisibilityMessage(type, visibility));
+        _window.OnLayerModeChanged += mode => SendMessage(new InteractionSetLayerModeMessage(mode));
     }
 
     protected override void UpdateState(BoundUserInterfaceState state)

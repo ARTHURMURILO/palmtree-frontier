@@ -400,7 +400,7 @@
   id: NFPrisonerClosetWallOrange
   parent: BaseWallCloset
   name: prisoner wall closet
-  description: It's a storage unit for Space Law compliant prisoner garb.
+  description: It's a storage unit for Frontier Sector Code compliant prisoner garb.
   components:
   - type: Appearance
   - type: EntityStorageVisuals

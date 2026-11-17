@@ -13,6 +13,9 @@ namespace Content.Shared.Input
         public static readonly BoundKeyFunction Drop = "Drop";
         public static readonly BoundKeyFunction ExamineEntity = "ExamineEntity";
         public static readonly BoundKeyFunction InteractWithEntity = "InteractWithEntity"; // Palmtree
+        public static readonly BoundKeyFunction CircuitEditorUndo = "CircuitEditorUndo";
+        public static readonly BoundKeyFunction CircuitEditorRedo = "CircuitEditorRedo";
+        public static readonly BoundKeyFunction CircuitEditorSave = "CircuitEditorSave";
         public static readonly BoundKeyFunction FocusChat = "FocusChatInputWindow";
         public static readonly BoundKeyFunction FocusLocalChat = "FocusLocalChatWindow";
         public static readonly BoundKeyFunction FocusEmote = "FocusEmote";

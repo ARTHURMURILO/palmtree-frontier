@@ -317,6 +317,10 @@ public partial class ChatSystem
         var ev = new EmoteEvent(proto);
         RaiseLocalEvent(uid, ref ev);
 
+        // Broadcast the performed emote for perception systems that cannot subscribe to the
+        // per-entity EmoteEvent (for example sensor-equipped circuitry assemblies).
+        RaiseLocalEvent(new EmotePerformedEvent(uid, proto));
+
         return true;
     }
 }

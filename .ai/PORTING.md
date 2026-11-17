@@ -878,10 +878,17 @@ Follow-up on the RCD/RPD after the second pass:
   device-on-pipe placement. Instead the RCD/RPD raises `RCDAtmosOverlapAttemptEvent`, and the
   server's `PipeRestrictOverlapSystem` compares the placement's resolved prototype nodes (mirror
   flip + RPD layer variant included) with the anchored nodes on the tile: only a same-layer,
-  same-direction overlap is vetoed. `Unstackable` remains on the devices themselves (vents, pumps,
-  sensors, manifold), so a second device on the same layer is still rejected. Pipes have no
-  fixtures, which is why the old collision check let duplicates through (the overlap popup came
-  from `PipeRestrictOverlapSystem` after the spawn).
+  same-direction overlap is vetoed. The layer itself comes from `RPDLayerEvent`, because the
+  server's click location is snapped to the tile centre; `RCDComponent.LastKnownPipeLayer` is
+  server-only working state and the resolved value rides in `RCDDoAfterEvent.Layer`. `Unstackable` remains on the devices themselves (vents, pumps,
+  sensors), so a second device on the same layer is still rejected.
+- **Pipe segments never share a layer.** The `AtmosPipeSegment` tag (`_PS/tags.yml`) marks the five
+  plain pipe shapes, the manifold and the broken pipe. Two segments on one layer have the same
+  sprite draw depth and z-fight even when their node directions do not overlap, so
+  `IsConstructionLocationValid` rejects that pair outright. Devices are exempt: their sprites use
+  a different draw depth, and the node check decides whether they fit. The tag is networked, so
+  the client's placement ghost also shows the stack as invalid; the client still cannot read the
+  server-only `PipeNode` data used for direction conflicts.
 - Test: `Content.IntegrationTests/Tests/_PS/RcdAtmosStackingTest.cs` (pipe-on-pipe same layer
   blocked, empty tile allowed, another layer allowed, valid vent-on-pipe allowed, conflicting
   vent node blocked, non-conflicting pipe orientation allowed, second device blocked).

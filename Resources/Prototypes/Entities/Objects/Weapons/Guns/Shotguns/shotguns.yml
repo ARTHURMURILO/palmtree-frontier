@@ -106,7 +106,7 @@
 - type: entity
   categories: [ HideSpawnMenu ] # Frontier
   name: double-barreled shotgun
-  parent: [BaseWeaponShotgun, BaseGunWieldable, BaseC1Contraband] # Frontier: BaseSecurityBartenderZookeeperContraband<BaseC1Contraband
+  parent: [BaseWeaponShotgun, BaseGunWieldable, BaseC2Contraband] # Frontier: BaseSecurityBartenderZookeeperContraband<BaseC2Contraband
   id: WeaponShotgunDoubleBarreled
   description: An immortal classic. A civilian grade shotgun. Uses .50 shotgun shells.
   components:
@@ -191,7 +191,7 @@
 - type: entity
   categories: [ HideSpawnMenu ] # Frontier
   name: sawn-off shotgun
-  parent: [ BaseWeaponShotgun, BaseC1Contraband ] # Frontier: BaseSecurityBartenderContraband<BaseC1Contraband
+  parent: [ BaseWeaponShotgun, BaseC2Contraband ] # Frontier: BaseSecurityBartenderContraband<BaseC2Contraband
   id: WeaponShotgunSawn
   description: Groovy! Uses .50 shotgun shells.
   components: # needs to be super inaccurate because you don't need to wield it
@@ -232,7 +232,7 @@
 - type: entity
   categories: [ HideSpawnMenu ] # Frontier
   name: handmade pistol
-  parent: [BaseWeaponShotgun, BaseC1Contraband] # Frontier: BaseMinorContraband<BaseC1Contraband
+  parent: [BaseWeaponShotgun, BaseC2Contraband] # Frontier: BaseMinorContraband<BaseC2Contraband
   id: WeaponShotgunHandmade
   description: Looks unreliable, but legal. Uses .50 shotgun shells.
   components:
@@ -278,7 +278,7 @@
 - type: entity
   categories: [ HideSpawnMenu ] # Frontier
   name: improvised shotgun
-  parent: [BaseWeaponShotgun, BaseGunWieldable, BaseC1Contraband] # Frontier: BaseMinorContraband<BaseC1Contraband
+  parent: [BaseWeaponShotgun, BaseGunWieldable, BaseC2Contraband] # Frontier: BaseMinorContraband<BaseC2Contraband
   id: WeaponShotgunImprovised
   description: A shitty, but legal, hand-made shotgun that uses .50 shotgun shells. It can only hold one round in the chamber.
   components:

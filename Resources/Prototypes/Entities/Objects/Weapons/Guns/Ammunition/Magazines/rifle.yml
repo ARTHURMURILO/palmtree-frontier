@@ -1,7 +1,7 @@
 - type: entity
   id: BaseMagazineRifle
   name: "magazine (.20 rifle)"
-  parent: [ BaseItem, BaseC1Contraband, RecyclableItemSteelTiny ] # Frontier: BaseSecurityContraband<BaseC1Contraband, added RecyclableItemSteelTiny
+  parent: [ BaseItem, BaseC2Contraband, RecyclableItemSteelTiny ] # Frontier: BaseSecurityContraband<BaseC2Contraband, added RecyclableItemSteelTiny
   abstract: true
   components:
   - type: Tag
@@ -80,6 +80,9 @@
   name: "magazine (.20 rifle incendiary)"
   parent: MagazineRifle
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     # proto: CartridgeRifleIncendiary # Frontier
   - type: Sprite
@@ -134,6 +137,9 @@
   name: "magazine (.20 rifle uranium)"
   parent: BaseMagazineRifle
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     # proto: CartridgeRifleUranium # Frontier
   - type: Sprite

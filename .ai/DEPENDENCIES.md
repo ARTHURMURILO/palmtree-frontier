@@ -84,6 +84,7 @@ GameTicker.StartRound ──► GamePreset prototype ──► GameRules ──�
 | EF Core (Sqlite + Npgsql) | Persistence |
 | Lidgren.Network | Engine networking (vendored) |
 | NetCord | Discord integration |
+| MoonSharp 2.0.0 | Server-only Lua interpreter for the circuitry CPU runtime (BSD-3-Clause) |
 | Fluent | Locale files |
 | NUnit | Tests |
 | Nix (optional) | Dev shell |

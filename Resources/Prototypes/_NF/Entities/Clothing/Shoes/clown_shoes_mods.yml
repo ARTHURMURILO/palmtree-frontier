@@ -6,6 +6,9 @@
   suffix: "Whoopie"
   description: "The modified standard-issue clowning shoes. Damn they're so soft!"
   components:
+  - type: Contraband
+    severity: Class1
+    allowedDepartments: []
   - type: FootstepModifier
     footstepSoundCollection:
       collection: Parp
@@ -23,6 +26,9 @@
   suffix: "Ketchup"
   description: "The modified standard-issue clowning shoes. Damn they're soggy!"
   components:
+  - type: Contraband
+    severity: Class1
+    allowedDepartments: []
   - type: SolutionContainerManager
     solutions:
       food:
@@ -53,6 +59,9 @@
   suffix: "Mustarchup"
   description: "The modified standard-issue clowning shoes. Damn they're very soggy!"
   components:
+  - type: Contraband
+    severity: Class1
+    allowedDepartments: []
   - type: SolutionContainerManager
     solutions:
       food:
@@ -85,6 +94,9 @@
   suffix: "Ultimate"
   description: "The modified standard-issue clowning shoes. Damn they're soft and soggy!"
   components:
+  - type: Contraband
+    severity: Class1
+    allowedDepartments: []
   - type: SolutionContainerManager
     solutions:
       food:

@@ -67,6 +67,7 @@ public sealed class RCDSystem : EntitySystem
     private static readonly ProtoId<TagPrototype> CatwalkTag = "Catwalk";
     private static readonly ProtoId<TagPrototype> AirlockTag = "Airlock"; // Palmtree: airlocks and firelocks may share a tile
     private static readonly ProtoId<TagPrototype> UnstackableTag = "Unstackable"; // Palmtree: no stacking atmos pipes/devices
+    private static readonly ProtoId<TagPrototype> PipeSegmentTag = "AtmosPipeSegment"; // Palmtree: two segments on one layer z-fight
     private static readonly ProtoId<TagPrototype> WindowTag = "Window";
     private static readonly ProtoId<TagPrototype> DirectionalWindowTag = "DirectionalWindow"; // Palmtree: only one per edge
     // Palmtree: even the admin RCD must leave these alone.
@@ -90,7 +91,7 @@ public sealed class RCDSystem : EntitySystem
         SubscribeNetworkEvent<RCDConstructionGhostFlipEvent>(OnRCDConstructionGhostFlipEvent); // Palmtree: mirror prototype flip
         // Palmtree: RPD pipe colouring and pipe layer placement
         SubscribeLocalEvent<RCDComponent, RCDColorChangeMessage>(OnColorChange);
-        SubscribeNetworkEvent<RPDEyeRotationEvent>(OnRPDEyeRotationEvent);
+        SubscribeNetworkEvent<RPDLayerEvent>(OnRPDLayerEvent);
     }
 
     #region Event handling
@@ -197,32 +198,15 @@ public sealed class RCDSystem : EntitySystem
         var tile = _mapSystem.GetTileRef(gridUid.Value, mapGrid, location);
         var position = _mapSystem.TileIndicesFor(gridUid.Value, mapGrid, location);
 
-        // Palmtree: work out which atmos pipe layer the click was aimed at, from its offset from
-        // the centre of the tile. Matches what AlignRPDAtmosPipeLayers previews on the client.
+        // Palmtree: the client knows the raw cursor offset and tells us which atmos pipe layer
+        // the ghost is previewing. The server's click location is snapped to the tile centre, so
+        // recomputing the layer here always picked primary and disagreed with the ghost.
         // The layer travels in the do-after event: the operation finishes on a later tick, so
         // system-wide state would let concurrent placements overwrite each other's layer.
         var layer = AtmosPipeLayer.Primary;
 
         if (component.IsRpd && prototype.Mode == RcdMode.ConstructObject && !prototype.NoLayers)
-        {
-            // TileSize is a ushort: this must be a float, or `/ 2` is integer division (1 / 2 == 0)
-            // and the deadzone ends up measured from the tile corner instead of its centre.
-            float tileSize = mapGrid.TileSize;
-            var tileCenter = new Vector2(tile.X + tileSize / 2, tile.Y + tileSize / 2);
-            var mouseCoordsDiff = args.ClickLocation.Position - tileCenter;
-            const float mouseDeadzoneRadius = 0.25f;
-
-            if (mouseCoordsDiff.Length() > mouseDeadzoneRadius && component.LastKnownEyeRotation.HasValue)
-            {
-                var gridRotation = _transform.GetWorldRotation(gridUid.Value);
-                var angle = new Angle(mouseCoordsDiff);
-                var eyeRotation = new Angle(component.LastKnownEyeRotation.Value);
-                var direction = (angle + eyeRotation + gridRotation + Math.PI / 2).GetCardinalDir();
-                layer = (direction == Direction.North || direction == Direction.East)
-                    ? AtmosPipeLayer.Secondary
-                    : AtmosPipeLayer.Tertiary;
-            }
-        }
+            layer = component.LastKnownPipeLayer;
 
         if (!IsRCDOperationStillValid(uid, component, gridUid.Value, mapGrid, tile, position, args.Target, args.User, layer: layer, direction: component.ConstructionDirection))
             return;
@@ -459,13 +443,13 @@ public sealed class RCDSystem : EntitySystem
     }
     // Palmtree end
 
-    // Palmtree: the RPD placement mode forwards the local eye rotation, which is not networked,
-    // so the server can resolve the same pipe layer the client previewed.
-    private void OnRPDEyeRotationEvent(RPDEyeRotationEvent ev, EntitySessionEventArgs session)
+    // Palmtree: the RPD placement mode sends the layer under the cursor, because the server's
+    // click location is snapped to the tile centre and cannot reproduce the cursor offset.
+    private void OnRPDLayerEvent(RPDLayerEvent ev, EntitySessionEventArgs session)
     {
         var uid = GetEntity(ev.NetEntity);
 
-        // Only accept eye rotations for an RPD this player is actually holding
+        // Only accept layer updates for an RPD this player is actually holding
         if (session.SenderSession.AttachedEntity is not { } player)
             return;
 
@@ -475,15 +459,11 @@ public sealed class RCDSystem : EntitySystem
         if (!TryComp<RCDComponent>(uid, out var rcd))
             return;
 
-        if (rcd.LastKnownEyeRotation == ev.EyeRotation)
+        // Not dirtied: only the server needs this, to resolve the pipe layer in FinalizeRCDOperation.
+        if (rcd.LastKnownPipeLayer == ev.Layer)
             return;
 
-        // Not dirtied: only the server needs this, to resolve the pipe layer in FinalizeRCDOperation,
-        // and network churn every time the player turns their head is not worth it.
-        if (ev.EyeRotation is { } rotation && !float.IsFinite(rotation))
-            return;
-
-        rcd.LastKnownEyeRotation = ev.EyeRotation;
+        rcd.LastKnownPipeLayer = ev.Layer;
     }
 
     #endregion
@@ -629,9 +609,11 @@ public sealed class RCDSystem : EntitySystem
 
         // Palmtree: atmos pipes/devices carry no fixtures, so the collision check below cannot see
         // them. `Unstackable` blocks a second device on the same atmos layer; plain pipes are not
-        // tagged because a vent or pump is supposed to sit on top of them. Actual pipe node
-        // conflicts are rejected by the node-aware RCDAtmosOverlapAttemptEvent below.
+        // tagged because a vent or pump is supposed to sit on top of them. Two plain pipe segments
+        // on one layer share a draw depth and z-fight, so those are rejected as a pair. Actual pipe
+        // node conflicts are rejected by the node-aware RCDAtmosOverlapAttemptEvent below.
         var buildsUnstackable = false;
+        var buildsPipeSegment = false;
         var buildsAirlock = false;
         var buildsFirelock = false;
         var builtLayer = AtmosPipeLayer.Primary;
@@ -644,6 +626,7 @@ public sealed class RCDSystem : EntitySystem
             // entity of the same kind (the collision check still rejects that).
             buildsAirlock = builtTags != null && _tags.HasTag(builtTags, AirlockTag);
             buildsFirelock = builtProto.HasComponent<FirelockComponent>(EntityManager.ComponentFactory);
+            buildsPipeSegment = builtTags != null && _tags.HasTag(builtTags, PipeSegmentTag);
             buildsWindow = builtTags != null && _tags.HasTag(builtTags, WindowTag);
             buildsDirectionalWindow = builtTags != null && _tags.HasTag(builtTags, DirectionalWindowTag);
             buildsFullTile = buildsFullTile || buildsWindow;
@@ -677,7 +660,7 @@ public sealed class RCDSystem : EntitySystem
                 if (overlapEv.Cancelled)
                 {
                     if (popMsgs)
-                        _popup.PopupClient(Loc.GetString("rcd-component-cannot-build-on-occupied-tile-message"), uid, user);
+                        _popup.PopupClient(Loc.GetString("rcd-component-pipe-nodes-overlap-message", ("layer", GetLayerName(builtLayer))), uid, user);
 
                     return false;
                 }
@@ -716,7 +699,25 @@ public sealed class RCDSystem : EntitySystem
                 }
             }
 
-            // Palmtree: no stacking pipes/devices on the same layer
+            // Palmtree: two pipe segments on one layer z-fight, so they never stack even when their
+            // node directions would not overlap. Devices use a different draw depth and are exempt.
+            if (buildsPipeSegment && IsPipeSegment(ent))
+            {
+                var existingLayer = AtmosPipeLayer.Primary;
+
+                if (TryComp<AtmosPipeLayersComponent>(ent, out var existingLayers))
+                    existingLayer = existingLayers.CurrentPipeLayer;
+
+                if (existingLayer == builtLayer)
+                {
+                    if (popMsgs)
+                        _popup.PopupClient(Loc.GetString("rcd-component-pipe-layer-occupied-message", ("layer", GetLayerName(builtLayer))), uid, user);
+
+                    return false;
+                }
+            }
+
+            // Palmtree: no stacking devices on the same layer
             if (buildsUnstackable && _tags.HasTag(ent, UnstackableTag))
             {
                 var existingLayer = AtmosPipeLayer.Primary;
@@ -997,6 +998,20 @@ public sealed class RCDSystem : EntitySystem
             ammoComp.Charges = overflow;
             Dirty(ammo, ammoComp);
         }
+    }
+
+    /// <summary>
+    /// Palmtree: whether the entity is a plain pipe segment. Tags are networked, so this works on
+    /// the client's placement ghost as well as on the server.
+    /// </summary>
+    private bool IsPipeSegment(EntityUid ent)
+    {
+        return _tags.HasTag(ent, PipeSegmentTag);
+    }
+
+    private string GetLayerName(AtmosPipeLayer layer)
+    {
+        return Loc.GetString("atmos-pipe-layers-component-layer-" + layer.ToString().ToLower());
     }
 
     /// <summary>

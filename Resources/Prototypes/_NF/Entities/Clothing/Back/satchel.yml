@@ -13,6 +13,9 @@
   parent: [ ClothingBackpackSatchel, BaseC3ContrabandNoValue, ContrabandClothing ]
   description: A satchel produced by Arcadia Industries.
   components:
+  - type: Contraband
+    severity: Class2
+    allowedDepartments: [ Security, Command ]
   - type: Sprite
     sprite: _NF/Clothing/Back/Satchels/arcadia.rsi
 

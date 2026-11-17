@@ -3,7 +3,7 @@
 - type: entity
   id: NFBaseMagazinePistol45
   name: pistol magazine (.45 pistol)
-  parent: [ BaseC1Contraband, BaseMagazineMagnum, RecyclableItemSteelTiny ]
+  parent: [ BaseC2Contraband, BaseMagazineMagnum, RecyclableItemSteelTiny ]
   abstract: true
   components:
   - type: Tag
@@ -36,7 +36,7 @@
 - type: entity
   id: NFBaseMagazinePistolSubMachineGun45
   name: smg magazine (.45 pistol)
-  parent: [ BaseC1Contraband, BaseMagazineMagnum, RecyclableItemSteelTiny ]
+  parent: [ BaseC2Contraband, BaseMagazineMagnum, RecyclableItemSteelTiny ]
   abstract: true
   components:
   - type: Tag
@@ -89,6 +89,9 @@
   name: pistol magazine (.45 pistol, overpressure)
   parent: NFBaseMagazinePistol45
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgePistol45Overpressure
   - type: Sprite
@@ -118,6 +121,9 @@
   name: pistol magazine (.45 pistol, incendiary)
   parent: NFBaseMagazinePistol45
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgePistol45Incendiary
   - type: Sprite
@@ -147,6 +153,9 @@
   name: pistol magazine (.45 pistol, uranium)
   parent: NFBaseMagazinePistol45
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgePistol45Uranium
   - type: Sprite
@@ -249,6 +258,9 @@
   name: SMG magazine (.45 pistol, overpressure)
   parent: NFBaseMagazinePistolSubMachineGun45
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: BallisticAmmoProvider
     proto: NFCartridgePistol45Overpressure
   - type: Sprite

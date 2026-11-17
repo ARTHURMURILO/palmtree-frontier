@@ -1,0 +1,249 @@
+# Palmtree: physical circuitry modules. These are ordinary items; the chassis' ItemSlots are the
+# only place they can be installed. Lua is the logic layer, so there are no logic-gate modules.
+- type: entity
+  parent: BaseItem
+  id: CircuitCpuBasic
+  name: basic circuit CPU
+  description: A small Lua processor. It stores one program and can be moved between assemblies.
+  components:
+  - type: Sprite
+    sprite: Objects/Misc/module.rsi
+    state: cpu
+  - type: Item
+    size: Small
+  - type: CircuitCpu
+    maxSourceBytes: 262144
+    autoYieldInstructions: 10000
+    tickBudgetMilliseconds: 0.5
+    idlePowerDraw: 0.25
+  - type: Tag
+    tags: [ CircuitCpu ]
+  - type: UserInterface
+    interfaces:
+      enum.CircuitCpuUiKey.Key:
+        type: CircuitCpuBoundUserInterface
+  - type: ActivatableUI
+    key: enum.CircuitCpuUiKey.Key
+
+- type: entity
+  parent: CircuitCpuBasic
+  id: CircuitCpuAdvanced
+  name: advanced circuit CPU
+  description: A faster Lua processor with more program memory.
+  components:
+  - type: Sprite
+    sprite: Objects/Misc/module.rsi
+    state: cpu_adv
+  - type: CircuitCpu
+    maxSourceBytes: 524288
+    autoYieldInstructions: 20000
+    tickBudgetMilliseconds: 0.75
+    idlePowerDraw: 0.4
+
+- type: entity
+  parent: BaseItem
+  id: CircuitWheels
+  name: wheeled locomotion module
+  description: A pair of small drive wheels. Fast on flat floors.
+  components:
+  - type: Sprite
+    sprite: Objects/Misc/module.rsi
+    state: servo
+  - type: CircuitPart
+    partType: Locomotion
+    walkSpeed: 3.0
+    sprintSpeed: 5.0
+    acceleration: 25
+    movePowerPerMeter: 0.02
+    idlePowerDraw: 0.05
+    actionPowerCost: 0.05
+  - type: Tag
+    tags: [ CircuitLocomotion ]
+
+- type: entity
+  parent: BaseItem
+  id: CircuitTracks
+  name: tracked locomotion module
+  description: Heavy tank treads. Slower, but with more grip and acceleration.
+  components:
+  - type: Sprite
+    sprite: Objects/Misc/module.rsi
+    state: mcontroller
+  - type: CircuitPart
+    partType: Locomotion
+    walkSpeed: 2.0
+    sprintSpeed: 3.5
+    acceleration: 35
+    movePowerPerMeter: 0.04
+    idlePowerDraw: 0.1
+    actionPowerCost: 0.08
+  - type: Tag
+    tags: [ CircuitLocomotion ]
+
+- type: entity
+  parent: BaseItem
+  id: CircuitThruster
+  name: thruster locomotion module
+  description: A compact cold-gas thruster. Ignores gravity and can move through the air, at a steep power cost.
+  components:
+  - type: Sprite
+    sprite: Objects/Misc/module.rsi
+    state: power_mod
+  - type: CircuitPart
+    partType: Locomotion
+    walkSpeed: 3.5
+    sprintSpeed: 6.0
+    acceleration: 15
+    movePowerPerMeter: 0.06
+    idlePowerDraw: 0.15
+    actionPowerCost: 0.1
+    ignoreGravity: true
+    canMoveInAir: true
+  - type: Tag
+    tags: [ CircuitLocomotion ]
+
+- type: entity
+  parent: BaseItem
+  id: CircuitManipulator
+  name: manipulator module
+  description: A simple articulated arm. Grants one hand for picking up items, using tools and firing guns.
+  components:
+  - type: Sprite
+    sprite: Objects/Misc/module.rsi
+    state: cyborg_upgrade
+  - type: CircuitPart
+    partType: Manipulator
+    hands: 1
+    handRange: 1.5
+    idlePowerDraw: 0.05
+    actionPowerCost: 0.05
+  - type: Tag
+    tags: [ CircuitManipulator ]
+
+- type: entity
+  parent: BaseItem
+  id: CircuitSpeaker
+  name: speaker module
+  description: A voice synthesizer. Lets the assembly speak.
+  components:
+  - type: Sprite
+    sprite: Objects/Misc/module.rsi
+    state: radio
+  - type: CircuitPart
+    partType: Voice
+    idlePowerDraw: 0.02
+    actionPowerCost: 0.02
+  - type: Tag
+    tags: [ CircuitVoice ]
+
+- type: entity
+  parent: BaseItem
+  id: CircuitSensor
+  name: sensor module
+  description: A 16-tile camera and microphone. Lets the assembly see, inspect and hear nearby entities.
+  components:
+  - type: Sprite
+    sprite: Objects/Misc/module.rsi
+    state: bluespacearray
+  - type: CircuitPart
+    partType: Sensor
+    sensorRange: 16
+    maxScanResults: 200
+    idlePowerDraw: 0.05
+    actionPowerCost: 0.05
+  - type: Tag
+    tags: [ CircuitSensor ]
+
+- type: entity
+  parent: BaseItem
+  id: CircuitRadio
+  name: radio module
+  description: A compact transceiver with two encryption-key slots. Installed keys determine which radio channels the assembly can use.
+  components:
+  - type: Sprite
+    sprite: Objects/Misc/module.rsi
+    state: radio_micro
+  - type: CircuitPart
+    partType: Radio
+    idlePowerDraw: 0.05
+    actionPowerCost: 0.05
+  - type: EncryptionKeyHolder
+    keySlots: 2
+  - type: ContainerContainer
+    containers:
+      key_slots: !type:Container
+  - type: ContainerFill
+    containers:
+      key_slots:
+      - EncryptionKeyCommon
+  - type: TelecomExempt
+  - type: Tag
+    tags: [ CircuitRadio ]
+
+- type: entity
+  parent: BaseItem
+  id: CircuitBotanicalAnalyzer
+  name: botanical analyzer module
+  description: Reads a plant's growth, health, water, nutrients and seed traits for Lua.
+  components:
+  - type: Sprite
+    sprite: Objects/Misc/module.rsi
+    state: service
+  - type: CircuitPart
+    partType: Analyzer
+    analyzerType: Botanical
+    idlePowerDraw: 0.05
+    actionPowerCost: 0.05
+  - type: Tag
+    tags: [ CircuitAnalyzer ]
+
+- type: entity
+  parent: BaseItem
+  id: CircuitChemicalAnalyzer
+  name: chemical analyzer module
+  description: Reads the solutions and reagent contents of nearby containers for Lua.
+  components:
+  - type: Sprite
+    sprite: Objects/Misc/module.rsi
+    state: science
+  - type: CircuitPart
+    partType: Analyzer
+    analyzerType: Chemical
+    idlePowerDraw: 0.05
+    actionPowerCost: 0.05
+  - type: Tag
+    tags: [ CircuitAnalyzer ]
+
+- type: entity
+  parent: BaseItem
+  id: CircuitMedicalAnalyzer
+  name: medical analyzer module
+  description: Reads the health, damage types and mob state of nearby creatures for Lua.
+  components:
+  - type: Sprite
+    sprite: Objects/Misc/module.rsi
+    state: medical
+  - type: CircuitPart
+    partType: Analyzer
+    analyzerType: Medical
+    idlePowerDraw: 0.05
+    actionPowerCost: 0.05
+  - type: Tag
+    tags: [ CircuitAnalyzer ]
+
+- type: entity
+  parent: BaseItem
+  id: CircuitGasAnalyzer
+  name: gas analyzer module
+  description: Reads the gas mixture, pressure and temperature of pipes, vents, canisters and the surrounding atmosphere for Lua.
+  components:
+  - type: Sprite
+    sprite: Objects/Misc/module.rsi
+    state: airalarm_electronics
+  - type: CircuitPart
+    partType: Analyzer
+    analyzerType: Gas
+    idlePowerDraw: 0.05
+    actionPowerCost: 0.05
+  - type: Tag
+    tags: [ CircuitAnalyzer ]

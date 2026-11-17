@@ -124,3 +124,16 @@
   - SuperMatterBinStockPart
   - PicoManipulatorStockPart
   - NFWeaponParticleDecelerator
+
+- type: latheRecipePack
+  id: NFAtmosMachineryEngineering
+  recipes:
+  - ElectrolyzerMachineCircuitboard # Funky
+  - CrystallizerMachineCircuitboard # Funky
+  - SmallGasTurbineFlatpack # Funky
+  - GasTurbineFlatpack # Funky
+
+- type: latheRecipePack
+  id: NFAtmosMachineryGeneral
+  recipes:
+  - PipeScrubberMachineCircuitBoard # Funky

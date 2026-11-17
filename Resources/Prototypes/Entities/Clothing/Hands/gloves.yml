@@ -207,7 +207,7 @@
   - type: FingerprintMask
 
 - type: entity
-  parent: [ClothingHandsBase, BaseToggleClothing, BaseC3Contraband, ContrabandClothing] # Frontier: BaseMajorContraband<BaseC3Contraband, added ContrabandClothing as parent
+  parent: [ClothingHandsBase, BaseToggleClothing, BaseC5ContrabandUnredeemable, ContrabandClothing] # Frontier: BaseMajorContraband<BaseC5ContrabandUnredeemable, added ContrabandClothing as parent
   id: ClothingHandsGlovesSpaceNinja
   name: space ninja gloves
   description: These black nano-enhanced gloves insulate from electricity and provide fire resistance.
@@ -369,6 +369,9 @@
   id: ThievingGloves
   suffix: Thieving
   components:
+  - type: Contraband
+    severity: Class5
+    allowedDepartments: []
   - type: Tag
     tags: [] # ignore "WhitelistChameleon" tag
   - type: Thieving

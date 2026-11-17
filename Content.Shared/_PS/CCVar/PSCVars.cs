@@ -86,6 +86,17 @@ public sealed partial class PSCVars
         CVarDef.Create("ps.ship_combat.torpedo_steering_duration", 120f, CVar.SERVER);
 
     /*
+     *  Circuitry
+     */
+
+    /// <summary>
+    /// Palmtree: emergency kill switch for the Lua circuitry runtime. When false, no new programs
+    /// can start and any running programs are stopped on the next tick.
+    /// </summary>
+    public static readonly CVarDef<bool> CircuitryLuaEnabled =
+        CVarDef.Create("circuitry.lua.enabled", true, CVar.SERVER);
+
+    /*
      *  Client
      */
 

@@ -122,6 +122,9 @@
   name: cartridge (.20 rifle, overpressure)
   parent: NFBaseCartridgeRifle20
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: NFBulletRifle20Overpressure
   - type: Sprite
@@ -137,6 +140,9 @@
   name: cartridge (.20 rifle, incendiary)
   parent: NFBaseCartridgeRifle20
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: NFBulletRifle20Incendiary
   - type: Sprite
@@ -152,6 +158,9 @@
   name: cartridge (.20 rifle, uranium)
   parent: NFBaseCartridgeRifle20
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: NFBulletRifle20Uranium
   - type: Sprite
@@ -304,6 +313,9 @@
   name: cartridge (.30 rifle, overpressure)
   parent: NFBaseCartridgeRifle30
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: NFBulletRifle30Overpressure
   - type: Sprite
@@ -319,6 +331,9 @@
   name: cartridge (.30 rifle, incendiary)
   parent: NFBaseCartridgeRifle30
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: NFBulletRifle30Incendiary
   - type: Sprite
@@ -334,6 +349,9 @@
   name: cartridge (.30 rifle, uranium)
   parent: NFBaseCartridgeRifle30
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     proto: NFBulletRifle20Uranium
   - type: Sprite

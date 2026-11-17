@@ -99,7 +99,7 @@
         Piercing: 25
 
 - type: entity
-  parent: [ BaseBoltProjectile, BaseBoltEmbeddable, BaseBoltLiquidInjector, BaseC1Contraband ]
+  parent: [ BaseBoltProjectile, BaseBoltEmbeddable, BaseBoltLiquidInjector, BaseC2Contraband ]
   id: BaseCrossbowBolt
   abstract: true
   components:

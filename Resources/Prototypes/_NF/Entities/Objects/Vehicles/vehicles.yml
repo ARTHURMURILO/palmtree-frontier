@@ -556,7 +556,7 @@
 - type: entity
   parent:
   - VehicleHoverbikeMailcarrier
-  - BaseC2ContrabandUnredeemable
+  - BaseC5ContrabandUnredeemable
   id: NFVehicleHoverbikeNfsd
   name: NFSD hoverbike
   description: An NFSD issued turbine with bike handles. Very safe.

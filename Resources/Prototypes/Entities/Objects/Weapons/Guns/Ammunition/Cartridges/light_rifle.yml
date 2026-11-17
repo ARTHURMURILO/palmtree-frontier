@@ -1,7 +1,7 @@
 - type: entity
   id: BaseCartridgeLightRifle
   name: cartridge (.30 rifle)
-  parent: [ BaseCartridge, BaseC1Contraband ] # Frontier: BaseSecurityContraband<BaseC1Contraband
+  parent: [ BaseCartridge, BaseC2Contraband ] # Frontier: BaseSecurityContraband<BaseC2Contraband
   abstract: true
   components:
   - type: Tag
@@ -54,6 +54,9 @@
   parent: BaseCartridgeLightRifle
   description: A classic intermediate cartridge used by many combat rifles and LMGs. Incendiary ammunition contains a self-igniting compound that sets the target ablaze.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     # proto: BulletLightRifleIncendiary # Frontier
   - type: Sprite
@@ -71,6 +74,9 @@
   parent: BaseCartridgeLightRifle
   description: A classic intermediate cartridge used by many combat rifles and LMGs. Uranium ammunition replaces the lead core of the bullet with fissile material, irradiating the target from the inside.
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     # proto: BulletLightRifleUranium # Frontier
   - type: Sprite

@@ -52,6 +52,11 @@
                     <Slider Name="MoaningMultiplierSlider" MinValue="0" MaxValue="100"
                             HorizontalExpand="True" />
                 </BoxContainer>
+                <BoxContainer Orientation="Horizontal" SeparationOverride="6">
+                    <Label Text="{Loc 'interaction-layer-mode'}" VerticalAlignment="Center" />
+                    <OptionButton Name="LayerModeButton" HorizontalExpand="True"
+                                  ToolTip="{Loc 'interaction-layer-mode-tooltip'}" />
+                </BoxContainer>
             </BoxContainer>
         </TabContainer>
 

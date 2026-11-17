@@ -56,3 +56,7 @@ rpd-color-distro = Distro
 rpd-color-air = Air
 rpd-color-mix = Mix
 rpd-color-external = External
+
+# Palmtree: RPD per-layer stacking feedback
+rcd-component-pipe-layer-occupied-message = There is already a pipe on the { $layer } atmos layer.
+rcd-component-pipe-nodes-overlap-message = That pipe's connections overlap another pipe on the { $layer } atmos layer.

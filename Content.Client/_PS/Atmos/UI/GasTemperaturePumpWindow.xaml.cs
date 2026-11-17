@@ -85,6 +85,10 @@ public sealed partial class GasTemperaturePumpWindow : FancyWindow
     {
         InletTemperatureLabel.Text = float.Round(inletTemperature).ToString();
         OutletTemperatureLabel.Text = float.Round(outletTemperature).ToString();
-        TransferredHeatLabel.Text = float.IsNaN(transferredHeat) ? "0" : float.Round(transferredHeat).ToString();
+        // Kilowatts keep the readout legible; a few hundred watts is a long string of digits that
+        // does not say much at a glance.
+        TransferredHeatLabel.Text = float.IsNaN(transferredHeat)
+            ? "0"
+            : $"{transferredHeat / 1000f:0.##}";
     }
 }

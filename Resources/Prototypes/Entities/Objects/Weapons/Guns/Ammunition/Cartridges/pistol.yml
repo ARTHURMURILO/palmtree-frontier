@@ -1,7 +1,7 @@
 - type: entity
   id: BaseCartridgePistol
   name: cartridge (.35 auto)
-  parent: [ BaseCartridge, BaseC1Contraband ] # Frontier: BaseSecurityContraband<BaseC1Contraband
+  parent: [ BaseCartridge, BaseC2Contraband ] # Frontier: BaseSecurityContraband<BaseC2Contraband
   abstract: true
   components:
   - type: Tag
@@ -54,6 +54,9 @@
   description: Arguably the most popular caliber on the market, used by all manner of pistols and submachine guns. Incendiary ammunition contains a self-igniting compound that sets the target ablaze.
   parent: BaseCartridgePistol
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     # proto: BulletPistolIncendiary # Frontier
   - type: Sprite
@@ -71,6 +74,9 @@
   description: Arguably the most popular caliber on the market, used by all manner of pistols and submachine guns. Uranium core ammunition features a load of fissile material, irradiating the target from the inside.
   parent: BaseCartridgePistol
   components:
+  - type: Contraband
+    severity: Class3General
+    allowedDepartments: [ Security, Command ]
   - type: CartridgeAmmo
     # proto: BulletPistolUranium # Frontier
   - type: Sprite

@@ -4,6 +4,9 @@
   name: samurai armor bundle
   description: A bundle containing a modern replica of a full Tousei-Gusoku set.
   components:
+  - type: Contraband
+    severity: Class5
+    allowedDepartments: []
   - type: StorageFill
     contents:
       - id: ClothingOuterArmorTouseiGusoku
