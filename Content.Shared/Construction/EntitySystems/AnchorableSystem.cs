@@ -1,4 +1,5 @@
 using Content.Shared.Administration.Logs;
+using Content.Shared.Atmos.Components;
 using Content.Shared.Examine;
 using Content.Shared.Construction.Components;
 using Content.Shared.Containers.ItemSlots;
@@ -363,10 +364,24 @@ public sealed partial class AnchorableSystem : EntitySystem
         DebugTools.Assert(!Transform(uid).Anchored);
 
         // If we are unstackable, iterate through any other entities anchored on the current square
-        return _tagSystem.HasTag(uid, Unstackable) && AnyUnstackablesAnchoredAt(location);
+        if (!_tagSystem.HasTag(uid, Unstackable))
+            return false;
+
+        // Palmtree: atmos devices on different pipe layers may share a tile. Entities without a
+        // pipe layer keep the old any-layer behaviour.
+        AtmosPipeLayer? layer = TryComp<AtmosPipeLayersComponent>(uid, out var layers)
+            ? layers.CurrentPipeLayer
+            : null;
+
+        return AnyUnstackablesAnchoredAt(location, layer);
     }
 
-    public bool AnyUnstackablesAnchoredAt(EntityCoordinates location)
+    /// <summary>
+    /// Returns true if any unstackables are anchored on the corresponding tile. When
+    /// <paramref name="layer"/> is set, an unstackable with a different atmos pipe layer does not
+    /// count; unstackables without an atmos pipe layer still count.
+    /// </summary>
+    public bool AnyUnstackablesAnchoredAt(EntityCoordinates location, AtmosPipeLayer? layer = null)
     {
         var gridUid = _transformSystem.GetGrid(location);
 
@@ -378,8 +393,15 @@ public sealed partial class AnchorableSystem : EntitySystem
         while (enumerator.MoveNext(out var entity))
         {
             // If we find another unstackable here, return true.
-            if (_tagSystem.HasTag(entity.Value, Unstackable))
+            if (!_tagSystem.HasTag(entity.Value, Unstackable))
+                continue;
+
+            if (layer == null
+                || !TryComp<AtmosPipeLayersComponent>(entity.Value, out var layers)
+                || layers.CurrentPipeLayer == layer.Value)
+            {
                 return true;
+            }
         }
 
         return false;

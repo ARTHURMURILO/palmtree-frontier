@@ -184,30 +184,28 @@ public sealed class RcdBehaviorTest
             // The RCD starts full, so all of the returned matter must spill out.
             addCharges!.Invoke(rcdSystem, new object[] { rcd, rcdComp, 5, coords });
 
-            var ammo = new List<int>();
+            EntityUid spilled = default;
             var query = entManager.EntityQueryEnumerator<RCDAmmoComponent>();
-            while (query.MoveNext(out _, out var ammoComp))
-                ammo.Add(ammoComp.Charges);
-
-            Assert.Multiple(() =>
+            while (query.MoveNext(out var ammoUid, out var ammoComp))
             {
-                Assert.That(chargesSystem.GetCurrentCharges((rcd, limited)), Is.EqualTo(limited.MaxCharges));
-                Assert.That(ammo, Does.Contain(5), "A full RCD should drop the gained matter as ammo.");
-            });
+                if (ammoComp.Charges == 5)
+                    spilled = ammoUid;
+            }
 
-            // Leave two slots free: two charges go into the tool, three spill out.
+            Assert.That(spilled, Is.Not.EqualTo(default(EntityUid)), "A full RCD should drop the gained matter as ammo.");
+
+            // Leave two slots free: two charges go into the tool, three spill out. The spill should
+            // top up the partial cartridge already on the tile instead of spawning a new pile.
             chargesSystem.SetCharges((rcd, limited), limited.MaxCharges - 2);
             addCharges.Invoke(rcdSystem, new object[] { rcd, rcdComp, 5, coords });
 
-            ammo.Clear();
-            query = entManager.EntityQueryEnumerator<RCDAmmoComponent>();
-            while (query.MoveNext(out _, out var ammoComp))
-                ammo.Add(ammoComp.Charges);
-
             Assert.Multiple(() =>
             {
                 Assert.That(chargesSystem.GetCurrentCharges((rcd, limited)), Is.EqualTo(limited.MaxCharges));
-                Assert.That(ammo, Does.Contain(3), "Only the matter that does not fit should spill out.");
+                Assert.That(
+                    entManager.GetComponent<RCDAmmoComponent>(spilled).Charges,
+                    Is.EqualTo(8),
+                    "Only the matter that does not fit should spill out, merged into the existing partial cartridge.");
             });
         });
 

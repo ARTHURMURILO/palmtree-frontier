@@ -79,10 +79,11 @@ public sealed partial class AtmosPipeLayersComponent : Component
     public ProtoId<ToolQualityPrototype> Tool = "Screwing";
 
     /// <summary>
-    /// The base delay to use for changing layers.
+    /// The base delay to use for changing layers. Palmtree: zero by default; the tool quality
+    /// and do-after checks still run, only the wait is gone.
     /// </summary>
     [DataField]
-    public float Delay = 1f;
+    public float Delay = 0f;
 }
 
 /// <summary>
