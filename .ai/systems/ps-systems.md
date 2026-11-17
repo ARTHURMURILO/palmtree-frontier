@@ -1043,12 +1043,17 @@ Small features that did not get their own section yet:
   `.../_PS/RCD/rcd.yml`, textures under `Resources/Textures/_PS/...`, locale
   `Resources/Locale/en-US/_PS/rcd.ftl`. A follow-up pass added diagonal solid/shuttle wall modes
   and mining walls, a per-tool `speedMultiplier` (the RCD ships at 2x), and node-aware per-layer
-  anti-stacking (a vent/pump may share a tile with the pipe that feeds it; pipe segments cannot
-  share a layer because their sprites z-fight, and remaining direction conflicts are rejected;
-  the placement ghost previews those through a networked pipe-node summary plus a cached
-  ghost-prototype lookup). The RPD also treats one
+  anti-stacking (a vent/pump may share a tile with the pipe that feeds it; pipe segments may share a
+  layer when their nodes do not overlap, so perpendicular crossings work; remaining direction
+  conflicts are rejected; the placement ghost previews those through a networked pipe-node summary
+  plus a cached ghost-prototype lookup). Unstackable atmos devices compare their
+  `AtmosPipeLayersComponent.CurrentPipeLayer`, and vents/scrubbers/passive vents/injectors (plus the
+  dual-port vent) have per-layer entity variants and construction recipes, so both the RPD and the
+  construction menu can place them on the layer under the cursor. The screwdriver layer-change
+  delay defaults to zero. The RPD also treats one
   compressed-matter charge as two tool charges, so one 30-charge cartridge fills its 60-charge
-  tank; the RCD keeps the normal 1:1, 30-charge behaviour. Details:
+  tank; the RCD keeps the normal 1:1, 30-charge behaviour. Deconstruction returns matter for the
+  RPD too, and overflow tops up a partial cartridge already on the tile. Details:
   `.ai/PORTING.md` §24-24b; traps: `.ai/HAZARDS.md` §26. The RPD deconstruct whitelist (`rpd: true`)
   is wired on `GasPipeBase` plus the air alarm, air sensor and gas pipe sensor, so the RPD removes
   what it builds while the RCD stays off atmos entities.

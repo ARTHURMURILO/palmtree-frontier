@@ -6,9 +6,8 @@
     mode: SnapgridCenter
   components:
   - type: AtmosDevice
-  - type: Tag
-    tags:
-      - Unstackable
+  # Palmtree: pumps and valves are exempt from the Unstackable rule so several inline devices
+  # can share a tile (the node-aware overlap check still rejects conflicting ports).
   - type: SubFloorHide
     blockInteractions: false
     blockAmbience: false
@@ -463,6 +462,10 @@
           map: [ "enabled", "enum.SubfloorLayers.FirstLayer" ]
     - type: AtmosPipeLayers
       spriteRsiPaths: {}
+      alternativePrototypes:
+        Primary: GasDualPortVentPump
+        Secondary: GasDualPortVentPumpAlt1
+        Tertiary: GasDualPortVentPumpAlt2
     - type: GenericVisualizer
       visuals:
         enum.VentPumpVisuals.State:

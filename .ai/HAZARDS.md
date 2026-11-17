@@ -686,8 +686,9 @@ so these fail only in CI:
   stores it. The placement ghost and the built pipe now agree even with the `ps.placement.offset_*`
   CVars set.
 - **`Unstackable` is for devices only; pipes use node-aware overlap.** `GasPipeSansLayers` must
-  *not* carry the tag: `NoUnstackableInTile` (construction) is layer-agnostic, so tagging pipes
-  blocks every vent/pump built on the pipe that feeds it. `RCDSystem.IsConstructionLocationValid`
+  *not* carry the tag: construction conditions used to be layer-agnostic, so tagging pipes
+  blocked every vent/pump built on the pipe that feeds it. Use `NoUnstackableOnPipeLayer` for
+  layer-aware recipes. `RCDSystem.IsConstructionLocationValid`
   keeps the tag check for the built *device* (same-layer `AtmosPipeLayersComponent.CurrentPipeLayer`)
   and additionally raises `RCDAtmosOverlapAttemptEvent` for any prototype with a `NodeContainer`.
   `PipeRestrictOverlapSystem` handles it on the server: it resolves the mirror/RPD-layer prototype,
@@ -699,14 +700,36 @@ so these fail only in CI:
   comparison. Pipes have no fixtures, which is why the collision check cannot catch them — the node
   check is what prevents the RCD from spawning an overlapping pipe that
   `PipeRestrictOverlapSystem` would immediately unanchor.
-- **Two pipe segments on one layer z-fight, so they are rejected as a pair.** `RCDSystem` checks
-  the `AtmosPipeSegment` tag (on the five plain pipe shapes, manifold and broken pipe) before the
-  node check. Devices are exempt because their sprites sit on a different draw depth, and the node
-  check decides whether they fit. The tag is networked, so the client's placement ghost turns red
-  for a stacked pipe even though the client cannot read the server-only
-  `NodeContainerComponent.Nodes` used by the direction check. When adding the tag to a shape,
-  include `Pipe` in the same `Tag` block: a child `Tag` component replaces the inherited tag list
-  rather than extending it.
+- **Pipe segments may share a layer only when their nodes do not overlap.** There is no blanket
+  `AtmosPipeSegment` rejection any more: a perpendicular crossing is valid construction, and the
+  node-aware `RCDAtmosOverlapAttemptEvent` still rejects parallel/overlapping segments (and the
+  server's `PipeRestrictOverlapSystem` rejects the same conflicts when wrenching). Do not
+  reintroduce a same-layer tag block. Devices remain exempt because their sprites sit on a
+  different draw depth, and the node check decides whether they fit.
+- **`Unstackable` checks are pipe-layer aware.** `AnchorableSystem.AnyUnstackable` passes the
+  candidate's `AtmosPipeLayersComponent.CurrentPipeLayer` to `AnyUnstackablesAnchoredAt`; an
+  anchored unstackable on a different layer does not count, while an unstackable without the
+  component still blocks every layer. `NoUnstackableOnPipeLayer` is the construction-condition
+  version and takes a `layer:`. Keep the layer argument in sync with the alt construction recipe;
+  the old `NoUnstackableInTile` remains for layer-less devices.
+- **Per-layer unary devices are entity + construction recipe pairs.** `GasVentPump`, `GasVentScrubber`,
+  `GasPassiveVent`, `GasOutletInjector` and `GasDualPortVentPump` have `Gas*Alt1/Alt2` entity
+  prototypes in `_PS/.../unary_layers.yml` and hidden `Gas*Alt1/Alt2` construction recipes plus
+  `ventpumpAlt1`-style `GasUnary` graph nodes. The alt entity overrides only the pipe-connector
+  sprite layer (alt RSI) and the `Construction.node`; the body sprite is inherited. If a new unary
+  device is added, add the matching `alternativePrototypes` map, alt entities, graph nodes and
+  construction recipes, or the RPD layer picker will silently keep placing it on primary.
+- **Admin ghosts must keep the RCD/RPD ghost at any range.** The server already bypasses range via
+  the `BypassInteractionRangeChecks` tag, but `AlignRCDConstruction`/`AlignRPDAtmosPipeLayers`
+  used to hide the ghost beyond `InteractionRange`. Both now skip that check (and the RPD layer
+  guide) when the player has `AdminGhostComponent`. Any new RCD placement mode needs the same
+  exemption.
+- **RPD deconstruction refunds matter like the RCD.** `RCDSystem.OnDoAfter` treats every
+  `RcdMode.Deconstruct` operation as a refund; the RPD's per-pipe `RCDDeconstructable.Cost` (1)
+  goes into its tank or spills as compressed matter. Overflow first tops up a partially filled
+  `RCDAmmo` cartridge within half a tile, then spawns full 30-charge cartridges, so a long pipe run
+  does not leave a pile of one-charge cartridges. The old "RPD keeps its normal charge cost" rule
+  is gone; do not special-case `IsRpd` out of the refund again.
 - **Component-specific `ComponentStartup` subscriptions are single-handler.** The directed event bus
   stores one subscription per (component, event) pair, so a second
   `SubscribeLocalEvent<NodeContainerComponent, ComponentStartup>` throws

@@ -1,6 +1,7 @@
 using System.Numerics;
 using Content.Client.Gameplay;
 using Content.Client.Hands.Systems;
+using Content.Shared._CS;
 using Content.Shared.Atmos.Components;
 using Content.Shared.Atmos.EntitySystems;
 using Content.Shared.Interaction;
@@ -77,8 +78,14 @@ public sealed class AlignRPDAtmosPipeLayers : PlacementMode
     public override void Render(in OverlayDrawArgs args)
     {
         if (_playerManager.LocalSession?.AttachedEntity is not { } player ||
-            !_entityManager.TryGetComponent<TransformComponent>(player, out var xform) ||
-            !_transformSystem.InRange(xform.Coordinates, MouseCoords, SharedInteractionSystem.InteractionRange))
+            !_entityManager.TryGetComponent<TransformComponent>(player, out var xform))
+        {
+            return;
+        }
+
+        // Palmtree: admin ghosts can build at any distance, so do not hide their layer guides.
+        if (!_entityManager.HasComponent<AdminGhostComponent>(player)
+            && !_transformSystem.InRange(xform.Coordinates, MouseCoords, SharedInteractionSystem.InteractionRange))
         {
             return;
         }
@@ -146,7 +153,8 @@ public sealed class AlignRPDAtmosPipeLayers : PlacementMode
         // Only track the layer / forward it when the player is in range and holding an RPD
         if (_playerManager.LocalSession?.AttachedEntity is { } player &&
             _entityManager.TryGetComponent<TransformComponent>(player, out var xform) &&
-            _transformSystem.InRange(xform.Coordinates, MouseCoords, SharedInteractionSystem.InteractionRange) &&
+            (_entityManager.HasComponent<AdminGhostComponent>(player)
+                || _transformSystem.InRange(xform.Coordinates, MouseCoords, SharedInteractionSystem.InteractionRange)) &&
             _hands.GetActiveItem(player) is { } heldEntity &&
             _entityManager.HasComponent<RCDComponent>(heldEntity))
         {
@@ -210,7 +218,9 @@ public sealed class AlignRPDAtmosPipeLayers : PlacementMode
         if (!_entityManager.TryGetComponent<TransformComponent>(player, out var xform))
             return false;
 
-        if (!_transformSystem.InRange(xform.Coordinates, position, SharedInteractionSystem.InteractionRange))
+        // Palmtree: admin ghosts can build at any distance, so keep their placement ghost visible.
+        if (!_entityManager.HasComponent<AdminGhostComponent>(player)
+            && !_transformSystem.InRange(xform.Coordinates, position, SharedInteractionSystem.InteractionRange))
         {
             InvalidPlaceColor = InvalidPlaceColor.WithAlpha(0);
             return false;
