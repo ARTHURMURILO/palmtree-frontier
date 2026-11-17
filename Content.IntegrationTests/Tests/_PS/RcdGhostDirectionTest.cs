@@ -124,4 +124,56 @@ public sealed class RcdGhostDirectionTest : InteractionTest
             Is.EqualTo(Direction.East.ToAngle()),
             "The built pipe should face the direction the ghost was showing.");
     }
+
+    [Test]
+    public async Task StaleNonRcdPlacerDoesNotBlockTheRpd()
+    {
+        var placement = Client.ResolveDependency<IPlacementManager>();
+
+        var rpdNet = await PlaceInHands("RPD");
+        var rpd = SEntMan.GetEntity(rpdNet);
+        SEntMan.EventBus.RaiseLocalEvent(rpd, new RCDSystemMessage("PipeStraight"));
+        await RunTicks(5);
+
+        Assert.That(placement.IsActive, Is.True, "Equipping an RPD should start its placement mode.");
+
+        // Simulate a construction-menu / spawn-panel placer left active with no owning mob. This is
+        // what happens after opening the build menu and then switching to the RPD.
+        await Client.WaitPost(() =>
+        {
+            placement.BeginPlacing(new PlacementInformation
+            {
+                EntityType = "WallSolid",
+                PlacementOption = "SnapgridCenter",
+                Range = 2,
+            });
+        });
+
+        await RunTicks(5);
+
+        Assert.That(
+            placement.CurrentPermission?.MobUid,
+            Is.EqualTo(ToClient(rpdNet)),
+            "Holding an RPD must take over a stale non-RCD placer instead of being ignored forever.");
+
+        // The click must go through to the RPD, not the stale placer.
+        var target = MapData.GridCoords.Offset(new Vector2(1.5f, 0.5f));
+        await SetTile("Plating", SEntMan.GetNetCoordinates(target));
+        await Interact(null, target);
+        await RunTicks(5);
+
+        EntityUid? pipe = null;
+        var query = SEntMan.EntityQueryEnumerator<MetaDataComponent>();
+        while (query.MoveNext(out var uid, out var meta))
+        {
+            if (meta.EntityPrototype?.ID == "GasPipeStraight")
+            {
+                pipe = uid;
+                break;
+            }
+        }
+
+        Assert.That(pipe, Is.Not.Null, "Clicking with the RPD should build a pipe after taking over the placer.");
+        Assert.That(placement.CurrentPermission?.MobUid, Is.EqualTo(ToClient(rpdNet)));
+    }
 }
