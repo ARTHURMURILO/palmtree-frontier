@@ -1,8 +1,10 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using System.Reflection;
 using Content.Shared.Atmos.Components;
 using Content.Shared.Construction.EntitySystems;
+using Content.Shared.Construction.Prototypes;
 using Content.Shared.RCD;
 using Content.Shared.RCD.Components;
 using Content.Shared.RCD.Systems;
@@ -164,7 +166,7 @@ public sealed class RcdAtmosStackingTest
     }
 
     [Test]
-    public async Task RpdBlocksAnyPipeSegmentOnSameLayer()
+    public async Task RpdAllowsPerpendicularPipeCrossingsOnSameLayer()
     {
         await using var pair = await PoolManager.GetServerClient();
         var server = pair.Server;
@@ -184,6 +186,8 @@ public sealed class RcdAtmosStackingTest
 
             var coords = new EntityCoordinates(grid.Owner, new Vector2(0.5f, 0.5f));
             var user = entManager.SpawnEntity("MobHuman", coords);
+
+            // Existing north-south pipe on the primary layer.
             entManager.SpawnEntity("GasPipeStraight", coords);
 
             var rpd = entManager.SpawnEntity("RPD", coords);
@@ -195,14 +199,152 @@ public sealed class RcdAtmosStackingTest
             {
                 Assert.That(
                     rcdSystem.IsRCDOperationStillValid(rpd, rcd, grid.Owner, grid.Comp, tile, new Vector2i(0, 0), null, user, false, direction: Direction.East),
-                    Is.False,
-                    "Even a non-conflicting pipe segment must not share a layer; the two sprites z-fight.");
+                    Is.True,
+                    "A perpendicular pipe crossing does not share a node direction, so it may share the layer.");
 
                 Assert.That(
                     rcdSystem.IsRCDOperationStillValid(rpd, rcd, grid.Owner, grid.Comp, tile, new Vector2i(0, 0), null, user, false, direction: Direction.South),
                     Is.False,
-                    "A second north-south pipe on the same layer conflicts with the existing one.");
+                    "A second north-south pipe on the same layer overlaps the existing node and must be rejected.");
             });
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task UnstackableAnchorCheckIgnoresOtherPipeLayers()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+
+        var entManager = server.ResolveDependency<IEntityManager>();
+        var mapManager = server.ResolveDependency<IMapManager>();
+        var tileDefMan = server.ResolveDependency<ITileDefinitionManager>();
+        var mapSystem = entManager.System<SharedMapSystem>();
+        var anchorable = entManager.System<AnchorableSystem>();
+
+        await server.WaitAssertion(() =>
+        {
+            mapSystem.CreateMap(out var mapId);
+            var grid = mapManager.CreateGridEntity(mapId);
+            var plating = new Tile(tileDefMan["Plating"].TileId);
+            mapSystem.SetTile(grid.Owner, grid.Comp, new Vector2i(0, 0), plating);
+
+            var coords = new EntityCoordinates(grid.Owner, new Vector2(0.5f, 0.5f));
+            entManager.SpawnEntity("GasVentPump", coords);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(
+                    anchorable.AnyUnstackablesAnchoredAt(coords, AtmosPipeLayer.Primary),
+                    Is.True,
+                    "A vent on the primary layer blocks another primary-layer unstackable.");
+
+                Assert.That(
+                    anchorable.AnyUnstackablesAnchoredAt(coords, AtmosPipeLayer.Secondary),
+                    Is.False,
+                    "A vent on the primary layer must not block a secondary-layer unstackable.");
+
+                Assert.That(
+                    anchorable.AnyUnstackablesAnchoredAt(coords),
+                    Is.True,
+                    "Callers that do not care about layers still see any unstackable.");
+            });
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task UnaryDevicesHaveLayerVariants()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+
+        await server.WaitAssertion(() =>
+        {
+            var protoManager = server.ResolveDependency<IPrototypeManager>();
+            var factory = server.ResolveDependency<IComponentFactory>();
+
+            Assert.Multiple(() =>
+            {
+                foreach (var (baseId, alt1Id, alt2Id) in new[]
+                         {
+                             ("GasVentPump", "GasVentPumpAlt1", "GasVentPumpAlt2"),
+                             ("GasVentScrubber", "GasVentScrubberAlt1", "GasVentScrubberAlt2"),
+                             ("GasPassiveVent", "GasPassiveVentAlt1", "GasPassiveVentAlt2"),
+                             ("GasOutletInjector", "GasOutletInjectorAlt1", "GasOutletInjectorAlt2"),
+                         })
+                {
+                    var proto = protoManager.Index<EntityPrototype>(baseId);
+                    Assert.That(
+                        proto.TryGetComponent<AtmosPipeLayersComponent>(out var layers, factory),
+                        Is.True,
+                        $"{baseId} has no AtmosPipeLayers component.");
+
+                    Assert.That(layers!.AlternativePrototypes, Does.ContainKey(AtmosPipeLayer.Secondary));
+                    Assert.That(layers.AlternativePrototypes[AtmosPipeLayer.Secondary].Id, Is.EqualTo(alt1Id));
+                    Assert.That(layers.AlternativePrototypes[AtmosPipeLayer.Tertiary].Id, Is.EqualTo(alt2Id));
+
+                    var alt1 = protoManager.Index<EntityPrototype>(alt1Id);
+                    Assert.That(
+                        alt1.TryGetComponent<AtmosPipeLayersComponent>(out var alt1Layers, factory),
+                        Is.True);
+                    Assert.That(alt1Layers!.CurrentPipeLayer, Is.EqualTo(AtmosPipeLayer.Secondary));
+
+                    var alt2 = protoManager.Index<EntityPrototype>(alt2Id);
+                    Assert.That(
+                        alt2.TryGetComponent<AtmosPipeLayersComponent>(out var alt2Layers, factory),
+                        Is.True);
+                    Assert.That(alt2Layers!.CurrentPipeLayer, Is.EqualTo(AtmosPipeLayer.Tertiary));
+                }
+            });
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task UnaryDevicesHaveLayeredConstructionRecipes()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+
+        await server.WaitAssertion(() =>
+        {
+            var protoManager = server.ResolveDependency<IPrototypeManager>();
+
+            foreach (var (baseId, alt1Id, alt2Id, node) in new[]
+                     {
+                         ("GasVentPump", "GasVentPumpAlt1", "GasVentPumpAlt2", "ventpump"),
+                         ("GasVentScrubber", "GasVentScrubberAlt1", "GasVentScrubberAlt2", "ventscrubber"),
+                         ("GasPassiveVent", "GasPassiveVentAlt1", "GasPassiveVentAlt2", "passivevent"),
+                         ("GasOutletInjector", "GasOutletInjectorAlt1", "GasOutletInjectorAlt2", "outletinjector"),
+                     })
+            {
+                var recipe = protoManager.Index<ConstructionPrototype>(baseId);
+
+                Assert.Multiple(() =>
+                {
+                    Assert.That(recipe.PlacementMode, Is.EqualTo("AlignAtmosPipeLayers"), $"{baseId} must pick a layer while placing.");
+                    Assert.That(recipe.TargetNode, Is.EqualTo(node));
+                    Assert.That(
+                        recipe.AlternativePrototypes.Select(p => p.Id),
+                        Is.EqualTo(new[] { baseId, alt1Id, alt2Id }),
+                        $"{baseId} must offer the three pipe-layer recipes in enum order.");
+                });
+
+                var alt1 = protoManager.Index<ConstructionPrototype>(alt1Id);
+                var alt2 = protoManager.Index<ConstructionPrototype>(alt2Id);
+                Assert.Multiple(() =>
+                {
+                    Assert.That(alt1.Hide, Is.True);
+                    Assert.That(alt2.Hide, Is.True);
+                    Assert.That(alt1.TargetNode, Is.EqualTo($"{node}Alt1"));
+                    Assert.That(alt2.TargetNode, Is.EqualTo($"{node}Alt2"));
+                });
+            }
         });
 
         await pair.CleanReturnAsync();
