@@ -100,8 +100,7 @@ public sealed class RCDConstructionGhostSystem : EntitySystem
 
         var placerIsRCD = HasComp<RCDComponent>(placerEntity);
 
-        // Exit if erasing or the current placer is not an RCD (build mode is active)
-        if (_placementManager.Eraser || (placerEntity != null && !placerIsRCD))
+        if (_placementManager.Eraser)
             return;
 
         // Determine if player is carrying an RCD in their active hand
@@ -109,6 +108,19 @@ public sealed class RCDConstructionGhostSystem : EntitySystem
             return;
 
         var heldEntity = _hands.GetActiveItem(player);
+
+        // Exit if the current placer is not an RCD (build mode is active), unless the player has
+        // explicitly taken an RCD/RPD back into their hand. A construction-menu placer can otherwise
+        // stay active forever after its menu is closed, swallowing every RCD/RPD click.
+        if (placerEntity != null && !placerIsRCD)
+        {
+            if (heldEntity is not { } held || !HasComp<RCDComponent>(held))
+                return;
+
+            _placementManager.Clear();
+            placerEntity = null;
+            placerIsRCD = false;
+        }
 
         if (!TryComp<RCDComponent>(heldEntity, out var rcd))
         {

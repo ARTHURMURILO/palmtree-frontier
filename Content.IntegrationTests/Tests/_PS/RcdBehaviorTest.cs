@@ -298,4 +298,50 @@ public sealed class RcdBehaviorTest
 
         await pair.CleanReturnAsync();
     }
+
+    [Test]
+    public async Task RpdClickActuallyBuildsAPipe()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+
+        var entManager = server.ResolveDependency<IEntityManager>();
+        var mapManager = server.ResolveDependency<IMapManager>();
+        var tileDefMan = server.ResolveDependency<ITileDefinitionManager>();
+        var mapSystem = entManager.System<SharedMapSystem>();
+
+        await server.WaitAssertion(() =>
+        {
+            mapSystem.CreateMap(out var mapId);
+            var grid = mapManager.CreateGridEntity(mapId);
+            var plating = new Tile(tileDefMan["Plating"].TileId);
+            mapSystem.SetTile(grid.Owner, grid.Comp, new Vector2i(0, 0), plating);
+
+            var coords = new EntityCoordinates(grid.Owner, new Vector2(0.5f, 0.5f));
+            var user = entManager.SpawnEntity("MobHuman", coords);
+            var rpd = entManager.SpawnEntity("RPD", coords);
+            SetMode(entManager, rpd, "PipeStraight");
+
+            // This is the same event the interaction system raises when the player left-clicks
+            // with the RPD. Raising it directly isolates the server handler from the client ghost.
+            entManager.EventBus.RaiseLocalEvent(rpd, new AfterInteractEvent(user, rpd, null, coords, true));
+        });
+
+        await pair.RunTicksSync(10);
+
+        await server.WaitAssertion(() =>
+        {
+            var pipes = 0;
+            var query = entManager.EntityQueryEnumerator<MetaDataComponent>();
+            while (query.MoveNext(out _, out var meta))
+            {
+                if (meta.EntityPrototype?.ID == "GasPipeStraight")
+                    pipes++;
+            }
+
+            Assert.That(pipes, Is.EqualTo(1), "The RPD click handler should have spawned one pipe.");
+        });
+
+        await pair.CleanReturnAsync();
+    }
 }
