@@ -1,4 +1,5 @@
 using Content.Shared.Access.Components;
+using Content.Shared._CS; // Palmtree: admin ghosts may build on protected grids
 using Content.Shared.Administration.Logs;
 using Content.Shared.Charges.Components;
 using Content.Shared.Charges.Systems;
@@ -212,8 +213,9 @@ public sealed class RCDSystem : EntitySystem
             return;
 
         // Frontier: grid-access restrictions
-        // Frontier - Remove all RCD use on outpost.
-        if (TryComp<ProtectedGridComponent>(gridUid.Value, out var prot) && prot.PreventRCDUse)
+        // Frontier - Remove all RCD use on outpost. Palmtree: admins and the unrestricted admin
+        // RCD are allowed through so they can still repair or build on protected grids.
+        if (!IsRcdUseAllowedOnGrid(gridUid.Value, user, component))
         {
             _popup.PopupClient(Loc.GetString("rcd-component-use-blocked"), used, user);
             return;
@@ -469,6 +471,19 @@ public sealed class RCDSystem : EntitySystem
     #endregion
 
     #region Entity construction/deconstruction rule checks
+
+    /// <summary>
+    /// Palmtree: whether RCD/RPD construction is allowed on this grid. Protected grids (the
+    /// Frontier outpost) block it for normal players; admin ghosts and the unrestricted admin
+    /// RCD may still build there.
+    /// </summary>
+    public bool IsRcdUseAllowedOnGrid(EntityUid gridUid, EntityUid user, RCDComponent component)
+    {
+        if (component.Unrestricted || HasComp<AdminGhostComponent>(user))
+            return true;
+
+        return !TryComp<ProtectedGridComponent>(gridUid, out var prot) || !prot.PreventRCDUse;
+    }
 
     public bool IsRCDOperationStillValid(EntityUid uid, RCDComponent component, EntityUid gridUid, MapGridComponent mapGrid, TileRef tile, Vector2i position, EntityUid? target, EntityUid user, bool popMsgs = true, AtmosPipeLayer layer = AtmosPipeLayer.Primary, Direction? direction = null)
     {
