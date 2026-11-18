@@ -308,18 +308,11 @@ public sealed class RcdBehaviorTest
         var server = pair.Server;
 
         var entManager = server.ResolveDependency<IEntityManager>();
-        var mapManager = server.ResolveDependency<IMapManager>();
-        var tileDefMan = server.ResolveDependency<ITileDefinitionManager>();
-        var mapSystem = entManager.System<SharedMapSystem>();
+        var testMap = await pair.CreateTestMap();
 
         await server.WaitAssertion(() =>
         {
-            mapSystem.CreateMap(out var mapId);
-            var grid = mapManager.CreateGridEntity(mapId);
-            var plating = new Tile(tileDefMan["Plating"].TileId);
-            mapSystem.SetTile(grid.Owner, grid.Comp, new Vector2i(0, 0), plating);
-
-            var coords = new EntityCoordinates(grid.Owner, new Vector2(0.5f, 0.5f));
+            var coords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
             var user = entManager.SpawnEntity("MobHuman", coords);
             var rpd = entManager.SpawnEntity("RPD", coords);
             SetMode(entManager, rpd, "PipeStraight");
@@ -333,11 +326,13 @@ public sealed class RcdBehaviorTest
 
         await server.WaitAssertion(() =>
         {
+            // Only count pipes on this test's own grid. Other tests in the pooled pair can leave
+            // pipes on their own maps, and CleanReturnAsync only removes the registered TestMap.
             var pipes = 0;
-            var query = entManager.EntityQueryEnumerator<MetaDataComponent>();
-            while (query.MoveNext(out _, out var meta))
+            var query = entManager.EntityQueryEnumerator<MetaDataComponent, TransformComponent>();
+            while (query.MoveNext(out _, out var meta, out var xform))
             {
-                if (meta.EntityPrototype?.ID == "GasPipeStraight")
+                if (meta.EntityPrototype?.ID == "GasPipeStraight" && xform.GridUid == testMap.Grid.Owner)
                     pipes++;
             }
 
