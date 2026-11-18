@@ -104,6 +104,12 @@ public sealed class AlignRCDConstruction : PlacementMode
         var gridUid = _transformSystem.GetGrid(position);
         if (!_entityManager.TryGetComponent<MapGridComponent>(gridUid, out var mapGrid))
             return false;
+
+        // Palmtree: show the protected-grid refusal on the ghost instead of a green ghost that
+        // silently does nothing when clicked.
+        if (!_rcdSystem.IsRcdUseAllowedOnGrid(gridUid.Value, player.Value, rcd))
+            return false;
+
         var tile = _mapSystem.GetTileRef(gridUid.Value, mapGrid, position);
         var posVector = _mapSystem.TileIndicesFor(gridUid.Value, mapGrid, position);
 
