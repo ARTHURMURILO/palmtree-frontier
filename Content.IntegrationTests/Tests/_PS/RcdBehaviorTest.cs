@@ -7,6 +7,8 @@ using Content.Shared.Interaction;
 using Content.Shared.RCD;
 using Content.Shared.RCD.Components;
 using Content.Shared.RCD.Systems;
+using Content.Shared.Tiles;
+using Content.Shared._CS;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
@@ -340,6 +342,53 @@ public sealed class RcdBehaviorTest
             }
 
             Assert.That(pipes, Is.EqualTo(1), "The RPD click handler should have spawned one pipe.");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task ProtectedGridOnlyBlocksNonAdmins()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var entManager = server.ResolveDependency<IEntityManager>();
+        var mapManager = server.ResolveDependency<IMapManager>();
+        var mapSystem = entManager.System<SharedMapSystem>();
+        var rcdSystem = entManager.System<RCDSystem>();
+
+        await server.WaitAssertion(() =>
+        {
+            mapSystem.CreateMap(out var mapId);
+            var grid = mapManager.CreateGridEntity(mapId);
+            var prot = entManager.AddComponent<ProtectedGridComponent>(grid.Owner);
+            typeof(ProtectedGridComponent)
+                .GetField(nameof(ProtectedGridComponent.PreventRCDUse))!
+                .SetValue(prot, true);
+
+            var coords = new EntityCoordinates(grid.Owner, new Vector2(0.5f, 0.5f));
+            var rcd = entManager.SpawnEntity("RCD", coords);
+            var comp = entManager.GetComponent<RCDComponent>(rcd);
+            var user = entManager.SpawnEntity("MobHuman", coords);
+
+            Assert.That(
+                rcdSystem.IsRcdUseAllowedOnGrid(grid.Owner, user, comp),
+                Is.False,
+                "A normal RCD must stay blocked on a protected grid.");
+
+            var admin = entManager.SpawnEntity("MobHuman", coords);
+            entManager.AddComponent<AdminGhostComponent>(admin);
+            Assert.That(
+                rcdSystem.IsRcdUseAllowedOnGrid(grid.Owner, admin, comp),
+                Is.True,
+                "An admin ghost must be able to build on a protected grid.");
+
+            var adminRcd = entManager.SpawnEntity("RCDExperimental", coords);
+            var adminComp = entManager.GetComponent<RCDComponent>(adminRcd);
+            Assert.That(
+                rcdSystem.IsRcdUseAllowedOnGrid(grid.Owner, user, adminComp),
+                Is.True,
+                "The unrestricted admin RCD must be able to build on a protected grid.");
         });
 
         await pair.CleanReturnAsync();
