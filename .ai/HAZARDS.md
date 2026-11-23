@@ -701,7 +701,7 @@ so these fail only in CI:
   check is what prevents the RCD from spawning an overlapping pipe that
   `PipeRestrictOverlapSystem` would immediately unanchor.
 - **Pipe segments may share a layer only when their nodes do not overlap.** There is no blanket
-  `AtmosPipeSegment` rejection any more: a perpendicular crossing is valid construction, and the
+  `AtmosPipeSegment` rejection any more (the tag was removed): a perpendicular crossing is valid construction, and the
   node-aware `RCDAtmosOverlapAttemptEvent` still rejects parallel/overlapping segments (and the
   server's `PipeRestrictOverlapSystem` rejects the same conflicts when wrenching). Do not
   reintroduce a same-layer tag block. Devices remain exempt because their sprites sit on a
@@ -711,7 +711,12 @@ so these fail only in CI:
   anchored unstackable on a different layer does not count, while an unstackable without the
   component still blocks every layer. `NoUnstackableOnPipeLayer` is the construction-condition
   version and takes a `layer:`. Keep the layer argument in sync with the alt construction recipe;
-  the old `NoUnstackableInTile` remains for layer-less devices.
+  the old `NoUnstackableInTile` remains for layer-less devices. The condition lives under
+  `Content.Shared/_PS/Construction/Conditions`.
+- **Binary inline devices are intentionally not `Unstackable`.** Two pumps/valves may share a tile
+  when their ports do not conflict (node-aware overlap still rejects parallel/overlapping ports).
+  Their body sprites share a draw depth, so a perpendicular compact stack can overlap visually;
+  `InlineBinaryDevicesMayShareATileWhenTheirPortsDoNotConflict` covers the placement rule.
 - **Per-layer unary devices are entity + construction recipe pairs.** `GasVentPump`, `GasVentScrubber`,
   `GasPassiveVent`, `GasOutletInjector` and `GasDualPortVentPump` have `Gas*Alt1/Alt2` entity
   prototypes in `_PS/.../unary_layers.yml` and hidden `Gas*Alt1/Alt2` construction recipes plus

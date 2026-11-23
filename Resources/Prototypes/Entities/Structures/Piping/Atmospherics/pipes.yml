@@ -102,7 +102,6 @@
   - type: Tag
     tags:
     - Pipe
-    - AtmosPipeSegment # Palmtree: two segments on one layer z-fight
   - type: NodeContainer
     nodes:
       pipe:
@@ -141,7 +140,6 @@
   - type: Tag
     tags:
     - Pipe
-    - AtmosPipeSegment # Palmtree: two segments on one layer z-fight
   - type: NodeContainer
     nodes:
       pipe:
@@ -188,7 +186,6 @@
   - type: Tag
     tags:
     - Pipe
-    - AtmosPipeSegment # Palmtree: two segments on one layer z-fight
   - type: NodeContainer
     nodes:
       pipe:
@@ -242,7 +239,6 @@
   - type: Tag
     tags:
     - Pipe
-    - AtmosPipeSegment # Palmtree: two segments on one layer z-fight
   - type: NodeContainer
     nodes:
       pipe:
@@ -289,7 +285,6 @@
   - type: Tag
     tags:
     - Pipe
-    - AtmosPipeSegment # Palmtree: two segments on one layer z-fight
   - type: Transform
     noRot: true
   - type: NodeContainer
@@ -337,7 +332,6 @@
   - type: Tag
     tags:
     - Pipe
-    - AtmosPipeSegment # Palmtree: two segments on one layer z-fight
   - type: Sprite
     sprite: Structures/Piping/Atmospherics/pipe.rsi
     drawdepth: ThinPipe
@@ -450,4 +444,3 @@
     tags:
     - Pipe
     - Unstackable
-    - AtmosPipeSegment # Palmtree: two segments on one layer z-fight

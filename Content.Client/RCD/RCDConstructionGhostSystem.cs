@@ -1,3 +1,4 @@
+using Content.Client.Construction;
 using Content.Client.Hands.Systems;
 using Content.Shared.Input;
 using Content.Shared.Interaction;
@@ -115,6 +116,12 @@ public sealed class RCDConstructionGhostSystem : EntitySystem
         if (placerEntity != null && !placerIsRCD)
         {
             if (heldEntity is not { } held || !HasComp<RCDComponent>(held))
+                return;
+
+            // Only take over the construction menu's placer. The sandbox spawn panel also leaves
+            // MobUid unset, but it has no hijack and must keep owning the placement: clearing it
+            // would deselect the spawn-panel entry on the next frame.
+            if (_placementManager is not PlacementManager { Hijack: ConstructionPlacementHijack })
                 return;
 
             _placementManager.Clear();

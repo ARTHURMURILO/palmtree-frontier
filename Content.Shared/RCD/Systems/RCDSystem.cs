@@ -983,11 +983,18 @@ public sealed class RCDSystem : EntitySystem
 
         var overflow = amount - stored;
 
-        if (overflow <= 0 || !_net.IsServer)
+        // Palmtree: `amount` and `free` are tool charges, but a cartridge charge is one matter
+        // unit. The RPD turns one matter unit into two tool charges (RCDAmmoSystem), so spilling
+        // the raw tool-charge overflow would refund twice the matter that was taken out. Round
+        // down for the RPD: a single leftover tool charge cannot be represented as half a unit of
+        // matter, and over-refunding is worse than losing that half unit at a full tank.
+        var ammoAmount = component.IsRpd ? overflow / 2 : overflow;
+
+        if (ammoAmount <= 0 || !_net.IsServer)
             return;
 
         var ammoProto = component.IsShipyardRCD ? ShipyardRcdAmmoProto : RcdAmmoProto;
-        var remaining = overflow;
+        var remaining = ammoAmount;
 
         // Palmtree: deconstructing a long run of pipes used to spawn one 1-charge cartridge per
         // pipe. Top up a partially filled cartridge already on the tile first, so the overflow
