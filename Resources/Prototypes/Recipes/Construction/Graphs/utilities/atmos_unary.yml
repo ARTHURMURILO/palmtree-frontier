@@ -92,6 +92,7 @@
       - tool: Welding
         doAfter: 1
 
+  # Palmtree: per-layer construction nodes for unary atmos devices.
   - node: ventpumpAlt1
     entity: GasVentPumpAlt1
     edges:

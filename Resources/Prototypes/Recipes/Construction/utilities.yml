@@ -1,4 +1,7 @@
 # SURVEILLANCE
+# Palmtree: RPD pipe-layer support changes this file. Per-layer Alt recipes live in
+# _PS/Recipes/Construction/utilities_rcd_layers.yml; base unary/binary recipes below use
+# AlignAtmosPipeLayers with layer-aware conditions.
 - type: construction
   id: camera
   graph: SurveillanceCamera
@@ -280,6 +283,7 @@
   - GasPipeSensorAlt1
   - GasPipeSensorAlt2
 
+# ATMOS PIPES
 - type: construction
   id: GasPipeHalf
   name: construction-recipe-gas-pipe-half
@@ -361,6 +365,7 @@
 # ATMOS UNARY
 - type: construction
   id: GasVentPump
+  # Palmtree: layer-aware placement; alt recipes live in _PS.
   graph: GasUnary
   startNode: start
   targetNode: ventpump
@@ -377,6 +382,7 @@
 
 - type: construction
   id: GasPassiveVent
+  # Palmtree: layer-aware placement; alt recipes live in _PS.
   graph: GasUnary
   startNode: start
   targetNode: passivevent
@@ -393,6 +399,7 @@
 
 - type: construction
   id: GasVentScrubber
+  # Palmtree: layer-aware placement; alt recipes live in _PS.
   graph: GasUnary
   startNode: start
   targetNode: ventscrubber
@@ -409,6 +416,7 @@
 
 - type: construction
   id: GasOutletInjector
+  # Palmtree: layer-aware placement; alt recipes live in _PS.
   graph: GasUnary
   startNode: start
   targetNode: outletinjector
@@ -423,6 +431,7 @@
   - GasOutletInjectorAlt1
   - GasOutletInjectorAlt2
 
+# Palmtree: buildable directional fan (Coyote/HardLight)
 - type: construction
   id: AtmosDeviceFanDirectional
   graph: GasUnary
@@ -435,6 +444,7 @@
   - !type:NoUnstackableInTile
 
 # ATMOS BINARY
+# Palmtree: inline binary devices are not Unstackable and use layer-aware alt prototypes.
 - type: construction
   id: GasPressurePump
   graph: GasBinary
@@ -550,6 +560,7 @@
 
 - type: construction
   id: GasDualPortVentPump
+  # Palmtree: layer-aware dual-port vent; alt recipes live in _PS.
   graph: GasBinary
   startNode: start
   targetNode: dualportventpump

@@ -3,7 +3,7 @@
   abstract: true
   id: GasUnaryBase
   placement:
-    mode: AlignAtmosPipeLayers
+    mode: AlignAtmosPipeLayers # Palmtree: SnapgridCenter<AlignAtmosPipeLayers
   components:
     - type: AtmosDevice
     - type: Tag
@@ -74,6 +74,7 @@
     - type: Weldable
     - type: AtmosMonitoringConsoleDevice
       navMapBlip: GasVentOpening
+    # Palmtree: per-layer alt entities + construction recipes
     - type: AtmosPipeLayers
       alternativePrototypes:
         Primary: GasVentPump
@@ -113,6 +114,7 @@
       node: passivevent
     - type: AtmosMonitoringConsoleDevice
       navMapBlip: GasVentOpening
+    # Palmtree: per-layer alt entities + construction recipes
     - type: AtmosPipeLayers
       alternativePrototypes:
         Primary: GasPassiveVent
@@ -176,6 +178,7 @@
     - type: Weldable
     - type: AtmosMonitoringConsoleDevice
       navMapBlip: GasVentScrubber
+    # Palmtree: per-layer alt entities + construction recipes
     - type: AtmosPipeLayers
       alternativePrototypes:
         Primary: GasVentScrubber
@@ -226,6 +229,7 @@
       - enum.LightLayers.Unshaded
     - type: AtmosMonitoringConsoleDevice
       navMapBlip: GasVentOpening
+    # Palmtree: per-layer alt entities + construction recipes
     - type: AtmosPipeLayers
       alternativePrototypes:
         Primary: GasOutletInjector

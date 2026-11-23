@@ -83,7 +83,7 @@ public sealed partial class AtmosPipeLayersComponent : Component
     /// and do-after checks still run, only the wait is gone.
     /// </summary>
     [DataField]
-    public float Delay = 0f;
+    public float Delay = 0f; // Palmtree: 1f<0f
 }
 
 /// <summary>
