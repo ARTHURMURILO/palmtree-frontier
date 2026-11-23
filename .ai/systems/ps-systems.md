@@ -1053,7 +1053,9 @@ Small features that did not get their own section yet:
   delay defaults to zero. The RPD also treats one
   compressed-matter charge as two tool charges, so one 30-charge cartridge fills its 60-charge
   tank; the RCD keeps the normal 1:1, 30-charge behaviour. Deconstruction returns matter for the
-  RPD too, and overflow tops up a partial cartridge already on the tile. Details:
+  RPD too; overflow is converted back to cartridge matter units, tops up a partial cartridge
+  already on the tile, and an odd half-unit waits on the tool (`PendingMatterCharges`) for the
+  next spill. Details:
   `.ai/PORTING.md` §24-24b; traps: `.ai/HAZARDS.md` §26. The RPD deconstruct whitelist (`rpd: true`)
   is wired on `GasPipeBase` plus the air alarm, air sensor and gas pipe sensor, so the RPD removes
   what it builds while the RCD stays off atmos entities.
