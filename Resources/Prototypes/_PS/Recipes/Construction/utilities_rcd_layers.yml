@@ -309,8 +309,6 @@
   - GasOutletInjectorAlt1
   - GasOutletInjectorAlt2
 
-# Palmtree: buildable directional fan (Coyote/HardLight)
-
 - type: construction
   id: GasPressurePumpAlt1
   hide: true

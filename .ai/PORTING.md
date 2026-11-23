@@ -910,6 +910,15 @@ Follow-up on the RCD/RPD after the second pass:
   half-filling it. The RCD stays 1:1. Only as much of the cartridge as the missing charges need is
   consumed (a half-full RPD uses 15 of the 30, leaving 15). Test: `RcdBehaviorTest`
   (`OneCompressedMatterCartridgeFillsTheTool`, `RpdUsesOnlyAsMuchMatterAsTheMissingCharges`).
+- **Protected grids and admin ghosts (2026-11)**: `ProtectedGridComponent.PreventRCDUse` is set
+  from map YAML, so it is `AutoNetworkedField` and the client's RCD/RPD ghost turns red on the
+  outpost and admin gallery. `RCDSystem.IsRcdUseAllowedOnGrid` is the shared rule; admin ghosts and
+  the unrestricted admin RCD bypass it, normal players do not.
+- **RPD spills are matter units (2026-11)**: the tool's charges are tool charges, but an
+  `RCDAmmo` cartridge charge is one matter unit and the RPD gets two tool charges per unit inside
+  its tank. Deconstruction overflow therefore converts back at 2:1 before topping up or spawning
+  cartridges; an odd leftover tool charge waits in `RCDComponent.PendingMatterCharges` for the next
+  spill instead of being lost or double-refunded. Test: `RcdBehaviorTest`.
 
 
 ## 25. 2026-10 Salto expedition ship (Coyote `_CS`)
