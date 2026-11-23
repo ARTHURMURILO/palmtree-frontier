@@ -1,7 +1,5 @@
-using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Reflection;
 using Content.Server.Construction.Components;
 using Content.Shared.Atmos.Components;
 using Content.Shared.Construction.EntitySystems;
@@ -9,10 +7,8 @@ using Content.Shared.Construction.Prototypes;
 using Content.Shared.RCD;
 using Content.Shared.RCD.Components;
 using Content.Shared.RCD.Systems;
-using Content.Shared.Tag;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
-using Robust.Shared.Map.Components;
 using Robust.Shared.Maths;
 using Robust.Shared.Prototypes;
 
@@ -42,15 +38,14 @@ public sealed class RcdAtmosStackingTest
         var server = pair.Server;
 
         var entManager = server.ResolveDependency<IEntityManager>();
-        var mapManager = server.ResolveDependency<IMapManager>();
         var tileDefMan = server.ResolveDependency<ITileDefinitionManager>();
         var mapSystem = entManager.System<SharedMapSystem>();
         var rcdSystem = entManager.System<RCDSystem>();
+        var testMap = await pair.CreateTestMap();
 
         await server.WaitAssertion(() =>
         {
-            mapSystem.CreateMap(out var mapId);
-            var grid = mapManager.CreateGridEntity(mapId);
+            var grid = testMap.Grid;
             var plating = new Tile(tileDefMan["Plating"].TileId);
 
             mapSystem.SetTile(grid.Owner, grid.Comp, new Vector2i(0, 0), plating);
@@ -98,17 +93,16 @@ public sealed class RcdAtmosStackingTest
         var server = pair.Server;
 
         var entManager = server.ResolveDependency<IEntityManager>();
-        var mapManager = server.ResolveDependency<IMapManager>();
         var tileDefMan = server.ResolveDependency<ITileDefinitionManager>();
         var mapSystem = entManager.System<SharedMapSystem>();
         var xformSystem = entManager.System<SharedTransformSystem>();
         var rcdSystem = entManager.System<RCDSystem>();
         var anchorable = entManager.System<AnchorableSystem>();
+        var testMap = await pair.CreateTestMap();
 
         await server.WaitAssertion(() =>
         {
-            mapSystem.CreateMap(out var mapId);
-            var grid = mapManager.CreateGridEntity(mapId);
+            var grid = testMap.Grid;
             var plating = new Tile(tileDefMan["Plating"].TileId);
 
             for (var x = 0; x < 4; x++)
@@ -174,18 +168,13 @@ public sealed class RcdAtmosStackingTest
         var server = pair.Server;
 
         var entManager = server.ResolveDependency<IEntityManager>();
-        var mapManager = server.ResolveDependency<IMapManager>();
-        var tileDefMan = server.ResolveDependency<ITileDefinitionManager>();
         var mapSystem = entManager.System<SharedMapSystem>();
         var rcdSystem = entManager.System<RCDSystem>();
+        var testMap = await pair.CreateTestMap();
 
         await server.WaitAssertion(() =>
         {
-            mapSystem.CreateMap(out var mapId);
-            var grid = mapManager.CreateGridEntity(mapId);
-            var plating = new Tile(tileDefMan["Plating"].TileId);
-            mapSystem.SetTile(grid.Owner, grid.Comp, new Vector2i(0, 0), plating);
-
+            var grid = testMap.Grid;
             var coords = new EntityCoordinates(grid.Owner, new Vector2(0.5f, 0.5f));
             var user = entManager.SpawnEntity("MobHuman", coords);
 
@@ -221,19 +210,12 @@ public sealed class RcdAtmosStackingTest
         var server = pair.Server;
 
         var entManager = server.ResolveDependency<IEntityManager>();
-        var mapManager = server.ResolveDependency<IMapManager>();
-        var tileDefMan = server.ResolveDependency<ITileDefinitionManager>();
-        var mapSystem = entManager.System<SharedMapSystem>();
         var anchorable = entManager.System<AnchorableSystem>();
+        var testMap = await pair.CreateTestMap();
 
         await server.WaitAssertion(() =>
         {
-            mapSystem.CreateMap(out var mapId);
-            var grid = mapManager.CreateGridEntity(mapId);
-            var plating = new Tile(tileDefMan["Plating"].TileId);
-            mapSystem.SetTile(grid.Owner, grid.Comp, new Vector2i(0, 0), plating);
-
-            var coords = new EntityCoordinates(grid.Owner, new Vector2(0.5f, 0.5f));
+            var coords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
             entManager.SpawnEntity("GasVentPump", coords);
 
             Assert.Multiple(() =>
@@ -394,19 +376,14 @@ public sealed class RcdAtmosStackingTest
         var server = pair.Server;
 
         var entManager = server.ResolveDependency<IEntityManager>();
-        var mapManager = server.ResolveDependency<IMapManager>();
-        var tileDefMan = server.ResolveDependency<ITileDefinitionManager>();
         var mapSystem = entManager.System<SharedMapSystem>();
         var xformSystem = entManager.System<SharedTransformSystem>();
         var rcdSystem = entManager.System<RCDSystem>();
+        var testMap = await pair.CreateTestMap();
 
         await server.WaitAssertion(() =>
         {
-            mapSystem.CreateMap(out var mapId);
-            var grid = mapManager.CreateGridEntity(mapId);
-            var plating = new Tile(tileDefMan["Plating"].TileId);
-            mapSystem.SetTile(grid.Owner, grid.Comp, new Vector2i(0, 0), plating);
-
+            var grid = testMap.Grid;
             var coords = new EntityCoordinates(grid.Owner, new Vector2(0.5f, 0.5f));
             var user = entManager.SpawnEntity("MobHuman", coords);
 

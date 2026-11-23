@@ -1,4 +1,4 @@
-using Content.Client.Construction;
+using Content.Client.Construction; // Palmtree: distinguish construction-menu placers
 using Content.Client.Hands.Systems;
 using Content.Shared.Input;
 using Content.Shared.Interaction;

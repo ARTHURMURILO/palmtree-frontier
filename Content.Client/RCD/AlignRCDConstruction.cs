@@ -1,7 +1,7 @@
 using System.Numerics;
 using Content.Client.Gameplay;
 using Content.Client.Hands.Systems;
-using Content.Shared._CS;
+using Content.Shared._CS; // Palmtree: admin ghost range exemption
 using Content.Shared.Hands.Components;
 using Content.Shared.Interaction;
 using Content.Shared.RCD.Components;

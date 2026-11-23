@@ -348,14 +348,12 @@ public sealed class RcdBehaviorTest
         await using var pair = await PoolManager.GetServerClient();
         var server = pair.Server;
         var entManager = server.ResolveDependency<IEntityManager>();
-        var mapManager = server.ResolveDependency<IMapManager>();
-        var mapSystem = entManager.System<SharedMapSystem>();
         var rcdSystem = entManager.System<RCDSystem>();
+        var testMap = await pair.CreateTestMap();
 
         await server.WaitAssertion(() =>
         {
-            mapSystem.CreateMap(out var mapId);
-            var grid = mapManager.CreateGridEntity(mapId);
+            var grid = testMap.Grid;
             var prot = entManager.AddComponent<ProtectedGridComponent>(grid.Owner);
             typeof(ProtectedGridComponent)
                 .GetField(nameof(ProtectedGridComponent.PreventRCDUse))!
@@ -396,22 +394,15 @@ public sealed class RcdBehaviorTest
         var server = pair.Server;
 
         var entManager = server.ResolveDependency<IEntityManager>();
-        var mapManager = server.ResolveDependency<IMapManager>();
-        var tileDefMan = server.ResolveDependency<ITileDefinitionManager>();
-        var mapSystem = entManager.System<SharedMapSystem>();
         var rcdSystem = entManager.System<RCDSystem>();
+        var testMap = await pair.CreateTestMap();
 
         var addCharges = typeof(RCDSystem).GetMethod("AddDeconstructCharges", BindingFlags.Instance | BindingFlags.NonPublic);
         Assert.That(addCharges, Is.Not.Null, "AddDeconstructCharges helper not found");
 
         await server.WaitAssertion(() =>
         {
-            mapSystem.CreateMap(out var mapId);
-            var grid = mapManager.CreateGridEntity(mapId);
-            var plating = new Tile(tileDefMan["Plating"].TileId);
-            mapSystem.SetTile(grid.Owner, grid.Comp, new Vector2i(0, 0), plating);
-
-            var coords = new EntityCoordinates(grid.Owner, new Vector2(0.5f, 0.5f));
+            var coords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
             var rpd = entManager.SpawnEntity("RPD", coords);
             var rpdComp = entManager.GetComponent<RCDComponent>(rpd);
 

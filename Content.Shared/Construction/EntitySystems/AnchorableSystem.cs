@@ -1,5 +1,5 @@
 using Content.Shared.Administration.Logs;
-using Content.Shared.Atmos.Components;
+using Content.Shared.Atmos.Components; // Palmtree: pipe-layer aware unstackable checks
 using Content.Shared.Examine;
 using Content.Shared.Construction.Components;
 using Content.Shared.Containers.ItemSlots;

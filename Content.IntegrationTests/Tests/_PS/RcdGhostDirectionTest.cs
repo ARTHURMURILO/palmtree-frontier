@@ -121,11 +121,11 @@ public sealed class RcdGhostDirectionTest : InteractionTest
         await RunTicks(5);
 
         EntityUid? pipe = null;
-        var query = SEntMan.EntityQueryEnumerator<MetaDataComponent>();
+        var query = SEntMan.EntityQueryEnumerator<MetaDataComponent, TransformComponent>();
 
-        while (query.MoveNext(out var uid, out var meta))
+        while (query.MoveNext(out var uid, out var meta, out var xform))
         {
-            if (meta.EntityPrototype?.ID != "GasPipeStraight")
+            if (meta.EntityPrototype?.ID != "GasPipeStraight" || xform.GridUid != MapData.Grid.Owner)
                 continue;
 
             pipe = uid;
@@ -181,10 +181,10 @@ public sealed class RcdGhostDirectionTest : InteractionTest
         await RunTicks(5);
 
         EntityUid? pipe = null;
-        var query = SEntMan.EntityQueryEnumerator<MetaDataComponent>();
-        while (query.MoveNext(out var uid, out var meta))
+        var query = SEntMan.EntityQueryEnumerator<MetaDataComponent, TransformComponent>();
+        while (query.MoveNext(out var uid, out var meta, out var xform))
         {
-            if (meta.EntityPrototype?.ID == "GasPipeStraight")
+            if (meta.EntityPrototype?.ID == "GasPipeStraight" && xform.GridUid == MapData.Grid.Owner)
             {
                 pipe = uid;
                 break;

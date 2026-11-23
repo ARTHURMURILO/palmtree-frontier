@@ -124,6 +124,7 @@
         amount: 2
         doAfter: 1
 
+    # Palmtree: per-layer dual-port vent graph nodes.
     - to: dualportventpumpAlt1
       steps:
       - material: Steel
@@ -506,6 +507,7 @@
       - tool: Welding
         doAfter: 1
 
+  # Palmtree: per-layer dual-port vent construction nodes.
   - node: dualportventpumpAlt1
     entity: GasDualPortVentPumpAlt1
     edges:

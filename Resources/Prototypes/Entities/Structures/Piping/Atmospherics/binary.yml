@@ -462,6 +462,7 @@
           map: [ "enabled", "enum.SubfloorLayers.FirstLayer" ]
     - type: AtmosPipeLayers
       spriteRsiPaths: {}
+      # Palmtree: per-layer dual-port vent variants
       alternativePrototypes:
         Primary: GasDualPortVentPump
         Secondary: GasDualPortVentPumpAlt1
