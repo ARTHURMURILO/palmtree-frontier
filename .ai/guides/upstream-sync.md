@@ -21,7 +21,7 @@
 | Date | Frontier tip merged | Merge commit | Notes |
 |---|---|---|---|
 | 2026-10-23 | `b40510417e` (2026-10-21, includes PR #4749) | `1352fe0805` | First sync after the admin-camera/overlay-cache work; see notes below. |
-| 2026-11-23 | `a2d4b0d703` (2026-11-22) | pending | 162 commits (88 substantive) covering #4811 (RT 277 DI rewrite), #4780 (Food → Edible), #4886 (pipe-layer construction) and #4923 (sector compaction); see notes below. |
+| 2026-11-23 | `a2d4b0d703` (2026-11-22) | `b6e6675a04` | 162 commits (88 substantive) covering #4811 (RT 277 DI rewrite), #4780 (Food → Edible), #4886 (pipe-layer construction) and #4923 (sector compaction); see notes below. |
 
 Previous upstream merge point: `c9b415e52b` (Frontier `#4657`, 2026-10-12). The fork's own work is
 committed on top of that; never reset or rebase away local `_PS` history to "catch up".
@@ -230,7 +230,7 @@ Conflict decisions made in this sync:
   alone; the pinned engine is `feb9e1db` (v267.3.0) and the migration is deferred to the engine bump.
 
 Verification: `dotnet build SpaceStation14.sln` 0 errors, `Content.YAMLLinter` clean, targeted
-integration tests (`EntityTest`, `CharacterCreationTest`, `_PS`) run as part of this sync.
+integration tests (`EntityTest`, `CharacterCreationTest`, `_PS`) 249 passed / 0 failed / 2 skipped.
 
 ## Open questions / follow-ups
 
