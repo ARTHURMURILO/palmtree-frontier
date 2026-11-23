@@ -733,8 +733,11 @@ so these fail only in CI:
   `RcdMode.Deconstruct` operation as a refund; the RPD's per-pipe `RCDDeconstructable.Cost` (1)
   goes into its tank or spills as compressed matter. Overflow first tops up a partially filled
   `RCDAmmo` cartridge within half a tile, then spawns full 30-charge cartridges, so a long pipe run
-  does not leave a pile of one-charge cartridges. The old "RPD keeps its normal charge cost" rule
-  is gone; do not special-case `IsRpd` out of the refund again.
+  does not leave a pile of one-charge cartridges. RPD tool-charge overflow must be converted back
+  to cartridge matter units (two tool charges per unit); an odd leftover charge is carried in
+  `RCDComponent.PendingMatterCharges` so a full tank still refunds a cost-1 pipe eventually. The old
+  "RPD keeps its normal charge cost" rule is gone; do not special-case `IsRpd` out of the refund
+  again.
 - **Component-specific `ComponentStartup` subscriptions are single-handler.** The directed event bus
   stores one subscription per (component, event) pair, so a second
   `SubscribeLocalEvent<NodeContainerComponent, ComponentStartup>` throws
