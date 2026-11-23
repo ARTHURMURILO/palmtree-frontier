@@ -2212,3 +2212,13 @@ Entries:
   time: '2026-11-16T03:57:21.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/c6a3cc004ad71f07289a15888560b624c77458f2
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: Tails no longer render over underwear when facing south.
+    - type: Fix
+      message: Right-leg markings now render correctly when facing east.
+  id: 90148
+  time: '2026-11-23T15:07:19.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/46d9ec367fc7153fec01fe70d435bc8d94010828
