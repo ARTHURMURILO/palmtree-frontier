@@ -2222,3 +2222,12 @@ Entries:
   time: '2026-11-23T15:07:19.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/46d9ec367fc7153fec01fe70d435bc8d94010828
+- author: ARTHURMURILO
+  changes:
+    - type: Fix
+      message: >-
+        Wrenching a supermatter shard now bolts it down instead of eating the
+        wrench and activating the crystal.
+  id: 90149
+  time: '2026-11-23T21:08:28.0000000+00:00'
+  url: https://github.com/xTheLifex/palmtree-frontier/pull/15
