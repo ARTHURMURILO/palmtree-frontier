@@ -602,6 +602,18 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
         // Palmtree/Floof: track the sprite order for markings that place several sprites on one layer.
         var layerDict = new Dictionary<string, int>();
 
+        // Palmtree: in the side views both leg base sprites occupy the same pixels and the fixed
+        // layer order always draws LLeg above RLeg. A marking on the leg nearest the camera must sit
+        // above the far leg's base sprite or it is hidden underneath it. Facing east the right leg
+        // is nearest; facing west the left leg already sits on top. Capture the stable top-of-leg
+        // anchor once so a multi-sprite marking keeps its order without climbing above GenitalLow.
+        var eastRightLegAnchor = -1;
+        if (screenDirection == RsiDirection.East
+            && _sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.GenitalLow, out var genitalLowAnchor, false))
+        {
+            eastRightLegAnchor = genitalLowAnchor;
+        }
+
         for (var j = 0; j < markingPrototype.Sprites.Count; j++)
         {
             var markingSprite = markingPrototype.Sprites[j];
@@ -633,6 +645,20 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
                 layerSlot = HumanoidVisualLayers.GenitalUnder;
             }
 
+            // Palmtree: in the front view the body sits between the camera and a tail hanging from
+            // the back, so a tail using the general Tail layer must render behind the body instead
+            // of over underwear, clothing and limbs. Split tails already send their BEHIND sprites
+            // to TailBehind, and their FRONT sprites are empty facing south; this aligns the rest.
+            var visibilityLayer = layerSlot;
+            if (layerSlot is HumanoidVisualLayers.Tail or HumanoidVisualLayers.TailExtras
+                && screenDirection == RsiDirection.South
+                && humanoid.BaseLayers.TryGetValue(HumanoidVisualLayers.TailBehind, out var tailBehindSetting)
+                && tailBehindSetting.AllowsMarkings
+                && _sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.TailBehind, out _, false))
+            {
+                layerSlot = HumanoidVisualLayers.TailBehind;
+            }
+
             if (!_sprite.LayerMapTryGet((entity.Owner, sprite), layerSlot, out var targetLayer, false))
             {
                 continue;
@@ -640,6 +666,9 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
 
             var layerVisible = visible;
             layerVisible &= !IsHidden(humanoid, layerSlot);
+            // Keep layer-visibility rules aimed at the original layer (e.g. harpies hiding Tail
+            // when wearing a wings-hiding coat) applying to rerouted tail sprites too.
+            layerVisible &= !IsHidden(humanoid, visibilityLayer);
             layerVisible &= humanoid.BaseLayers.TryGetValue(layerSlot, out var setting)
                && setting.AllowsMarkings;
 
@@ -656,6 +685,10 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
 
             var layerOrder = layerDict[layerSlot.ToString()];
             var targLayerAdj = targetLayer + layerOrder + 1;
+
+            // Palmtree: lift right-leg markings over the left-leg base while facing east.
+            if (eastRightLegAnchor >= 0 && layerSlot == HumanoidVisualLayers.RLeg)
+                targLayerAdj = eastRightLegAnchor + layerOrder;
 
             // Palmtree: tails tuck under hair when the character is seen from the side (east/west).
             // Hair is a marking layer, so insert the tail before the current hair layer instead of
