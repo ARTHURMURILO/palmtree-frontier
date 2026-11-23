@@ -370,7 +370,9 @@ public sealed class RcdAtmosStackingTest
     }
 
     [Test]
-    public async Task InlineBinaryDevicesMayShareATileWhenTheirPortsDoNotConflict()
+    [TestCase("GasPressurePump", "PressurePump")]
+    [TestCase("GasValve", "ManualValve")]
+    public async Task InlineBinaryDevicesMayShareATileWhenTheirPortsDoNotConflict(string deviceProto, string mode)
     {
         await using var pair = await PoolManager.GetServerClient();
         var server = pair.Server;
@@ -389,12 +391,12 @@ public sealed class RcdAtmosStackingTest
 
             // An east-west pump. A second north-south pump has no port in common with it, so the
             // node-aware check accepts the shared tile; this is the overlap inline devices need.
-            var existing = entManager.SpawnEntity("GasPressurePump", coords);
+            var existing = entManager.SpawnEntity(deviceProto, coords);
             xformSystem.SetLocalRotation(existing, Angle.FromDegrees(90));
 
             var rpd = entManager.SpawnEntity("RPD", coords);
             var rcd = entManager.GetComponent<RCDComponent>(rpd);
-            SetMode(entManager, rpd, "PressurePump");
+            SetMode(entManager, rpd, mode);
             var tile = mapSystem.GetTileRef(grid.Owner, grid.Comp, new Vector2i(0, 0));
 
             Assert.Multiple(() =>

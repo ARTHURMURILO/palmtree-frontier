@@ -1,5 +1,6 @@
 using System.Numerics;
 using Content.Client.Construction;
+using Content.Client.RCD;
 using Content.Client.Hands.Systems;
 using Content.IntegrationTests.Tests.Interaction;
 using Content.Shared.RCD;
@@ -227,6 +228,13 @@ public sealed class RcdGhostDirectionTest : InteractionTest
                 rcdSystem.IsRcdUseAllowedOnGrid(MapData.CGridUid, player, rcd),
                 Is.False,
                 "The client ghost must see the protected-grid refusal for a normal RCD.");
+
+            var placement = Client.ResolveDependency<IPlacementManager>();
+            var align = new AlignRCDConstruction((PlacementManager) placement);
+            Assert.That(
+                align.IsValidPosition(MapData.CGridCoords),
+                Is.False,
+                "The RCD placement ghost must render the protected-grid refusal as invalid.");
         });
     }
 }
