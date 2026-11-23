@@ -1,6 +1,6 @@
 - type: construction
   id: GasTemperatureGate
-  graph: GasTemperature
+  graph: GasBinaryStarlight
   startNode: start
   targetNode: temperaturegate
   category: construction-category-utilities
@@ -16,7 +16,7 @@
 - type: construction
   hide: true
   id: GasTemperatureGateAlt1
-  graph: GasTemperature
+  graph: GasBinaryStarlight
   startNode: start
   targetNode: temperaturegateAlt1
   category: construction-category-utilities
@@ -32,7 +32,7 @@
 - type: construction
   hide: true
   id: GasTemperatureGateAlt2
-  graph: GasTemperature
+  graph: GasBinaryStarlight
   startNode: start
   targetNode: temperaturegateAlt2
   category: construction-category-utilities
@@ -47,7 +47,7 @@
 
 - type: construction
   id: GasTemperaturePump
-  graph: GasTemperature
+  graph: GasBinaryStarlight
   startNode: start
   targetNode: temperaturepump
   category: construction-category-utilities
@@ -63,7 +63,7 @@
 - type: construction
   hide: true
   id: GasTemperaturePumpAlt1
-  graph: GasTemperature
+  graph: GasBinaryStarlight
   startNode: start
   targetNode: temperaturepumpAlt1
   category: construction-category-utilities
@@ -79,7 +79,7 @@
 - type: construction
   hide: true
   id: GasTemperaturePumpAlt2
-  graph: GasTemperature
+  graph: GasBinaryStarlight
   startNode: start
   targetNode: temperaturepumpAlt2
   category: construction-category-utilities
@@ -94,7 +94,7 @@
 
 - type: construction
   id: GasHeatExchanger
-  graph: GasTemperature
+  graph: GasUnaryStarlight
   startNode: start
   targetNode: heatexchanger
   category: construction-category-utilities
@@ -110,7 +110,7 @@
 - type: construction
   hide: true
   id: GasHeatExchangerAlt1
-  graph: GasTemperature
+  graph: GasUnaryStarlight
   startNode: start
   targetNode: heatexchangerAlt1
   category: construction-category-utilities
@@ -126,7 +126,7 @@
 - type: construction
   hide: true
   id: GasHeatExchangerAlt2
-  graph: GasTemperature
+  graph: GasUnaryStarlight
   startNode: start
   targetNode: heatexchangerAlt2
   category: construction-category-utilities
@@ -141,7 +141,7 @@
 
 - type: construction
   id: GasMeter
-  graph: GasTemperature
+  graph: GasUnaryStarlight
   startNode: start
   targetNode: meter
   category: construction-category-utilities
@@ -157,7 +157,7 @@
 - type: construction
   hide: true
   id: GasMeterAlt1
-  graph: GasTemperature
+  graph: GasUnaryStarlight
   startNode: start
   targetNode: meterAlt1
   category: construction-category-utilities
@@ -173,7 +173,7 @@
 - type: construction
   hide: true
   id: GasMeterAlt2
-  graph: GasTemperature
+  graph: GasUnaryStarlight
   startNode: start
   targetNode: meterAlt2
   category: construction-category-utilities

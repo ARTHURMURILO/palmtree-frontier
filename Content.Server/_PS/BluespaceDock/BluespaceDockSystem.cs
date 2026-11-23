@@ -7,6 +7,8 @@ using Content.Server._NF.Bank;
 using Content.Shared._NF.Bank;
 using Content.Server._NF.ShuttleRecords;
 using Content.Server.Cargo.Systems;
+using Content.Server.Construction;
+using Content.Server.Construction.Components;
 using Content.Server.Ame.Components;
 using Content.Server.Ame.EntitySystems;
 using Content.Server.Botany.Components;
@@ -51,6 +53,7 @@ using Content.Shared._PS.BluespaceDock;
 using Content.Shared._PS.ShipCombat.Components;
 using Content.Shared._PS.ShipRegistry;
 using Content.Shared.Access.Components;
+using Content.Shared.Construction.Prototypes;
 using Content.Shared.Chemistry;
 using Content.Shared.Containers.ItemSlots;
 using Content.Shared.Database;
@@ -131,6 +134,7 @@ public sealed class BluespaceDockSystem : EntitySystem
     [Dependency] private readonly ISerializationManager _serialization = default!;
     [Dependency] private readonly AccessSystem _accessSystem = default!;
     [Dependency] private readonly BankSystem _bank = default!;
+    [Dependency] private readonly ConstructionSystem _construction = default!;
     [Dependency] private readonly DockingSystem _docking = default!;
     [Dependency] private readonly MapLoaderSystem _mapLoader = default!;
     [Dependency] private readonly MapSystem _map = default!;
@@ -1760,6 +1764,10 @@ public sealed class BluespaceDockSystem : EntitySystem
             // entities, or every storage/container fill re-runs and duplicates or spills items.
             RestoreMapInitRegistration(shuttleUid.Value);
 
+            // A construction graph can be renamed or folded into another graph between saves. The
+            // map format stores the component's graph id, so repair it before the ship is handed out.
+            RepairConstructionComponents(shuttleUid.Value);
+
             // Entities the save had to skip (they could not be serialized) come back as a fresh copy
             // of their prototype at the position they were saved at, so a ship is never missing a
             // machine or item because of one unserializable component.
@@ -2302,6 +2310,29 @@ public sealed class BluespaceDockSystem : EntitySystem
     /// Every entity is restored on its own: one entity that throws must not abort the sweep and
     /// leave every later entity (doors, buttons, cannons, guns) unregistered.
     /// </remarks>
+    /// <summary>
+    /// Palmtree: a ship file can carry a construction component whose graph was renamed, folded into
+    /// another graph, or removed since the save. Ask the construction system to re-sync it with the
+    /// entity's prototype so deconstruction keeps working. This is the ship-side counterpart of the
+    /// entity renames in <c>migration.yml</c>, which only cover whole prototypes.
+    /// </summary>
+    public void RepairConstructionComponents(EntityUid grid)
+    {
+        var entities = new HashSet<EntityUid>();
+        GetEntitiesOnGrid(grid, entities);
+
+        var repaired = 0;
+
+        foreach (var uid in entities)
+        {
+            if (Exists(uid) && _construction.TryRepairConstruction(uid))
+                repaired++;
+        }
+
+        if (repaired > 0)
+            _sawmill.Warning($"Ship migration: repaired {repaired} construction component(s) whose graph no longer exists.");
+    }
+
     public void RestoreMapInitRegistration(EntityUid grid)
     {
         var entities = new HashSet<EntityUid>();

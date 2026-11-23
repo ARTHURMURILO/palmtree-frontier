@@ -28,6 +28,7 @@
   - WallmountSubstationElectronics
   - SMESAdvancedMachineCircuitboard
   - NFScreenTimerElectronics
+  - IntercomElectronics
 
 - type: latheRecipePack
   id: NFEngineeringBoardsStatic
@@ -100,11 +101,17 @@
 - type: latheRecipePack
   id: NFEngineeringBoardsCircuitImprinter
   recipes:
+  - AlertsComputerCircuitboard
+  - AtmosMonitoringComputerCircuitboard
   - GasMiningDrillMachineCircuitboard
   - GaslockFrameMachineCircuitboard
-  - AlertsComputerCircuitboard
+  - MaterialSiloMachineCircuitboard
+  - MiniStationAnchorCircuitboard
+  - NFHolopadGridMachineCircuitboard
+  - NFHolopadShipMachineCircuitboard
   - PowerComputerCircuitboard
-  - AtmosMonitoringComputerCircuitboard
+  - SmallGyroscopeMachineCircuitboard
+  - SmallThrusterMachineCircuitboard
   - SupermatterComputerCircuitboard # Palmtree
   - SolarAssemblyFlatpack
 

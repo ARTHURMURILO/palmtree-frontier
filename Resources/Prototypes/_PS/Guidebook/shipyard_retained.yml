@@ -1,0 +1,11 @@
+# Palmtree: guidebook entries for ships retained after Frontier removed them from the shipyard.
+
+- type: guideEntry
+  id: ShipyardWasp
+  name: guide-entry-shipyard-wasp
+  text: "/ServerInfo/_PS/Guidebook/Shipyard/Wasp.xml"
+
+- type: guideEntry
+  id: ShipyardAdder
+  name: guide-entry-shipyard-adder
+  text: "/ServerInfo/_PS/Guidebook/Shipyard/Adder.xml"

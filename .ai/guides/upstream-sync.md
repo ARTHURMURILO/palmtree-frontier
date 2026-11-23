@@ -21,6 +21,7 @@
 | Date | Frontier tip merged | Merge commit | Notes |
 |---|---|---|---|
 | 2026-10-23 | `b40510417e` (2026-10-21, includes PR #4749) | `1352fe0805` | First sync after the admin-camera/overlay-cache work; see notes below. |
+| 2026-11-23 | `a2d4b0d703` (2026-11-22) | pending | 162 commits (88 substantive) covering #4811 (RT 277 DI rewrite), #4780 (Food → Edible), #4886 (pipe-layer construction) and #4923 (sector compaction); see notes below. |
 
 Previous upstream merge point: `c9b415e52b` (Frontier `#4657`, 2026-10-12). The fork's own work is
 committed on top of that; never reset or rebase away local `_PS` history to "catch up".
@@ -183,6 +184,53 @@ Conflict decisions made in this sync:
   no longer needed it; re-added it for the fork's leg-style displacement override.
 - The admin-camera/overlay-cache work was not overwritten; the upstream #40181 cache and the fork's
   thermal-overlay cache both remain.
+
+## Sync notes: 2026-11-23 (Frontier #4811, #4780, #4886, #4923 and 84 more)
+
+Upstream tip `a2d4b0d703` contains 162 commits, of which 88 carry content (72 are changelog-bot
+commits). The merge produced 39 conflicts: 30 were the same collision between Frontier's RT 277
+dependency rewrite (`[Dependency] private readonly` -> `private`, `class` -> `partial class`) and a
+Palmtree `[Dependency]` field appended to the same block. The resolution is always: take upstream's
+style for the shared fields, re-append the Palmtree field. The remaining nine were content merges
+listed below.
+
+Conflict decisions made in this sync:
+
+- **Retained ships.** Frontier removed the LVHI Adder and the NSF Wasp. Both were re-homed under
+  `_PS` (shipyard prototype, map, guidebook page, shuttle-map preview) instead of accepted as
+  removals. The sprites stay under `_NF` as unmodified Frontier assets, so their `states` entries
+  in `_NF/Guidebook/shuttle_maps/128x96.rsi/meta.json` were restored. The two `shipyard_*` child
+  lists in `_NF` keep one-line `# Palmtree` entries that point at the `_PS` guide pages.
+- **Atmos construction.** The private `GasTemperature` graph was folded into Frontier's
+  `GasUnaryStarlight` and `GasBinaryStarlight` graphs (heat exchanger + meter in unary, gate + pump
+  in binary). Recipes and the devices' `Construction` components now point at the shared graphs.
+  `ConstructionSystem.TryRepairConstruction` plus `BluespaceDockSystem.RepairConstructionComponents`
+  re-sync saved ships whose component still names a removed graph.
+- **Food -> Edible.** All but one file came from upstream. `_Goobstation/.../Food/lollypops.yml`
+  is ours and still used `- type: Food`; the three components were migrated to `- type: Edible`.
+- **GasTileDangerousTemperatureOverlay.** We had independently implemented the same
+  `OverlayResourceCache` refactor as Frontier #43032. Took upstream's version, which is a superset
+  (adds the reused `_grids` list and drops the `anyGasDrawn` early return).
+- **Keybinds.** Dropped the Frontier `SwapHandsPrevious` binding: Frontier renamed the function to
+  `SwapHandsReverse` and the old id no longer exists. Kept the Palmtree circuitry-editor region.
+- **PurchaseShuttleCommand.** Kept the Palmtree split of `_sysManager` (`IEntitySystemManager`) and
+  `_entityManager` (`IEntityManager`); upstream still has one field named `_entityManager` with the
+  system-manager type.
+- **Tabletop.** Kept the Palmtree hologram fields and constants; dropped `_hands`, which the
+  hologram rewrite stopped using.
+- **Engineering lathe pack.** Kept upstream's small thruster/gyroscope boards plus the Palmtree
+  supermatter board; removed the pre-existing duplicate `AtmosMonitoringComputerCircuitboard`.
+- **Stamp locale.** Kept the Palmtree "Frontier Confidential" string and upstream's new pet stamps.
+- **Expedition weapon table.** Kept the Coyote EG-4/Anaconda entries and the Fallout nested
+  selector alongside upstream's returning energy shotgun.
+- **Sector compaction (#4923).** Accepted as-is: dead zone 1 km -> 250 m, dense field 14 km ->
+  8 km, sparse outer ring to 15 km, Barrier Gate 8.5-9.5 km -> 7.5-8.5 km. Vgroids spawn 1.5-3.5 km
+  toward the gate; that bias is #4973's revert, not #4923.
+- **Dependency syntax.** The 83 `_PS` files that still use `[Dependency] private readonly` were left
+  alone; the pinned engine is `feb9e1db` (v267.3.0) and the migration is deferred to the engine bump.
+
+Verification: `dotnet build SpaceStation14.sln` 0 errors, `Content.YAMLLinter` clean, targeted
+integration tests (`EntityTest`, `CharacterCreationTest`, `_PS`) run as part of this sync.
 
 ## Open questions / follow-ups
 

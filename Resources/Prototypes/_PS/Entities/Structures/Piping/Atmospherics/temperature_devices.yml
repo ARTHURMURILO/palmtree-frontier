@@ -60,7 +60,7 @@
       enum.GasTemperatureGateUiKey.Key:
         type: GasTemperatureGateBoundUserInterface
   - type: Construction
-    graph: GasTemperature
+    graph: GasBinaryStarlight
     node: temperaturegate
   - type: AmbientSound
     enabled: false
@@ -163,7 +163,7 @@
       enum.GasTemperaturePumpUiKey.Key:
         type: GasTemperaturePumpBoundUserInterface
   - type: Construction
-    graph: GasTemperature
+    graph: GasBinaryStarlight
     node: temperaturepump
   - type: AmbientSound
     enabled: false
@@ -251,7 +251,7 @@
   - type: PipeColorVisuals
   - type: GasHeatExchanger
   - type: Construction
-    graph: GasTemperature
+    graph: GasUnaryStarlight
     node: heatexchanger
   - type: AtmosMonitoringConsoleDevice
     navMapBlip: Thermoregulator
@@ -355,7 +355,7 @@
   - type: PipeColorVisuals
   - type: GasMeter
   - type: Construction
-    graph: GasTemperature
+    graph: GasUnaryStarlight
     node: meter
   - type: AtmosMonitoringConsoleDevice
   - type: GuideHelp
