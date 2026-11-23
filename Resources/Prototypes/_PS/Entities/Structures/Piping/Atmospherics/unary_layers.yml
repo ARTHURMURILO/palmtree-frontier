@@ -152,6 +152,9 @@
   id: GasDualPortVentPumpAlt1
   categories: [ HideSpawnMenu ]
   components:
+  - type: Construction
+    graph: GasBinary
+    node: dualportventpumpAlt1
   - type: AtmosPipeLayers
     pipeLayer: 1
     spriteRsiPaths: {}
@@ -168,6 +171,9 @@
   id: GasDualPortVentPumpAlt2
   categories: [ HideSpawnMenu ]
   components:
+  - type: Construction
+    graph: GasBinary
+    node: dualportventpumpAlt2
   - type: AtmosPipeLayers
     pipeLayer: 2
     spriteRsiPaths: {}

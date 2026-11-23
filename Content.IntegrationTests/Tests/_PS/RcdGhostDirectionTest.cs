@@ -1,7 +1,11 @@
 using System.Numerics;
+using Content.Client.Construction;
+using Content.Client.Hands.Systems;
 using Content.IntegrationTests.Tests.Interaction;
 using Content.Shared.RCD;
 using Content.Shared.RCD.Components;
+using Content.Shared.RCD.Systems;
+using Content.Shared.Tiles;
 using Robust.Client.Placement;
 using Robust.Shared.Enums;
 using Robust.Shared.GameObjects;
@@ -36,6 +40,11 @@ public sealed class RcdGhostDirectionTest : InteractionTest
     {
         var placement = Client.ResolveDependency<IPlacementManager>();
 
+        // Hold an RPD first: the regression only happened when the player had an RCD/RPD in hand
+        // while a sandbox spawn-panel placement was active.
+        await PlaceInHands("RPD");
+        await RunTicks(5);
+
         await Client.WaitPost(() =>
         {
             placement.BeginPlacing(new PlacementInformation
@@ -48,13 +57,18 @@ public sealed class RcdGhostDirectionTest : InteractionTest
 
         Assert.That(placement.IsActive, Is.True, "Starting a spawn-menu placement should activate it.");
 
-        // Sandbox and map-editor placements leave MobUid at EntityUid.Invalid. The RCD ghost
-        // system must not mistake that for a deleted held tool and clear the placement, or the
-        // spawn panel entry deselects on the next frame.
+        // Sandbox and map-editor placements leave MobUid at EntityUid.Invalid and carry no hijack.
+        // The RCD ghost system must leave those alone, or the spawn panel entry deselects on the
+        // next frame.
         await RunTicks(10);
 
-        Assert.That(placement.IsActive, Is.True,
-            "The RCD ghost system must not clear placements that have no owning mob.");
+        Assert.Multiple(() =>
+        {
+            Assert.That(placement.IsActive, Is.True,
+                "The RCD ghost system must not clear spawn-panel placements that have no owning mob.");
+            Assert.That(placement.CurrentPermission?.PlacementOption, Is.EqualTo("SnapgridCenter"),
+                "The spawn-panel placement must not be replaced by the RPD placer.");
+        });
     }
 
     [Test]
@@ -137,16 +151,20 @@ public sealed class RcdGhostDirectionTest : InteractionTest
 
         Assert.That(placement.IsActive, Is.True, "Equipping an RPD should start its placement mode.");
 
-        // Simulate a construction-menu / spawn-panel placer left active with no owning mob. This is
-        // what happens after opening the build menu and then switching to the RPD.
+        // Simulate a construction-menu placer left active with no owning mob. This is what happens
+        // after opening the build menu and then switching to the RPD. The construction menu sets a
+        // ConstructionPlacementHijack; the sandbox spawn panel does not, so this is the shape the
+        // RCD ghost system is allowed to take over.
         await Client.WaitPost(() =>
         {
-            placement.BeginPlacing(new PlacementInformation
-            {
-                EntityType = "WallSolid",
-                PlacementOption = "SnapgridCenter",
-                Range = 2,
-            });
+            placement.BeginPlacing(
+                new PlacementInformation
+                {
+                    EntityType = "WallSolid",
+                    PlacementOption = "SnapgridCenter",
+                    Range = 2,
+                },
+                new ConstructionPlacementHijack(CConSys, null));
         });
 
         await RunTicks(5);
@@ -175,5 +193,40 @@ public sealed class RcdGhostDirectionTest : InteractionTest
 
         Assert.That(pipe, Is.Not.Null, "Clicking with the RPD should build a pipe after taking over the placer.");
         Assert.That(placement.CurrentPermission?.MobUid, Is.EqualTo(ToClient(rpdNet)));
+    }
+
+    [Test]
+    public async Task ProtectedGridRefusalIsVisibleOnTheClient()
+    {
+        await PlaceInHands("RCD");
+
+        await Server.WaitPost(() =>
+        {
+            var prot = SEntMan.AddComponent<ProtectedGridComponent>(MapData.Grid.Owner);
+            typeof(ProtectedGridComponent)
+                .GetField(nameof(ProtectedGridComponent.PreventRCDUse))!
+                .SetValue(prot, true);
+            SEntMan.Dirty(MapData.Grid.Owner, prot);
+        });
+
+        await RunTicks(10);
+
+        await Client.WaitAssertion(() =>
+        {
+            var prot = CEntMan.GetComponent<ProtectedGridComponent>(MapData.CGridUid);
+            Assert.That(prot.PreventRCDUse, Is.True,
+                "The protected-grid RCD flag must be networked to the client.");
+
+            var player = CEntMan.GetEntity(Player);
+            var clientHands = CEntMan.System<Content.Client.Hands.Systems.HandsSystem>();
+            var held = clientHands.GetActiveItem(player);
+            Assert.That(held, Is.Not.Null, "The client player should be holding the RCD.");
+            var rcd = CEntMan.GetComponent<RCDComponent>(held!.Value);
+            var rcdSystem = CEntMan.System<RCDSystem>();
+            Assert.That(
+                rcdSystem.IsRcdUseAllowedOnGrid(MapData.CGridUid, player, rcd),
+                Is.False,
+                "The client ghost must see the protected-grid refusal for a normal RCD.");
+        });
     }
 }

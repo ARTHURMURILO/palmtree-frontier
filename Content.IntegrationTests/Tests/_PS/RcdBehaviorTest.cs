@@ -393,4 +393,55 @@ public sealed class RcdBehaviorTest
 
         await pair.CleanReturnAsync();
     }
+
+    [Test]
+    public async Task RpdDeconstructOverflowDoesNotDoubleRefund()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+
+        var entManager = server.ResolveDependency<IEntityManager>();
+        var mapManager = server.ResolveDependency<IMapManager>();
+        var tileDefMan = server.ResolveDependency<ITileDefinitionManager>();
+        var mapSystem = entManager.System<SharedMapSystem>();
+        var rcdSystem = entManager.System<RCDSystem>();
+
+        var addCharges = typeof(RCDSystem).GetMethod("AddDeconstructCharges", BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.That(addCharges, Is.Not.Null, "AddDeconstructCharges helper not found");
+
+        await server.WaitAssertion(() =>
+        {
+            mapSystem.CreateMap(out var mapId);
+            var grid = mapManager.CreateGridEntity(mapId);
+            var plating = new Tile(tileDefMan["Plating"].TileId);
+            mapSystem.SetTile(grid.Owner, grid.Comp, new Vector2i(0, 0), plating);
+
+            var coords = new EntityCoordinates(grid.Owner, new Vector2(0.5f, 0.5f));
+            var rpd = entManager.SpawnEntity("RPD", coords);
+            var rpdComp = entManager.GetComponent<RCDComponent>(rpd);
+
+            // A full RPD has nowhere to put the return, so two tool charges spill out. A
+            // compressed-matter cartridge charge is worth two RPD tool charges, so the spill must
+            // be one cartridge charge, not two.
+            addCharges!.Invoke(rcdSystem, new object[] { rpd, rpdComp, 2, coords });
+
+            var cartridges = 0;
+            var totalCharges = 0;
+            var query = entManager.EntityQueryEnumerator<RCDAmmoComponent>();
+            while (query.MoveNext(out _, out var ammo))
+            {
+                cartridges++;
+                totalCharges += ammo.Charges;
+            }
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(cartridges, Is.EqualTo(1), "The overflow should spill as one cartridge.");
+                Assert.That(totalCharges, Is.EqualTo(1),
+                    "Two RPD tool charges of overflow are one matter unit, not two.");
+            });
+        });
+
+        await pair.CleanReturnAsync();
+    }
 }

@@ -1,9 +1,11 @@
 using Content.Shared.Atmos.Components;
+using Content.Shared.Construction;
+using Content.Shared.Construction.Conditions;
 using Content.Shared.Construction.EntitySystems;
 using JetBrains.Annotations;
 using Robust.Shared.Map;
 
-namespace Content.Shared.Construction.Conditions;
+namespace Content.Shared._PS.Construction.Conditions;
 
 /// <summary>
 /// Palmtree: like <see cref="NoUnstackableInTile"/>, but only counts unstackable atmos devices on
