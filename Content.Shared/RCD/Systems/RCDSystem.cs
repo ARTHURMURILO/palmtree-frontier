@@ -984,10 +984,17 @@ public sealed class RCDSystem : EntitySystem
 
         // Palmtree: `amount` and `free` are tool charges, but a cartridge charge is one matter
         // unit. The RPD turns one matter unit into two tool charges (RCDAmmoSystem), so spilling
-        // the raw tool-charge overflow would refund twice the matter that was taken out. Round
-        // down for the RPD: a single leftover tool charge cannot be represented as half a unit of
-        // matter, and over-refunding is worse than losing that half unit at a full tank.
-        var ammoAmount = component.IsRpd ? overflow / 2 : overflow;
+        // the raw tool-charge overflow would refund twice the matter that was taken out. Convert
+        // to matter units and carry an odd leftover charge in the tool until the next spill.
+        var spillCharges = overflow;
+
+        if (component.IsRpd && _net.IsServer)
+        {
+            spillCharges += component.PendingMatterCharges;
+            component.PendingMatterCharges = spillCharges % 2;
+        }
+
+        var ammoAmount = component.IsRpd ? spillCharges / 2 : overflow;
 
         if (ammoAmount <= 0 || !_net.IsServer)
             return;

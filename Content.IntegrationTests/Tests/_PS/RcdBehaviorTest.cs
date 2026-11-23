@@ -406,25 +406,51 @@ public sealed class RcdBehaviorTest
             var rpd = entManager.SpawnEntity("RPD", coords);
             var rpdComp = entManager.GetComponent<RCDComponent>(rpd);
 
-            // A full RPD has nowhere to put the return, so two tool charges spill out. A
-            // compressed-matter cartridge charge is worth two RPD tool charges, so the spill must
-            // be one cartridge charge, not two.
-            addCharges!.Invoke(rcdSystem, new object[] { rpd, rpdComp, 2, coords });
+            // A full RPD has nowhere to put the return. One tool charge is half a cartridge
+            // matter unit, so it is held until a second charge completes it; otherwise a pipe
+            // worth one tool charge would refund zero (or a double-charged cartridge).
+            addCharges!.Invoke(rcdSystem, new object[] { rpd, rpdComp, 1, coords });
 
             var cartridges = 0;
             var totalCharges = 0;
-            var query = entManager.EntityQueryEnumerator<RCDAmmoComponent>();
-            while (query.MoveNext(out _, out var ammo))
+            var query = entManager.EntityQueryEnumerator<RCDAmmoComponent, TransformComponent>();
+            while (query.MoveNext(out _, out var ammo, out var xform))
             {
+                if (xform.GridUid != testMap.Grid.Owner)
+                    continue;
+
                 cartridges++;
                 totalCharges += ammo.Charges;
             }
 
             Assert.Multiple(() =>
             {
-                Assert.That(cartridges, Is.EqualTo(1), "The overflow should spill as one cartridge.");
+                Assert.That(cartridges, Is.EqualTo(0),
+                    "One leftover tool charge should wait for a second charge instead of spilling zero matter.");
+                Assert.That(rpdComp.PendingMatterCharges, Is.EqualTo(1),
+                    "The RPD should remember the half matter unit.");
+            });
+
+            addCharges.Invoke(rcdSystem, new object[] { rpd, rpdComp, 1, coords });
+
+            cartridges = 0;
+            totalCharges = 0;
+            query = entManager.EntityQueryEnumerator<RCDAmmoComponent, TransformComponent>();
+            while (query.MoveNext(out _, out var ammo, out var xform))
+            {
+                if (xform.GridUid != testMap.Grid.Owner)
+                    continue;
+
+                cartridges++;
+                totalCharges += ammo.Charges;
+            }
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(cartridges, Is.EqualTo(1), "The two half units should merge into one cartridge.");
                 Assert.That(totalCharges, Is.EqualTo(1),
                     "Two RPD tool charges of overflow are one matter unit, not two.");
+                Assert.That(rpdComp.PendingMatterCharges, Is.EqualTo(0));
             });
         });
 

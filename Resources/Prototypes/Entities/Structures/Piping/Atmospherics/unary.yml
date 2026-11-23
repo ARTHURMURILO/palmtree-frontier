@@ -3,7 +3,7 @@
   abstract: true
   id: GasUnaryBase
   placement:
-    mode: AlignAtmosPipeLayers # Palmtree: SnapgridCenter<AlignAtmosPipeLayers
+    mode: SnapgridCenter
   components:
     - type: AtmosDevice
     - type: Tag
