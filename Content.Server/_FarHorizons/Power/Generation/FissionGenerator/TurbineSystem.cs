@@ -58,6 +58,7 @@ public sealed class TurbineSystem : SharedTurbineSystem
     {
         base.Initialize();
         SubscribeLocalEvent<TurbineComponent, ComponentInit>(OnInit);
+        SubscribeLocalEvent<TurbineComponent, ComponentStartup>(OnStartup);
         SubscribeLocalEvent<TurbineComponent, ComponentShutdown>(OnShutdown);
 
         SubscribeLocalEvent<TurbineComponent, AtmosDeviceUpdateEvent>(OnUpdate);
@@ -72,6 +73,26 @@ public sealed class TurbineSystem : SharedTurbineSystem
     {
         _signal.EnsureSourcePorts(uid, comp.SpeedHighPort, comp.SpeedLowPort);
         _signal.EnsureSinkPorts(uid, comp.StatorLoadIncreasePort, comp.StatorLoadDecreasePort);
+    }
+
+    /// <summary>
+    ///     Rebuild the turbine condition after a save/load. Only <see cref="TurbineComponent.BladeHealth"/>
+    ///     and <see cref="TurbineComponent.Ruined"/> were persisted; the spark/smoke flags are runtime
+    ///     state and appearance data is not serialized, so a reloaded wreck used to look intact and
+    ///     re-ran the tear-apart explosion on the first atmos tick.
+    /// </summary>
+    private void OnStartup(EntityUid uid, TurbineComponent comp, ref ComponentStartup args)
+    {
+        // Saves written before the ruin flag was persisted only carry the blade health.
+        if (comp.BladeHealth <= 0)
+            comp.Ruined = true;
+
+        // Set the flags directly rather than going through UpdateHealthIndicators: a reload must not
+        // replay the spark/smoke popups or sounds.
+        comp.IsSparking = comp.BladeHealth <= 0.75f * comp.BladeHealthMax;
+        comp.IsSmoking = comp.BladeHealth <= 0.5f * comp.BladeHealthMax;
+
+        UpdateAppearance(uid, comp);
     }
 
     private void OnAnalyze(EntityUid uid, TurbineComponent comp, ref GasAnalyzerScanEvent args)
@@ -149,6 +170,11 @@ public sealed class TurbineSystem : SharedTurbineSystem
 
     private void UpdateTurbine(EntityUid uid, TurbineComponent comp, AtmosDeviceUpdateEvent args)
     {
+        var previousRpm = comp.RPM;
+        var previousBladeHealth = comp.BladeHealth;
+        var previousOvertempAlarm = comp.AlarmAudioOvertemp;
+        var previousUnderspeedAlarm = comp.AlarmAudioUnderspeed;
+
         var supplier = Comp<PowerSupplierComponent>(uid);
         comp.SupplierMaxSupply = supplier.MaxSupply;
 
@@ -306,7 +332,17 @@ public sealed class TurbineSystem : SharedTurbineSystem
         else if (comp.RPM < comp.BestRPM*0.95)
             _signal.InvokePort(uid, comp.SpeedLowPort);
 
-        Dirty(uid, comp);
+        // Dirtying the whole networked component every atmos tick replicated it (and every field on
+        // it) to every client even while the turbine sat idle. Only push a state update when one of
+        // the fields that are actually networked changed.
+        if (comp.RPM != previousRpm ||
+            comp.BladeHealth != previousBladeHealth ||
+            comp.AlarmAudioOvertemp != previousOvertempAlarm ||
+            comp.AlarmAudioUnderspeed != previousUnderspeedAlarm)
+        {
+            Dirty(uid, comp);
+        }
+
         UpdateUI(uid, comp);
     }
 
@@ -344,10 +380,21 @@ public sealed class TurbineSystem : SharedTurbineSystem
     {
         var wantToTransfer = comp.FlowRate * _atmosphereSystem.PumpSpeedup() * dt;
         var transferVolume = Math.Min(inlet.Air.Volume, wantToTransfer);
+
+        // An empty (or vented) inlet has zero pressure. Dividing the moles back out by pressure
+        // then produced 0/0 = NaN, which the pipe net happily spread to every connected device.
+        if (!float.IsFinite(inlet.Air.Pressure) || inlet.Air.Pressure <= 0f ||
+            !float.IsFinite(inlet.Air.Temperature) || inlet.Air.Temperature <= 0f)
+        {
+            return 0f;
+        }
+
         var transferMoles = inlet.Air.Pressure * transferVolume / (inlet.Air.Temperature * Atmospherics.R);
         var molesSpaceLeft = (comp.OutputPressure - outlet.Air.Pressure) * outlet.Air.Volume / (outlet.Air.Temperature * Atmospherics.R);
         var actualMolesTransfered = Math.Clamp(transferMoles, 0, Math.Max(0, molesSpaceLeft));
-        return Math.Max(0, actualMolesTransfered * inlet.Air.Temperature * Atmospherics.R / inlet.Air.Pressure);
+        var transfer = actualMolesTransfered * inlet.Air.Temperature * Atmospherics.R / inlet.Air.Pressure;
+
+        return float.IsFinite(transfer) ? Math.Max(0, transfer) : 0f;
     }
 
     private void TearApart(EntityUid uid, TurbineComponent comp)
