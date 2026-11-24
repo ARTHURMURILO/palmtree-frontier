@@ -26,10 +26,13 @@ namespace Content.IntegrationTests.Tests._Funkystation;
 [TestFixture]
 public sealed class HFRReviewFixesTest
 {
+    // Uses the pooled pair on purpose: the integration suite has a 20 minute cap and a fresh
+    // (destructive) pair costs a full server+client boot. These tests only spawn and delete
+    // entities on the pair's own test map.
     [Test]
     public async Task FusionProcessKeepsReactorValuesFinite()
     {
-        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
+        await using var pair = await PoolManager.GetServerClient();
         var server = pair.Server;
         var entMan = server.EntMan;
         var testMap = await pair.CreateTestMap();
@@ -81,7 +84,7 @@ public sealed class HFRReviewFixesTest
     [Test]
     public async Task GravityPulseUsesLevelSixRangeAndRestoresWellRange()
     {
-        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
+        await using var pair = await PoolManager.GetServerClient();
         var server = pair.Server;
         var entMan = server.EntMan;
         var testMap = await pair.CreateTestMap();
@@ -132,7 +135,7 @@ public sealed class HFRReviewFixesTest
     [Test]
     public async Task HfrPartsBlockWeldingWhileActive()
     {
-        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
+        await using var pair = await PoolManager.GetServerClient();
         var server = pair.Server;
         var entMan = server.EntMan;
         var testMap = await pair.CreateTestMap();

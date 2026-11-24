@@ -24,12 +24,16 @@ namespace Content.IntegrationTests.Tests._Funkystation;
 [TestFixture]
 public sealed class TurbineReviewFixesTest
 {
-    private static readonly ResPath SavePath = new("/Maps/Test/TurbineReviewFixes.yml");
+    // The integration test harness has a 20 minute cap for the whole suite (PoolManagerTestEventHandler).
+    // These tests must not create fresh (destructive) pairs: each one costs a full server+client boot
+    // on CI. They use the pooled pair instead and clean up the maps they create.
+    private static readonly ResPath RuinedSavePath = new("/Maps/Test/TurbineRuined.yml");
+    private static readonly ResPath LegacySavePath = new("/Maps/Test/TurbineLegacy.yml");
 
     [Test]
     public async Task RuinedTurbineSurvivesSaveLoad()
     {
-        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
+        await using var pair = await PoolManager.GetServerClient();
         var server = pair.Server;
         var entMan = server.EntMan;
         var mapManager = server.ResolveDependency<IMapManager>();
@@ -39,7 +43,7 @@ public sealed class TurbineReviewFixesTest
 
         await server.WaitAssertion(() =>
         {
-            resManager.UserData.CreateDir(SavePath.Directory);
+            resManager.UserData.CreateDir(RuinedSavePath.Directory);
             mapSystem.CreateMap(out var mapId);
             var grid = mapManager.CreateGridEntity(mapId);
             var turbine = entMan.SpawnEntity("Turbine", new EntityCoordinates(grid.Owner, new Vector2(0.5f, 0.5f)));
@@ -50,16 +54,18 @@ public sealed class TurbineReviewFixesTest
             comp.BladeHealth = 10;
             comp.Ruined = true;
 
-            Assert.That(mapLoader.TrySaveMap(mapId, SavePath), Is.True);
+            Assert.That(mapLoader.TrySaveMap(mapId, RuinedSavePath), Is.True);
             mapSystem.DeleteMap(mapId);
         });
 
         await server.WaitIdleAsync();
 
         EntityUid loaded = default;
+        MapId loadedMapId = default;
         await server.WaitAssertion(() =>
         {
-            Assert.That(mapLoader.TryLoadMap(SavePath, out _, out _), Is.True);
+            Assert.That(mapLoader.TryLoadMap(RuinedSavePath, out var loadedMap, out _), Is.True);
+            loadedMapId = loadedMap!.Value.Comp.MapId;
 
             var turbines = new List<Entity<TurbineComponent>>();
             var query = entMan.EntityQueryEnumerator<TurbineComponent>();
@@ -86,6 +92,8 @@ public sealed class TurbineReviewFixesTest
 
             Assert.That(entMan.GetComponent<TurbineComponent>(loaded).RPM, Is.EqualTo(500f),
                 "a reloaded wreck ran TearApart again");
+
+            mapSystem.DeleteMap(loadedMapId);
         });
 
         await pair.CleanReturnAsync();
@@ -94,7 +102,7 @@ public sealed class TurbineReviewFixesTest
     [Test]
     public async Task LegacyZeroHealthTurbineLoadsRuined()
     {
-        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
+        await using var pair = await PoolManager.GetServerClient();
         var server = pair.Server;
         var entMan = server.EntMan;
         var mapManager = server.ResolveDependency<IMapManager>();
@@ -104,7 +112,7 @@ public sealed class TurbineReviewFixesTest
 
         await server.WaitAssertion(() =>
         {
-            resManager.UserData.CreateDir(SavePath.Directory);
+            resManager.UserData.CreateDir(RuinedSavePath.Directory);
             mapSystem.CreateMap(out var mapId);
             var grid = mapManager.CreateGridEntity(mapId);
             var turbine = entMan.SpawnEntity("Turbine", new EntityCoordinates(grid.Owner, new Vector2(0.5f, 0.5f)));
@@ -115,15 +123,17 @@ public sealed class TurbineReviewFixesTest
             comp.BladeHealth = 0;
             comp.Ruined = false;
 
-            Assert.That(mapLoader.TrySaveMap(mapId, SavePath), Is.True);
+            Assert.That(mapLoader.TrySaveMap(mapId, LegacySavePath), Is.True);
             mapSystem.DeleteMap(mapId);
         });
 
         await server.WaitIdleAsync();
 
+        MapId legacyLoadedMapId = default;
         await server.WaitAssertion(() =>
         {
-            Assert.That(mapLoader.TryLoadMap(SavePath, out _, out _), Is.True);
+            Assert.That(mapLoader.TryLoadMap(LegacySavePath, out var legacyLoadedMap, out _), Is.True);
+            legacyLoadedMapId = legacyLoadedMap!.Value.Comp.MapId;
 
             var turbines = new List<Entity<TurbineComponent>>();
             var query = entMan.EntityQueryEnumerator<TurbineComponent>();
@@ -145,6 +155,8 @@ public sealed class TurbineReviewFixesTest
             entMan.EventBus.RaiseLocalEvent(turbines[0].Owner, ref ev);
 
             Assert.That(turbine.RPM, Is.EqualTo(500f), "a zero-health turbine tore itself apart again on load");
+
+            mapSystem.DeleteMap(legacyLoadedMapId);
         });
 
         await pair.CleanReturnAsync();
@@ -153,7 +165,7 @@ public sealed class TurbineReviewFixesTest
     [Test]
     public async Task EmptyInletDoesNotProduceNaN()
     {
-        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Destructive = true });
+        await using var pair = await PoolManager.GetServerClient();
         var server = pair.Server;
         var entMan = server.EntMan;
         var testMap = await pair.CreateTestMap();
