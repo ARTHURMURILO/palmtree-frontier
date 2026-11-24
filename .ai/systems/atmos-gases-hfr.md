@@ -15,7 +15,7 @@
 | Gas prototypes + tile overlay metadata | `Resources/Prototypes/Atmospherics/gases.yml` |
 | Reactions (15 new + six vanilla reactions patched) | `Resources/Prototypes/Atmospherics/reactions.yml` |
 | Reagents for the new gases | `Resources/Prototypes/Reagents/gases.yml` |
-| Canisters (Frontier model, one colour per gas) | `Resources/Prototypes/_Funkystation/Atmospherics/` |
+| Canisters (Frontier model, one colour per gas) | `Resources/Prototypes/_Funkystation/Entities/Structures/Storage/Canisters/gas_canisters.yml` |
 | Supermatter coefficients and the two conversions | `Content.Shared/_EE/Supermatter/Components/SupermatterComponent.cs`, `Content.Server/_EE/Systems/SupermatterSystem.Processing.cs` |
 | Tests | `Content.IntegrationTests/Tests/_Funkystation/Atmos/*`, `FunkyAtmosPrototypesTest.cs`, `Content.IntegrationTests/Tests/_EE/SupermatterTest.cs` |
 
@@ -75,20 +75,27 @@ The Funky maths is authored for a **25,000,000 K** fusion ceiling. The fork's at
   (500 K first boundary so ambient air is still level 0, geometric steps to 40% of the ceiling).
   Change the table in one place only.
 - Heat-up and equilibrium were measured: level 1 ~6 s, level 6 ~44 s (Funky 4.7 s / 54.7 s), the
-  ceiling is reachable without the atmos clamp interfering.
+  ceiling is reachable without the atmos clamp interfering. Those numbers assume a heating
+  conductor of 500: the reactor starts at 50 (`HFRCoreComponent.HeatingConductor`), the console
+  clamps the setting to 50-500, and `hfr.yml`'s printed quick guide tells the crew to set 500 to
+  kickstart the reaction (then drop to ~100 once the power level exceeds 1). The unpowered-console
+  fallback also runs at 500.
 - **Never raise `Atmospherics.Tmax`** to make an engine reach its design temperature. Scale the
   engine (this is also the `.ai/HAZARDS.md` rule).
 
 ### Assembly and control invariants
 
-- Part links (`ConsoleUid`, `FuelInputUid`, `ModeratorInputUid`, `WasteOutputUid`, `CornerUids`)
-  are **runtime only, not serialised**. They are rebuilt from the anchored parts on startup/anchor
-  (`TryLinkComponent`, `TryLinkCorner`, `TryFindCore`); `ComponentShutdown` on any part clears the
-  links in both directions. Do not re-add `[DataField]` to them: a save/load would resurrect a dead
-  or recycled UID.
+- Part links are **runtime only, not serialised, in both directions**: the core holds `ConsoleUid`,
+  `FuelInputUid`, `ModeratorInputUid`, `WasteOutputUid` and `CornerUids`, and every part holds its
+  own `CoreUid`. They are rebuilt from the anchored parts on startup/anchor (`TryLinkComponent`,
+  `TryLinkCorner`, `TryFindCore`), and `ComponentShutdown` on either side clears both. Relinking
+  happens on entity startup — keep it that way; `HFRReviewFixesTest.AssemblyRelinksAfterSaveLoad`
+  guards the save/load round-trip. Do not re-add `[DataField]` to any link: a save/load would
+  resurrect a dead or recycled UID.
 - `AreAllPartsConnected` is the activation gate (`ToggleActiveState` refuses to start otherwise),
-  and `Process` deactivates a reactor that loses a part. Unbolting is blocked while active, but
-  deletion is not.
+  and `Process` deactivates a reactor that loses a part. It requires **exactly one corner per
+  diagonal**: four corner links alone are not enough, because two corners on one diagonal and a
+  missing fourth are rejected. Unbolting is blocked while active, but deletion is not.
 - A stale console UID must be dropped before `PowerReceiverSystem.IsPowered` (it returns true for a
   deleted receiver). Pipe nodes are resolved through `TryGetPartPipe`, which tolerates deleted
   parts.
@@ -114,7 +121,7 @@ The Funky maths is authored for a **25,000,000 K** fusion ceiling. The fork's at
 | Turbine main loop (flow, RPM, stator, damage, power) | `Content.Server/_FarHorizons/Power/Generation/FissionGenerator/TurbineSystem.cs` |
 | Turbine state (persisted `Ruined`, runtime fields) | `Content.Shared/_FarHorizons/Power/Generation/FissionGenerator/TurbineComponent.cs` |
 | Flatpack site works + pack-up + packed state | `Content.Server/_FarHorizons/Power/Generation/FissionGenerator/TurbineAssemblySystem.cs`, `TurbineFlatpackStateComponent.cs`, `Content.Shared/_FarHorizons/.../TurbineAssemblyComponent.cs` |
-| Multi-tile footprint check (shared by server and ghost) | `Content.Shared/_PS/Construction/SharedFlatpackPlacementSystem.cs`, `Components/FlatpackFootprintComponent.cs`, `Content.Server/_PS/Construction/FlatpackPlacementSystem.cs` |
+| Multi-tile footprint check (shared by server and ghost) | `Content.Shared/_PS/Construction/SharedFlatpackPlacementSystem.cs`, `Components/FlatpackFootprintComponent.cs`, `Content.Server/_PS/Construction/FlatpackPlacementSystem.cs`, `Content.Client/_Funkystation/Construction/FlatpackPlacementGhostSystem.cs` |
 | Chalk tool, marks, radial and build-from-mark | `Content.{Shared,Server,Client}/_Funkystation/ConstructionChalk/`, `Resources/Prototypes/_Funkystation/ConstructionChalk/chalk_categories.yml`, `Entities/Objects/Tools/construction_chalk.yml` |
 | Tests | `Content.IntegrationTests/Tests/_Funkystation/{Turbine*,ConstructionChalkTest}.cs`, `Tests/_PS/AtmosPipeLayerHijackTest.cs` |
 

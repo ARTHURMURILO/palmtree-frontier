@@ -77,6 +77,32 @@ markingId@#rrggbb,...@m3@cCustom Name               # Palmtree: + toggle flags (
 - Map migrations: `Resources/migration.yml` + `Resources/nf_migration.yml` applied on map load.
 - Prototype ignore list: `Resources/IgnoredPrototypes/ignoredPrototypes.yml`.
 
+## Ported engines: save/load invariants
+
+The ported atmos/engineering machines are documented in `.ai/systems/atmos-gases-hfr.md`; these
+save/load rules have already caused bugs:
+
+- **Gas mixtures are padded, gas ids append-only.** A mixture saved with 11-21 gases is padded to
+  `Atmospherics.AdjustedNumberOfGases` (24) by `GasMixture.AfterDeserialization`, so old saves load
+  with zero moles in the ten appended slots. Never renumber the `Gas` enum.
+- **Persist prototype ids, not `ITileDefinitionManager` ints.** `TurbineAssemblyComponent.FloorTileId`
+  and `TurbineFloorRestore.OriginalTileId` are tile prototype id strings; the earlier `int` fields
+  were session-local numeric ids and restored the wrong deck after a map reload
+  (`TurbineAssemblyTest.FloorRestoreUsesPrototypeIdsAndSurvivesMapReload`).
+- **Persisted flags.** `TurbineComponent.Ruined` and `TurbineAssemblyComponent.Deployed` must stay
+  `[DataField]`: a saved wreck has to stay ruined (it used to come back intact and explode again),
+  and a flatpack-deployed turbine must stay packable after a reload while map-spawned turbines get
+  no pack-up verb. The spark/smoke indicators are runtime only and are rebuilt from blade health on
+  startup without replaying their popups or sounds.
+- **Packed turbine state travels with the flatpack.** `TurbineFlatpackStateComponent` persists blade
+  health, ruin flag, stator load and flow rate so a pack/unpack cycle cannot repair or retune a
+  turbine for free.
+- **HFR part links are runtime only.** `HFRCoreComponent`'s internal mixtures, settings and flags
+  persist, but its part links (`ConsoleUid`, `FuelInputUid`, `ModeratorInputUid`, `WasteOutputUid`,
+  `CornerUids`) and each part's `CoreUid` do not; they are rebuilt from the anchored parts on
+  startup/anchoring. Never add `[DataField]` to a link UID: a reload would resurrect a dead or
+  recycled entity id.
+
 ## Hazards
 
 - `LogType` values are persisted; never renumber.
