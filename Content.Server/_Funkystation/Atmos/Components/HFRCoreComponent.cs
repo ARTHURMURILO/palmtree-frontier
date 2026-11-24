@@ -276,7 +276,7 @@ public sealed partial class HFRCoreComponent : Component
     public TimeSpan LastAccentSound;
 
     [DataField]
-    public SoundSpecifier CalmLoopSound = new SoundPathSpecifier("/Audio/_EE/Supermatter/calm.ogg");
+    public SoundSpecifier CalmLoopSound = new SoundPathSpecifier("/Audio/_Funkystation/Hypertorus/calm.ogg");
 
     [DataField]
     public SoundSpecifier MeltdownLoopSound = new SoundPathSpecifier("/Audio/_EE/Supermatter/delamming.ogg");

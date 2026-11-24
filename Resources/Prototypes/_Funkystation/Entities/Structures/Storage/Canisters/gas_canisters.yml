@@ -1,7 +1,7 @@
 # Funky atmos - /tg/ gases
 # Canisters for the gases appended in Content.Shared/Atmos/Atmospherics.cs (ids 11-20).
-# The 1500 L volume and the moles keep the same fill pressure as the codebase's
-# other canisters; Funky fills theirs at 1000 L.
+# The 1500 L volume and 2769.36 mol at 293.15 K match the 4500 kPa fill pressure of the
+# codebase's other canisters.
 
 - type: entity
   parent: GasCanister
@@ -27,7 +27,7 @@
       - 0 # frezon
       - 0 # respiron
       - 0 # helium
-      - 2807.565765 # bz
+      - 2769.36 # bz
       - 0 # healium
       - 0 # nitrium
       - 0 # pluoxium
@@ -87,7 +87,7 @@
       - 0 # respiron
       - 0 # helium
       - 0 # bz
-      - 2807.565765 # healium
+      - 2769.36 # healium
       - 0 # nitrium
       - 0 # pluoxium
       - 0 # hydrogen
@@ -147,7 +147,7 @@
       - 0 # helium
       - 0 # bz
       - 0 # healium
-      - 2807.565765 # nitrium
+      - 2769.36 # nitrium
       - 0 # pluoxium
       - 0 # hydrogen
       - 0 # hyper-noblium
@@ -207,7 +207,7 @@
       - 0 # bz
       - 0 # healium
       - 0 # nitrium
-      - 2807.565765 # pluoxium
+      - 2769.36 # pluoxium
       - 0 # hydrogen
       - 0 # hyper-noblium
       - 0 # proto-nitrate
@@ -267,7 +267,7 @@
       - 0 # healium
       - 0 # nitrium
       - 0 # pluoxium
-      - 2807.565765 # hydrogen
+      - 2769.36 # hydrogen
       - 0 # hyper-noblium
       - 0 # proto-nitrate
       - 0 # zauker
@@ -327,7 +327,7 @@
       - 0 # nitrium
       - 0 # pluoxium
       - 0 # hydrogen
-      - 2807.565765 # hyper-noblium
+      - 2769.36 # hyper-noblium
       - 0 # proto-nitrate
       - 0 # zauker
       - 0 # halon
@@ -387,7 +387,7 @@
       - 0 # pluoxium
       - 0 # hydrogen
       - 0 # hyper-noblium
-      - 2807.565765 # proto-nitrate
+      - 2769.36 # proto-nitrate
       - 0 # zauker
       - 0 # halon
       - 0 # anti-noblium
@@ -447,7 +447,7 @@
       - 0 # hydrogen
       - 0 # hyper-noblium
       - 0 # proto-nitrate
-      - 2807.565765 # zauker
+      - 2769.36 # zauker
       - 0 # halon
       - 0 # anti-noblium
       temperature: 293.15
@@ -507,7 +507,7 @@
       - 0 # hyper-noblium
       - 0 # proto-nitrate
       - 0 # zauker
-      - 2807.565765 # halon
+      - 2769.36 # halon
       - 0 # anti-noblium
       temperature: 293.15
   - type: Destructible
@@ -567,7 +567,7 @@
       - 0 # proto-nitrate
       - 0 # zauker
       - 0 # halon
-      - 2807.565765 # anti-noblium
+      - 2769.36 # anti-noblium
       temperature: 293.15
   - type: Destructible
     thresholds:
