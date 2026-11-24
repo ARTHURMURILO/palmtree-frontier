@@ -571,6 +571,13 @@ namespace Content.Server.Construction
             if (!valid)
                 return null;
 
+            // Palmtree: the material container name doubles as the "one construction job at a time"
+            // guard in Construct() (_container.EnsureContainer bails when the name already exists),
+            // so each job needs its own unique name. Ghost construction used to key this on the
+            // client ghost ack; the chalk has no ack, hence the GUID. Parallel construction is
+            // intended: every job takes its materials off the nearby stacks synchronously before
+            // its do-after starts, so two jobs can never spend the same item twice. The per-session
+            // _beingBuilt set above still rejects starting the same construction ghost twice.
             return await Construct(user,
                 $"{constructionPrototype.ID}-{user}-{Guid.NewGuid()}",
                 constructionGraph,
