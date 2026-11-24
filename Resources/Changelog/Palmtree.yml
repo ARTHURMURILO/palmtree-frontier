@@ -2262,3 +2262,23 @@ Entries:
   id: 90151
   time: '2026-11-24T00:57:15.0000000+00:00'
   url: https://github.com/xTheLifex/palmtree-frontier/pull/16
+- author: xTheLifex
+  changes:
+    - type: Tweak
+      message: >-
+        Whips can now be used outside combat mode; those lashes deal no health
+        damage but still apply stamina.
+    - type: Tweak
+      message: >-
+        Whip light attacks are long-ranged and use a black rope effect, while
+        heavy attacks keep the original close-range multi-target sweep.
+    - type: Tweak
+      message: Whips now deal 10 slash damage, or 50 slash for the new hardy variants.
+    - type: Add
+      message: >-
+        Added hardy pink and hardy teal whip variants with increased damage and
+        range.
+  id: 90152
+  time: '2026-11-24T02:58:25.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/99cef5ff53fb333ef1718eb0135920b954a769df
