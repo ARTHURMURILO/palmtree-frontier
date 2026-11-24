@@ -1,0 +1,4 @@
+- files: ["NCPD.ogg", "MaxTac.ogg"]
+  license: "Custom"
+  copyright: "Cyberpunk 2077 NCPD and MaxTac siren sound effects (CD Projekt Red). Ported from the Coyote Sector codebase for Palmtree Station; do not redistribute."
+  source: "https://www.cyberpunk.net/"

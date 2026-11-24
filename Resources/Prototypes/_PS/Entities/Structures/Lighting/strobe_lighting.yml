@@ -1,0 +1,50 @@
+# Palmtree: cyberpunk siren strobes, ported from the old Coyote codebase.
+
+- type: entity
+  abstract: true
+  parent: PoweredStrobeLightEmpty
+  id: PoweredStrobeRedAlert
+  suffix: "Red Alert"
+  components:
+  - type: PointLight
+    enabled: true
+    energy: 5.0
+    radius: 12
+    softness: 1.1
+  - type: PoweredLight
+    hasLampOnSpawn: LightBulbCrystalRed
+
+- type: entity
+  parent: PoweredStrobeRedAlert
+  id: PoweredStrobeLightNCPD
+  name: NCPD siren
+  suffix: "NFSD"
+  components:
+  # The powered light toggles the ambient component when the fixture is lit; LongRangeSiren reads
+  # that state and plays the real, PVS-overridden stream. `range: 0` keeps the local ambient sampler
+  # from playing a second copy of the same sound nearby.
+  - type: AmbientSound
+    enabled: false
+    range: 0
+    volume: -5
+    sound:
+      path: /Audio/_PS/Effects/Lightning/NCPD.ogg
+  - type: LongRangeSiren
+    maxDistance: 60
+    referenceDistance: 8
+
+- type: entity
+  parent: PoweredStrobeRedAlert
+  id: PoweredStrobeLightMaxTac
+  name: MaxTac siren
+  suffix: "MaxTac"
+  components:
+  - type: AmbientSound
+    enabled: false
+    range: 0
+    volume: -5
+    sound:
+      path: /Audio/_PS/Effects/Lightning/MaxTac.ogg
+  - type: LongRangeSiren
+    maxDistance: 60
+    referenceDistance: 8

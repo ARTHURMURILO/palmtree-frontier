@@ -145,7 +145,7 @@ in #66411): the same machine, but it moves heat between two pipes instead of mak
 | RPI economy, Needs, Healing bank, Space janitor, etc. (`_CS`) | Not ported; not requested. |
 | IPC species | Replaced by the Palmtree **Synth** species (`_PS`) — see `systems/ps-systems.md`. Battery and radio/encryption remain unported; **EMP and the reboot mechanic are implemented** (deadly EMP pulses, `DeadStartupButton`). |
 | Kitsune species | **Does not exist in the old codebase.** It only appears inside marking allowlists. Nothing to port. |
-| Turrets, RCD, strobe lighting, shipyard cauterizer | Not requested / possibly stale systems. (The **RCD/RPD** were ported in 2026-10 — see §24; turrets, strobe lighting and the shipyard cauterizer remain unported. Sandstorm interaction sounds/panel were ported — see `systems/interaction-panel.md`.) |
+| Turrets, RCD, general strobe lighting, shipyard cauterizer | Not requested / possibly stale systems. (The **RCD/RPD** were ported in 2026-10 — see §24; the **Cyberpunk NCPD/MaxTac siren strobes** were ported in 2026-11 — see §33. Turrets, the remaining generic red/Star Trek strobes and the shipyard cauterizer remain unported. Sandstorm interaction sounds/panel were ported — see `systems/interaction-panel.md`.) |
 
 ## 5. Bugs found and fixed during the port
 
@@ -1163,3 +1163,28 @@ feeding produce into it for every recipe.
   `Resources/Prototypes/Entities/Structures/Machines/lathe.yml`; all limits live in the
   component defaults.
 - **Validation**: full solution build; rebuilt `Content.YAMLLinter` (`No errors found`).
+
+## 33. 2026-11 Cyberpunk siren strobes (NCPD / MaxTac, Coyote `_PS`)
+
+The old Coyote `_PS` strobe file had four red-alert siren props. The two Cyberpunk ones were ported
+at the maintainer's request; the Star Trek TOS/VOY red alerts remain unported.
+
+- **Origin**: Coyote `Resources/Prototypes/_PS/Entities/Structures/Lighting/strobe_lighting.yml`
+  (commit `f7d9528dfd7`, "Star Trek Alarms") and its
+  `Resources/Audio/_PS/Effects/Lightning/{NCPD,MaxTac}.ogg`.
+- **Prototypes**: `Resources/Prototypes/_PS/Entities/Structures/Lighting/strobe_lighting.yml`:
+  abstract `PoweredStrobeRedAlert`, then `PoweredStrobeLightNCPD` (suffix `NFSD`, matching the old
+  id/suffix) and `PoweredStrobeLightMaxTac`. Both start switched off (inheriting `PoweredLight`'s
+  `on: false`) and use a red crystal bulb; turning the fixture on starts the siren.
+- **Long-range audio**: an `AmbientSound` would stop when the fixture leaves PVS, and the client
+  only samples ambience within `ambience.range` (8 m). `Content.Server/_PS/Audio/LongRangeSirenSystem`
+  instead plays a looping stream at the siren, sets `NoOcclusion`, and adds a global PVS override to
+  the stream. The stream also keeps the parent siren visible. The `AmbientSound` remains the
+  power/light switch and sound source with `range: 0` so the local ambient system does not play a
+  second copy. Defaults: `maxDistance: 60`, `referenceDistance: 8`.
+- **Assets/attribution**: `Resources/Audio/_PS/Effects/Lightning/` with `attributions.yml`
+  (Cyberpunk 2077, CD Projekt Red; private-server use only).
+- **Tests**: `Content.IntegrationTests/Tests/_PS/LongRangeSirenTest.cs` (both prototypes create the
+  looping stream while powered and clean it up when unpowered).
+- **Validation**: `Content.Server` build; rebuilt `Content.YAMLLinter` (`No errors found`);
+  `LongRangeSirenTest` passes (2/2).

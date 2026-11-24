@@ -112,9 +112,10 @@ Adaptations made when porting (old 2023 prototypes):
 - `SoundOnTrigger` → `EmitSoundOnTrigger`, `OnUseTimerTrigger` → `TimerTrigger`.
 - `noSpawn: true` → `categories: [ HideSpawnMenu ]`.
 
-Not ported from `_PS`: turrets, strobe lighting, shipyard cauterizer, announcement/interaction
-sound collections, custom emotes. (The `_PS` **RCD/RPD** were ported in 2026-10 — see
-`.ai/PORTING.md` §24.)
+Not ported from `_PS`: turrets, general strobe lighting, shipyard cauterizer,
+announcement/interaction sound collections, custom emotes. (The `_PS` **RCD/RPD** were ported in
+2026-10 — see `.ai/PORTING.md` §24. The Cyberpunk NCPD/MaxTac siren strobes were ported in 2026-11
+— see the long-range siren section below and `.ai/PORTING.md` §33.)
 
 Re-enabled Frontier-disabled guns: Frontier deletes whole upstream weapon directories at load
 (`Resources/IgnoredPrototypes/ignoredPrototypes.yml`), so the upstream taser, elite taser, tesla
@@ -1000,6 +1001,25 @@ opening a preview replaces any existing one for that session (no camera accumula
   `SharedRaveLightSystem`. The fixture owns the effect, so swapping bulbs only changes the color.
 - Tests: `Content.IntegrationTests/Tests/_PS/LightEffectsTest.cs` (flicker sync, always-power,
   screwdriver cycle, client pulse).
+
+## Cyberpunk siren strobes (long-range)
+
+- Prototypes: `Resources/Prototypes/_PS/Entities/Structures/Lighting/strobe_lighting.yml`
+  (`PoweredStrobeLightNCPD`, `PoweredStrobeLightMaxTac`), ported from Coyote. They are
+  `PoweredStrobeLightEmpty` children with a red crystal bulb, a stronger red point light, and
+  `AmbientSound` carrying the Cyberpunk siren clip. They start switched off (`on: false` inherited
+  from the parent); turning the fixture on via its switch/device link starts the siren.
+- Long-range playback: `Content.Server/_PS/Audio/LongRangeSirenComponent.cs` +
+  `LongRangeSirenSystem.cs`. The system watches the siren's `AmbientSound.Enabled` (the powered
+  light toggles it with the fixture's bulb/power state), plays a looping stream with
+  `NoOcclusion`, and `PvsOverrideSystem.AddGlobalOverride`s the stream. This keeps the stream (and
+  the parent siren) loaded beyond PVS and audible out to `maxDistance` (60 m by default,
+  `referenceDistance` 8 m). The ambient component has `range: 0` so the nearby ambient sampler
+  does not play a second copy; do not raise it.
+- The stream is created/removed within one second of a power or bulb change. The stream entity is
+  parented to the siren, so moving grids carry it automatically.
+- Assets: `Resources/Audio/_PS/Effects/Lightning/{NCPD,MaxTac}.ogg`, attribution in the same folder.
+- Test: `Content.IntegrationTests/Tests/_PS/LongRangeSirenTest.cs`.
 
 ## 2026-10 misc additions (walkman, UI sounds, editor QoL, RTG radiation)
 
