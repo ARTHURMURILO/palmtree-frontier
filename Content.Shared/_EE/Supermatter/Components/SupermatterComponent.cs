@@ -298,7 +298,9 @@ public sealed partial class SupermatterComponent : Component
     /// <summary>
     /// Last time a supermatter accent sound was triggered
     /// </summary>
-    [DataField]
+    // Palmtree: runtime clock, not saved. It is compared against IGameTiming.CurTime, so a value
+    // carried over a save/load would silence accents until the new clock caught up.
+    [ViewVariables]
     public TimeSpan AccentLastTime;
 
     /// <summary>
@@ -307,7 +309,8 @@ public sealed partial class SupermatterComponent : Component
     [DataField]
     public float AccentMinCooldown = 2f;
 
-    [DataField]
+    // Palmtree: runtime clock, not saved. See AccentLastTime.
+    [ViewVariables]
     public TimeSpan ZapLast;
 
     #endregion

@@ -20,7 +20,6 @@ public sealed class HFRConsoleBoundInterfaceState : BoundUserInterfaceState
     public readonly float ModeratorInputRate;
     public readonly string? SelectedRecipeId;
     public readonly float HeatingConductor;
-    public readonly int CoolingVolume;
     public readonly float MagneticConstrictor;
     public readonly float CurrentDamper;
     public readonly bool IsWasteRemoving;
@@ -56,7 +55,6 @@ public sealed class HFRConsoleBoundInterfaceState : BoundUserInterfaceState
         float moderatorInputRate,
         string? selectedRecipeId,
         float heatingConductor,
-        int coolingVolume,
         float magneticConstrictor,
         float currentDamper,
         bool isWasteRemoving,
@@ -91,7 +89,6 @@ public sealed class HFRConsoleBoundInterfaceState : BoundUserInterfaceState
         ModeratorInputRate = moderatorInputRate;
         SelectedRecipeId = selectedRecipeId;
         HeatingConductor = heatingConductor;
-        CoolingVolume = coolingVolume;
         MagneticConstrictor = magneticConstrictor;
         CurrentDamper = currentDamper;
         IsWasteRemoving = isWasteRemoving;
@@ -175,13 +172,6 @@ public sealed class HFRConsoleSetHeatingConductorMessage : BoundUserInterfaceMes
 {
     public readonly float Rate;
     public HFRConsoleSetHeatingConductorMessage(float rate) => Rate = rate;
-}
-
-[Serializable, NetSerializable]
-public sealed class HFRConsoleSetCoolingVolumeMessage : BoundUserInterfaceMessage
-{
-    public readonly int Rate;
-    public HFRConsoleSetCoolingVolumeMessage(int rate) => Rate = rate;
 }
 
 [Serializable, NetSerializable]

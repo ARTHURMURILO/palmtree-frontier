@@ -24,13 +24,13 @@ namespace Content.Server.Construction
 {
     public sealed partial class ConstructionSystem
     {
-        [Dependency] private readonly InventorySystem _inventorySystem = default!;
-        [Dependency] private readonly SharedInteractionSystem _interactionSystem = default!;
-        [Dependency] private readonly ActionBlockerSystem _actionBlocker = default!;
-        [Dependency] private readonly SharedHandsSystem _handsSystem = default!;
-        [Dependency] private readonly EntityLookupSystem _lookupSystem = default!;
-        [Dependency] private readonly SharedTransformSystem _transformSystem = default!;
-        [Dependency] private readonly EntityWhitelistSystem _whitelistSystem = default!;
+        [Dependency] private InventorySystem _inventorySystem = default!;
+        [Dependency] private SharedInteractionSystem _interactionSystem = default!;
+        [Dependency] private ActionBlockerSystem _actionBlocker = default!;
+        [Dependency] private SharedHandsSystem _handsSystem = default!;
+        [Dependency] private EntityLookupSystem _lookupSystem = default!;
+        [Dependency] private SharedTransformSystem _transformSystem = default!;
+        [Dependency] private EntityWhitelistSystem _whitelistSystem = default!;
 
         // --- WARNING! LEGACY CODE AHEAD! ---
         // This entire file contains the legacy code for initial construction.
@@ -571,6 +571,13 @@ namespace Content.Server.Construction
             if (!valid)
                 return null;
 
+            // Palmtree: the material container name doubles as the "one construction job at a time"
+            // guard in Construct() (_container.EnsureContainer bails when the name already exists),
+            // so each job needs its own unique name. Ghost construction used to key this on the
+            // client ghost ack; the chalk has no ack, hence the GUID. Parallel construction is
+            // intended: every job takes its materials off the nearby stacks synchronously before
+            // its do-after starts, so two jobs can never spend the same item twice. The per-session
+            // _beingBuilt set above still rejects starting the same construction ghost twice.
             return await Construct(user,
                 $"{constructionPrototype.ID}-{user}-{Guid.NewGuid()}",
                 constructionGraph,

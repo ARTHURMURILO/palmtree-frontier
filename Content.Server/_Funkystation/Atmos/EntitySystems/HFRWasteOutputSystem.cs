@@ -25,6 +25,7 @@ public sealed class HFRWasteOutputSystem : EntitySystem
     {
         base.Initialize();
         SubscribeLocalEvent<HFRWasteOutputComponent, AnchorStateChangedEvent>(OnAnchorChanged);
+        SubscribeLocalEvent<HFRWasteOutputComponent, ComponentShutdown>(OnShutdown);
     }
 
     private void OnAnchorChanged(EntityUid uid, HFRWasteOutputComponent wasteOutput, ref AnchorStateChangedEvent args)
@@ -51,5 +52,18 @@ public sealed class HFRWasteOutputSystem : EntitySystem
         {
             _hfrSidePartSystem.TryFindCore(uid);
         }
+    }
+
+    private void OnShutdown(EntityUid uid, HFRWasteOutputComponent wasteOutput, ref ComponentShutdown args)
+    {
+        // Palmtree: a deleted part must not stay linked from the core; the core would otherwise keep
+        // treating a recycled UID as its waste output link.
+        if (wasteOutput.CoreUid is { } coreUid && EntityManager.TryGetComponent<HFRCoreComponent>(coreUid, out var core))
+        {
+            if (core.WasteOutputUid == uid)
+                core.WasteOutputUid = null;
+        }
+
+        wasteOutput.CoreUid = null;
     }
 }

@@ -45,7 +45,10 @@ tiles_b64 = base64.b64encode(bytes(tiles)).decode()
 
 # --- atmosphere -------------------------------------------------------------
 # Same standard mix used by station maps: ~101 kPa of 21% O2 / 79% N2 at 20C.
-MOLES = [21.824879, 82.10312, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]  # 12 = AdjustedNumberOfGases
+# The list predates the ten /tg/ gases (enum ids 11-20), which append after the vanilla ids and
+# default to zero here; GasMixture.AfterDeserialization pads a shorter list to
+# Atmospherics.AdjustedNumberOfGases (currently 24), so this list need not grow.
+MOLES = [21.824879, 82.10312, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 CHUNK = 4
 
 chunks: dict[tuple[int, int], int] = {}

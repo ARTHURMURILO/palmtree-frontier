@@ -18,7 +18,10 @@
 
 ## Atmos, power, chemistry, construction
 
-- Atmos: pipe networks, vents/scrubbers, gas mixtures; `_NF/Atmos` adds Frontier variants.
+- Atmos: pipe networks, vents/scrubbers, gas mixtures; `_NF/Atmos` adds Frontier variants. The
+  fork also has ten /tg/ gases, the Hypertorus Fusion Reactor and Far Horizons turbines — see
+  `systems/atmos-gases-hfr.md`. `Atmospherics.Tmax` stays 262,144 K; engines are scaled to the
+  clamp, never the other way round.
 - Power: `PowerNet` + `Pow3r` debug tool; solars, generators, batteries, `_NF/Power`.
 - Chemistry: reagent prototypes + reactions; metabolism in `MetabolismSystem`.
 - Construction: construction graphs + `ConstructionSystem`; `_NF/Construction` adds Frontier

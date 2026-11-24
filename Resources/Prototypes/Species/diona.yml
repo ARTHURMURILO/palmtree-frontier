@@ -19,6 +19,8 @@
   id: MobDionaSprites
   sprites:
     Genital: MobHumanoidAnyMarking
+    GenitalUnder: MobHumanoidAnyMarking
+    GenitalLow: MobHumanoidAnyMarking
     TailBehind: MobHumanoidAnyMarking
     Special: MobHumanoidAnyMarking # Palmtree: allow all markings (cat ears etc.)
     Head: MobDionaHead

@@ -75,9 +75,11 @@ What it does and why:
 - Tiles: 16x16 chunks; 7 bytes per tile (`int32` YAML tile id + flags + variant +
   rotationMirroring), base64, row-major. `tilemap` maps YAML ids to tile prototypes (0 = Space).
 - `GridAtmosphere` v2: `chunkSize: 4`, `uniqueMixes` (volume, temperature, `moles` with
-  `Atmospherics.AdjustedNumberOfGases` = 12 values) and a bitmask per mix per 4x4 chunk. This is
-  the reliable way to give an indoor runtime-loaded map air: interior floors are not `isSpace`, so
-  a `MapAtmosphereComponent` alone does not pressurize them (only Space/lattice tiles use it).
+  `Atmospherics.AdjustedNumberOfGases` = 24 values — 21 gases padded to a multiple of 4; older
+  12-value lists still load because `GasMixture.AfterDeserialization` pads them) and a bitmask per
+  mix per 4x4 chunk. This is the reliable way to give an indoor runtime-loaded map air: interior
+  floors are not `isSpace`, so a `MapAtmosphereComponent` alone does not pressurize them (only
+  Space/lattice tiles use it).
 - Grid components to include: `MapGrid`, `Broadphase`, `Physics`, `Fixtures`, `OccluderTree`,
   `GridPathfinding`, `Gravity` (**`enabled: true`, `inherent: true` — the component defaults to
   false**), `DecalGrid`, `SpreaderGrid`, `ImplicitRoof`, `GridAtmosphere`.

@@ -26,7 +26,6 @@ hfr-console-reactor-status = Reactor Status
 hfr-console-reactor-integrity = Reactor Integrity
 hfr-console-iron-content = Iron Content
 hfr-console-area-power = Area Power
-hfr-console-cooling-volume = Cooling Volume
 hfr-console-heating-conductor = Heating Conductor
 hfr-console-current-damper = Current Damper
 hfr-console-magnetic-constrictor = Magnetic Constrictor

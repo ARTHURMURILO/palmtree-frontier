@@ -73,6 +73,7 @@
     - map: [ "enum.HumanoidVisualLayers.RLeg" ]
     - map: [ "enum.HumanoidVisualLayers.LLegBehind" ]
     - map: [ "enum.HumanoidVisualLayers.LLeg" ]
+    - map: [ "enum.HumanoidVisualLayers.GenitalLow" ]
     - map: [ "enum.HumanoidVisualLayers.UndergarmentBottom" ]
     - map: [ "enum.HumanoidVisualLayers.UndergarmentTop" ]
     - map: [ "enum.HumanoidVisualLayers.UndershirtUnderclothes" ]
@@ -93,6 +94,7 @@
     - map: [ "enum.HumanoidVisualLayers.TailOversuit" ]
     - map: [ "back" ]
     - map: [ "enum.HumanoidVisualLayers.UndershirtOverclothes" ]
+    - map: [ "enum.HumanoidVisualLayers.GenitalUnder" ]
     - map: [ "neck" ]
     - map: [ "suitstorage" ] # This is not in the default order
     - map: [ "enum.HumanoidVisualLayers.SnoutCover" ]

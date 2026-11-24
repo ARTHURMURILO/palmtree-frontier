@@ -109,7 +109,11 @@ public sealed partial class TurbineComponent : Component
     /// <summary>
     /// If the turbine is functional or not
     /// </summary>
-    [ViewVariables]
+    /// <remarks>
+    /// Palmtree: persisted. The condition used to live only in memory, so a saved wreck came back
+    /// intact and immediately exploded again on the first atmos tick.
+    /// </remarks>
+    [DataField, ViewVariables]
     public bool Ruined = false;
 
     /// <summary>

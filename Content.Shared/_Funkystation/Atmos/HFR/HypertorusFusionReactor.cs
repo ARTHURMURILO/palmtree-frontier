@@ -99,11 +99,6 @@ namespace Content.Shared._Funkystation.Atmos.HFR
         /// </summary>
         public const float ToroidVolumeBreakeven = 1000f;
 
-        /// <summary>
-        /// Constant used when calculating the chance of emitting a radioactive particle.
-        /// </summary>
-        public const float ParticleChanceConstant = -20000000f;
-
         #endregion
 
         #region Heat Conduction
@@ -118,29 +113,120 @@ namespace Content.Shared._Funkystation.Atmos.HFR
         /// </summary>
         public const float HighEfficiencyConductivity = 0.975f;
 
+        #endregion
+
+        #region Temperature Scale
+
+        // Palmtree: Funky authored the fusion math for a 25,000,000 K reactor ceiling, which needed a
+        // fork-wide 1000x raise of Atmospherics.Tmax to work. The fork keeps the upstream 262,144 K
+        // atmos ceiling instead, so the HFR runs at the fork's atmos temperature scale: one Funky
+        // fusion degree is TemperatureScale kelvin here. Every absolute temperature constant in this
+        // file (and every kelvin-per-second heat rate that is proportional to one) is multiplied by
+        // this factor so the reactor behaves like Funky's, just at ~95x lower temperatures.
+        // Keep FusionMaximumTemperature at or below Atmospherics.Tmax or the atmos sim clamps the mix.
+
         /// <summary>
-        /// Maximum temperature fusion can achieve.
+        /// Fusion temperature ceiling (K). Funky used 25,000,000 K; this is the old atmos ceiling.
         /// </summary>
-        public const float FusionMaximumTemperature = 2.5e7f;
+        public const float FusionMaximumTemperature = Atmospherics.Tmax;
+
+        /// <summary>
+        /// How many kelvin one Funky fusion degree is worth (262144 / 25000000, ~0.01049).
+        /// </summary>
+        public const float TemperatureScale = FusionMaximumTemperature / 25000000f;
+
+        /// <summary>
+        /// Fusion temperature at which each power level ends (index 0 is the level 0/1 boundary).
+        /// Level 0 is ambient air up to 500 K, matching Funky. The remaining boundaries are geometric
+        /// from 500 K to 40% of the ceiling (Funky's 1e7 K / 2.5e7 K ratio) because ambient air is
+        /// still ~293 K here, so Funky's decade steps cannot fit under a 262,144 K ceiling.
+        /// The client console graph uses the same table.
+        /// </summary>
+        public static readonly float[] PowerLevelUpperTemperatures = BuildPowerLevelUpperTemperatures();
+
+        private static float[] BuildPowerLevelUpperTemperatures()
+        {
+            const float first = 500f;
+            // Funky reaches level 6 at 1e7 K, i.e. 40% of its 2.5e7 K ceiling. Keep that ratio.
+            var last = 1e7f * TemperatureScale;
+            var step = MathF.Pow(last / first, 1f / 5f);
+
+            var boundaries = new float[6];
+            for (var i = 0; i < boundaries.Length; i++)
+                boundaries[i] = first * MathF.Pow(step, i);
+
+            return boundaries;
+        }
+
+        /// <summary>
+        /// Gets the fusion power level for a fusion mix temperature (see
+        /// <see cref="PowerLevelUpperTemperatures"/>).
+        /// </summary>
+        public static int GetPowerLevel(float fusionTemperature)
+        {
+            // A broken temperature must not look like a level 6 reaction.
+            if (!float.IsFinite(fusionTemperature))
+                return 0;
+
+            for (var i = 0; i < PowerLevelUpperTemperatures.Length; i++)
+            {
+                if (fusionTemperature <= PowerLevelUpperTemperatures[i])
+                    return i;
+            }
+
+            return 6;
+        }
+
+        /// <summary>
+        /// Parses a gas id out of a fusion recipe. Recipes are authored in YAML, so this uses
+        /// <see cref="Enum.TryParse{TEnum}(string, out TEnum)"/> instead of a throwing parse: a
+        /// malformed recipe must never throw inside the atmos tick (see the prototype test too).
+        /// </summary>
+        public static bool TryParseGas(string? gasId, out Gas gas)
+        {
+            return Enum.TryParse(gasId, out gas);
+        }
+
+        /// <summary>
+        /// Parses every valid gas id out of a recipe gas list, skipping ids that do not name a gas.
+        /// </summary>
+        public static IEnumerable<Gas> ParseGases(IEnumerable<string> gasIds)
+        {
+            foreach (var gasId in gasIds)
+            {
+                if (TryParseGas(gasId, out var gas))
+                    yield return gas;
+            }
+        }
+
+        /// <summary>
+        /// Parses a gas id, falling back to <paramref name="fallback"/> when the id is invalid.
+        /// </summary>
+        public static Gas ParseGasOr(string? gasId, Gas fallback)
+        {
+            return TryParseGas(gasId, out var gas) ? gas : fallback;
+        }
+
+        /// <summary>
+        /// Internal fusion mix volume in liters. The reactor always uses this volume; the old console
+        /// "cooling volume" control changed the coolant port mix volume in tg, which does not map to
+        /// SS14's shared pipe-net mixture, so the control was removed instead of being wired up here.
+        /// </summary>
+        public const float InternalFusionVolume = 5000f;
+
+        /// <summary>
+        /// Internal moderator mix volume in liters.
+        /// </summary>
+        public const float ModeratorInternalVolume = 10000f;
 
         #endregion
 
         #region Power and Damage
 
         /// <summary>
-        /// Sets the minimum amount of power the machine uses (in watts).
-        /// </summary>
-        public const float MinPowerUsage = 50000f; // 50 kilowatts - ! MUST BE REVISITED AND REBALANCED FOR 14 !
-
-        /// <summary>
         /// Sets the multiplier for the damage.
         /// </summary>
         public const float DamageCapMultiplier = 0.005f;
-
-        /// <summary>
-        /// Sets the range of the hallucinations.
-        /// </summary>
-        public const float HallucinationHfr = 7f; // min(7, round(abs(P) ^ 0.25))
 
         #endregion
 
@@ -276,9 +362,9 @@ namespace Content.Shared._Funkystation.Atmos.HFR
         public const float HypertorusColdCoolantMaxRestore = 2.5f;
 
         /// <summary>
-        /// Start healing below this temperature.
+        /// Start healing below this temperature (100,000 K in Funky's temperature scale).
         /// </summary>
-        public const float HypertorusColdCoolantThreshold = 100000f; // 10^5
+        public const float HypertorusColdCoolantThreshold = 100000f * TemperatureScale;
 
         /// <summary>
         /// Derived scale for cold coolant healing.
@@ -359,90 +445,6 @@ namespace Content.Shared._Funkystation.Atmos.HFR
         /// Amount of moderator mix to spill per second until mended for strong spill.
         /// </summary>
         public const float HypertorusStrongSpillRate = 0.05f;
-
-        #endregion
-
-        #region Explosion Flags
-        // Explosion flags for use in fuel recipes
-
-        /// <summary>
-        /// Flag for base explosion.
-        /// </summary>
-        public const int HypertorusFlagBaseExplosion = 1 << 0;
-
-        /// <summary>
-        /// Flag for medium explosion.
-        /// </summary>
-        public const int HypertorusFlagMediumExplosion = 1 << 1;
-
-        /// <summary>
-        /// Flag for devastating explosion.
-        /// </summary>
-        public const int HypertorusFlagDevastatingExplosion = 1 << 2;
-
-        /// <summary>
-        /// Flag for radiation pulse.
-        /// </summary>
-        public const int HypertorusFlagRadiationPulse = 1 << 3;
-
-        /// <summary>
-        /// Flag for EMP effect.
-        /// </summary>
-        public const int HypertorusFlagEmp = 1 << 4;
-
-        /// <summary>
-        /// Flag for minimum spread.
-        /// </summary>
-        public const int HypertorusFlagMinimumSpread = 1 << 5;
-
-        /// <summary>
-        /// Flag for medium spread.
-        /// </summary>
-        public const int HypertorusFlagMediumSpread = 1 << 6;
-
-        /// <summary>
-        /// Flag for big spread.
-        /// </summary>
-        public const int HypertorusFlagBigSpread = 1 << 7;
-
-        /// <summary>
-        /// Flag for massive spread.
-        /// </summary>
-        public const int HypertorusFlagMassiveSpread = 1 << 8;
-
-        /// <summary>
-        /// Flag for critical meltdown.
-        /// </summary>
-        public const int HypertorusFlagCriticalMeltdown = 1 << 9;
-
-        #endregion
-
-        #region Status Flags
-
-        /// <summary>
-        /// Flag for high power damage.
-        /// </summary>
-        public const int HypertorusFlagHighPowerDamage = 1 << 0;
-
-        /// <summary>
-        /// Flag for high fuel mix mole.
-        /// </summary>
-        public const int HypertorusFlagHighFuelMixMole = 1 << 1;
-
-        /// <summary>
-        /// Flag for iron content damage.
-        /// </summary>
-        public const int HypertorusFlagIronContentDamage = 1 << 2;
-
-        /// <summary>
-        /// Flag for increasing iron content.
-        /// </summary>
-        public const int HypertorusFlagIronContentIncrease = 1 << 3;
-
-        /// <summary>
-        /// Flag for EMPed hypertorus.
-        /// </summary>
-        public const int HypertorusFlagEmped = 1 << 4;
 
         #endregion
     }

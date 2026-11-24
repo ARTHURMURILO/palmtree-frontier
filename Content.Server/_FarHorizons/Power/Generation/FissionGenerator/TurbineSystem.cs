@@ -25,6 +25,8 @@ using Content.Server.NodeContainer.Nodes;
 using Content.Shared.DeviceLinking.Events;
 using Content.Server.DeviceLinking.Systems;
 using System.Numerics;
+using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
 using Robust.Shared.Physics;
 
 namespace Content.Server._FarHorizons.Power.Generation.FissionGenerator;
@@ -45,6 +47,7 @@ public sealed class TurbineSystem : SharedTurbineSystem
     [Dependency] private readonly TransformSystem _transformSystem = default!;
     [Dependency] private readonly UserInterfaceSystem _uiSystem = null!;
     [Dependency] private readonly DeviceLinkSystem _signal = default!;
+    [Dependency] private readonly SharedMapSystem _mapSystem = default!;
 
     private readonly List<string> _damageSoundList = [
         "/Audio/_FarHorizons/Effects/engine_grump1.ogg",
@@ -54,10 +57,13 @@ public sealed class TurbineSystem : SharedTurbineSystem
         "/Audio/Effects/metal_scrape2.ogg"
     ];
 
+    private const string PipeStubPrototype = "TurbineGasPipe";
+
     public override void Initialize()
     {
         base.Initialize();
         SubscribeLocalEvent<TurbineComponent, ComponentInit>(OnInit);
+        SubscribeLocalEvent<TurbineComponent, ComponentStartup>(OnStartup);
         SubscribeLocalEvent<TurbineComponent, ComponentShutdown>(OnShutdown);
 
         SubscribeLocalEvent<TurbineComponent, AtmosDeviceUpdateEvent>(OnUpdate);
@@ -72,6 +78,26 @@ public sealed class TurbineSystem : SharedTurbineSystem
     {
         _signal.EnsureSourcePorts(uid, comp.SpeedHighPort, comp.SpeedLowPort);
         _signal.EnsureSinkPorts(uid, comp.StatorLoadIncreasePort, comp.StatorLoadDecreasePort);
+    }
+
+    /// <summary>
+    ///     Rebuild the turbine condition after a save/load. Only <see cref="TurbineComponent.BladeHealth"/>
+    ///     and <see cref="TurbineComponent.Ruined"/> were persisted; the spark/smoke flags are runtime
+    ///     state and appearance data is not serialized, so a reloaded wreck used to look intact and
+    ///     re-ran the tear-apart explosion on the first atmos tick.
+    /// </summary>
+    private void OnStartup(EntityUid uid, TurbineComponent comp, ref ComponentStartup args)
+    {
+        // Saves written before the ruin flag was persisted only carry the blade health.
+        if (comp.BladeHealth <= 0)
+            comp.Ruined = true;
+
+        // Set the flags directly rather than going through UpdateHealthIndicators: a reload must not
+        // replay the spark/smoke popups or sounds.
+        comp.IsSparking = comp.BladeHealth <= 0.75f * comp.BladeHealthMax;
+        comp.IsSmoking = comp.BladeHealth <= 0.5f * comp.BladeHealthMax;
+
+        UpdateAppearance(uid, comp);
     }
 
     private void OnAnalyze(EntityUid uid, TurbineComponent comp, ref GasAnalyzerScanEvent args)
@@ -105,30 +131,66 @@ public sealed class TurbineSystem : SharedTurbineSystem
     }
 
     /// <summary>
-    ///     Reuse a pipe stub that was saved with the grid instead of spawning another one on top of
-    ///     it. The stub entities are children of the turbine and survive a map save/load, but the
-    ///     runtime UID fields do not, so without this every reload doubled the pipe nodes.
+    ///     Reuse a pipe stub that was saved with the map instead of spawning another one on top of
+    ///     it. The stub positions are stable, but the runtime UIDs are not serialized, and the map
+    ///     loader parents anchored stubs to the grid rather than to the turbine, so the stubs have
+    ///     to be found by position rather than as turbine children. Any duplicate already sitting
+    ///     on the tile (from a save written before this fix) is deleted.
     /// </summary>
     private EntityUid FindOrSpawnPipe(EntityUid uid, Vector2 offset, float rotation)
     {
-        EntityUid? found = null;
-        var children = Transform(uid).ChildEnumerator;
-        while (children.MoveNext(out var child))
-        {
-            if (MetaData(child).EntityPrototype?.ID != "TurbineGasPipe")
-                continue;
+        var target = new EntityCoordinates(uid, offset);
+        var targetMap = _transformSystem.ToMapCoordinates(target);
 
-            if ((Transform(child).LocalPosition - offset).LengthSquared() > 0.01f)
-                continue;
+        EntityUid? found = null;
+
+        void Consider(EntityUid candidate)
+        {
+            if (candidate == found || TerminatingOrDeleted(candidate))
+                return;
+
+            if (MetaData(candidate).EntityPrototype?.ID != PipeStubPrototype)
+                return;
+
+            // The stubs sit on tile-sized spacing (the inlet and outlet are two tiles apart on every
+            // turbine prototype), so a metre of slack cannot confuse the two.
+            if ((_transformSystem.GetWorldPosition(candidate) - targetMap.Position).LengthSquared() > 1f)
+                return;
 
             if (found == null)
-                found = child;
-            else
-                QueueDel(child);
+            {
+                found = candidate;
+                return;
+            }
+
+            // Duplicates can be left over from saves written before the stubs were deduplicated by
+            // position: keep the first one and clean the rest up.
+            QueueDel(candidate);
         }
 
+        // Runtime case: stubs spawned (or still parented) by the turbine are its children.
+        var children = Transform(uid).ChildEnumerator;
+        while (children.MoveNext(out var child))
+            Consider(child);
         children.Dispose();
-        return found ?? SpawnAttachedTo("TurbineGasPipe", new(uid, offset), rotation: Angle.FromDegrees(rotation));
+
+        // Save/load case: anchored entities are re-parented to the grid, so also look on the tile.
+        if (Transform(uid).GridUid is { } gridUid && TryComp<MapGridComponent>(gridUid, out var grid))
+        {
+            var tile = _mapSystem.TileIndicesFor(gridUid, grid, target);
+            foreach (var anchored in _mapSystem.GetAnchoredEntities((gridUid, grid), tile))
+                Consider(anchored);
+        }
+
+        if (found is not { } stub)
+            return SpawnAttachedTo(PipeStubPrototype, target, rotation: Angle.FromDegrees(rotation));
+
+        // A reused stub has to stay anchored or CheckAnchoredPipes would delete it again next tick.
+        var stubXform = Transform(stub);
+        if (!stubXform.Anchored)
+            _transformSystem.AnchorEntity(stub);
+
+        return stub;
     }
 
     #region Main Loop
@@ -149,6 +211,11 @@ public sealed class TurbineSystem : SharedTurbineSystem
 
     private void UpdateTurbine(EntityUid uid, TurbineComponent comp, AtmosDeviceUpdateEvent args)
     {
+        var previousRpm = comp.RPM;
+        var previousBladeHealth = comp.BladeHealth;
+        var previousOvertempAlarm = comp.AlarmAudioOvertemp;
+        var previousUnderspeedAlarm = comp.AlarmAudioUnderspeed;
+
         var supplier = Comp<PowerSupplierComponent>(uid);
         comp.SupplierMaxSupply = supplier.MaxSupply;
 
@@ -306,7 +373,17 @@ public sealed class TurbineSystem : SharedTurbineSystem
         else if (comp.RPM < comp.BestRPM*0.95)
             _signal.InvokePort(uid, comp.SpeedLowPort);
 
-        Dirty(uid, comp);
+        // Dirtying the whole networked component every atmos tick replicated it (and every field on
+        // it) to every client even while the turbine sat idle. Only push a state update when one of
+        // the fields that are actually networked changed.
+        if (comp.RPM != previousRpm ||
+            comp.BladeHealth != previousBladeHealth ||
+            comp.AlarmAudioOvertemp != previousOvertempAlarm ||
+            comp.AlarmAudioUnderspeed != previousUnderspeedAlarm)
+        {
+            Dirty(uid, comp);
+        }
+
         UpdateUI(uid, comp);
     }
 
@@ -344,10 +421,21 @@ public sealed class TurbineSystem : SharedTurbineSystem
     {
         var wantToTransfer = comp.FlowRate * _atmosphereSystem.PumpSpeedup() * dt;
         var transferVolume = Math.Min(inlet.Air.Volume, wantToTransfer);
+
+        // An empty (or vented) inlet has zero pressure. Dividing the moles back out by pressure
+        // then produced 0/0 = NaN, which the pipe net happily spread to every connected device.
+        if (!float.IsFinite(inlet.Air.Pressure) || inlet.Air.Pressure <= 0f ||
+            !float.IsFinite(inlet.Air.Temperature) || inlet.Air.Temperature <= 0f)
+        {
+            return 0f;
+        }
+
         var transferMoles = inlet.Air.Pressure * transferVolume / (inlet.Air.Temperature * Atmospherics.R);
         var molesSpaceLeft = (comp.OutputPressure - outlet.Air.Pressure) * outlet.Air.Volume / (outlet.Air.Temperature * Atmospherics.R);
         var actualMolesTransfered = Math.Clamp(transferMoles, 0, Math.Max(0, molesSpaceLeft));
-        return Math.Max(0, actualMolesTransfered * inlet.Air.Temperature * Atmospherics.R / inlet.Air.Pressure);
+        var transfer = actualMolesTransfered * inlet.Air.Temperature * Atmospherics.R / inlet.Air.Pressure;
+
+        return float.IsFinite(transfer) ? Math.Max(0, transfer) : 0f;
     }
 
     private void TearApart(EntityUid uid, TurbineComponent comp)

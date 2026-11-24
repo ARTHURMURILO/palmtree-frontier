@@ -559,26 +559,99 @@ end
 
 ### Mining and space
 
-Mining is feasible in principle with a thruster, a mining tool in a manipulator hand, and an
-asteroid grid. The current API is still missing ore scanning, mining-tool-specific helpers and
-cargo/storage management, so a mining bot should be treated as an advanced project:
+A wheeled or legged assembly can mine asteroid rock on the surface of an asteroid grid with a
+proto-kinetic accelerator and an ore bag. The current API has no ore-vein filter, so this example
+mines any entity named `asteroid rock`; run it in an area with ore veins and keep it away from
+gibtonite. There is also no ore-bag storage query, so the loop stops after a fixed number of rocks.
+
+Setup before starting:
+
+- Two manipulator modules: the PKA in the **active hand**, the ore bag in the other hand.
+- Turn the ore bag magnet **on** (`Alt+Z` / alt-use while holding it). Lua cannot invoke that
+  alt-use toggle, and it also cannot switch the assembly's active hand.
+- The assembly must already be on the asteroid grid; this example walks on the surface instead of
+  flying between separate asteroids.
 
 ```lua
--- Outline only; requires a thruster and a mining tool in hand.
-local rock = robot.find("rock")
-if rock then
-    local x, y = robot.position_of(rock)
-    robot.walk_to(x, y, 1)
+-- Circuit assembly asteroid miner.
+-- Mines nearby asteroid rocks, lets the ore bag collect the drops,
+-- then walks back to the starting position.
 
-    while robot.can_reach(rock) do
-        robot.attack(rock)
-        robot.wait(1)
-        local nextRock = robot.find("rock")
-        if not nextRock then
+local MAX_ROCKS = 20
+
+local function mine_one()
+    local rock, findReason = robot.find("asteroid rock", 16)
+    if not rock then
+        return false, findReason
+    end
+
+    local rockX, rockY = robot.position_of(rock)
+    if not rockX then
+        return false, rockY
+    end
+
+    local selfX, selfY = robot.position()
+    local dx, dy = selfX - rockX, selfY - rockY
+    local distance = math.sqrt(dx * dx + dy * dy)
+
+    if distance < 0.01 then
+        dx, dy, distance = 1, 0, 1
+    end
+
+    -- Stand roughly one tile from the rock. Close enough for the PKA and the
+    -- ore bag's one-tile magnet, without trying to walk into the rock itself.
+    local standX = rockX + dx / distance
+    local standY = rockY + dy / distance
+
+    local ok, reason = robot.walk_to(standX, standY, 0.5, false)
+    if not ok then
+        return false, reason
+    end
+
+    ok, reason = robot.shoot(rock)
+    if not ok then
+        return false, reason
+    end
+
+    -- Let the bolt land, then step onto the cleared tile so the magnet
+    -- can sweep up the ore that dropped.
+    robot.wait(0.6)
+    robot.walk_to(rockX, rockY, 0.5, false)
+    robot.wait(1.2)
+
+    return true
+end
+
+function main()
+    local startX, startY = robot.position()
+    local mined = 0
+
+    log("miner started; PKA must be in the active hand and ore bag magnet ON")
+
+    while mined < MAX_ROCKS do
+        local ok, reason = mine_one()
+        if not ok then
+            log("mining stopped:", reason)
             break
         end
-        rock = nextRock
+
+        mined = mined + 1
+        log("mined rock", mined)
     end
+
+    -- Try a few times in case a freshly mined tile temporarily blocks the path.
+    for attempt = 1, 3 do
+        local ok, reason = robot.walk_to(startX, startY, 0.75, false)
+        if ok then
+            log("returned to start after", mined, "rocks")
+            return
+        end
+
+        log("return attempt", attempt, "failed:", reason)
+        robot.wait(1)
+    end
+
+    log("could not return to start")
 end
 ```
 
@@ -694,7 +767,7 @@ filesystem, networking, entity, hook, or userdata APIs.
 | `robot.charge(handle, amount)` | `true` | `false, reason` |
 | `robot.charge_from(amount [, radius])` | `true` | `false, reason` |
 | `robot.health()` | table | `damage`, `health`, `max_health`, `dead`. |
-| `robot.item_status(handle)` | table | Name/kind, `activated` for toggleable items, `injector` mode/transfer amount, and every solution container. |
+| `robot.item_status(handle)` | table | Name/kind, `activated` for toggleable items, `wielded` for wieldable items, `injector` mode/transfer amount, and every solution container. |
 | `robot.solution(handle [, name])` | solution table or `false, reason` | Reads a bucket, beaker, syringe or other container. Auto-selects injector/refillable/drainable or a single solution. |
 | `robot.has_module(name)` | boolean | Accepts the module aliases below. Returns `false, reason` if the argument is missing or not a string. |
 
@@ -1014,7 +1087,8 @@ Installing a radio module gives the assembly a device-link `Trigger`/`On`/`Off` 
 source to the assembly's `Trigger` sink, and the assembly's source ports to any device sink.
 
 - `robot.trigger(handle)` raises use-in-hand on the active held item. Use it for a remote signaller,
-  flashlight, or other use-in-hand device.
+  flashlight, or other use-in-hand device. For two-handed guns and other wieldable items, use
+  `robot.wield([enabled])` instead.
 - `robot.send_signal([state [, port]])` sends `High`/`Low` from the selected source port, default
   `"Pressed"`. It is rate-limited to 0.5 seconds; an unknown port returns `false, reason`.
 - Incoming signals appear as `type = "signal"` events with `port` and `state`.
@@ -1032,6 +1106,7 @@ source to the assembly's `Trigger` sink, and the assembly's source ports to any 
 | `robot.plant(handle)` | Same as `use_item` | `true` after any do-after, or `false, reason` |
 | `robot.attack(handle)` | Manipulator, melee weapon, power | `true` or `false, reason`; temporarily enables combat mode for the swing |
 | `robot.combat([enabled])` | Assembly | Current combat state, or `false, reason` for a non-boolean argument |
+| `robot.wield([enabled])` | Manipulator, active wieldable item, power | `true` or `false, reason`; toggles or sets the wield state |
 | `robot.point(handle)` | Manipulator, power | `true` or `false, reason`; spawns the normal pointing arrow |
 | `robot.shoot(handle)` | Manipulator, gun in hand, line of sight | `true` or `false, reason` |
 | `robot.inject(handle)` | Manipulator, syringe/injector in active hand, power | `true` after the injection do-after, or `false, reason` |
@@ -1062,6 +1137,45 @@ synchronous wrappers; normal scripts should use the high-level functions.
   does not send the player-chat popup text that a player's Ctrl+Shift+Middle Click does.
 - `shoot` uses the active hand's gun. The target check uses at least 20 metres of line of sight, or
   the sensor range if larger; the target does **not** need to be within manipulator hand range.
+
+### Two-handed weapons and wielding
+
+Assemblies can wield guns and other wieldable items with `robot.wield([enabled])`. The item must
+be in the active hand. Wielding occupies one additional manipulator hand for the support grip, so
+the assembly needs at least two manipulator modules and another free (or droppable) hand. If the
+other hand holds an item, the wield attempt may drop it to free the hand.
+
+```lua
+local gun = robot.find("enforcer")
+local target = robot.find("target")
+
+if gun and target then
+    robot.pickup(gun)
+
+    local ok, reason = robot.wield(true)
+    if ok then
+        log("wielded", tostring(robot.item_status(gun).wielded))
+        robot.shoot(target)
+
+        robot.wield(false) -- unwield when done
+    else
+        log("could not wield:", reason)
+    end
+end
+```
+
+- `robot.wield()` toggles the active hand item. `robot.wield(true)` and `robot.wield(false)` set
+  the state explicitly.
+- `robot.wield` returns
+  `false, "could not wield weapon: needs a free manipulator hand or item is on cooldown"` when the
+  assembly cannot wield it.
+- `robot.item_status(handle).wielded` reports the current state.
+- `robot.shoot(handle)` returns `false, "weapon must be wielded"` for guns with
+  `GunRequiresWieldComponent` while they are not wielded.
+- Guns with only an accuracy bonus, such as the proto-kinetic accelerator, can still fire
+  unwielded; wielding tightens their spread.
+- `robot.trigger` still raises use-in-hand and can toggle some wieldable items, but `robot.wield`
+  is the dedicated API and also handles items that do not unwield on use.
 
 ## Chemistry and botany
 
@@ -2091,6 +2205,7 @@ element of the same shape, and all positions are local grid coordinates in tiles
 | `robot.use_item(handle)` | `true` after any do-after | `false, reason` |
 | `robot.attack(handle)` | `true` | `false, reason` |
 | `robot.combat([enabled])` | current combat state (`boolean`) | `false, reason` for an invalid argument |
+| `robot.wield([enabled])` | `true` | `false, reason` |
 | `robot.point(handle)` | `true` | `false, reason` |
 | `robot.shoot(handle)` | `true` | `false, reason` |
 | `robot.interact(handle)` / `robot.harvest(handle)` | `true` after any do-after | `false, reason` |
@@ -2162,3 +2277,4 @@ When changing the API:
 | 2026-11-10 | Fixed `shoot` incorrectly requiring the target to be within manipulator hand range; ranged attacks now use sight range. |
 | 2026-11-10 | `walk_to` and `walk_to_async` now accept a single entity handle as an alternative to `x, y`, so scripts can walk directly to `find`/`nearest_*` results. |
 | 2026-11-10 | Lua-facing actions are synchronous by default. `walk_to` yields until arrival/no-path/timeout and `walk_to_async` is the fire-and-forget variant. `use`, `use_item`, `interact`/`harvest`, `plant`, `trigger` and `inject` wait for their do-after and expose `_async` variants; instant actions are unchanged. |
+| 2026-11-15 | Added saved asteroid-mining and wielding examples. Added `robot.wield([enabled])`, `item_status` now reports `wielded`, `trigger` reports failed wield/unwield attempts, and `shoot` reports `weapon must be wielded` for two-handed guns. |

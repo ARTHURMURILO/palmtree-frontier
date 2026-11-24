@@ -50,6 +50,14 @@ There is no `RoundEndedEvent`; use `RoundEndMessageEvent` + `GameRunLevelChanged
 | `ExaminedEvent` / `ExamineCompletedEvent` | examine pipeline | No ERP contributors registered in this repo |
 | `TickerLobbyStatusEvent` | `LobbyState` | Updates lobby UI + background |
 | `AfterAutoHandleStateEvent` | client humanoid system | Re-renders on marking/state changes |
+| `FlatpackUnpackAttemptEvent` | `FlatpackPlacementSystem`; raised by `SharedFlatpackSystem` | By-ref veto before unpacking: set `Cancelled` + `Message` (built from the footprint reason key) |
+| `FlatpackUnpackedEvent` | `FlatpackPlacementSystem` (anchor), `TurbineAssemblySystem` (site works) | Broadcast on the spawned entity after unpack |
+
+Both flatpack events are declared in `Content.Shared/_PS/Construction/FlatpackEvents.cs`. The
+attempt event is raised directed on the flatpack by `Content.Shared/Construction/SharedFlatpackSystem.cs`,
+which pops the vetoer's `Message`; the server footprint handler is
+`Content.Server/_PS/Construction/FlatpackPlacementSystem.cs`, and the `CanPlace` check it shares
+with the client ghost is `Content.Shared/_PS/Construction/SharedFlatpackPlacementSystem.cs`.
 
 ## Marking-related event/data notes
 
@@ -66,3 +74,8 @@ There is no `RoundEndedEvent`; use `RoundEndMessageEvent` + `GameRunLevelChanged
   auto-networked collections still rely on a component dirty.
 - Directed events for components require the component to be on the target entity.
 - Do not subscribe outside `Initialize()` (subscription lock).
+- Shared attack/action hooks are predicted: they run on the client, can replay after a server
+  state, and run again on the server. Client-only visuals must be spawned from a client
+  override guarded by `Timing.IsFirstTimePredicted`, and server relays must target
+  `Filter.PvsExcept(user)`; clients should also ignore the relay for `IPlayerManager.LocalEntity`
+  and dedupe delayed duplicates. See `.ai/HAZARDS.md` §30.

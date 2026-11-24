@@ -1,4 +1,6 @@
 using System;
+using Content.Shared._PS.Construction;
+using Content.Shared._PS.Construction.Components;
 using Content.Shared.Construction.Components;
 using Content.Shared.Construction;
 using NUnit.Framework;
@@ -18,6 +20,56 @@ namespace Content.IntegrationTests.Tests._Funkystation;
 [TestFixture]
 public sealed class TurbineFlatpackTest
 {
+    [Test]
+    public async Task FootprintRejectsMobsStandingOnIt()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var testMap = await pair.CreateTestMap();
+        var entMan = server.ResolveDependency<IEntityManager>();
+        var mapSys = server.System<SharedMapSystem>();
+        var xformSys = server.System<SharedTransformSystem>();
+        var tiles = server.ResolveDependency<ITileDefinitionManager>();
+
+        await server.WaitAssertion(() =>
+        {
+            var plating = tiles["Plating"];
+            for (var x = -4; x <= 4; x++)
+            {
+                for (var y = -4; y <= 4; y++)
+                    mapSys.SetTile(testMap.Grid.Owner, testMap.Grid.Comp, new Vector2i(x, y), new Tile(plating.TileId));
+            }
+
+            var flatpack = entMan.SpawnEntity("GasTurbineFlatpack", testMap.GridCoords);
+            var center = mapSys.TileIndicesFor(testMap.Grid.Owner, testMap.Grid.Comp, testMap.GridCoords);
+
+            bool Attempt()
+            {
+                var ev = new FlatpackUnpackAttemptEvent(flatpack, EntityUid.Invalid, testMap.Grid.Owner, center);
+                entMan.EventBus.RaiseLocalEvent(flatpack, ref ev, true);
+                return !ev.Cancelled;
+            }
+
+            Assert.That(Attempt(), Is.True, "an empty patch of floor must accept the turbine");
+
+            // The flatpack tile is at the centre of the footprint, so this mob is on a footprint
+            // tile without being on the flatpack itself. It has no AnchorableComponent, which is
+            // exactly the case the old check missed.
+            var mob = entMan.SpawnEntity("MobHuman",
+                mapSys.GridTileToLocal(testMap.Grid.Owner, testMap.Grid.Comp, center + new Vector2i(1, 0)));
+            Assert.That(Attempt(), Is.False, "a player standing on the footprint must veto unpacking");
+
+            // Stepping off the footprint re-allows the placement.
+            xformSys.SetCoordinates(mob,
+                mapSys.GridTileToLocal(testMap.Grid.Owner, testMap.Grid.Comp, center + new Vector2i(3, 0)));
+            Assert.That(Attempt(), Is.True, "moving the player off the footprint should clear the block");
+
+            entMan.DeleteEntity(mob);
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
     [Test]
     public async Task TurbineFlatpackFootprintIsValidated()
     {

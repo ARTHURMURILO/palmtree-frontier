@@ -25,6 +25,7 @@ public sealed class HFRModeratorInputSystem : EntitySystem
     {
         base.Initialize();
         SubscribeLocalEvent<HFRModeratorInputComponent, AnchorStateChangedEvent>(OnAnchorChanged);
+        SubscribeLocalEvent<HFRModeratorInputComponent, ComponentShutdown>(OnShutdown);
     }
 
     private void OnAnchorChanged(EntityUid uid, HFRModeratorInputComponent moderatorInput, ref AnchorStateChangedEvent args)
@@ -51,5 +52,18 @@ public sealed class HFRModeratorInputSystem : EntitySystem
         {
             _hfrSidePartSystem.TryFindCore(uid);
         }
+    }
+
+    private void OnShutdown(EntityUid uid, HFRModeratorInputComponent moderatorInput, ref ComponentShutdown args)
+    {
+        // Palmtree: a deleted part must not stay linked from the core; the core would otherwise keep
+        // treating a recycled UID as its moderator input link.
+        if (moderatorInput.CoreUid is { } coreUid && EntityManager.TryGetComponent<HFRCoreComponent>(coreUid, out var core))
+        {
+            if (core.ModeratorInputUid == uid)
+                core.ModeratorInputUid = null;
+        }
+
+        moderatorInput.CoreUid = null;
     }
 }

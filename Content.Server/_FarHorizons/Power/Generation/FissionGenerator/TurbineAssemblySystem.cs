@@ -6,6 +6,8 @@ using Content.Shared._FarHorizons.Power.Generation.FissionGenerator;
 using Content.Shared.Administration.Logs;
 using Content.Shared.Construction;
 using Content.Shared.Construction.Components;
+using Content.Shared._PS.Construction;
+using Content.Shared._PS.Construction.Components;
 using Content.Shared.Database;
 using Content.Shared.DoAfter;
 using Content.Shared.Popups;
@@ -71,7 +73,9 @@ public sealed class TurbineAssemblySystem : EntitySystem
         if (assembly.Floor != null)
         {
             var floor = _tileManager[assembly.Floor];
-            assembly.FloorTile = floor.TileId;
+            // Record the prototype ID, not the session-local numeric tile ID: the latter is not
+            // stable across map loads or prototype registration order.
+            assembly.FloorTileId = floor.ID;
 
             foreach (var pos in tiles)
             {
@@ -81,7 +85,7 @@ public sealed class TurbineAssemblySystem : EntitySystem
                 assembly.Floors.Add(new TurbineFloorRestore
                 {
                     Position = pos,
-                    OriginalTileType = tileRef.Tile.TypeId,
+                    OriginalTileId = GetTilePrototypeId(tileRef.Tile),
                 });
                 _map.SetTile(gridUid, grid, pos, new Tile(floor.TileId));
             }
@@ -138,6 +142,29 @@ public sealed class TurbineAssemblySystem : EntitySystem
             if (TryComp<CableComponent>(anchored, out var cable) && cable.CableType == CableType.HighVoltage)
                 QueueDel(anchored);
         }
+    }
+
+    /// <summary>
+    ///     Prototype ID of a tile, or null for an empty tile (which has no prototype).
+    /// </summary>
+    private string? GetTilePrototypeId(Tile tile)
+    {
+        if (tile.IsEmpty || !_tileManager.TryGetDefinition(tile.TypeId, out var definition))
+            return null;
+
+        return definition.ID;
+    }
+
+    private Tile GetOriginalTile(TurbineFloorRestore floor)
+    {
+        // A missing or unknown ID means the tile was empty before the flatpack laid its floor.
+        if (floor.OriginalTileId is { } originalId &&
+            _tileManager.TryGetDefinition(originalId, out var definition))
+        {
+            return new Tile(definition.TileId);
+        }
+
+        return Tile.Empty;
     }
 
     private void OnGetVerbs(Entity<TurbineAssemblyComponent> ent, ref GetVerbsEvent<Verb> args)
@@ -221,13 +248,19 @@ public sealed class TurbineAssemblySystem : EntitySystem
             foreach (var pos in assembly.CableTiles)
                 RemoveHvCableAt(gridUid, grid, pos);
 
-            foreach (var floor in assembly.Floors)
+            if (assembly.FloorTileId is { } floorTileId &&
+                _tileManager.TryGetDefinition(floorTileId, out var laidFloor))
             {
-                // Only restore the deck the flatpack itself laid; leave crew changes alone.
-                if (_map.TryGetTileRef(gridUid, grid, floor.Position, out var tileRef) &&
-                    tileRef.Tile.TypeId == assembly.FloorTile)
+                foreach (var floor in assembly.Floors)
                 {
-                    _map.SetTile(gridUid, grid, floor.Position, new Tile(floor.OriginalTileType));
+                    // Only restore the deck the flatpack itself laid; leave crew changes alone.
+                    if (!_map.TryGetTileRef(gridUid, grid, floor.Position, out var tileRef) ||
+                        tileRef.Tile.TypeId != laidFloor.TileId)
+                    {
+                        continue;
+                    }
+
+                    _map.SetTile(gridUid, grid, floor.Position, GetOriginalTile(floor));
                 }
             }
         }

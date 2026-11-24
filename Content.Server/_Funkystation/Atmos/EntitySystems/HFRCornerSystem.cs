@@ -27,6 +27,7 @@ public sealed class HFRCornerSystem : EntitySystem
         base.Initialize();
         SubscribeLocalEvent<HFRCornerComponent, ComponentStartup>(OnStartup);
         SubscribeLocalEvent<HFRCornerComponent, AnchorStateChangedEvent>(OnAnchorChanged);
+        SubscribeLocalEvent<HFRCornerComponent, ComponentShutdown>(OnShutdown);
     }
 
     private void OnStartup(EntityUid uid, HFRCornerComponent corner, ComponentStartup args)
@@ -195,10 +196,20 @@ public sealed class HFRCornerSystem : EntitySystem
             {
                 if (TryComp<TransformComponent>(entity, out var entityXform) && entityXform.Anchored && entityXform.GridUid == gridUid)
                 {
-                    _coreSystem.TryLinkCorner(entity, coreComp, uid, corner);
+                    _coreSystem.TryLinkCorner(entity, coreComp, uid);
                     break;
                 }
             }
         }
+    }
+
+    private void OnShutdown(EntityUid uid, HFRCornerComponent corner, ref ComponentShutdown args)
+    {
+        // Palmtree: drop the deleted corner from the core's list so the assembly check can fail and
+        // nothing keeps dereferencing a recycled UID.
+        if (corner.CoreUid is { } coreUid && EntityManager.TryGetComponent<HFRCoreComponent>(coreUid, out var core))
+            core.CornerUids.Remove(uid);
+
+        corner.CoreUid = null;
     }
 }

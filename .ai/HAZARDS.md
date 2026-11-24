@@ -719,11 +719,14 @@ so these fail only in CI:
   `InlineBinaryDevicesMayShareATileWhenTheirPortsDoNotConflict` covers the placement rule.
 - **Per-layer unary devices are entity + construction recipe pairs.** `GasVentPump`, `GasVentScrubber`,
   `GasPassiveVent`, `GasOutletInjector` and `GasDualPortVentPump` have `Gas*Alt1/Alt2` entity
-  prototypes in `_PS/.../unary_layers.yml` and hidden `Gas*Alt1/Alt2` construction recipes plus
-  `ventpumpAlt1`-style `GasUnary` graph nodes. The alt entity overrides only the pipe-connector
-  sprite layer (alt RSI) and the `Construction.node`; the body sprite is inherited. If a new unary
-  device is added, add the matching `alternativePrototypes` map, alt entities, graph nodes and
-  construction recipes, or the RPD layer picker will silently keep placing it on primary.
+  prototypes in `_NF/.../alt_layers.yml` and hidden `Gas*Alt1/Alt2` construction recipes in
+  `_NF/Recipes/Construction/utilities.yml` plus `ventpumpAlt1`-style `GasUnaryStarlight` graph
+  nodes. The alt entity overrides only the pipe-connector sprite layer (alt RSI) and the
+  `Construction.node`; the body sprite is inherited. Both the base and the alt construction
+  recipes must use `NoUnstackableOnPipeLayer` with their own layer; the old `NoUnstackableInTile`
+  on an alt recipe rejects a valid different-layer placement. If a new unary device is added, add
+  the matching `alternativePrototypes` map, alt entities, graph nodes and construction recipes, or
+  the RPD layer picker will silently keep placing it on primary.
 - **Admin ghosts must keep the RCD/RPD ghost at any range.** The server already bypasses range via
   the `BypassInteractionRangeChecks` tag, but `AlignRCDConstruction`/`AlignRPDAtmosPipeLayers`
   used to hide the ghost beyond `InteractionRange`. Both now skip that check (and the RPD layer
@@ -916,3 +919,80 @@ so these fail only in CI:
   behavior; a later synchronous action first waits for any existing do-after so it cannot confuse
   an old completed/cancelled entry with the new action's result. Keep the do-after index
   comparison wrap-safe (`ushort`).
+
+## 30. Prediction hooks and client-only visual effects (2026-11)
+
+- **A shared attack/action hook can run more than once.** `SharedMeleeWeaponSystem.AttemptAttack`
+  (and similar shared confirmation paths) runs on the client for prediction, again when prediction
+  is replayed after a server state, and on the server for authority. Putting a visual effect
+  directly in that shared hook makes the first client prediction play the effect; a replay or a
+  server-relayed copy then plays it a second time. The classic symptom is a whip/beam/rope "out and
+  back, then out and back again" or several copies at once, even though the attack happened once.
+- **The effect should be client-only, but the server still relays it to observers.** Spawn the
+  local visual from the client-side override, not the shared method:
+
+  ```csharp
+  protected override void DoWhipLash(...)
+  {
+      if (!Timing.IsFirstTimePredicted)
+          return; // ignore prediction replay
+
+      _whipLash.SpawnLash(...);
+  }
+  ```
+
+  The server override should only relay to other clients with
+  `Filter.PvsExcept(user, entityManager: EntityManager)`. A client must also ignore a relayed event
+  for its own `IPlayerManager.LocalEntity`; do not rely on the PVS filter alone (host/singleplayer,
+  attached entities, replay and delayed packets can still produce a duplicate).
+- **Deduplicate by user and time, not just by "a lash is active".** A delayed server event can
+  arrive after the local visual has already retracted. Keep a small per-entity timestamp
+  (`IGameTiming.RealTime`) and ignore a second effect inside the attack cooldown window (for whips,
+  0.9 s with a 1 s attack rate). Replace/queue-delete an existing effect only when the new target is
+  genuinely different; identical duplicate events must not restart the animation.
+- **Keep the effect out of per-swing loops.** `AttemptAttack` has a `swings` catch-up loop; a visual
+  hook inside it can spawn one effect per swing. Hook once after the loop, on the confirmed attack.
+- **Local-only effect entities still need cleanup.** Spawn them on the client, update with
+  `FrameUpdate` + `IGameTiming.RealTime`, clamp elapsed time to `>= 0` (negative time makes easing
+  extrapolate backward and look like a jump), and add a `TimedDespawnComponent` fallback in case the
+  visual system is skipped. Never create a server-side networked entity just to render a local
+  effect.
+- **Symptoms to suspect this first:** duplicate ropes/beams, effect playing twice per click, an
+  effect that appears after the animation already finished, or different clients seeing a different
+  number of effects. Check the hook location and the network relay before tuning the visual.
+
+## 31. Atmos temperature ceiling and ported-content persistence invariants (2026-11)
+
+- **Never raise `Atmospherics.Tmax` to make an engine reach its design temperature.** The Funky
+  HFR port first did exactly that (`262144` -> `262144000`), which changed the clamp for every gas
+  mixture in the game, cost float precision, let fires get 1000x hotter before being caught, and
+  made saves written at those temperatures unloadable by any other build. It was reverted: the HFR
+  now expresses its temperatures through `HypertorusFusionReactor.TemperatureScale`
+  (`Atmospherics.Tmax / 25,000,000`). An engine that needs a hotter gas must scale itself, not the
+  world. See `.ai/systems/atmos-gases-hfr.md`.
+- **The `Gas` enum is append-only.** The port appended ids 11-20 after Frontier's `Helium = 10`.
+  Renumbering corrupts saves and every fixed-size reaction array. Use `TotalNumberOfGases` /
+  `AdjustedNumberOfGases` instead of literal 11/21, and remember `AdjustedNumberOfGases` is padded
+  to a multiple of 4 for SIMD.
+- **Do not find saved entities by parentage.** Anchored entities are re-parented to the grid when a
+  map is saved/loaded, so a search of `Transform(turbine).ChildEnumerator` silently misses the pipe
+  stubs that are right there in the save. The turbine stub reuse is by world position on the target
+  tile. If you add a multi-part machine with attached entities, do the same or store positions.
+- **Persist prototype ids, not session-local ints.** `ITileDefinitionManager` tile ids (and most
+  other definition indices) are load-order dependent. The turbine flatpack originally saved tile
+  ids as ints and mangled the deck after a reload; it now stores tile prototype IDs.
+- **Runtime links are not save state.** HFR part UIDs are deliberately not `[DataField]`; they are
+  rebuilt from anchored parts on startup, cleared on `ComponentShutdown`, and every stale deref is
+  guarded (`TryGetPartPipe`, existence checks before `IsPowered`). Conversely, gameplay flags that
+  must survive a save (turbine `Ruined`, flatpack `Deployed`) do need `[DataField]`.
+- **Multi-tile flatpack footprints validate mobs too.** The check rejects living mobs and
+  non-anchored collidable bodies on any footprint tile; the client ghost calls the same
+  `CanPlace`, so do not fork the logic. Subfloor cables and non-primary pipes are the deliberate
+  exceptions.
+- **Chalk marks are bounded.** `ConstructionChalkComponent.MaxMarks` (128) and `MarkLifetime`
+  (15 min, `TimedDespawnComponent`) exist so marks cannot fill the entity table. Do not raise the
+  cap without addressing cleanup.
+- **The HFR's recovered power is intentionally ~95x lower than Funky's.** That is the accepted
+  consequence of running at the fork's atmos range; the tunables are
+  `HypertorusFusionReactor.TemperatureScale`/`FusionMaximumTemperature` and the positive heat cap,
+  not `Tmax`. Gas production was compensated separately, so it still produces the same moles/s.

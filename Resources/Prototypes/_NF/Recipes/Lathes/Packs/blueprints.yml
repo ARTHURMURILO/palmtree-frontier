@@ -239,6 +239,8 @@
   # PersonalPropulsion
   - JetpackBlue
   - JetpackCaptain
+  # ProtectiveMedicalInformation
+  - NFClothingEyesGlassesMesonMedical
 
 # region Mercenary
 - type: latheRecipePack
@@ -423,6 +425,7 @@
   - MassMediaCircuitboard
   - JukeboxCircuitBoard
   - SuperHarmonicaInstrument
+  - HandheldTelevision
   # RoboticCleanliness
   - BorgModuleAdvancedCleaning
   - PortablePumpMachineCircuitBoard

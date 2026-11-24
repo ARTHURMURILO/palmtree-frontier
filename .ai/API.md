@@ -74,6 +74,20 @@
 | `MarkingCategoriesConversion.Category2Layer` | `Content.Shared/Humanoid/Markings/MarkingCategories.cs` | Maps `Base*` categories to hidden base layers |
 | `MarkingColoring.GetMarkingLayerColors` | `Content.Shared/Humanoid/Markings/MarkingColoring.cs` | Per-sprite colors, used by picker/renderer |
 
+## Ported atmos/engineering (`_Funkystation`, `_FarHorizons`, `_PS`)
+
+| Symbol | Location | Purpose |
+|---|---|---|
+| `HypertorusFusionReactor` | `Content.Shared/_Funkystation/Atmos/HFR/HypertorusFusionReactor.cs` | Fusion constants/conversions, `TemperatureScale`, power-level table |
+| `HypertorusFusionReactorSystem` | `Content.Server/_Funkystation/HFR/Systems/` | HFR main loop, fusion maths, assembly/meltdown, gravity pulse |
+| `HFRCoreSystem` | `Content.Server/_Funkystation/Atmos/EntitySystems/` | Core linking/anchor handling, reactor UI updates, the atmos-device tick that drives processing |
+| `HFRConsoleSystem` | `Content.Server/_Funkystation/Atmos/EntitySystems/` | Console UI state, setting messages, APC power draw |
+| `TurbineSystem` | `Content.Server/_FarHorizons/Power/Generation/FissionGenerator/TurbineSystem.cs` | Gas turbine flow/RPM/stator/damage/power and pipe stubs |
+| `TurbineAssemblySystem` | `Content.Server/_FarHorizons/Power/Generation/FissionGenerator/TurbineAssemblySystem.cs` | Flatpack site works, turbine pack-up and packed-state restore |
+| `SharedFlatpackPlacementSystem` | `Content.Shared/_PS/Construction/SharedFlatpackPlacementSystem.cs` | Multi-tile footprint validation (`CanPlace`), shared with the client ghost |
+| `FlatpackFootprintComponent` | `Content.Shared/_PS/Construction/Components/FlatpackFootprintComponent.cs` | Footprint size/offset for multi-tile flatpacks |
+| `ConstructionChalkSystem` | `Content.Server/_Funkystation/ConstructionChalk/` | Chalk marks, build-from-mark, global mark cap/expiry |
+
 ## CVars of note
 
 | CVar | Default | Where |

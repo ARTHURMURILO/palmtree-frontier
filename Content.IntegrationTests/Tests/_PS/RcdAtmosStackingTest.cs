@@ -7,6 +7,7 @@ using Content.Shared.Construction.Prototypes;
 using Content.Shared.RCD;
 using Content.Shared.RCD.Components;
 using Content.Shared.RCD.Systems;
+using Content.Shared._PS.Construction.Conditions;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Maths;
@@ -291,7 +292,7 @@ public sealed class RcdAtmosStackingTest
     }
 
     [Test]
-    public async Task UnaryDevicesHaveLayeredConstructionRecipes()
+    public async Task UnaryDevicesHaveLayeredConstructionPrototypes()
     {
         await using var pair = await PoolManager.GetServerClient();
         var server = pair.Server;
@@ -318,17 +319,23 @@ public sealed class RcdAtmosStackingTest
                     Assert.That(
                         recipe.AlternativePrototypes.Select(p => p.Id),
                         Is.EqualTo(new[] { baseId, alt1Id, alt2Id }),
-                        $"{baseId} must offer the three pipe-layer recipes in enum order.");
+                        $"{baseId} must offer the three pipe-layer entities in enum order.");
+
+                    var baseCondition = recipe.Conditions.OfType<NoUnstackableOnPipeLayer>().SingleOrDefault();
+                    Assert.That(baseCondition, Is.Not.Null, $"{baseId} must use the layer-aware unstackable condition.");
+                    Assert.That(baseCondition?.Layer, Is.EqualTo(AtmosPipeLayer.Primary));
                 });
 
                 var alt1 = protoManager.Index<ConstructionPrototype>(alt1Id);
                 var alt2 = protoManager.Index<ConstructionPrototype>(alt2Id);
                 Assert.Multiple(() =>
                 {
-                    Assert.That(alt1.Hide, Is.True);
-                    Assert.That(alt2.Hide, Is.True);
-                    Assert.That(alt1.TargetNode, Is.EqualTo($"{node}Alt1"));
-                    Assert.That(alt2.TargetNode, Is.EqualTo($"{node}Alt2"));
+                    var alt1Condition = alt1.Conditions.OfType<NoUnstackableOnPipeLayer>().SingleOrDefault();
+                    var alt2Condition = alt2.Conditions.OfType<NoUnstackableOnPipeLayer>().SingleOrDefault();
+                    Assert.That(alt1Condition, Is.Not.Null, $"{alt1Id} must use the layer-aware unstackable condition.");
+                    Assert.That(alt2Condition, Is.Not.Null, $"{alt2Id} must use the layer-aware unstackable condition.");
+                    Assert.That(alt1Condition?.Layer, Is.EqualTo(AtmosPipeLayer.Secondary));
+                    Assert.That(alt2Condition?.Layer, Is.EqualTo(AtmosPipeLayer.Tertiary));
                 });
             }
         });

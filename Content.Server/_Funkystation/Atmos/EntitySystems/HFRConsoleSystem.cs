@@ -30,6 +30,16 @@ public sealed class HFRConsoleSystem : EntitySystem
     [Dependency] private readonly HFRSidePartSystem _hfrSidePartSystem = default!;
     [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
 
+    /// <summary>
+    /// Idle power draw of a lone or idle console. Matches the prototype's powerLoad.
+    /// </summary>
+    public const float IdlePowerLoad = 350f;
+
+    /// <summary>
+    /// Power draw while the reactor is actually running.
+    /// </summary>
+    public const float RunningPowerLoad = 100000f;
+
     public override void Initialize()
     {
         base.Initialize();
@@ -44,12 +54,12 @@ public sealed class HFRConsoleSystem : EntitySystem
         SubscribeLocalEvent<HFRConsoleComponent, AnchorStateChangedEvent>(OnConsoleAnchorChanged);
         SubscribeLocalEvent<HFRConsoleComponent, HFRConsoleToggleWasteRemoveMessage>(OnToggleWasteRemoveMessage);
         SubscribeLocalEvent<HFRConsoleComponent, HFRConsoleSetHeatingConductorMessage>(OnSetHeatingConductorMessage);
-        SubscribeLocalEvent<HFRConsoleComponent, HFRConsoleSetCoolingVolumeMessage>(OnSetCoolingVolumeMessage);
         SubscribeLocalEvent<HFRConsoleComponent, HFRConsoleSetMagneticConstrictorMessage>(OnSetMagneticConstrictorMessage);
         SubscribeLocalEvent<HFRConsoleComponent, HFRConsoleSetCurrentDamperMessage>(OnSetCurrentDamperMessage);
         SubscribeLocalEvent<HFRConsoleComponent, HFRConsoleSetModeratorFilteringRateMessage>(OnSetModeratorFilteringRateMessage);
         SubscribeLocalEvent<HFRConsoleComponent, HFRConsoleSetFilterGasesMessage>(OnSetFilterGasesMessage);
         SubscribeLocalEvent<HFRConsoleComponent, BeforeActivatableUIOpenEvent>(OnBeforeOpened);
+        SubscribeLocalEvent<HFRConsoleComponent, ComponentShutdown>(OnConsoleShutdown);
     }
 
     private void OnBeforeOpened(Entity<HFRConsoleComponent> ent, ref BeforeActivatableUIOpenEvent args)
@@ -65,8 +75,10 @@ public sealed class HFRConsoleSystem : EntitySystem
             {
                 if (EntityManager.TryGetComponent<HFRCoreComponent>(console.CoreUid, out var coreComp))
                 {
-                    coreComp.ConsoleUid = null;
+                    // Palmtree: deactivate while the core can still see this console, otherwise the
+                    // unanchored console keeps the running power load it will never use again.
                     _hfrSystem.ToggleActiveState(console.CoreUid.Value, coreComp, false);
+                    coreComp.ConsoleUid = null;
                 }
                 console.CoreUid = null;
             }
@@ -91,10 +103,29 @@ public sealed class HFRConsoleSystem : EntitySystem
             !TryComp<HFRCoreComponent>(console.CoreUid.Value, out var coreComp))
         {
             powerReceiver.PowerDisabled = false;
+            // Palmtree: an orphaned console has to drop back to its idle draw. The old code left it
+            // at the 100 kW running load forever after the core melted down and despawned.
+            powerReceiver.Load = IdlePowerLoad;
             return;
         }
 
         powerReceiver.PowerDisabled = !_hfrSystem.AreAllPartsConnected(console.CoreUid.Value, coreComp);
+        // Only a live reactor draws the running load; after a meltdown (core deactivated but still
+        // around for a moment) the console is back to idle.
+        powerReceiver.Load = coreComp.IsActive ? RunningPowerLoad : IdlePowerLoad;
+    }
+
+    private void OnConsoleShutdown(EntityUid uid, HFRConsoleComponent console, ref ComponentShutdown args)
+    {
+        if (console.CoreUid is not { } coreUid || !TryComp<HFRCoreComponent>(coreUid, out var coreComp))
+            return;
+
+        // Palmtree: drop the stale link so the core stops treating the deleted console as a powered
+        // UI (PowerReceiverSystem.IsPowered returns true for a deleted receiver).
+        if (coreComp.ConsoleUid == uid)
+            coreComp.ConsoleUid = null;
+
+        console.CoreUid = null;
     }
 
     private void OnTogglePowerMessage(EntityUid uid, HFRConsoleComponent component, HFRConsoleTogglePowerMessage args)
@@ -106,6 +137,15 @@ public sealed class HFRConsoleSystem : EntitySystem
                 DirtyUI(uid, component);
                 return;
             }
+
+            // Palmtree: refuse to start a reactor with a missing or unbolted part. It used to
+            // activate anyway and then could not be shut down once the power level rose.
+            if (!coreComp.IsActive && !_hfrSystem.AreAllPartsConnected(component.CoreUid.Value, coreComp))
+            {
+                DirtyUI(uid, component);
+                return;
+            }
+
             _hfrSystem.ToggleActiveState(component.CoreUid.Value, coreComp, !coreComp.IsActive);
             DirtyUI(uid, component);
         }
@@ -172,6 +212,19 @@ public sealed class HFRConsoleSystem : EntitySystem
             if (args.RecipeId == null || !_prototypeManager.HasIndex<FusionRecipePrototype>(args.RecipeId))
                 return;
 
+            // Palmtree: the meltdown blast flags are read from the selected recipe at detonation, so
+            // swapping recipes during a running reactor or its countdown is a griefing lever. Only
+            // allow a change while the reactor is completely idle, and dump any leftover fusion gases
+            // (tg does the same) so the next recipe does not inherit the old fuel.
+            if (coreComp.IsActive || coreComp.PowerLevel > 0)
+            {
+                DirtyUI(uid, component);
+                return;
+            }
+
+            if (coreComp.SelectedRecipeId != args.RecipeId)
+                _hfrSystem.DumpGases(component.CoreUid.Value, coreComp);
+
             coreComp.SelectedRecipeId = args.RecipeId;
             DirtyUI(uid, component);
         }
@@ -194,15 +247,6 @@ public sealed class HFRConsoleSystem : EntitySystem
         if (component.CoreUid != null && TryComp<HFRCoreComponent>(component.CoreUid, out var coreComp))
         {
             coreComp.HeatingConductor = ClampFinite(args.Rate, 50f, 500f);
-            DirtyUI(uid, component);
-        }
-    }
-
-    private void OnSetCoolingVolumeMessage(EntityUid uid, HFRConsoleComponent component, HFRConsoleSetCoolingVolumeMessage args)
-    {
-        if (component.CoreUid != null && TryComp<HFRCoreComponent>(component.CoreUid, out var coreComp))
-        {
-            coreComp.CoolingVolume = (int) ClampFinite(args.Rate, 50f, 2000f);
             DirtyUI(uid, component);
         }
     }
@@ -273,7 +317,6 @@ public sealed class HFRConsoleSystem : EntitySystem
         float moderatorInputRate = 0f;
         string? selectedRecipeId = null;
         float heatingConductor = 0f;
-        int coolingVolume = 0;
         float magneticConstrictor = 0f;
         float currentDamper = 0f;
         bool isWasteRemoving = false;
@@ -310,7 +353,6 @@ public sealed class HFRConsoleSystem : EntitySystem
             moderatorInputRate = coreComp.ModeratorInputRate;
             selectedRecipeId = coreComp.SelectedRecipeId;
             heatingConductor = coreComp.HeatingConductor;
-            coolingVolume = coreComp.CoolingVolume;
             magneticConstrictor = coreComp.MagneticConstrictor;
             currentDamper = coreComp.CurrentDamper;
             isWasteRemoving = coreComp.IsWasteRemoving;
@@ -378,7 +420,6 @@ public sealed class HFRConsoleSystem : EntitySystem
                 moderatorInputRate,
                 selectedRecipeId,
                 heatingConductor,
-                coolingVolume,
                 magneticConstrictor,
                 currentDamper,
                 isWasteRemoving,

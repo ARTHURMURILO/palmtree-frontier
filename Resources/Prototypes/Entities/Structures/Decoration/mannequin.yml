@@ -16,6 +16,7 @@
     - map: [ "jumpsuit" ]
     - map: [ "outerClothing" ]
     - map: [ "eyes" ]
+    - map: [ "enum.HumanoidVisualLayers.GenitalUnder" ]
     - map: [ "neck" ]
     - map: [ "back" ]
     - map: [ "mask" ]

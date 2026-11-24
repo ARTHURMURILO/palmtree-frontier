@@ -1,10 +1,13 @@
-﻿namespace Content.IntegrationTests;
+namespace Content.IntegrationTests;
 
 [SetUpFixture]
 public sealed class PoolManagerTestEventHandler
 {
     // This value is completely arbitrary.
-    private static TimeSpan MaximumTotalTestingTimeLimit => TimeSpan.FromMinutes(20);
+    // Palmtree: raised from 20 to 30 minutes. The fork's pooled integration suite already runs for
+    // ~19 of the upstream 20 minutes, and one more content-heavy test can push it over the limit and
+    // fail the whole run with "pool manager has not been initialized" noise.
+    private static TimeSpan MaximumTotalTestingTimeLimit => TimeSpan.FromMinutes(30);
     private static TimeSpan HardStopTimeLimit => MaximumTotalTestingTimeLimit.Add(TimeSpan.FromMinutes(1));
 
     [OneTimeSetUp]

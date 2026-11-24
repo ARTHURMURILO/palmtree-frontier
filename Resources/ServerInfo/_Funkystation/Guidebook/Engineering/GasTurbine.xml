@@ -48,11 +48,11 @@
 
   ## Repair
 
-  Weld the turbine with a welding tool to repair blade damage. Each repair costs welding fuel and time; the repair dialogue and the blade health are shown in the UI.
+  Weld the turbine with a welding tool to repair blade damage. Each repair costs welding fuel and time; sparks and smoke show how badly the blades are damaged.
 
   ## Tips
 
-  - The turbine is most efficient with a steady, hot gas supply. A reactor's waste line is a good match: the turbine turns the leftover heat into power instead of venting it.
+  - The turbine is most efficient with a steady, hot gas supply under its 3000 K inlet limit. A reactor's waste line can be blended into that range, turning leftover heat into power instead of venting it.
   - Do not feed it cold gas — it will stall.
   - The stator load can be automated with the two signal ports (increase/decrease).
 

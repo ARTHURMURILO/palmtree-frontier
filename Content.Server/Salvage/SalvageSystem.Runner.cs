@@ -43,12 +43,12 @@ public sealed partial class SalvageSystem
      * Handles actively running a salvage expedition.
      */
 
-    [Dependency] private readonly MobStateSystem _mobState = default!;
-    [Dependency] private readonly GameTicker _gameTicker = default!; // Frontier
-    [Dependency] private readonly BuckleSystem _buckle = default!; // Palmtree/Coyote: expedition auto-recovery
-    [Dependency] private readonly IPlayerManager _players = default!; // Palmtree/Coyote: expedition auto-recovery
-    [Dependency] private readonly DamageableSystem _damageable = default!; // Palmtree/Coyote: expedition auto-recovery
-    [Dependency] private readonly TemperatureSystem _temperature = default!; // Palmtree/Coyote: expedition auto-recovery
+    [Dependency] private MobStateSystem _mobState = default!;
+    [Dependency] private GameTicker _gameTicker = default!; // Frontier
+    [Dependency] private BuckleSystem _buckle = default!; // Palmtree/Coyote: expedition auto-recovery
+    [Dependency] private IPlayerManager _players = default!; // Palmtree/Coyote: expedition auto-recovery
+    [Dependency] private DamageableSystem _damageable = default!; // Palmtree/Coyote: expedition auto-recovery
+    [Dependency] private TemperatureSystem _temperature = default!; // Palmtree/Coyote: expedition auto-recovery
 
     private void InitializeRunner()
     {

@@ -303,7 +303,10 @@ DIR_TO_ROT = {
 }
 
 FALLBACK_FLOOR = "Plating"
-MOLES = [21.824879, 82.10312, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]  # 12 = AdjustedNumberOfGases
+# A 21% O2 / 79% N2 mix at 20 C. The list predates the ten /tg/ gases (enum ids 11-20), which
+# append after the vanilla ids and default to zero here; GasMixture.AfterDeserialization pads a
+# shorter list to Atmospherics.AdjustedNumberOfGases (currently 24), so this list need not grow.
+MOLES = [21.824879, 82.10312, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 
 def concrete_prototype_ids():

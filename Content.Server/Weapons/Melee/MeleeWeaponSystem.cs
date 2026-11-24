@@ -6,6 +6,7 @@ using Content.Shared.Effects;
 using Content.Shared.Speech.Components;
 using Content.Shared.Weapons.Melee;
 using Content.Shared.Weapons.Melee.Events;
+using Content.Shared._PS.Weapons.Melee; // Palmtree
 using Robust.Shared.Map;
 using Robust.Shared.Player;
 using System.Linq;
@@ -13,12 +14,12 @@ using System.Numerics;
 
 namespace Content.Server.Weapons.Melee;
 
-public sealed class MeleeWeaponSystem : SharedMeleeWeaponSystem
+public sealed partial class MeleeWeaponSystem : SharedMeleeWeaponSystem
 {
-    [Dependency] private readonly ChatSystem _chat = default!;
-    [Dependency] private readonly DamageExamineSystem _damageExamine = default!;
-    [Dependency] private readonly LagCompensationSystem _lag = default!;
-    [Dependency] private readonly SharedColorFlashEffectSystem _color = default!;
+    [Dependency] private ChatSystem _chat = default!;
+    [Dependency] private DamageExamineSystem _damageExamine = default!;
+    [Dependency] private LagCompensationSystem _lag = default!;
+    [Dependency] private SharedColorFlashEffectSystem _color = default!;
 
     public override void Initialize()
     {
@@ -83,10 +84,10 @@ public sealed class MeleeWeaponSystem : SharedMeleeWeaponSystem
         return Interaction.InRangeUnobstructed(user, target, range);
     }
 
-    protected override void DoDamageEffect(List<EntityUid> targets, EntityUid? user, TransformComponent targetXform)
+    protected override void DoDamageEffect(HashSet<EntityUid> targets, EntityUid? user, TransformComponent targetXform)
     {
         var filter = Filter.Pvs(targetXform.Coordinates, entityMan: EntityManager).RemoveWhereAttachedEntity(o => o == user);
-        _color.RaiseEffect(Color.Red, targets, filter);
+        _color.RaiseEffect(Color.Red, targets.ToList(), filter);
     }
 
     public override void DoLunge(EntityUid user, EntityUid weapon, Angle angle, Vector2 localPos, string? animation, bool predicted = true)
@@ -103,6 +104,15 @@ public sealed class MeleeWeaponSystem : SharedMeleeWeaponSystem
         }
 
         RaiseNetworkEvent(new MeleeLungeEvent(GetNetEntity(user), GetNetEntity(weapon), angle, localPos, animation), filter);
+    }
+
+    /// <summary>
+    /// Palmtree: relay whip lashes to other clients so they see the rope too.
+    /// </summary>
+    protected override void DoWhipLash(EntityUid user, EntityUid weapon, MapCoordinates target, WhipComponent whip)
+    {
+        var filter = Filter.PvsExcept(user, entityManager: EntityManager);
+        RaiseNetworkEvent(new WhipLashEvent(GetNetEntity(user), GetNetEntity(weapon), GetNetCoordinates(TransformSystem.ToCoordinates(target))), filter);
     }
 
     private void OnSpeechHit(EntityUid owner, MeleeSpeechComponent comp, MeleeHitEvent args)

@@ -118,9 +118,9 @@ characters).
 
 ## Layers
 
-`HumanoidVisualLayers` now includes the Floof layers: `Genital`, `TailBehind`, `TailOversuit`,
-`NeckFluff`, `RLegBehind`/`LLegBehind`, `RFootBehind`/`LFootBehind`, `UndershirtUnderclothes`,
-`UndershirtOverclothes`, `TailExtras`, `Disregard`.
+`HumanoidVisualLayers` now includes the Floof layers: `Genital`, `GenitalUnder`, `GenitalLow`,
+`TailBehind`, `TailOversuit`, `NeckFluff`, `RLegBehind`/`LLegBehind`, `RFootBehind`/`LFootBehind`,
+`UndershirtUnderclothes`, `UndershirtOverclothes`, `TailExtras`, `Disregard`.
 
 Layer maps must exist in two places for a species to render a marking on that layer:
 
@@ -147,15 +147,19 @@ undershirts) so hiding a parent hides its sublayers.
      displacement, and clamps genital layers below `jumpsuit`/`outerClothing`.
      Layer order is direction-aware on the client (screen direction = world + eye rotation):
      south-facing exposed genitals sit above hair/tails when no garment covers them,
-     side-facing (including diagonal) tail markings are inserted under the hair layer, and
-     side-facing snout/snout-cover markings are inserted above hair when the character's
-     `SnoutAboveHair` option is enabled (default off keeps the legacy under-hair order; the
-     checkbox sits in the editor's Markings tab under Leg style). A client system
+     south-facing `Tail`/`TailExtras` sprites are routed to `TailBehind` so the body, underwear and
+     clothing occlude them (split tails already put their `_BEHIND_` sprites there; their `_FRONT_`
+     sprites are empty from the south), side-facing (including diagonal) tail markings are inserted
+     under the hair layer, and side-facing snout/snout-cover markings are inserted above hair when
+     the character's `SnoutAboveHair` option is enabled (default off keeps the legacy under-hair
+     order; the checkbox sits in the editor's Markings tab under Leg style). In east/west views the
+     two leg base sprites are pixel-identical, so the near leg is whichever one is drawn last. Facing
+     east the right leg is nearest: `RLeg` markings are inserted just below `GenitalLow` so they
+     render above the left leg instead of being buried under it. Facing west the left leg is already
+     the uppermost leg layer. A client system
      (`DirectionalLayerOrderSystem`) rebuilds the sprite when the cardinal or side-facing state
      changes. Uncovered breast markings are inserted below the neck clothing layer in every
      direction, so scarves/cloaks cover breasts while hair and the head remain above the cloak.
-     South-facing butt markings are anchored below the breast/neck group so breasts draw over the
-     butt; other directions keep the existing organ order.
      Under-clothing genital insertions anchor to stable layers, not `jumpsuit`/`outerClothing`:
      bottom organs (butt, vagina, balls, penis, belly) anchor above `LLeg` so they render below
      `UndergarmentBottom`, while breast markings anchor above `UndergarmentBottom` so they render
@@ -163,6 +167,11 @@ undershirts) so hiding a parent hides its sublayers.
      so multi-sprite markings (e.g. breast + nipple, butt front + mid) stay ordered. If a visible
      relevant undergarment is worn, this clamp applies in every direction (so panties cover the
      butt even when facing south); without one, south keeps the exposed-genitals-over-hair rule.
+     `GenitalUnder` is a dedicated sublayer immediately before `neck` (above body/leg markings but
+     below breasts/neck clothing). Exposed south-facing butt markings are routed there so breasts
+     render above the butt without dropping it onto the leg/body layers. `GenitalLow` sits after
+     `LLeg` and before `UndergarmentBottom`; clamped bottom organs anchor there so leg markings stay
+     below them while clothing still covers them.
      When a color's glow is > 0 it also creates a companion `<markingId>-<state>-glow` layer with the
      `unshaded` shader, splitting alpha so the composed alpha is preserved.
    - Base markings (`Base*` categories) add their target layer to `HiddenBaseLayers` via
@@ -171,6 +180,23 @@ undershirts) so hiding a parent hides its sublayers.
    parts).
 5. Genital markings are hidden by default (`AddMarking` sets `Visible = false` for the Genital
    category) and toggled at runtime through `ModifyUndies`.
+
+## Design note: explicit genital render priority (option 3)
+
+If the `GenitalUnder` approach proves insufficient, the next option is an explicit per-marking
+render sort key instead of relying on insertion anchors:
+
+- Add a transient `Marking.RenderPriority` (int) set by `GenitalOrganSystem.SyncRender` from
+  `GenitalType`: butt = 0, vagina = 1, balls = 2, penis = 3, belly = 4, breasts = 5 (current
+  reverse-priority add order already encodes this).
+- In `ApplyMarkingSet`, collect genital render layers, then insert them in a direction-aware order:
+  south = butt < breasts < other organs; north = breasts < butt; east/west = breasts < butt (current
+  clamped order).
+- Always insert the group at the `GenitalUnder`/`Genital` region above body markings, never at the
+  `LLeg` undergarment anchor, so leg/body markings cannot draw over genitals.
+- Keep the per-sprite offset for multi-sprite organs and test all four directions plus covered
+  (jumpsuit/undergarment) cases.
+
 
 ## ModifyUndies (marking toggle verbs)
 

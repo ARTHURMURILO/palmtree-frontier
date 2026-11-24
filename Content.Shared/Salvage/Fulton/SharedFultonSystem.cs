@@ -26,17 +26,17 @@ namespace Content.Shared.Salvage.Fulton;
 /// </summary>
 public abstract partial class SharedFultonSystem : EntitySystem
 {
-    [Dependency] protected readonly IGameTiming Timing = default!;
-    [Dependency] private   readonly MetaDataSystem _metadata = default!;
-    [Dependency] protected readonly SharedAudioSystem Audio = default!;
-    [Dependency] private   readonly SharedDoAfterSystem _doAfter = default!;
-    [Dependency] private   readonly FoldableSystem _foldable = default!;
-    [Dependency] protected readonly SharedContainerSystem Container = default!;
-    [Dependency] private   readonly SharedPopupSystem _popup = default!;
-    [Dependency] private   readonly SharedStackSystem _stack = default!;
-    [Dependency] protected readonly SharedTransformSystem TransformSystem = default!;
-    [Dependency] private readonly EntityWhitelistSystem _whitelistSystem = default!;
-    [Dependency] private readonly MobStateSystem _mobState = default!; // Palmtree
+    [Dependency] private EntityWhitelistSystem _whitelistSystem = default!;
+    [Dependency] private FoldableSystem _foldable = default!;
+    [Dependency] private MetaDataSystem _metadata = default!;
+    [Dependency] private SharedDoAfterSystem _doAfter = default!;
+    [Dependency] private SharedPopupSystem _popup = default!;
+    [Dependency] private SharedStackSystem _stack = default!;
+    [Dependency] protected IGameTiming Timing = default!;
+    [Dependency] protected SharedAudioSystem Audio = default!;
+    [Dependency] protected SharedContainerSystem Container = default!;
+    [Dependency] protected SharedTransformSystem TransformSystem = default!;
+    [Dependency] private MobStateSystem _mobState = default!; // Palmtree
 
     public static readonly EntProtoId EffectProto = "FultonEffect";
     protected static readonly Vector2 EffectOffset = Vector2.Zero;

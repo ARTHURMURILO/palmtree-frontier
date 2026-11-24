@@ -94,7 +94,7 @@
     range: 20
     volume: -5
     sound:
-      path: /Audio/_EE/Supermatter/calm.ogg
+      path: /Audio/_Funkystation/Hypertorus/calm.ogg
   - type: RadiationSource
   - type: Construction
     graph: HFRCore
@@ -386,6 +386,11 @@
   name: hfr crate
   description: Extremely complex to setup and maintain, but rewarding as heck.
   components:
+  # Funky: CrateEngineeringSecure's access list is commented out upstream, so secure engineering
+  # crates open for anyone. The HFR crate is an expensive, round-defining machine; lock it to
+  # Engineering explicitly instead of inheriting the open parent.
+  - type: AccessReader
+    access: [["Engineering"]]
   - type: StorageFill
     contents:
       - id: HFRConsoleBox

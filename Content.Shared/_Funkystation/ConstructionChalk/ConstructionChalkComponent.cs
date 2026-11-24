@@ -18,6 +18,21 @@ public sealed partial class ConstructionChalkComponent : Component
     [DataField]
     public SoundSpecifier PlaceSound = new SoundCollectionSpecifier("Chalk");
 
+    /// <summary>
+    ///     Maximum number of chalk marks that may be active in the world at once. Chalk is cheap and
+    ///     a mark is an entity, so an uncapped placement would let someone flood the entity table.
+    ///     Checked against the total mark count whenever this chalk places a new one.
+    /// </summary>
+    [DataField]
+    public int MaxMarks = 128;
+
+    /// <summary>
+    ///     How long the marks this chalk places stay around. Marks expire so forgotten plans cannot
+    ///     pile up indefinitely. Zero or negative keeps marks forever.
+    /// </summary>
+    [DataField]
+    public TimeSpan MarkLifetime = TimeSpan.FromMinutes(15);
+
     [ViewVariables]
     public bool IsStatusControlUpdateRequired;
 

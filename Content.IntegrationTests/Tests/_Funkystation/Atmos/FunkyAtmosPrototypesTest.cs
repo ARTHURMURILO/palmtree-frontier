@@ -137,7 +137,7 @@ public sealed class FunkyAtmosPrototypesTest
         var testMap = await pair.CreateTestMap();
         var coords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
 
-        var mixtures = new List<(EntProtoId Canister, Gas Gas, float Moles, float TotalMoles, float Volume)>();
+        var mixtures = new List<(EntProtoId Canister, Gas Gas, float Moles, float TotalMoles, float Volume, float Pressure)>();
 
         await server.WaitPost(() =>
         {
@@ -148,13 +148,17 @@ public sealed class FunkyAtmosPrototypesTest
                 mixtures.Add((canisterId, gas,
                     canister.Air.GetMoles(gas),
                     canister.Air.TotalMoles,
-                    canister.Air.Volume));
+                    canister.Air.Volume,
+                    canister.Air.Pressure));
             }
         });
 
+        // The rest of the codebase fills its canisters with 2769.36 mol at 293.15 K, i.e. 4500 kPa.
+        const float expectedPressure = 4500f;
+
         Assert.Multiple(() =>
         {
-            foreach (var (canisterId, gas, moles, totalMoles, volume) in mixtures)
+            foreach (var (canisterId, gas, moles, totalMoles, volume, pressure) in mixtures)
             {
                 Assert.That(moles, Is.GreaterThan(0f),
                     $"{canisterId} does not contain {gas}");
@@ -162,6 +166,8 @@ public sealed class FunkyAtmosPrototypesTest
                     $"{canisterId} contains gases other than {gas}");
                 Assert.That(volume, Is.EqualTo(1500f),
                     $"{canisterId} does not use the standard canister volume");
+                Assert.That(pressure, Is.EqualTo(expectedPressure).Within(1f),
+                    $"{canisterId} is filled to {pressure} kPa instead of {expectedPressure} kPa");
             }
         });
 

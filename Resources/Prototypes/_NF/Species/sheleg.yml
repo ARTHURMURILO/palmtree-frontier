@@ -23,6 +23,8 @@
   id: MobShelegSprites
   sprites:
     Genital: MobHumanoidAnyMarking
+    GenitalUnder: MobHumanoidAnyMarking
+    GenitalLow: MobHumanoidAnyMarking
     TailBehind: MobHumanoidAnyMarking
     Special: MobHumanoidAnyMarking
     Head: MobShelegHead

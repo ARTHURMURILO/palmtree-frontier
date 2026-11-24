@@ -36,6 +36,8 @@
     UndergarmentTop: MobHumanoidAnyMarking
     UndergarmentBottom: MobHumanoidAnyMarking
     Genital: MobHumanoidAnyMarking
+    GenitalUnder: MobHumanoidAnyMarking
+    GenitalLow: MobHumanoidAnyMarking
     LLegBehind: MobHumanoidAnyMarking
     RLegBehind: MobHumanoidAnyMarking
     LFootBehind: MobHumanoidAnyMarking

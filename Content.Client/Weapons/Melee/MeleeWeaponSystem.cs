@@ -23,15 +23,15 @@ namespace Content.Client.Weapons.Melee;
 
 public sealed partial class MeleeWeaponSystem : SharedMeleeWeaponSystem
 {
-    [Dependency] private readonly IEyeManager _eyeManager = default!;
-    [Dependency] private readonly IInputManager _inputManager = default!;
-    [Dependency] private readonly IPlayerManager _player = default!;
-    [Dependency] private readonly IStateManager _stateManager = default!;
-    [Dependency] private readonly AnimationPlayerSystem _animation = default!;
-    [Dependency] private readonly InputSystem _inputSystem = default!;
-    [Dependency] private readonly SharedColorFlashEffectSystem _color = default!;
-    [Dependency] private readonly MapSystem _map = default!;
-    [Dependency] private readonly SpriteSystem _sprite = default!;
+    [Dependency] private IEyeManager _eyeManager = default!;
+    [Dependency] private IInputManager _inputManager = default!;
+    [Dependency] private IPlayerManager _player = default!;
+    [Dependency] private IStateManager _stateManager = default!;
+    [Dependency] private AnimationPlayerSystem _animation = default!;
+    [Dependency] private InputSystem _inputSystem = default!;
+    [Dependency] private SharedColorFlashEffectSystem _color = default!;
+    [Dependency] private MapSystem _map = default!;
+    [Dependency] private SpriteSystem _sprite = default!;
 
     private EntityQuery<TransformComponent> _xformQuery;
 
@@ -68,7 +68,9 @@ public sealed partial class MeleeWeaponSystem : SharedMeleeWeaponSystem
         if (!TryGetWeapon(entity, out var weaponUid, out var weapon))
             return;
 
-        if (!CombatMode.IsInCombatMode(entity) || !Blocker.CanAttack(entity, weapon: (weaponUid, weapon)))
+        // Palmtree: weapons that opt out of combat mode (e.g. whips) can still be used outside it.
+        if ((weapon.RequiresCombatMode && !CombatMode.IsInCombatMode(entity)) ||
+            !Blocker.CanAttack(entity, weapon: (weaponUid, weapon)))
         {
             weapon.Attacking = false;
             return;
@@ -186,10 +188,10 @@ public sealed partial class MeleeWeaponSystem : SharedMeleeWeaponSystem
         return Interaction.InRangeUnobstructed(user, target, targetCoordinates, targetLocalAngle, range, overlapCheck: false);
     }
 
-    protected override void DoDamageEffect(List<EntityUid> targets, EntityUid? user, TransformComponent targetXform)
+    protected override void DoDamageEffect(HashSet<EntityUid> targets, EntityUid? user, TransformComponent targetXform)
     {
         // Server never sends the event to us for predictiveeevent.
-        _color.RaiseEffect(Color.Red, targets, Filter.Local());
+        _color.RaiseEffect(Color.Red, targets.ToList(), Filter.Local());
     }
 
     /// <summary>
@@ -212,12 +214,14 @@ public sealed partial class MeleeWeaponSystem : SharedMeleeWeaponSystem
 
         var userPos = TransformSystem.GetWorldPosition(userXform);
         var direction = targetMap.Position - userPos;
-        var distance = MathF.Min(component.Range, direction.Length());
+        var range = component.HeavyRangeOverride ?? component.Range;
+        var distance = MathF.Min(range, direction.Length());
 
         // This should really be improved. GetEntitiesInArc uses pos instead of bounding boxes.
         // Server will validate it with InRangeUnobstructed.
-        var entities = GetNetEntityList(ArcRayCast(userPos, direction.ToWorldAngle(), component.Angle, distance, userXform.MapID, user).ToList());
-        RaisePredictiveEvent(new HeavyAttackEvent(GetNetEntity(meleeUid), entities.GetRange(0, Math.Min(MaxTargets, entities.Count)), GetNetCoordinates(coordinates)));
+        var entities = GetNetEntitySet(ArcRayCast(userPos, direction.ToWorldAngle(), component.Angle, distance, userXform.MapID, user));
+        entities = entities.Take(Math.Min(MaxTargets, entities.Count)).ToHashSet();
+        RaisePredictiveEvent(new HeavyAttackEvent(GetNetEntity(meleeUid), entities, GetNetCoordinates(coordinates)));
     }
 
     private void ClientDisarm(EntityUid attacker, MapCoordinates mousePos, EntityCoordinates coordinates)

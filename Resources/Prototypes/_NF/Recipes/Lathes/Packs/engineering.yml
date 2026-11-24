@@ -28,6 +28,7 @@
   - WallmountSubstationElectronics
   - SMESAdvancedMachineCircuitboard
   - NFScreenTimerElectronics
+  - IntercomElectronics
 
 - type: latheRecipePack
   id: NFEngineeringBoardsStatic
@@ -100,11 +101,17 @@
 - type: latheRecipePack
   id: NFEngineeringBoardsCircuitImprinter
   recipes:
+  - AlertsComputerCircuitboard
+  - AtmosMonitoringComputerCircuitboard
   - GasMiningDrillMachineCircuitboard
   - GaslockFrameMachineCircuitboard
-  - AlertsComputerCircuitboard
+  - MaterialSiloMachineCircuitboard
+  - MiniStationAnchorCircuitboard
+  - NFHolopadGridMachineCircuitboard
+  - NFHolopadShipMachineCircuitboard
   - PowerComputerCircuitboard
-  - AtmosMonitoringComputerCircuitboard
+  - SmallGyroscopeMachineCircuitboard
+  - SmallThrusterMachineCircuitboard
   - SupermatterComputerCircuitboard # Palmtree
   - SolarAssemblyFlatpack
 
@@ -132,6 +139,15 @@
   - CrystallizerMachineCircuitboard # Funky
   - SmallGasTurbineFlatpack # Funky
   - GasTurbineFlatpack # Funky
+  # Hypertorus fusion reactor parts (Funky). Also in NFBlueprintsEngineering so a printed
+  # blueprint can be handed to the techfab; the techfab itself needs them listed here to print
+  # the boxes directly once the technology is researched.
+  - HFRCoreBox
+  - HFRCornerBox
+  - HFRFuelBox
+  - HFRModeratorBox
+  - HFRWasteBox
+  - HFRConsoleBox
 
 - type: latheRecipePack
   id: NFAtmosMachineryGeneral

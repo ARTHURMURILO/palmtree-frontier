@@ -1,0 +1,35 @@
+# Provenance note (Palmtree): audio for the Hypertorus Fusion Reactor, ported from
+# Funky Station's HFR (funky-station/funky-station#775). All five files were originally
+# taken from /tg/station13, which publishes its sound assets under CC-BY-SA-3.0 (see the
+# LICENSE section of the /tg/station README: "All assets including icons and sound are
+# under a Creative Commons 3.0 BY-SA license unless otherwise indicated").
+#
+# The files were copied byte-for-byte from /tg/station (commit 436ba869eb, the
+# "Optivorbis lossless compression for the sound folder" commit for four of them);
+# HFR_critical_explosion.ogg is the /tg/ stereo original downmixed to mono for SS14.
+# Create an issue upstream before changing the licensing of these entries.
+
+- files: ["calm.ogg"]
+  copyright: "Created by actioninja for tgstation13"
+  license: "CC-BY-SA-3.0"
+  source: "https://github.com/tgstation/tgstation/blob/436ba869ebcd0b60b63973fb7562f447ee655205/sound/machines/sm/loops/calm.ogg"
+
+- files: ["engine_alert1.ogg"]
+  copyright: "Taken from tgstation"
+  license: "CC-BY-SA-3.0"
+  source: "https://github.com/tgstation/tgstation/blob/436ba869ebcd0b60b63973fb7562f447ee655205/sound/machines/engine_alert/engine_alert1.ogg"
+
+- files: ["engine_alert2.ogg"]
+  copyright: "Taken from tgstation"
+  license: "CC-BY-SA-3.0"
+  source: "https://github.com/tgstation/tgstation/blob/436ba869ebcd0b60b63973fb7562f447ee655205/sound/machines/engine_alert/engine_alert2.ogg"
+
+- files: ["terminal_alert.ogg"]
+  copyright: "Taken from tgstation"
+  license: "CC-BY-SA-3.0"
+  source: "https://github.com/tgstation/tgstation/blob/436ba869ebcd0b60b63973fb7562f447ee655205/sound/machines/terminal/terminal_alert.ogg"
+
+- files: ["HFR_critical_explosion.ogg"]
+  copyright: "Taken from tgstation (added by Ghilker in /tg/station PR #61242), downmixed to mono for SS14"
+  license: "CC-BY-SA-3.0"
+  source: "https://github.com/tgstation/tgstation/pull/61242"

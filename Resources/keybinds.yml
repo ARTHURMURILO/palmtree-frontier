@@ -643,12 +643,6 @@ binds:
   type: State
   key: MouseRight
   canFocus: true
-# region Frontier
-- function: SwapHandsPrevious
-  type: State
-  key: X
-  mod1: Shift
-# endregion Frontier
 # region Palmtree circuitry editor
 - function: CircuitEditorUndo
   type: State

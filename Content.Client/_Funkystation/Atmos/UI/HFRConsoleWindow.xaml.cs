@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later AND MIT
 
+using Content.Shared._Funkystation.Atmos.HFR;
 using Content.Shared._Funkystation.Atmos.Prototypes;
 using Content.Client.UserInterface.Controls;
 using Content.Shared._Funkystation.Atmos;
@@ -42,7 +43,6 @@ public sealed partial class HFRConsoleWindow : FancyWindow
     public float FuelInputRate { get; private set; }
     public float ModeratorInputRate { get; private set; }
     public float HeatingConductor { get; private set; }
-    public int CoolingVolume { get; private set; }
     public float MagneticConstrictor { get; private set; }
     public float CurrentDamper { get; private set; }
     public float ModeratorFilteringRate { get; private set; }
@@ -52,7 +52,6 @@ public sealed partial class HFRConsoleWindow : FancyWindow
     public Action<float>? OnSetFuelInputRate { get; set; }
     public Action<float>? OnSetModeratorInputRate { get; set; }
     public Action<float>? OnSetHeatingConductor { get; set; }
-    public Action<int>? OnSetCoolingVolume { get; set; }
     public Action<float>? OnSetMagneticConstrictor { get; set; }
     public Action<float>? OnSetCurrentDamper { get; set; }
     public Action<float>? OnSetModeratorFilteringRate { get; set; }
@@ -97,7 +96,6 @@ public sealed partial class HFRConsoleWindow : FancyWindow
     private float LowerGraphTempValue = 3f;
     private float UpperGraphTempValue = 500f;
     private const float MaxBarHeight = 220f;
-    private const float BaseMaxTemperature = 10000000f;
 
     public HFRConsoleWindow()
     {
@@ -123,7 +121,6 @@ public sealed partial class HFRConsoleWindow : FancyWindow
         FuelInputRateSpinbox.OnValueChanged += args => OnSetFuelInputRate?.Invoke(args.Value);
         ModeratorInputRateSpinbox.OnValueChanged += args => OnSetModeratorInputRate?.Invoke(args.Value);
         HeatingConductorSpinBox.OnValueChanged += args => OnSetHeatingConductor?.Invoke(args.Value);
-        CoolingVolumeSpinBox.OnValueChanged += args => OnSetCoolingVolume?.Invoke((int)args.Value);
         MagneticConstrictorSpinBox.OnValueChanged += args => OnSetMagneticConstrictor?.Invoke(args.Value);
         CurrentDamperSpinBox.OnValueChanged += args => OnSetCurrentDamper?.Invoke(args.Value);
         ModeratorFilteringRateSpinBox.OnValueChanged += args => OnSetModeratorFilteringRate?.Invoke(args.Value);
@@ -552,7 +549,7 @@ public sealed partial class HFRConsoleWindow : FancyWindow
 
         var integrityPercent = Math.Max(0, 100 - (_currentState.CriticalThresholdProximity / _currentState.MeltingPoint * 100));
         ReactorIntegrityLabel.Text = $"{integrityPercent:0}%";
-        IronContentLabel.Text = $"{_currentState.IronContent:0}%";
+        IronContentLabel.Text = $"{_currentState.IronContent*100:0}%";
         AreaPowerLabel.Text = $"{_currentState.AreaPower:0}%";
         FusionLevelLabel.Text = $"{_currentState.PowerLevel}";
         float energyValue;
@@ -601,7 +598,6 @@ public sealed partial class HFRConsoleWindow : FancyWindow
                 _currentState.ModeratorInputRate,
                 message.SelectedRecipeId,
                 _currentState.HeatingConductor,
-                _currentState.CoolingVolume,
                 _currentState.MagneticConstrictor,
                 _currentState.CurrentDamper,
                 _currentState.IsWasteRemoving,
@@ -636,7 +632,6 @@ public sealed partial class HFRConsoleWindow : FancyWindow
                 0f,
                 message.SelectedRecipeId,
                 0f,
-                0,
                 0f,
                 0f,
                 false,
@@ -713,27 +708,35 @@ public sealed partial class HFRConsoleWindow : FancyWindow
 
     private (float minTemperature, float maxTemperature) CalculateTemperatureBounds(HFRConsoleBoundInterfaceState state)
     {
-        float prevPowerLevelTemperature = (float)Math.Pow(10, 1 + state.PowerLevel);
-        float nextPowerLevelTemperature = (float)Math.Pow(10, 2 + state.PowerLevel);
+        // Palmtree: the graph axis uses the same power-level temperature table as the server. Funky's
+        // 1e7/2.5e7 K scale is gone; the reactor runs under the fork's 262,144 K atmos ceiling.
+        var boundaries = HypertorusFusionReactor.PowerLevelUpperTemperatures;
 
-        if (state.PowerLevel == 0)
+        float prevPowerLevelTemperature;
+        float nextPowerLevelTemperature;
+
+        if (state.PowerLevel <= 0)
         {
             prevPowerLevelTemperature = 0f;
-            nextPowerLevelTemperature = 500f;
+            nextPowerLevelTemperature = boundaries[0];
         }
-        else if (state.PowerLevel == 1)
+        else if (state.PowerLevel >= 6)
         {
-            prevPowerLevelTemperature = 500f;
-        }
-        else if (state.PowerLevel == 6)
-        {
+            prevPowerLevelTemperature = boundaries[^1];
+
             float temperatureMultiplier = 1f;
             if (state.SelectedRecipeId != null &&
                 _protoManager.TryIndex<FusionRecipePrototype>(state.SelectedRecipeId, out var recipe))
             {
                 temperatureMultiplier = recipe.TemperatureChangeMultiplier;
             }
-            nextPowerLevelTemperature = BaseMaxTemperature * temperatureMultiplier;
+
+            nextPowerLevelTemperature = HypertorusFusionReactor.FusionMaximumTemperature * temperatureMultiplier;
+        }
+        else
+        {
+            prevPowerLevelTemperature = boundaries[state.PowerLevel - 1];
+            nextPowerLevelTemperature = boundaries[state.PowerLevel];
         }
 
         var temperatures = new List<float> { prevPowerLevelTemperature, nextPowerLevelTemperature };
@@ -943,7 +946,7 @@ public sealed partial class HFRConsoleWindow : FancyWindow
     public void SetModeratorInputRate(float rate)
     {
         rate = Math.Clamp(rate, 0.1f, 150f);
-        if (ModeratorInputRateSpinbox.Value != rate)
+        if (ModeratorInputRate != rate)
         {
             ModeratorInputRate = rate;
             ModeratorInputRateSpinbox.Value = rate;
@@ -957,16 +960,6 @@ public sealed partial class HFRConsoleWindow : FancyWindow
         {
             HeatingConductor = rate;
             HeatingConductorSpinBox.Value = rate;
-        }
-    }
-
-    public void SetCoolingVolume(int rate)
-    {
-        rate = Math.Clamp(rate, 50, 2000);
-        if (CoolingVolumeSpinBox.Value != rate)
-        {
-            CoolingVolume = rate;
-            CoolingVolumeSpinBox.Value = rate;
         }
     }
 
@@ -1016,6 +1009,12 @@ public sealed partial class HFRConsoleWindow : FancyWindow
         ToggleModeratorInjectionButton.Disabled = !Active || !Cooling;
         ToggleWasteRemoveButton.Disabled = PowerLevel >= 5;
         TogglePowerButton.Disabled = PowerLevel > 0 && Active;
+
+        // Palmtree: the meltdown flags are taken from the selected recipe at detonation time, so the
+        // recipe table is locked while the reactor runs or counts down.
+        var recipesLocked = Active || PowerLevel > 0;
+        foreach (var button in _recipeButtons.Keys)
+            button.Disabled = recipesLocked;
     }
 
     public void UpdateState(HFRConsoleBoundInterfaceState state)
@@ -1028,7 +1027,6 @@ public sealed partial class HFRConsoleWindow : FancyWindow
         SetFuelInputRate(state.FuelInputRate);
         SetModeratorInputRate(state.ModeratorInputRate);
         SetHeatingConductor(state.HeatingConductor);
-        SetCoolingVolume(state.CoolingVolume);
         SetMagneticConstrictor(state.MagneticConstrictor);
         SetCurrentDamper(state.CurrentDamper);
         SetWasteRemoving(state.IsWasteRemoving);

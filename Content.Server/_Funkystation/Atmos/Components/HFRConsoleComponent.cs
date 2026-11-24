@@ -14,12 +14,10 @@ namespace Content.Server._Funkystation.Atmos.Components
     [RegisterComponent]
     public sealed partial class HFRConsoleComponent : Component
     {
-        [DataField("coreUid")]
-        public EntityUid? CoreUid { get; set; }
-
-        [DataField("fusionStarted")]
+        // Palmtree: runtime link only. It is rebuilt from the anchored parts on startup and cleared
+        // on shutdown; serialising entity ids lets a save/load resurrect a dead or recycled UID.
         [ViewVariables(VVAccess.ReadWrite)]
-        public bool FusionStarted;
+        public EntityUid? CoreUid { get; set; }
 
         [DataField("isActive")]
         [ViewVariables(VVAccess.ReadWrite)]

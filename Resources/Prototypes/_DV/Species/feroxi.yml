@@ -19,6 +19,8 @@
   id: MobFeroxiSprites
   sprites:
     Genital: MobHumanoidAnyMarking
+    GenitalUnder: MobHumanoidAnyMarking
+    GenitalLow: MobHumanoidAnyMarking
     TailBehind: MobHumanoidAnyMarking
     Head: MobFeroxiHead
     Hair: MobHumanoidAnyMarking

@@ -145,7 +145,7 @@ in #66411): the same machine, but it moves heat between two pipes instead of mak
 | RPI economy, Needs, Healing bank, Space janitor, etc. (`_CS`) | Not ported; not requested. |
 | IPC species | Replaced by the Palmtree **Synth** species (`_PS`) — see `systems/ps-systems.md`. Battery and radio/encryption remain unported; **EMP and the reboot mechanic are implemented** (deadly EMP pulses, `DeadStartupButton`). |
 | Kitsune species | **Does not exist in the old codebase.** It only appears inside marking allowlists. Nothing to port. |
-| Turrets, RCD, strobe lighting, shipyard cauterizer | Not requested / possibly stale systems. (The **RCD/RPD** were ported in 2026-10 — see §24; turrets, strobe lighting and the shipyard cauterizer remain unported. Sandstorm interaction sounds/panel were ported — see `systems/interaction-panel.md`.) |
+| Turrets, RCD, general strobe lighting, shipyard cauterizer | Not requested / possibly stale systems. (The **RCD/RPD** were ported in 2026-10 — see §24; the **Cyberpunk NCPD/MaxTac siren strobes** were ported in 2026-11 — see §34. Turrets, the remaining generic red/Star Trek strobes and the shipyard cauterizer remain unported. Sandstorm interaction sounds/panel were ported — see `systems/interaction-panel.md`.) |
 
 ## 5. Bugs found and fixed during the port
 
@@ -876,7 +876,8 @@ Follow-up on the RCD/RPD after the second pass:
   A vent, pump or sensor is built onto the pipe that feeds it, and construction's
   `NoUnstackableOnPipeLayer` (under `Content.Shared/_PS/Construction/Conditions`) compares the
   target `AtmosPipeLayer`, so tagging plain pipes would still reject every legitimate
-  device-on-pipe placement. Instead the RCD/RPD raises `RCDAtmosOverlapAttemptEvent`, and the
+  device-on-pipe placement. Both the base recipes and the upstream Starlight alt recipes use the
+  layer-aware condition; the alt recipes must not fall back to `NoUnstackableInTile`. Instead the RCD/RPD raises `RCDAtmosOverlapAttemptEvent`, and the
   server's `PipeRestrictOverlapSystem` compares the placement's resolved prototype nodes (mirror
   flip + RPD layer variant included) with the anchored nodes on the tile: only a same-layer,
   same-direction overlap is vetoed. The layer itself comes from `RPDLayerEvent`, because the
@@ -889,9 +890,8 @@ Follow-up on the RCD/RPD after the second pass:
 - **Pipe segments may share a layer when their nodes do not overlap.** The old
   `AtmosPipeSegment` tag (and its client test) was removed. Perpendicular crossings are valid
   construction; a same-layer same-direction overlap is still rejected by the node-aware check.
-  Non-conflicting pipe orientations on one layer are allowed. The client cannot read server-only
-  `PipeNode` data, so it uses the networked `AtmosPipeNodeDirectionsComponent` summary to show
-  the same result on the ghost.
+  The client cannot read server-only `PipeNode` data, so it uses the networked
+  `AtmosPipeNodeDirectionsComponent` summary to show the same result on the ghost.
 - Test: `Content.IntegrationTests/Tests/_PS/RcdAtmosStackingTest.cs` (perpendicular crossing
   allowed, same-direction pipe blocked, empty tile allowed, another layer allowed, valid
   vent-on-pipe allowed, conflicting vent node blocked, second unary device blocked, two inline
@@ -919,7 +919,6 @@ Follow-up on the RCD/RPD after the second pass:
   its tank. Deconstruction overflow therefore converts back at 2:1 before topping up or spawning
   cartridges; an odd leftover tool charge waits in `RCDComponent.PendingMatterCharges` for the next
   spill instead of being lost or double-refunded. Test: `RcdBehaviorTest`.
-
 
 ## 25. 2026-10 Salto expedition ship (Coyote `_CS`)
 
@@ -1182,7 +1181,24 @@ the maintainer's request, so the set is admin-spawn only with no crate or vendor
   and `Resources/Audio/Floof/Lewd/whip.ogg` (SPLURT, CC-BY-SA-3.0).
 - **Adaptations**: added the `Coyote Frontier` weapon suffix; dropped the EE combat fields already
   commented out in the source (`heavyRateModifier`, `heavyDamageBaseModifier`, `heavyStaminaCost`,
-  `maxTargets`). Damage/stamina behavior is unchanged (Slash 2, 20 stamina on hit/collide).
+  `maxTargets`).
+- **Palmtree rework (2026-11)**: whips are now long-ranged Castlevania-style lashes and can be
+  used outside combat mode. Out-of-combat lashes do no health damage but still apply 10 stamina
+  (split across targets); in combat mode they deal Slash 10 (regular whips) or Slash 50
+  (`WhipPinkHardy`/`WhipTealHardy`, the "hardy" pink/teal variants) and 50 stamina. The attack
+  input is let through by `MeleeWeaponComponent.RequiresCombatMode`, while
+  `WhipComponent`/`WhipSystem` (`Content.Shared/_PS/Weapons/Melee/`) handle the combat-mode damage
+  and stamina split. Left-click (light) attacks use the full long range (`range: 6`, or `12` for
+  the hardy variants), draw a short-lived rope line from the wielder to the actual strike point,
+  and are single-target. Right-click (heavy) attacks keep the old whip sweep behavior: the default
+  1.5-tile melee reach via `MeleeWeaponComponent.HeavyRangeOverride`, the old 120° wide attack,
+  multi-target hits, the standard wide-attack animation, and no rope. The rope is a black copy of
+  the grappling gun's `rope` state at `Resources/Textures/_PS/Objects/Weapons/Melee/whip_rope.rsi`
+  (the original grappling-gun asset is untouched); it is drawn by the client-only
+  `Content.Client/_PS/Weapons/Melee/*` code and relayed to other clients with `WhipLashEvent`.
+  The local lash is spawned only on the first client prediction; the server relay is ignored for
+  the local player and deduped per wielder, because shared attack hooks run again on prediction
+  replay and would otherwise play the rope twice (see `.ai/HAZARDS.md` §30).
 - **Validation**: `Content.YAMLLinter` reports no errors; `EntityTest` passes.
 
 ## 32. 2026-11 Rings on gloves (Sandstorm / old SPLURT)
@@ -1233,3 +1249,101 @@ feeding produce into it for every recipe.
   `Resources/Prototypes/Entities/Structures/Machines/lathe.yml`; all limits live in the
   component defaults.
 - **Validation**: full solution build; rebuilt `Content.YAMLLinter` (`No errors found`).
+
+## 34. 2026-11 Cyberpunk siren strobes (NCPD / MaxTac, Coyote `_PS`)
+
+The old Coyote `_PS` strobe file had four red-alert siren props. The two Cyberpunk ones were ported
+at the maintainer's request; the Star Trek TOS/VOY red alerts remain unported.
+
+- **Origin**: Coyote `Resources/Prototypes/_PS/Entities/Structures/Lighting/strobe_lighting.yml`
+  (commit `f7d9528dfd7`, "Star Trek Alarms") and its
+  `Resources/Audio/_PS/Effects/Lightning/{NCPD,MaxTac}.ogg`.
+- **Prototypes**: `Resources/Prototypes/_PS/Entities/Structures/Lighting/strobe_lighting.yml`:
+  abstract `PoweredStrobeRedAlert`, then `PoweredStrobeLightNCPD` (suffix `NFSD`, matching the old
+  id/suffix) and `PoweredStrobeLightMaxTac`. Both start switched off (inheriting `PoweredLight`'s
+  `on: false`) and use a red crystal bulb; turning the fixture on starts the siren.
+- **Long-range audio**: an `AmbientSound` would stop when the fixture leaves PVS, and the client
+  only samples ambience within `ambience.range` (8 m). `Content.Server/_PS/Audio/LongRangeSirenSystem`
+  instead plays a looping stream at the siren, sets `NoOcclusion`, and adds a global PVS override to
+  the stream. The stream also keeps the parent siren visible. The `AmbientSound` remains the
+  power/light switch and sound source with `range: 0` so the local ambient system does not play a
+  second copy. Defaults: `maxDistance: 60`, `referenceDistance: 8`.
+- **Assets/attribution**: `Resources/Audio/_PS/Effects/Lightning/` with `attributions.yml`
+  (Cyberpunk 2077, CD Projekt Red; private-server use only).
+- **Tests**: `Content.IntegrationTests/Tests/_PS/LongRangeSirenTest.cs` (both prototypes create the
+  looping stream while powered and clean it up when unpowered).
+- **Validation**: `Content.Server` build; rebuilt `Content.YAMLLinter` (`No errors found`);
+  `LongRangeSirenTest` passes (2/2).
+
+## 35. 2026-11 /tg/ gas suite, Hypertorus Fusion Reactor, turbines and chalk (PR #14, Funky Station)
+
+A large port batch: the ten /tg/ atmos gases (the Assmos set) and the engines they enable.
+Source is `funky-station/funky-station` master — the Hypertorus Fusion Reactor is its **PR #775**,
+originally ported there by LaCumbiaDelCoronavirus, marc-pelletier and taydeo — with /tg/station as
+the origin of the gases, reactions, supermatter coefficients and HFR audio. Design decisions and
+known gaps: `.ai/systems/atmos-gases-hfr.md`.
+
+- **Gas suite** (`_Funkystation`): ten gases appended after Frontier's `Helium = 10` — `BZ`,
+  `Healium`, `Nitrium`, `Pluoxium`, `Hydrogen`, `HyperNoblium`, `ProtoNitrate`, `Zauker`, `Halon`,
+  `AntiNoblium` — so `Atmospherics.TotalNumberOfGases` goes 11 → 21 and `AdjustedNumberOfGases`
+  12 → 24. Includes gas prototypes/reagents/overlay sprites/canister colours, 15 new reactions
+  plus the hyper-noblium guard on six vanilla fire reactions, abbreviations and `GasNames` for the
+  HFR console, and atmos monitor/sensor guards for gases with no alarm thresholds. The enum order
+  is append-only: never renumber, and old saves are padded on load (see `systems/atmos-gases-hfr.md`).
+- **Hypertorus Fusion Reactor** (`_Funkystation`): the 3x3 multiblock — core, four corners, fuel
+  input, moderator input, waste output and console — with fusion recipe prototypes, construction
+  graph, lathe printing once researched (the parts are also in the blueprint pack, so a blueprint
+  can be printed and handed to a techfab), the 10,000-credit cargo crate, the
+  `NFHypertorusFusionReactor` research node, guidebook page and console UI. Main loop under
+  `Content.Server/_Funkystation/HFR/Systems/`, part systems under
+  `Content.Server/_Funkystation/Atmos/EntitySystems/`, shared maths under
+  `Content.Shared/_Funkystation/Atmos/HFR/`.
+- **Far Horizons turbines** (`_FarHorizons`): large (3x5) and small (3x2) gas turbines, their
+  flatpacks (unpack do-after, rotated footprint check, green/red client ghost), the site works a
+  flatpack lays (reinforced plating + HV cable) and pack-up, which removes exactly those works,
+  restores the deck and carries blade health/stator load/flow rate in `TurbineFlatpackStateComponent`.
+  Research/lathe/cargo wired. The turbine code and sprites originate on goonstation
+  (by Jhrushbe) and came over with Far Horizons; their CC-BY-NC-SA-3.0 headers are kept.
+- **Atmos machines** (`_Funkystation`): electrolyzer, crystallizer (recipe prototype + products)
+  and the portable pipe scrubber, each with a circuitboard and lathe recipe; all three need APC
+  power (`AtmosMachinesPowerTest`).
+- **Construction chalk** (`_Funkystation`): chalk tool, radial `chalkCategory` prototypes, chalk
+  marks, build-from-mark and a box of three chalk; marks are globally capped and expire.
+- **Supermatter** (`_EE`): Funky's per-gas coefficients for the ten new gases, and the two
+  conversions (CO2 + O2 → pluoxium, anti-noblium + helium → hyper-noblium) run in Funky's order
+  before the waste release.
+
+**Deliberate deviations:**
+
+- `Atmospherics.Tmax` stays **262,144 K**. The HFR is authored for a 25,000,000 K fusion ceiling,
+  so it runs through `HypertorusFusionReactor.TemperatureScale = Atmospherics.Tmax / 25,000,000`
+  (every absolute temperature and range-relative rate is scaled; the positive per-tick heat cap
+  stays absolute). Raising the global clamp instead would corrupt fire behaviour and make saves
+  unloadable by upstream builds.
+- /tg/'s **cooling-volume control** is dropped: it resizes the coolant port mixture, which has no
+  safe SS14 equivalent, so the field, message and console control were removed rather than wired
+  to the wrong thing.
+- Not ported: Funky's **bluespace gas network** and gas extractors, the **Far Horizons fission
+  reactor** (only its gas turbine came over), and the /tg/ **RBMK** and **stormdrive** engines.
+- Funky's newer turbine blade/stator **part** system is not ported (it depends on the 289
+  materials layer); the turbine is the engine-matched single machine.
+- The multi-tile **flatpack footprint/placement code and the placement ghost are Palmtree-original**
+  and live under `_PS` (`Content.Shared/_PS/Construction/`,
+  `Content.Server/_PS/Construction/`, with the client ghost at
+  `Content.Client/_Funkystation/Construction/FlatpackPlacementGhostSystem.cs`); upstream
+  `SharedFlatpackSystem` only gained the unpack-delay hook and the event raises.
+- **Plumbing-pipe alt recipes** are handled by the separate RCD/RPD work (the layer-aware
+  `NoUnstackableOnPipeLayer` pass in §24b), not duplicated here.
+
+**Licensing:** HFR audio (`Resources/Audio/_Funkystation/Hypertorus/`) is /tg/station
+CC-BY-SA-3.0 with per-file provenance in its `attributions.yml`; the HFR console fonts are Font
+Awesome 6 Free font files (SIL OFL-1.1) with the full license next to them in
+`Resources/Fonts/_Funkystation/FontAwesome6Free/LICENSE.txt`; chalk audio is CC-BY-NC-3.0
+(Freesound); the Far Horizons turbine assets keep CC-BY-NC-SA-3.0.
+
+**Tests:** `Content.IntegrationTests/Tests/_Funkystation/` — `HFRAssemblyTest.cs`,
+`HFRHeatUpCurveTest.cs`, `HFRReviewFixesTest.cs`, `HFRTemperatureScaleTest.cs`,
+`TurbineAssemblyTest.cs`, `TurbineFlatpackTest.cs`, `TurbinePipeStubTest.cs`,
+`TurbineReviewFixesTest.cs`, `ConstructionChalkTest.cs`, `AtmosMachinesPowerTest.cs`,
+`FunkyResearchReachabilityTest.cs` — plus `Tests/_Funkystation/Atmos/FunkyAtmosPrototypesTest.cs`,
+`Tests/_EE/SupermatterTest.cs` and `Tests/_PS/AtmosPipeLayerHijackTest.cs`.

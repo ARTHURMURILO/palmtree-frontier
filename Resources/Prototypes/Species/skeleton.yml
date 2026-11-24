@@ -17,6 +17,8 @@
   id: MobSkeletonSprites
   sprites:
     Genital: MobHumanoidAnyMarking
+    GenitalUnder: MobHumanoidAnyMarking
+    GenitalLow: MobHumanoidAnyMarking
     TailBehind: MobHumanoidAnyMarking
     Head: MobSkeletonHead
     Chest: MobSkeletonTorso
