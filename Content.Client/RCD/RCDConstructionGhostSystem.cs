@@ -1,3 +1,4 @@
+using Content.Client.Construction; // Palmtree: distinguish construction-menu placers
 using Content.Client.Hands.Systems;
 using Content.Shared.Input;
 using Content.Shared.Interaction;
@@ -100,8 +101,7 @@ public sealed partial class RCDConstructionGhostSystem : EntitySystem
 
         var placerIsRCD = HasComp<RCDComponent>(placerEntity);
 
-        // Exit if erasing or the current placer is not an RCD (build mode is active)
-        if (_placementManager.Eraser || (placerEntity != null && !placerIsRCD))
+        if (_placementManager.Eraser)
             return;
 
         // Determine if player is carrying an RCD in their active hand
@@ -109,6 +109,25 @@ public sealed partial class RCDConstructionGhostSystem : EntitySystem
             return;
 
         var heldEntity = _hands.GetActiveItem(player);
+
+        // Exit if the current placer is not an RCD (build mode is active), unless the player has
+        // explicitly taken an RCD/RPD back into their hand. A construction-menu placer can otherwise
+        // stay active forever after its menu is closed, swallowing every RCD/RPD click.
+        if (placerEntity != null && !placerIsRCD)
+        {
+            if (heldEntity is not { } held || !HasComp<RCDComponent>(held))
+                return;
+
+            // Only take over the construction menu's placer. The sandbox spawn panel also leaves
+            // MobUid unset, but it has no hijack and must keep owning the placement: clearing it
+            // would deselect the spawn-panel entry on the next frame.
+            if (_placementManager is not PlacementManager { Hijack: ConstructionPlacementHijack })
+                return;
+
+            _placementManager.Clear();
+            placerEntity = null;
+            placerIsRCD = false;
+        }
 
         if (!TryComp<RCDComponent>(heldEntity, out var rcd))
         {

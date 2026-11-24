@@ -538,8 +538,10 @@
   category: construction-category-utilities
   placementMode: AlignAtmosPipeLayers # starlight
   canBuildInImpassable: false
+  # Palmtree: layer-aware unstackable check
   conditions:
-  - !type:NoUnstackableInTile
+  - !type:NoUnstackableOnPipeLayer
+    layer: Primary
   # region starlight
   alternativePrototypes:
   - GasVentPump
@@ -555,8 +557,10 @@
   category: construction-category-utilities
   placementMode: AlignAtmosPipeLayers # starlight
   canBuildInImpassable: false
+  # Palmtree: layer-aware unstackable check
   conditions:
-  - !type:NoUnstackableInTile
+  - !type:NoUnstackableOnPipeLayer
+    layer: Primary
   # region starlight
   alternativePrototypes:
   - GasPassiveVent
@@ -572,8 +576,10 @@
   category: construction-category-utilities
   placementMode: AlignAtmosPipeLayers # starlight
   canBuildInImpassable: false
+  # Palmtree: layer-aware unstackable check
   conditions:
-  - !type:NoUnstackableInTile
+  - !type:NoUnstackableOnPipeLayer
+    layer: Primary
   # region starlight
   alternativePrototypes:
   - GasVentScrubber
@@ -589,8 +595,10 @@
   category: construction-category-utilities
   placementMode: AlignAtmosPipeLayers # starlight
   canBuildInImpassable: false
+  # Palmtree: layer-aware unstackable check
   conditions:
-  - !type:NoUnstackableInTile
+  - !type:NoUnstackableOnPipeLayer
+    layer: Primary
   # region starlight
   alternativePrototypes:
   - GasOutletInjector
@@ -611,6 +619,7 @@
   - !type:NoUnstackableInTile
 
 # ATMOS BINARY
+# Palmtree: inline binary devices are not Unstackable; they share a tile when their ports do not conflict.
 - type: construction
   id: GasPressurePump
   graph: GasBinary
@@ -619,8 +628,6 @@
   category: construction-category-utilities
   placementMode: AlignAtmosPipeLayers
   canBuildInImpassable: false
-  conditions:
-  - !type:NoUnstackableInTile
   alternativePrototypes:
   - GasPressurePump
   - GasPressurePumpAlt1
@@ -635,8 +642,6 @@
   category: construction-category-utilities
   placementMode: AlignAtmosPipeLayers
   canBuildInImpassable: false
-  conditions:
-  - !type:NoUnstackableInTile
   alternativePrototypes:
   - GasPressurePump
   - GasPressurePumpAlt1
@@ -651,8 +656,6 @@
   category: construction-category-utilities
   placementMode: AlignAtmosPipeLayers
   canBuildInImpassable: false
-  conditions:
-  - !type:NoUnstackableInTile
   alternativePrototypes:
   - GasPressurePump
   - GasPressurePumpAlt1
@@ -666,8 +669,6 @@
   category: construction-category-utilities
   placementMode: AlignAtmosPipeLayers
   canBuildInImpassable: false
-  conditions:
-  - !type:NoUnstackableInTile
   alternativePrototypes:
   - GasVolumePump
   - GasVolumePumpAlt1
@@ -682,8 +683,6 @@
   category: construction-category-utilities
   placementMode: AlignAtmosPipeLayers
   canBuildInImpassable: false
-  conditions:
-  - !type:NoUnstackableInTile
   alternativePrototypes:
   - GasVolumePump
   - GasVolumePumpAlt1
@@ -698,8 +697,6 @@
   category: construction-category-utilities
   placementMode: AlignAtmosPipeLayers
   canBuildInImpassable: false
-  conditions:
-  - !type:NoUnstackableInTile
   alternativePrototypes:
   - GasVolumePump
   - GasVolumePumpAlt1
@@ -713,8 +710,6 @@
   category: construction-category-utilities
   placementMode: AlignAtmosPipeLayers
   canBuildInImpassable: false
-  conditions:
-  - !type:NoUnstackableInTile
   alternativePrototypes:
   - GasPassiveGate
   - GasPassiveGateAlt1
@@ -729,8 +724,6 @@
   category: construction-category-utilities
   placementMode: AlignAtmosPipeLayers
   canBuildInImpassable: false
-  conditions:
-  - !type:NoUnstackableInTile
   alternativePrototypes:
   - GasPassiveGate
   - GasPassiveGateAlt1
@@ -745,8 +738,6 @@
   category: construction-category-utilities
   placementMode: AlignAtmosPipeLayers
   canBuildInImpassable: false
-  conditions:
-  - !type:NoUnstackableInTile
   alternativePrototypes:
   - GasPassiveGate
   - GasPassiveGateAlt1
@@ -760,8 +751,6 @@
   category: construction-category-utilities
   placementMode: AlignAtmosPipeLayers
   canBuildInImpassable: false
-  conditions:
-  - !type:NoUnstackableInTile
   alternativePrototypes:
   - GasPressureRegulator
   - GasPressureRegulatorAlt1
@@ -776,8 +765,6 @@
   category: construction-category-utilities
   placementMode: AlignAtmosPipeLayers
   canBuildInImpassable: false
-  conditions:
-  - !type:NoUnstackableInTile
   alternativePrototypes:
   - GasPressureRegulator
   - GasPressureRegulatorAlt1
@@ -792,8 +779,6 @@
   category: construction-category-utilities
   placementMode: AlignAtmosPipeLayers
   canBuildInImpassable: false
-  conditions:
-  - !type:NoUnstackableInTile
   alternativePrototypes:
   - GasPressureRegulator
   - GasPressureRegulatorAlt1
@@ -807,8 +792,6 @@
   category: construction-category-utilities
   placementMode: AlignAtmosPipeLayers
   canBuildInImpassable: false
-  conditions:
-    - !type:NoUnstackableInTile
   alternativePrototypes:
   - GasValve
   - GasValveAlt1
@@ -823,8 +806,6 @@
   category: construction-category-utilities
   placementMode: AlignAtmosPipeLayers
   canBuildInImpassable: false
-  conditions:
-    - !type:NoUnstackableInTile
   alternativePrototypes:
   - GasValve
   - GasValveAlt1
@@ -839,8 +820,6 @@
   category: construction-category-utilities
   placementMode: AlignAtmosPipeLayers
   canBuildInImpassable: false
-  conditions:
-    - !type:NoUnstackableInTile
   alternativePrototypes:
   - GasValve
   - GasValveAlt1
@@ -854,8 +833,6 @@
   category: construction-category-utilities
   placementMode: AlignAtmosPipeLayers
   canBuildInImpassable: false
-  conditions:
-  - !type:NoUnstackableInTile
   alternativePrototypes:
   - SignalControlledValve
   - SignalControlledValveAlt1
@@ -870,8 +847,6 @@
   category: construction-category-utilities
   placementMode: AlignAtmosPipeLayers
   canBuildInImpassable: false
-  conditions:
-    - !type:NoUnstackableInTile
   alternativePrototypes:
   - SignalControlledValve
   - SignalControlledValveAlt1
@@ -886,8 +861,6 @@
   category: construction-category-utilities
   placementMode: AlignAtmosPipeLayers
   canBuildInImpassable: false
-  conditions:
-    - !type:NoUnstackableInTile
   alternativePrototypes:
   - SignalControlledValve
   - SignalControlledValveAlt1
@@ -918,6 +891,10 @@
   category: construction-category-utilities
   placementMode: AlignAtmosPipeLayers # starlight
   canBuildInImpassable: false
+  # Palmtree: layer-aware unstackable check
+  conditions:
+  - !type:NoUnstackableOnPipeLayer
+    layer: Primary
   # region starlight
   alternativePrototypes:
   - GasDualPortVentPump

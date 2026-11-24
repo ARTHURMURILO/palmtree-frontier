@@ -686,8 +686,9 @@ so these fail only in CI:
   stores it. The placement ghost and the built pipe now agree even with the `ps.placement.offset_*`
   CVars set.
 - **`Unstackable` is for devices only; pipes use node-aware overlap.** `GasPipeSansLayers` must
-  *not* carry the tag: `NoUnstackableInTile` (construction) is layer-agnostic, so tagging pipes
-  blocks every vent/pump built on the pipe that feeds it. `RCDSystem.IsConstructionLocationValid`
+  *not* carry the tag: construction conditions used to be layer-agnostic, so tagging pipes
+  blocked every vent/pump built on the pipe that feeds it. Use `NoUnstackableOnPipeLayer` for
+  layer-aware recipes. `RCDSystem.IsConstructionLocationValid`
   keeps the tag check for the built *device* (same-layer `AtmosPipeLayersComponent.CurrentPipeLayer`)
   and additionally raises `RCDAtmosOverlapAttemptEvent` for any prototype with a `NodeContainer`.
   `PipeRestrictOverlapSystem` handles it on the server: it resolves the mirror/RPD-layer prototype,
@@ -699,14 +700,47 @@ so these fail only in CI:
   comparison. Pipes have no fixtures, which is why the collision check cannot catch them — the node
   check is what prevents the RCD from spawning an overlapping pipe that
   `PipeRestrictOverlapSystem` would immediately unanchor.
-- **Two pipe segments on one layer z-fight, so they are rejected as a pair.** `RCDSystem` checks
-  the `AtmosPipeSegment` tag (on the five plain pipe shapes, manifold and broken pipe) before the
-  node check. Devices are exempt because their sprites sit on a different draw depth, and the node
-  check decides whether they fit. The tag is networked, so the client's placement ghost turns red
-  for a stacked pipe even though the client cannot read the server-only
-  `NodeContainerComponent.Nodes` used by the direction check. When adding the tag to a shape,
-  include `Pipe` in the same `Tag` block: a child `Tag` component replaces the inherited tag list
-  rather than extending it.
+- **Pipe segments may share a layer only when their nodes do not overlap.** There is no blanket
+  `AtmosPipeSegment` rejection any more (the tag was removed): a perpendicular crossing is valid construction, and the
+  node-aware `RCDAtmosOverlapAttemptEvent` still rejects parallel/overlapping segments (and the
+  server's `PipeRestrictOverlapSystem` rejects the same conflicts when wrenching). Do not
+  reintroduce a same-layer tag block. Devices remain exempt because their sprites sit on a
+  different draw depth, and the node check decides whether they fit.
+- **`Unstackable` checks are pipe-layer aware.** `AnchorableSystem.AnyUnstackable` passes the
+  candidate's `AtmosPipeLayersComponent.CurrentPipeLayer` to `AnyUnstackablesAnchoredAt`; an
+  anchored unstackable on a different layer does not count, while an unstackable without the
+  component still blocks every layer. `NoUnstackableOnPipeLayer` is the construction-condition
+  version and takes a `layer:`. Keep the layer argument in sync with the alt construction recipe;
+  the old `NoUnstackableInTile` remains for layer-less devices. The condition lives under
+  `Content.Shared/_PS/Construction/Conditions`.
+- **Binary inline devices are intentionally not `Unstackable`.** Two pumps/valves may share a tile
+  when their ports do not conflict (node-aware overlap still rejects parallel/overlapping ports).
+  Their body sprites share a draw depth, so a perpendicular compact stack can overlap visually;
+  `InlineBinaryDevicesMayShareATileWhenTheirPortsDoNotConflict` covers the placement rule.
+- **Per-layer unary devices are entity + construction recipe pairs.** `GasVentPump`, `GasVentScrubber`,
+  `GasPassiveVent`, `GasOutletInjector` and `GasDualPortVentPump` have `Gas*Alt1/Alt2` entity
+  prototypes in `_NF/.../alt_layers.yml` and hidden `Gas*Alt1/Alt2` construction recipes in
+  `_NF/Recipes/Construction/utilities.yml` plus `ventpumpAlt1`-style `GasUnaryStarlight` graph
+  nodes. The alt entity overrides only the pipe-connector sprite layer (alt RSI) and the
+  `Construction.node`; the body sprite is inherited. Both the base and the alt construction
+  recipes must use `NoUnstackableOnPipeLayer` with their own layer; the old `NoUnstackableInTile`
+  on an alt recipe rejects a valid different-layer placement. If a new unary device is added, add
+  the matching `alternativePrototypes` map, alt entities, graph nodes and construction recipes, or
+  the RPD layer picker will silently keep placing it on primary.
+- **Admin ghosts must keep the RCD/RPD ghost at any range.** The server already bypasses range via
+  the `BypassInteractionRangeChecks` tag, but `AlignRCDConstruction`/`AlignRPDAtmosPipeLayers`
+  used to hide the ghost beyond `InteractionRange`. Both now skip that check (and the RPD layer
+  guide) when the player has `AdminGhostComponent`. Any new RCD placement mode needs the same
+  exemption.
+- **RPD deconstruction refunds matter like the RCD.** `RCDSystem.OnDoAfter` treats every
+  `RcdMode.Deconstruct` operation as a refund; the RPD's per-pipe `RCDDeconstructable.Cost` (1)
+  goes into its tank or spills as compressed matter. Overflow first tops up a partially filled
+  `RCDAmmo` cartridge within half a tile, then spawns full 30-charge cartridges, so a long pipe run
+  does not leave a pile of one-charge cartridges. RPD tool-charge overflow must be converted back
+  to cartridge matter units (two tool charges per unit); an odd leftover charge is carried in
+  `RCDComponent.PendingMatterCharges` so a full tank still refunds a cost-1 pipe eventually. The old
+  "RPD keeps its normal charge cost" rule is gone; do not special-case `IsRpd` out of the refund
+  again.
 - **Component-specific `ComponentStartup` subscriptions are single-handler.** The directed event bus
   stores one subscription per (component, event) pair, so a second
   `SubscribeLocalEvent<NodeContainerComponent, ComponentStartup>` throws
@@ -884,3 +918,44 @@ so these fail only in CI:
   behavior; a later synchronous action first waits for any existing do-after so it cannot confuse
   an old completed/cancelled entry with the new action's result. Keep the do-after index
   comparison wrap-safe (`ushort`).
+
+## 30. Prediction hooks and client-only visual effects (2026-11)
+
+- **A shared attack/action hook can run more than once.** `SharedMeleeWeaponSystem.AttemptAttack`
+  (and similar shared confirmation paths) runs on the client for prediction, again when prediction
+  is replayed after a server state, and on the server for authority. Putting a visual effect
+  directly in that shared hook makes the first client prediction play the effect; a replay or a
+  server-relayed copy then plays it a second time. The classic symptom is a whip/beam/rope "out and
+  back, then out and back again" or several copies at once, even though the attack happened once.
+- **The effect should be client-only, but the server still relays it to observers.** Spawn the
+  local visual from the client-side override, not the shared method:
+
+  ```csharp
+  protected override void DoWhipLash(...)
+  {
+      if (!Timing.IsFirstTimePredicted)
+          return; // ignore prediction replay
+
+      _whipLash.SpawnLash(...);
+  }
+  ```
+
+  The server override should only relay to other clients with
+  `Filter.PvsExcept(user, entityManager: EntityManager)`. A client must also ignore a relayed event
+  for its own `IPlayerManager.LocalEntity`; do not rely on the PVS filter alone (host/singleplayer,
+  attached entities, replay and delayed packets can still produce a duplicate).
+- **Deduplicate by user and time, not just by "a lash is active".** A delayed server event can
+  arrive after the local visual has already retracted. Keep a small per-entity timestamp
+  (`IGameTiming.RealTime`) and ignore a second effect inside the attack cooldown window (for whips,
+  0.9 s with a 1 s attack rate). Replace/queue-delete an existing effect only when the new target is
+  genuinely different; identical duplicate events must not restart the animation.
+- **Keep the effect out of per-swing loops.** `AttemptAttack` has a `swings` catch-up loop; a visual
+  hook inside it can spawn one effect per swing. Hook once after the loop, on the confirmed attack.
+- **Local-only effect entities still need cleanup.** Spawn them on the client, update with
+  `FrameUpdate` + `IGameTiming.RealTime`, clamp elapsed time to `>= 0` (negative time makes easing
+  extrapolate backward and look like a jump), and add a `TimedDespawnComponent` fallback in case the
+  visual system is skipped. Never create a server-side networked entity just to render a local
+  effect.
+- **Symptoms to suspect this first:** duplicate ropes/beams, effect playing twice per click, an
+  effect that appears after the animation already finished, or different clients seeing a different
+  number of effects. Check the hook location and the network relay before tuning the visual.

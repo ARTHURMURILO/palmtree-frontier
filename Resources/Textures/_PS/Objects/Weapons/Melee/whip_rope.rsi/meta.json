@@ -1,0 +1,14 @@
+{
+    "version": 1,
+    "license": "CC-BY-SA-3.0",
+    "copyright": "Derived from Objects/Weapons/Guns/Launchers/grappling_gun.rsi/rope.png (tgstation; recolored and adjusted by EmoGarbage404), recolored black for Palmtree Station.",
+    "size": {
+        "x": 32,
+        "y": 32
+    },
+    "states": [
+        {
+            "name": "rope"
+        }
+    ]
+}

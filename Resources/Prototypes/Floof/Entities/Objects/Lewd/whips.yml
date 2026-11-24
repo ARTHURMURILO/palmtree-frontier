@@ -11,20 +11,24 @@
     wideAnimationRotation: -135
     damage:
       types:
-        Slash: 2
+        Slash: 10
     # Flooftier - removed as frontier doesn't have the EE combat system.
     # heavyRateModifier: 0.5
     # heavyDamageBaseModifier: 1.75
     # heavyStaminaCost: 10
     # maxTargets: 1
+    range: 6
     angle: 120
+    heavyRangeOverride: 1.5
+    requiresCombatMode: false
     animation: WeaponArcSlash
     soundHit:
       path: /Audio/Floof/Lewd/whip.ogg
-  - type: StaminaDamageOnHit
-    damage: 20
+  - type: Whip
+    staminaDamage: 50
+    outOfCombatStaminaDamage: 10
   - type: StaminaDamageOnCollide
-    damage: 20
+    damage: 50
   - type: StaticPrice
     price: 60
   - type: Item
@@ -51,6 +55,32 @@
   - type: Sprite
     sprite: Floof/Objects/Fun/Lewd/Weapons/whip_teal.rsi
     state: icon
+
+- type: entity
+  parent: WhipPink
+  id: WhipPinkHardy
+  suffix: Palmtree
+  name: hardy pink whip
+  description: A sturdy pink whip for discipline!
+  components:
+  - type: MeleeWeapon
+    range: 12
+    damage:
+      types:
+        Slash: 50
+
+- type: entity
+  parent: WhipTeal
+  id: WhipTealHardy
+  suffix: Palmtree
+  name: hardy teal whip
+  description: A sturdy teal whip for discipline!
+  components:
+  - type: MeleeWeapon
+    range: 12
+    damage:
+      types:
+        Slash: 50
 
 - type: entity
   parent: BaseWhip

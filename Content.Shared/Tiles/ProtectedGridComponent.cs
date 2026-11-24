@@ -21,7 +21,9 @@ public sealed partial class ProtectedGridComponent : Component
     public bool PreventFloorRemoval = false;
     [DataField]
     public bool PreventFloorPlacement = false;
-    [DataField]
+    // Palmtree: protected grids (the outpost and admin gallery) set this from map YAML, so it has
+    // to be networked for the client's RCD/RPD placement ghost to turn red on those grids.
+    [DataField, AutoNetworkedField]
     public bool PreventRCDUse = false;
     [DataField]
     public bool PreventEmpEvents = false;

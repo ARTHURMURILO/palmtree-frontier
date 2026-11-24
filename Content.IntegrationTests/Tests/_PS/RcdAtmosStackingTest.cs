@@ -1,25 +1,26 @@
-using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
-using System.Reflection;
+using Content.Server.Construction.Components;
 using Content.Shared.Atmos.Components;
 using Content.Shared.Construction.EntitySystems;
+using Content.Shared.Construction.Prototypes;
 using Content.Shared.RCD;
 using Content.Shared.RCD.Components;
 using Content.Shared.RCD.Systems;
-using Content.Shared.Tag;
+using Content.Shared._PS.Construction.Conditions;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
-using Robust.Shared.Map.Components;
 using Robust.Shared.Maths;
 using Robust.Shared.Prototypes;
 
 namespace Content.IntegrationTests.Tests._PS;
 
 /// <summary>
-/// Palmtree: the RPD refuses to stack two plain pipe segments on one layer (their sprites share a
-/// draw depth and z-fight) and refuses conflicting pipe nodes, while still allowing the legitimate
-/// overlaps atmos construction depends on (a vent or pump on the pipe that feeds it, and the same
-/// pipe on a different atmos layer).
+/// Palmtree: the RPD follows the node-aware overlap rules. Perpendicular pipe segments may share
+/// an atmos layer because their ports do not collide; parallel segments, conflicting pipe nodes
+/// and same-layer unstackable devices are rejected. Legitimate overlaps atmos construction depends
+/// on (a vent or pump on the pipe that feeds it, and the same pipe on a different atmos layer)
+/// stay allowed.
 /// </summary>
 [TestFixture]
 public sealed class RcdAtmosStackingTest
@@ -38,15 +39,14 @@ public sealed class RcdAtmosStackingTest
         var server = pair.Server;
 
         var entManager = server.ResolveDependency<IEntityManager>();
-        var mapManager = server.ResolveDependency<IMapManager>();
         var tileDefMan = server.ResolveDependency<ITileDefinitionManager>();
         var mapSystem = entManager.System<SharedMapSystem>();
         var rcdSystem = entManager.System<RCDSystem>();
+        var testMap = await pair.CreateTestMap();
 
         await server.WaitAssertion(() =>
         {
-            mapSystem.CreateMap(out var mapId);
-            var grid = mapManager.CreateGridEntity(mapId);
+            var grid = testMap.Grid;
             var plating = new Tile(tileDefMan["Plating"].TileId);
 
             mapSystem.SetTile(grid.Owner, grid.Comp, new Vector2i(0, 0), plating);
@@ -94,17 +94,16 @@ public sealed class RcdAtmosStackingTest
         var server = pair.Server;
 
         var entManager = server.ResolveDependency<IEntityManager>();
-        var mapManager = server.ResolveDependency<IMapManager>();
         var tileDefMan = server.ResolveDependency<ITileDefinitionManager>();
         var mapSystem = entManager.System<SharedMapSystem>();
         var xformSystem = entManager.System<SharedTransformSystem>();
         var rcdSystem = entManager.System<RCDSystem>();
         var anchorable = entManager.System<AnchorableSystem>();
+        var testMap = await pair.CreateTestMap();
 
         await server.WaitAssertion(() =>
         {
-            mapSystem.CreateMap(out var mapId);
-            var grid = mapManager.CreateGridEntity(mapId);
+            var grid = testMap.Grid;
             var plating = new Tile(tileDefMan["Plating"].TileId);
 
             for (var x = 0; x < 4; x++)
@@ -164,26 +163,23 @@ public sealed class RcdAtmosStackingTest
     }
 
     [Test]
-    public async Task RpdBlocksAnyPipeSegmentOnSameLayer()
+    public async Task RpdAllowsPerpendicularPipeCrossingsOnSameLayer()
     {
         await using var pair = await PoolManager.GetServerClient();
         var server = pair.Server;
 
         var entManager = server.ResolveDependency<IEntityManager>();
-        var mapManager = server.ResolveDependency<IMapManager>();
-        var tileDefMan = server.ResolveDependency<ITileDefinitionManager>();
         var mapSystem = entManager.System<SharedMapSystem>();
         var rcdSystem = entManager.System<RCDSystem>();
+        var testMap = await pair.CreateTestMap();
 
         await server.WaitAssertion(() =>
         {
-            mapSystem.CreateMap(out var mapId);
-            var grid = mapManager.CreateGridEntity(mapId);
-            var plating = new Tile(tileDefMan["Plating"].TileId);
-            mapSystem.SetTile(grid.Owner, grid.Comp, new Vector2i(0, 0), plating);
-
+            var grid = testMap.Grid;
             var coords = new EntityCoordinates(grid.Owner, new Vector2(0.5f, 0.5f));
             var user = entManager.SpawnEntity("MobHuman", coords);
+
+            // Existing north-south pipe on the primary layer.
             entManager.SpawnEntity("GasPipeStraight", coords);
 
             var rpd = entManager.SpawnEntity("RPD", coords);
@@ -195,13 +191,13 @@ public sealed class RcdAtmosStackingTest
             {
                 Assert.That(
                     rcdSystem.IsRCDOperationStillValid(rpd, rcd, grid.Owner, grid.Comp, tile, new Vector2i(0, 0), null, user, false, direction: Direction.East),
-                    Is.False,
-                    "Even a non-conflicting pipe segment must not share a layer; the two sprites z-fight.");
+                    Is.True,
+                    "A perpendicular pipe crossing does not share a node direction, so it may share the layer.");
 
                 Assert.That(
                     rcdSystem.IsRCDOperationStillValid(rpd, rcd, grid.Owner, grid.Comp, tile, new Vector2i(0, 0), null, user, false, direction: Direction.South),
                     Is.False,
-                    "A second north-south pipe on the same layer conflicts with the existing one.");
+                    "A second north-south pipe on the same layer overlaps the existing node and must be rejected.");
             });
         });
 
@@ -209,40 +205,219 @@ public sealed class RcdAtmosStackingTest
     }
 
     [Test]
-    public async Task ClientPrototypesCarryPipeSegmentTag()
+    public async Task UnstackableAnchorCheckIgnoresOtherPipeLayers()
     {
         await using var pair = await PoolManager.GetServerClient();
-        var client = pair.Client;
-        var segmentTag = new ProtoId<TagPrototype>("AtmosPipeSegment");
+        var server = pair.Server;
 
-        await client.WaitAssertion(() =>
+        var entManager = server.ResolveDependency<IEntityManager>();
+        var anchorable = entManager.System<AnchorableSystem>();
+        var testMap = await pair.CreateTestMap();
+
+        await server.WaitAssertion(() =>
         {
-            var protoManager = client.ResolveDependency<IPrototypeManager>();
-            var componentFactory = client.ResolveDependency<IComponentFactory>();
+            var coords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
+            entManager.SpawnEntity("GasVentPump", coords);
 
-            foreach (var id in new[]
+            Assert.Multiple(() =>
+            {
+                Assert.That(
+                    anchorable.AnyUnstackablesAnchoredAt(coords, AtmosPipeLayer.Primary),
+                    Is.True,
+                    "A vent on the primary layer blocks another primary-layer unstackable.");
+
+                Assert.That(
+                    anchorable.AnyUnstackablesAnchoredAt(coords, AtmosPipeLayer.Secondary),
+                    Is.False,
+                    "A vent on the primary layer must not block a secondary-layer unstackable.");
+
+                Assert.That(
+                    anchorable.AnyUnstackablesAnchoredAt(coords),
+                    Is.True,
+                    "Callers that do not care about layers still see any unstackable.");
+            });
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task UnaryDevicesHaveLayerVariants()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+
+        await server.WaitAssertion(() =>
+        {
+            var protoManager = server.ResolveDependency<IPrototypeManager>();
+            var factory = server.ResolveDependency<IComponentFactory>();
+
+            Assert.Multiple(() =>
+            {
+                foreach (var (baseId, alt1Id, alt2Id) in new[]
+                         {
+                             ("GasVentPump", "GasVentPumpAlt1", "GasVentPumpAlt2"),
+                             ("GasVentScrubber", "GasVentScrubberAlt1", "GasVentScrubberAlt2"),
+                             ("GasPassiveVent", "GasPassiveVentAlt1", "GasPassiveVentAlt2"),
+                             ("GasOutletInjector", "GasOutletInjectorAlt1", "GasOutletInjectorAlt2"),
+                             ("GasDualPortVentPump", "GasDualPortVentPumpAlt1", "GasDualPortVentPumpAlt2"),
+                         })
+                {
+                    var proto = protoManager.Index<EntityPrototype>(baseId);
+                    Assert.That(
+                        proto.TryGetComponent<AtmosPipeLayersComponent>(out var layers, factory),
+                        Is.True,
+                        $"{baseId} has no AtmosPipeLayers component.");
+
+                    Assert.That(layers!.AlternativePrototypes, Does.ContainKey(AtmosPipeLayer.Secondary));
+                    Assert.That(layers.AlternativePrototypes[AtmosPipeLayer.Secondary].Id, Is.EqualTo(alt1Id));
+                    Assert.That(layers.AlternativePrototypes[AtmosPipeLayer.Tertiary].Id, Is.EqualTo(alt2Id));
+
+                    var alt1 = protoManager.Index<EntityPrototype>(alt1Id);
+                    Assert.That(
+                        alt1.TryGetComponent<AtmosPipeLayersComponent>(out var alt1Layers, factory),
+                        Is.True);
+                    Assert.That(alt1Layers!.CurrentPipeLayer, Is.EqualTo(AtmosPipeLayer.Secondary));
+
+                    var alt2 = protoManager.Index<EntityPrototype>(alt2Id);
+                    Assert.That(
+                        alt2.TryGetComponent<AtmosPipeLayersComponent>(out var alt2Layers, factory),
+                        Is.True);
+                    Assert.That(alt2Layers!.CurrentPipeLayer, Is.EqualTo(AtmosPipeLayer.Tertiary));
+                }
+            });
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task UnaryDevicesHaveLayeredConstructionPrototypes()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+
+        await server.WaitAssertion(() =>
+        {
+            var protoManager = server.ResolveDependency<IPrototypeManager>();
+
+            foreach (var (baseId, alt1Id, alt2Id, node) in new[]
                      {
-                         "GasPipeHalf", "GasPipeStraight", "GasPipeBend", "GasPipeTJunction",
-                         "GasPipeFourway", "GasPipeManifold", "GasPipeBroken", "GasPipeStraightAlt1",
+                         ("GasVentPump", "GasVentPumpAlt1", "GasVentPumpAlt2", "ventpump"),
+                         ("GasVentScrubber", "GasVentScrubberAlt1", "GasVentScrubberAlt2", "ventscrubber"),
+                         ("GasPassiveVent", "GasPassiveVentAlt1", "GasPassiveVentAlt2", "passivevent"),
+                         ("GasOutletInjector", "GasOutletInjectorAlt1", "GasOutletInjectorAlt2", "outletinjector"),
+                         ("GasDualPortVentPump", "GasDualPortVentPumpAlt1", "GasDualPortVentPumpAlt2", "dualportventpump"),
+                     })
+            {
+                var recipe = protoManager.Index<ConstructionPrototype>(baseId);
+
+                Assert.Multiple(() =>
+                {
+                    Assert.That(recipe.PlacementMode, Is.EqualTo("AlignAtmosPipeLayers"), $"{baseId} must pick a layer while placing.");
+                    Assert.That(recipe.TargetNode, Is.EqualTo(node));
+                    Assert.That(
+                        recipe.AlternativePrototypes.Select(p => p.Id),
+                        Is.EqualTo(new[] { baseId, alt1Id, alt2Id }),
+                        $"{baseId} must offer the three pipe-layer entities in enum order.");
+
+                    var baseCondition = recipe.Conditions.OfType<NoUnstackableOnPipeLayer>().SingleOrDefault();
+                    Assert.That(baseCondition, Is.Not.Null, $"{baseId} must use the layer-aware unstackable condition.");
+                    Assert.That(baseCondition?.Layer, Is.EqualTo(AtmosPipeLayer.Primary));
+                });
+
+                var alt1 = protoManager.Index<ConstructionPrototype>(alt1Id);
+                var alt2 = protoManager.Index<ConstructionPrototype>(alt2Id);
+                Assert.Multiple(() =>
+                {
+                    var alt1Condition = alt1.Conditions.OfType<NoUnstackableOnPipeLayer>().SingleOrDefault();
+                    var alt2Condition = alt2.Conditions.OfType<NoUnstackableOnPipeLayer>().SingleOrDefault();
+                    Assert.That(alt1Condition, Is.Not.Null, $"{alt1Id} must use the layer-aware unstackable condition.");
+                    Assert.That(alt2Condition, Is.Not.Null, $"{alt2Id} must use the layer-aware unstackable condition.");
+                    Assert.That(alt1Condition?.Layer, Is.EqualTo(AtmosPipeLayer.Secondary));
+                    Assert.That(alt2Condition?.Layer, Is.EqualTo(AtmosPipeLayer.Tertiary));
+                });
+            }
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+
+    [Test]
+    public async Task DualPortVentAltEntitiesUseAltConstructionNodes()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+
+        await server.WaitAssertion(() =>
+        {
+            var protoManager = server.ResolveDependency<IPrototypeManager>();
+            var factory = server.ResolveDependency<IComponentFactory>();
+
+            foreach (var (id, node) in new[]
+                     {
+                         ("GasDualPortVentPumpAlt1", "dualportventpumpAlt1"),
+                         ("GasDualPortVentPumpAlt2", "dualportventpumpAlt2"),
                      })
             {
                 var proto = protoManager.Index<EntityPrototype>(id);
-
                 Assert.That(
-                    proto.TryGetComponent<TagComponent>(out var tagComp, componentFactory),
+                    proto.TryGetComponent<ConstructionComponent>(out var construction, factory),
                     Is.True,
-                    $"{id} has no TagComponent on the client.");
-
-                // TagComponent.Tags is access-restricted to TagSystem, and the test client does not
-                // register TagSystem, so read the field directly for this prototype check.
-                var tagsField = typeof(TagComponent).GetField("Tags", BindingFlags.Public | BindingFlags.Instance);
-                var protoTags = (HashSet<ProtoId<TagPrototype>>) tagsField!.GetValue(tagComp)!;
-
+                    $"{id} has no Construction component.");
                 Assert.That(
-                    protoTags.Contains(segmentTag),
-                    Is.True,
-                    $"{id} is missing AtmosPipeSegment on the client.");
+                    construction!.Node,
+                    Is.EqualTo(node),
+                    $"{id} must deconstruct through its own alt graph node.");
             }
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    [TestCase("GasPressurePump", "PressurePump")]
+    [TestCase("GasValve", "ManualValve")]
+    public async Task InlineBinaryDevicesMayShareATileWhenTheirPortsDoNotConflict(string deviceProto, string mode)
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+
+        var entManager = server.ResolveDependency<IEntityManager>();
+        var mapSystem = entManager.System<SharedMapSystem>();
+        var xformSystem = entManager.System<SharedTransformSystem>();
+        var rcdSystem = entManager.System<RCDSystem>();
+        var testMap = await pair.CreateTestMap();
+
+        await server.WaitAssertion(() =>
+        {
+            var grid = testMap.Grid;
+            var coords = new EntityCoordinates(grid.Owner, new Vector2(0.5f, 0.5f));
+            var user = entManager.SpawnEntity("MobHuman", coords);
+
+            // An east-west pump. A second north-south pump has no port in common with it, so the
+            // node-aware check accepts the shared tile; this is the overlap inline devices need.
+            var existing = entManager.SpawnEntity(deviceProto, coords);
+            xformSystem.SetLocalRotation(existing, Angle.FromDegrees(90));
+
+            var rpd = entManager.SpawnEntity("RPD", coords);
+            var rcd = entManager.GetComponent<RCDComponent>(rpd);
+            SetMode(entManager, rpd, mode);
+            var tile = mapSystem.GetTileRef(grid.Owner, grid.Comp, new Vector2i(0, 0));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(
+                    rcdSystem.IsRCDOperationStillValid(rpd, rcd, grid.Owner, grid.Comp, tile, new Vector2i(0, 0), null, user, false, direction: Direction.North),
+                    Is.True,
+                    "A perpendicular inline device has no conflicting port and may share the tile.");
+
+                Assert.That(
+                    rcdSystem.IsRCDOperationStillValid(rpd, rcd, grid.Owner, grid.Comp, tile, new Vector2i(0, 0), null, user, false, direction: Direction.East),
+                    Is.False,
+                    "A second inline device with the same ports must still be rejected.");
+            });
         });
 
         await pair.CleanReturnAsync();

@@ -6,6 +6,7 @@ using Content.Shared.Effects;
 using Content.Shared.Speech.Components;
 using Content.Shared.Weapons.Melee;
 using Content.Shared.Weapons.Melee.Events;
+using Content.Shared._PS.Weapons.Melee; // Palmtree
 using Robust.Shared.Map;
 using Robust.Shared.Player;
 using System.Linq;
@@ -103,6 +104,15 @@ public sealed partial class MeleeWeaponSystem : SharedMeleeWeaponSystem
         }
 
         RaiseNetworkEvent(new MeleeLungeEvent(GetNetEntity(user), GetNetEntity(weapon), angle, localPos, animation), filter);
+    }
+
+    /// <summary>
+    /// Palmtree: relay whip lashes to other clients so they see the rope too.
+    /// </summary>
+    protected override void DoWhipLash(EntityUid user, EntityUid weapon, MapCoordinates target, WhipComponent whip)
+    {
+        var filter = Filter.PvsExcept(user, entityManager: EntityManager);
+        RaiseNetworkEvent(new WhipLashEvent(GetNetEntity(user), GetNetEntity(weapon), GetNetCoordinates(TransformSystem.ToCoordinates(target))), filter);
     }
 
     private void OnSpeechHit(EntityUid owner, MeleeSpeechComponent comp, MeleeHitEvent args)

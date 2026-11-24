@@ -168,6 +168,21 @@ public sealed partial class MeleeWeaponComponent : Component
     [DataField, AutoNetworkedField]
     public bool MustBeEquippedToUse = false;
 
+    // Palmtree: whips can be used outside combat mode (with damage suppressed by WhipSystem).
+    /// <summary>
+    /// If true, the user must be in combat mode to attack with this weapon.
+    /// Weapons that allow attacks outside combat mode should suppress their damage there themselves.
+    /// </summary>
+    [DataField, AutoNetworkedField]
+    public bool RequiresCombatMode = true;
+
+    // Palmtree: lets a weapon's wide/heavy attack use a different reach than its light attack.
+    /// <summary>
+    /// Optional range override for heavy (wide) attacks. When null, <see cref="Range"/> is used.
+    /// </summary>
+    [DataField, AutoNetworkedField]
+    public float? HeavyRangeOverride;
+
     // Goobstation
     [DataField, AutoNetworkedField]
     public float ArmorPenetration;

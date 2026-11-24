@@ -145,7 +145,7 @@ in #66411): the same machine, but it moves heat between two pipes instead of mak
 | RPI economy, Needs, Healing bank, Space janitor, etc. (`_CS`) | Not ported; not requested. |
 | IPC species | Replaced by the Palmtree **Synth** species (`_PS`) — see `systems/ps-systems.md`. Battery and radio/encryption remain unported; **EMP and the reboot mechanic are implemented** (deadly EMP pulses, `DeadStartupButton`). |
 | Kitsune species | **Does not exist in the old codebase.** It only appears inside marking allowlists. Nothing to port. |
-| Turrets, RCD, strobe lighting, shipyard cauterizer | Not requested / possibly stale systems. (The **RCD/RPD** were ported in 2026-10 — see §24; turrets, strobe lighting and the shipyard cauterizer remain unported. Sandstorm interaction sounds/panel were ported — see `systems/interaction-panel.md`.) |
+| Turrets, RCD, general strobe lighting, shipyard cauterizer | Not requested / possibly stale systems. (The **RCD/RPD** were ported in 2026-10 — see §24; the **Cyberpunk NCPD/MaxTac siren strobes** were ported in 2026-11 — see §33. Turrets, the remaining generic red/Star Trek strobes and the shipyard cauterizer remain unported. Sandstorm interaction sounds/panel were ported — see `systems/interaction-panel.md`.) |
 
 ## 5. Bugs found and fixed during the port
 
@@ -874,24 +874,28 @@ Follow-up on the RCD/RPD after the second pass:
   below zero are ignored, and `InstantConstruction` still forces a 0 delay.
 - **No atmos stacking (node-aware)**: `GasPipeSansLayers` is deliberately *not* `Unstackable`.
   A vent, pump or sensor is built onto the pipe that feeds it, and construction's
-  `NoUnstackableInTile` is layer-agnostic, so tagging plain pipes rejected every legitimate
-  device-on-pipe placement. Instead the RCD/RPD raises `RCDAtmosOverlapAttemptEvent`, and the
+  `NoUnstackableOnPipeLayer` (under `Content.Shared/_PS/Construction/Conditions`) compares the
+  target `AtmosPipeLayer`, so tagging plain pipes would still reject every legitimate
+  device-on-pipe placement. Both the base recipes and the upstream Starlight alt recipes use the
+  layer-aware condition; the alt recipes must not fall back to `NoUnstackableInTile`. Instead the RCD/RPD raises `RCDAtmosOverlapAttemptEvent`, and the
   server's `PipeRestrictOverlapSystem` compares the placement's resolved prototype nodes (mirror
   flip + RPD layer variant included) with the anchored nodes on the tile: only a same-layer,
   same-direction overlap is vetoed. The layer itself comes from `RPDLayerEvent`, because the
   server's click location is snapped to the tile centre; `RCDComponent.LastKnownPipeLayer` is
-  server-only working state and the resolved value rides in `RCDDoAfterEvent.Layer`. `Unstackable` remains on the devices themselves (vents, pumps,
-  sensors), so a second device on the same layer is still rejected.
-- **Pipe segments never share a layer.** The `AtmosPipeSegment` tag (`_PS/tags.yml`) marks the five
-  plain pipe shapes, the manifold and the broken pipe. Two segments on one layer have the same
-  sprite draw depth and z-fight even when their node directions do not overlap, so
-  `IsConstructionLocationValid` rejects that pair outright. Devices are exempt: their sprites use
-  a different draw depth, and the node check decides whether they fit. The tag is networked, so
-  the client's placement ghost also shows the stack as invalid; the client still cannot read the
-  server-only `PipeNode` data used for direction conflicts.
-- Test: `Content.IntegrationTests/Tests/_PS/RcdAtmosStackingTest.cs` (pipe-on-pipe same layer
-  blocked, empty tile allowed, another layer allowed, valid vent-on-pipe allowed, conflicting
-  vent node blocked, second device blocked).
+  server-only working state and the resolved value rides in `RCDDoAfterEvent.Layer`.
+  `Unstackable` remains on unary devices (vents, scrubbers, sensors) so a second device on the
+  same layer is still rejected. Binary inline devices (pumps, valves) are deliberately exempt so
+  two of them may share a tile when their ports do not conflict; their body sprites can overlap
+  visually, which is accepted for compact atmos builds.
+- **Pipe segments may share a layer when their nodes do not overlap.** The old
+  `AtmosPipeSegment` tag (and its client test) was removed. Perpendicular crossings are valid
+  construction; a same-layer same-direction overlap is still rejected by the node-aware check.
+  The client cannot read server-only `PipeNode` data, so it uses the networked
+  `AtmosPipeNodeDirectionsComponent` summary to show the same result on the ghost.
+- Test: `Content.IntegrationTests/Tests/_PS/RcdAtmosStackingTest.cs` (perpendicular crossing
+  allowed, same-direction pipe blocked, empty tile allowed, another layer allowed, valid
+  vent-on-pipe allowed, conflicting vent node blocked, second unary device blocked, two inline
+  binary devices with non-conflicting ports allowed, dual-port layered recipes/nodes covered).
 - **Client ghost parity (2026-11)**: the placement ghost used to stay green for a node conflict
   because `NodeContainerComponent.Nodes` is `serverOnly`. The server now maintains a networked
   `AtmosPipeNodeDirectionsComponent` (one `PipeDirection` mask per atmos layer) on entities with
@@ -906,6 +910,15 @@ Follow-up on the RCD/RPD after the second pass:
   half-filling it. The RCD stays 1:1. Only as much of the cartridge as the missing charges need is
   consumed (a half-full RPD uses 15 of the 30, leaving 15). Test: `RcdBehaviorTest`
   (`OneCompressedMatterCartridgeFillsTheTool`, `RpdUsesOnlyAsMuchMatterAsTheMissingCharges`).
+- **Protected grids and admin ghosts (2026-11)**: `ProtectedGridComponent.PreventRCDUse` is set
+  from map YAML, so it is `AutoNetworkedField` and the client's RCD/RPD ghost turns red on the
+  outpost and admin gallery. `RCDSystem.IsRcdUseAllowedOnGrid` is the shared rule; admin ghosts and
+  the unrestricted admin RCD bypass it, normal players do not.
+- **RPD spills are matter units (2026-11)**: the tool's charges are tool charges, but an
+  `RCDAmmo` cartridge charge is one matter unit and the RPD gets two tool charges per unit inside
+  its tank. Deconstruction overflow therefore converts back at 2:1 before topping up or spawning
+  cartridges; an odd leftover tool charge waits in `RCDComponent.PendingMatterCharges` for the next
+  spill instead of being lost or double-refunded. Test: `RcdBehaviorTest`.
 
 ## 25. 2026-10 Salto expedition ship (Coyote `_CS`)
 
@@ -1112,7 +1125,24 @@ the maintainer's request, so the set is admin-spawn only with no crate or vendor
   and `Resources/Audio/Floof/Lewd/whip.ogg` (SPLURT, CC-BY-SA-3.0).
 - **Adaptations**: added the `Coyote Frontier` weapon suffix; dropped the EE combat fields already
   commented out in the source (`heavyRateModifier`, `heavyDamageBaseModifier`, `heavyStaminaCost`,
-  `maxTargets`). Damage/stamina behavior is unchanged (Slash 2, 20 stamina on hit/collide).
+  `maxTargets`).
+- **Palmtree rework (2026-11)**: whips are now long-ranged Castlevania-style lashes and can be
+  used outside combat mode. Out-of-combat lashes do no health damage but still apply 10 stamina
+  (split across targets); in combat mode they deal Slash 10 (regular whips) or Slash 50
+  (`WhipPinkHardy`/`WhipTealHardy`, the "hardy" pink/teal variants) and 50 stamina. The attack
+  input is let through by `MeleeWeaponComponent.RequiresCombatMode`, while
+  `WhipComponent`/`WhipSystem` (`Content.Shared/_PS/Weapons/Melee/`) handle the combat-mode damage
+  and stamina split. Left-click (light) attacks use the full long range (`range: 6`, or `12` for
+  the hardy variants), draw a short-lived rope line from the wielder to the actual strike point,
+  and are single-target. Right-click (heavy) attacks keep the old whip sweep behavior: the default
+  1.5-tile melee reach via `MeleeWeaponComponent.HeavyRangeOverride`, the old 120° wide attack,
+  multi-target hits, the standard wide-attack animation, and no rope. The rope is a black copy of
+  the grappling gun's `rope` state at `Resources/Textures/_PS/Objects/Weapons/Melee/whip_rope.rsi`
+  (the original grappling-gun asset is untouched); it is drawn by the client-only
+  `Content.Client/_PS/Weapons/Melee/*` code and relayed to other clients with `WhipLashEvent`.
+  The local lash is spawned only on the first client prediction; the server relay is ignored for
+  the local player and deduped per wielder, because shared attack hooks run again on prediction
+  replay and would otherwise play the rope twice (see `.ai/HAZARDS.md` §30).
 - **Validation**: `Content.YAMLLinter` reports no errors; `EntityTest` passes.
 
 ## 31. 2026-11 Rings on gloves (Sandstorm / old SPLURT)
@@ -1163,3 +1193,28 @@ feeding produce into it for every recipe.
   `Resources/Prototypes/Entities/Structures/Machines/lathe.yml`; all limits live in the
   component defaults.
 - **Validation**: full solution build; rebuilt `Content.YAMLLinter` (`No errors found`).
+
+## 33. 2026-11 Cyberpunk siren strobes (NCPD / MaxTac, Coyote `_PS`)
+
+The old Coyote `_PS` strobe file had four red-alert siren props. The two Cyberpunk ones were ported
+at the maintainer's request; the Star Trek TOS/VOY red alerts remain unported.
+
+- **Origin**: Coyote `Resources/Prototypes/_PS/Entities/Structures/Lighting/strobe_lighting.yml`
+  (commit `f7d9528dfd7`, "Star Trek Alarms") and its
+  `Resources/Audio/_PS/Effects/Lightning/{NCPD,MaxTac}.ogg`.
+- **Prototypes**: `Resources/Prototypes/_PS/Entities/Structures/Lighting/strobe_lighting.yml`:
+  abstract `PoweredStrobeRedAlert`, then `PoweredStrobeLightNCPD` (suffix `NFSD`, matching the old
+  id/suffix) and `PoweredStrobeLightMaxTac`. Both start switched off (inheriting `PoweredLight`'s
+  `on: false`) and use a red crystal bulb; turning the fixture on starts the siren.
+- **Long-range audio**: an `AmbientSound` would stop when the fixture leaves PVS, and the client
+  only samples ambience within `ambience.range` (8 m). `Content.Server/_PS/Audio/LongRangeSirenSystem`
+  instead plays a looping stream at the siren, sets `NoOcclusion`, and adds a global PVS override to
+  the stream. The stream also keeps the parent siren visible. The `AmbientSound` remains the
+  power/light switch and sound source with `range: 0` so the local ambient system does not play a
+  second copy. Defaults: `maxDistance: 60`, `referenceDistance: 8`.
+- **Assets/attribution**: `Resources/Audio/_PS/Effects/Lightning/` with `attributions.yml`
+  (Cyberpunk 2077, CD Projekt Red; private-server use only).
+- **Tests**: `Content.IntegrationTests/Tests/_PS/LongRangeSirenTest.cs` (both prototypes create the
+  looping stream while powered and clean it up when unpowered).
+- **Validation**: `Content.Server` build; rebuilt `Content.YAMLLinter` (`No errors found`);
+  `LongRangeSirenTest` passes (2/2).

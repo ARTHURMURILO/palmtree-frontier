@@ -112,9 +112,10 @@ Adaptations made when porting (old 2023 prototypes):
 - `SoundOnTrigger` → `EmitSoundOnTrigger`, `OnUseTimerTrigger` → `TimerTrigger`.
 - `noSpawn: true` → `categories: [ HideSpawnMenu ]`.
 
-Not ported from `_PS`: turrets, strobe lighting, shipyard cauterizer, announcement/interaction
-sound collections, custom emotes. (The `_PS` **RCD/RPD** were ported in 2026-10 — see
-`.ai/PORTING.md` §24.)
+Not ported from `_PS`: turrets, general strobe lighting, shipyard cauterizer,
+announcement/interaction sound collections, custom emotes. (The `_PS` **RCD/RPD** were ported in
+2026-10 — see `.ai/PORTING.md` §24. The Cyberpunk NCPD/MaxTac siren strobes were ported in 2026-11
+— see the long-range siren section below and `.ai/PORTING.md` §33.)
 
 Re-enabled Frontier-disabled guns: Frontier deletes whole upstream weapon directories at load
 (`Resources/IgnoredPrototypes/ignoredPrototypes.yml`), so the upstream taser, elite taser, tesla
@@ -1001,6 +1002,25 @@ opening a preview replaces any existing one for that session (no camera accumula
 - Tests: `Content.IntegrationTests/Tests/_PS/LightEffectsTest.cs` (flicker sync, always-power,
   screwdriver cycle, client pulse).
 
+## Cyberpunk siren strobes (long-range)
+
+- Prototypes: `Resources/Prototypes/_PS/Entities/Structures/Lighting/strobe_lighting.yml`
+  (`PoweredStrobeLightNCPD`, `PoweredStrobeLightMaxTac`), ported from Coyote. They are
+  `PoweredStrobeLightEmpty` children with a red crystal bulb, a stronger red point light, and
+  `AmbientSound` carrying the Cyberpunk siren clip. They start switched off (`on: false` inherited
+  from the parent); turning the fixture on via its switch/device link starts the siren.
+- Long-range playback: `Content.Server/_PS/Audio/LongRangeSirenComponent.cs` +
+  `LongRangeSirenSystem.cs`. The system watches the siren's `AmbientSound.Enabled` (the powered
+  light toggles it with the fixture's bulb/power state), plays a looping stream with
+  `NoOcclusion`, and `PvsOverrideSystem.AddGlobalOverride`s the stream. This keeps the stream (and
+  the parent siren) loaded beyond PVS and audible out to `maxDistance` (60 m by default,
+  `referenceDistance` 8 m). The ambient component has `range: 0` so the nearby ambient sampler
+  does not play a second copy; do not raise it.
+- The stream is created/removed within one second of a power or bulb change. The stream entity is
+  parented to the siren, so moving grids carry it automatically.
+- Assets: `Resources/Audio/_PS/Effects/Lightning/{NCPD,MaxTac}.ogg`, attribution in the same folder.
+- Test: `Content.IntegrationTests/Tests/_PS/LongRangeSirenTest.cs`.
+
 ## 2026-10 misc additions (walkman, UI sounds, editor QoL, RTG radiation)
 
 Small features that did not get their own section yet:
@@ -1043,12 +1063,19 @@ Small features that did not get their own section yet:
   `.../_PS/RCD/rcd.yml`, textures under `Resources/Textures/_PS/...`, locale
   `Resources/Locale/en-US/_PS/rcd.ftl`. A follow-up pass added diagonal solid/shuttle wall modes
   and mining walls, a per-tool `speedMultiplier` (the RCD ships at 2x), and node-aware per-layer
-  anti-stacking (a vent/pump may share a tile with the pipe that feeds it; pipe segments cannot
-  share a layer because their sprites z-fight, and remaining direction conflicts are rejected;
-  the placement ghost previews those through a networked pipe-node summary plus a cached
-  ghost-prototype lookup). The RPD also treats one
+  anti-stacking (a vent/pump may share a tile with the pipe that feeds it; pipe segments may share a
+  layer when their nodes do not overlap, so perpendicular crossings work; remaining direction
+  conflicts are rejected; the placement ghost previews those through a networked pipe-node summary
+  plus a cached ghost-prototype lookup). Unstackable atmos devices compare their
+  `AtmosPipeLayersComponent.CurrentPipeLayer`, and vents/scrubbers/passive vents/injectors (plus the
+  dual-port vent) have per-layer entity variants and construction recipes, so both the RPD and the
+  construction menu can place them on the layer under the cursor. The screwdriver layer-change
+  delay defaults to zero. The RPD also treats one
   compressed-matter charge as two tool charges, so one 30-charge cartridge fills its 60-charge
-  tank; the RCD keeps the normal 1:1, 30-charge behaviour. Details:
+  tank; the RCD keeps the normal 1:1, 30-charge behaviour. Deconstruction returns matter for the
+  RPD too; overflow is converted back to cartridge matter units, tops up a partial cartridge
+  already on the tile, and an odd half-unit waits on the tool (`PendingMatterCharges`) for the
+  next spill. Details:
   `.ai/PORTING.md` §24-24b; traps: `.ai/HAZARDS.md` §26. The RPD deconstruct whitelist (`rpd: true`)
   is wired on `GasPipeBase` plus the air alarm, air sensor and gas pipe sensor, so the RPD removes
   what it builds while the RCD stays off atmos entities.

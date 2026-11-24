@@ -66,3 +66,8 @@ There is no `RoundEndedEvent`; use `RoundEndMessageEvent` + `GameRunLevelChanged
   auto-networked collections still rely on a component dirty.
 - Directed events for components require the component to be on the target entity.
 - Do not subscribe outside `Initialize()` (subscription lock).
+- Shared attack/action hooks are predicted: they run on the client, can replay after a server
+  state, and run again on the server. Client-only visuals must be spawned from a client
+  override guarded by `Timing.IsFirstTimePredicted`, and server relays must target
+  `Filter.PvsExcept(user)`; clients should also ignore the relay for `IPlayerManager.LocalEntity`
+  and dedupe delayed duplicates. See `.ai/HAZARDS.md` §30.

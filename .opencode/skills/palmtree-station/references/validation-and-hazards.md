@@ -58,6 +58,15 @@ and skip categories that already have markings. `||` overruns `DefaultMarkings` 
 overload creates a fresh marking and drops scale/offset/glow (editor preview shows values, in-game
 they reset).
 
+### Prediction and client-only effects
+Shared attack/action hooks (`AttemptAttack` and similar) run on the client for prediction, can
+replay after a server state, and run on the server. Spawn vfx from a client override guarded by
+`Timing.IsFirstTimePredicted`; relay only to others with `Filter.PvsExcept(user)`; ignore the relay
+for `IPlayerManager.LocalEntity`; and dedupe by user + `IGameTiming.RealTime` because a delayed
+event can arrive after the local effect ended. Hook once after the swing loop, not inside it.
+Local effect entities need `FrameUpdate` + clamped `RealTime` and a `TimedDespawnComponent` fallback.
+Symptom: "out and back, then out and back" or several ropes at once. See `.ai/HAZARDS.md` §30.
+
 ### Body speed
 `SharedBodySystem.UpdateMovementSpeed` averages `MovementBodyPart` values from leg entities and calls
 `MovementSpeedModifierSystem.ChangeBaseSpeed`. Set speed on the **leg parts**; a mob-level

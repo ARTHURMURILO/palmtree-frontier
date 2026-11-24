@@ -1,4 +1,5 @@
 using Content.Shared.Access.Components;
+using Content.Shared._CS; // Palmtree: admin ghosts may build on protected grids
 using Content.Shared.Administration.Logs;
 using Content.Shared.Charges.Components;
 using Content.Shared.Charges.Systems;
@@ -67,13 +68,13 @@ public sealed partial class RCDSystem : EntitySystem
     private static readonly ProtoId<TagPrototype> CatwalkTag = "Catwalk";
     private static readonly ProtoId<TagPrototype> AirlockTag = "Airlock"; // Palmtree: airlocks and firelocks may share a tile
     private static readonly ProtoId<TagPrototype> UnstackableTag = "Unstackable"; // Palmtree: no stacking atmos pipes/devices
-    private static readonly ProtoId<TagPrototype> PipeSegmentTag = "AtmosPipeSegment"; // Palmtree: two segments on one layer z-fight
     private static readonly ProtoId<TagPrototype> WindowTag = "Window";
     private static readonly ProtoId<TagPrototype> DirectionalWindowTag = "DirectionalWindow"; // Palmtree: only one per edge
     // Palmtree: even the admin RCD must leave these alone.
     private static readonly ProtoId<TagPrototype> RcdUnDeconstructableTag = "RCDUnDeconstructable";
     private static readonly EntProtoId RcdAmmoProto = "RCDAmmo";
     private static readonly EntProtoId ShipyardRcdAmmoProto = "ShipyardRCDAmmo";
+    private const int AmmoCartridgeMaxCharges = 30; // Palmtree: standard compressed-matter cartridge size
 
     private HashSet<EntityUid> _intersectingEntities = new();
 
@@ -212,8 +213,9 @@ public sealed partial class RCDSystem : EntitySystem
             return;
 
         // Frontier: grid-access restrictions
-        // Frontier - Remove all RCD use on outpost.
-        if (TryComp<ProtectedGridComponent>(gridUid.Value, out var prot) && prot.PreventRCDUse)
+        // Frontier - Remove all RCD use on outpost. Palmtree: admins and the unrestricted admin
+        // RCD are allowed through so they can still repair or build on protected grids.
+        if (!IsRcdUseAllowedOnGrid(gridUid.Value, user, component))
         {
             _popup.PopupClient(Loc.GetString("rcd-component-use-blocked"), used, user);
             return;
@@ -389,11 +391,11 @@ public sealed partial class RCDSystem : EntitySystem
         // Palmtree: the admin RCD neither consumes nor gains matter.
         if (!component.Unrestricted)
         {
-            if (!component.IsRpd && _protoManager.Index(component.ProtoId).Mode == RcdMode.Deconstruct)
+            if (_protoManager.Index(component.ProtoId).Mode == RcdMode.Deconstruct)
             {
-                // Palmtree: RCD deconstruction now returns matter instead of costing it. Any amount
-                // that does not fit in the tool spills out as a fresh compressed-matter cartridge.
-                // The RPD keeps its normal charge cost.
+                // Palmtree: deconstruction returns matter instead of costing it, for the RCD and the
+                // RPD alike. Any amount that does not fit in the tool spills out as compressed
+                // matter, merged into a cartridge already lying on the tile when possible.
                 AddDeconstructCharges(uid, component, args.Cost, location);
             }
             else
@@ -469,6 +471,19 @@ public sealed partial class RCDSystem : EntitySystem
     #endregion
 
     #region Entity construction/deconstruction rule checks
+
+    /// <summary>
+    /// Palmtree: whether RCD/RPD construction is allowed on this grid. Protected grids (the
+    /// Frontier outpost) block it for normal players; admin ghosts and the unrestricted admin
+    /// RCD may still build there.
+    /// </summary>
+    public bool IsRcdUseAllowedOnGrid(EntityUid gridUid, EntityUid user, RCDComponent component)
+    {
+        if (component.Unrestricted || HasComp<AdminGhostComponent>(user))
+            return true;
+
+        return !TryComp<ProtectedGridComponent>(gridUid, out var prot) || !prot.PreventRCDUse;
+    }
 
     public bool IsRCDOperationStillValid(EntityUid uid, RCDComponent component, EntityUid gridUid, MapGridComponent mapGrid, TileRef tile, Vector2i position, EntityUid? target, EntityUid user, bool popMsgs = true, AtmosPipeLayer layer = AtmosPipeLayer.Primary, Direction? direction = null)
     {
@@ -609,11 +624,10 @@ public sealed partial class RCDSystem : EntitySystem
 
         // Palmtree: atmos pipes/devices carry no fixtures, so the collision check below cannot see
         // them. `Unstackable` blocks a second device on the same atmos layer; plain pipes are not
-        // tagged because a vent or pump is supposed to sit on top of them. Two plain pipe segments
-        // on one layer share a draw depth and z-fight, so those are rejected as a pair. Actual pipe
-        // node conflicts are rejected by the node-aware RCDAtmosOverlapAttemptEvent below.
+        // tagged because a vent or pump is supposed to sit on top of them. Pipe segments may share
+        // a layer when their nodes do not overlap (perpendicular crossings), which the node-aware
+        // RCDAtmosOverlapAttemptEvent below decides.
         var buildsUnstackable = false;
-        var buildsPipeSegment = false;
         var buildsAirlock = false;
         var buildsFirelock = false;
         var builtLayer = AtmosPipeLayer.Primary;
@@ -626,7 +640,6 @@ public sealed partial class RCDSystem : EntitySystem
             // entity of the same kind (the collision check still rejects that).
             buildsAirlock = builtTags != null && _tags.HasTag(builtTags, AirlockTag);
             buildsFirelock = builtProto.HasComponent<FirelockComponent>(EntityManager.ComponentFactory);
-            buildsPipeSegment = builtTags != null && _tags.HasTag(builtTags, PipeSegmentTag);
             buildsWindow = builtTags != null && _tags.HasTag(builtTags, WindowTag);
             buildsDirectionalWindow = builtTags != null && _tags.HasTag(builtTags, DirectionalWindowTag);
             buildsFullTile = buildsFullTile || buildsWindow;
@@ -695,24 +708,6 @@ public sealed partial class RCDSystem : EntitySystem
                 else if (!buildsWindow && !buildsFullTile)
                 {
                     continue;
-                }
-            }
-
-            // Palmtree: two pipe segments on one layer z-fight, so they never stack even when their
-            // node directions would not overlap. Devices use a different draw depth and are exempt.
-            if (buildsPipeSegment && IsPipeSegment(ent))
-            {
-                var existingLayer = AtmosPipeLayer.Primary;
-
-                if (TryComp<AtmosPipeLayersComponent>(ent, out var existingLayers))
-                    existingLayer = existingLayers.CurrentPipeLayer;
-
-                if (existingLayer == builtLayer)
-                {
-                    if (popMsgs)
-                        _popup.PopupClient(Loc.GetString("rcd-component-pipe-layer-occupied-message", ("layer", GetLayerName(builtLayer))), uid, user);
-
-                    return false;
                 }
             }
 
@@ -987,25 +982,62 @@ public sealed partial class RCDSystem : EntitySystem
 
         var overflow = amount - stored;
 
-        if (overflow <= 0 || !_net.IsServer)
+        // Palmtree: `amount` and `free` are tool charges, but a cartridge charge is one matter
+        // unit. The RPD turns one matter unit into two tool charges (RCDAmmoSystem), so spilling
+        // the raw tool-charge overflow would refund twice the matter that was taken out. Convert
+        // to matter units and carry an odd leftover charge in the tool until the next spill.
+        var spillCharges = overflow;
+
+        if (component.IsRpd && _net.IsServer)
+        {
+            spillCharges += component.PendingMatterCharges;
+            component.PendingMatterCharges = spillCharges % 2;
+        }
+
+        var ammoAmount = component.IsRpd ? spillCharges / 2 : overflow;
+
+        if (ammoAmount <= 0 || !_net.IsServer)
             return;
 
-        var ammo = Spawn(component.IsShipyardRCD ? ShipyardRcdAmmoProto : RcdAmmoProto, coordinates);
+        var ammoProto = component.IsShipyardRCD ? ShipyardRcdAmmoProto : RcdAmmoProto;
+        var remaining = ammoAmount;
 
-        if (TryComp<RCDAmmoComponent>(ammo, out var ammoComp))
+        // Palmtree: deconstructing a long run of pipes used to spawn one 1-charge cartridge per
+        // pipe. Top up a partially filled cartridge already on the tile first, so the overflow
+        // collects into one pile instead of a scattering of tiny ones.
+        var nearby = _lookup.GetEntitiesInRange(coordinates, 0.5f, LookupFlags.Uncontained);
+
+        foreach (var existing in nearby)
         {
-            ammoComp.Charges = overflow;
-            Dirty(ammo, ammoComp);
-        }
-    }
+            if (remaining <= 0)
+                break;
 
-    /// <summary>
-    /// Palmtree: whether the entity is a plain pipe segment. Tags are networked, so this works on
-    /// the client's placement ghost as well as on the server.
-    /// </summary>
-    private bool IsPipeSegment(EntityUid ent)
-    {
-        return _tags.HasTag(ent, PipeSegmentTag);
+            if (!TryComp<RCDAmmoComponent>(existing, out var existingAmmo)
+                || existingAmmo.IsShipyardRCDAmmo != component.IsShipyardRCD
+                || existingAmmo.Charges >= AmmoCartridgeMaxCharges)
+            {
+                continue;
+            }
+
+            var added = Math.Min(remaining, AmmoCartridgeMaxCharges - existingAmmo.Charges);
+            existingAmmo.Charges += added;
+            Dirty(existing, existingAmmo);
+            remaining -= added;
+        }
+
+        while (remaining > 0)
+        {
+            var amountInCartridge = Math.Min(remaining, AmmoCartridgeMaxCharges);
+            var ammo = Spawn(ammoProto, coordinates);
+
+            if (TryComp<RCDAmmoComponent>(ammo, out var ammoComp))
+            {
+                ammoComp.Charges = amountInCartridge;
+                Dirty(ammo, ammoComp);
+            }
+
+            remaining -= amountInCartridge;
+        }
     }
 
     private string GetLayerName(AtmosPipeLayer layer)
