@@ -53,7 +53,7 @@ Fork modules are folder/namespace prefixes:
 | `_PS` | Palmtree (this repo) | Lobby screens/music, concealable clothing backpack implant, weapons/grenades, Synth species, Hilbert's Hotel, Bluespace Dock/Ship Registrar, interaction panel, genital organs, RIX (Rouble PIX) bank transfers |
 | `_Floof` | Floofstation | Marking system extensions, `ModifyUndies` (ERP toggle verbs) |
 | `_CS` | Coyote Sector | Anthromorph species, undergarments, Coyote Bayou clothes (incl. latex), undies locale |
-| `_Funkystation` | Funky Station (via Dumont) | NanoChat group chats, emoji picker and emoji prototypes |
+| `_Funkystation` | Funky Station (via Dumont) | NanoChat group chats, emoji picker, ported atmos/engineering (gas suite, HFR, turbines, chalk) |
 | `_HL` | HardLight (via Coyote) | Ported shower (prototype, construction, sprite, audio) |
 | `_DEN` | TheDen | Clicker, foot protectors, Ovinia markings/sprites |
 | `_EE` | Einstein Engines | Tajaran species (ported), carrying |
@@ -109,6 +109,7 @@ Fork modules are folder/namespace prefixes:
 | `.ai/systems/atmos-heat-pump.md` | Heat pump: the two-port thermomachine from /tg/station, its maths, efficiency, safeties and deviations |
 | `.ai/systems/core-gameplay.md` | Interactions, body/damage, atmos, power, chemistry, construction, NPC, shuttles |
 | `.ai/systems/atmos-temperature-devices.md` | Temperature gate/pump, heat exchanger, atmos meter: /tg/ maths, pipe layers, sprites, RPD wiring |
+| `.ai/systems/atmos-gases-hfr.md` | /tg/ gas suite, Hypertorus Fusion Reactor (temperature scale, assembly, meltdown), Far Horizons turbines/flatpacks and construction chalk |
 | `.ai/systems/content-pipeline-and-tooling.md` | Prototypes, localization, maps, tests, CI, packaging |
 | `.ai/guides/prototype-tutorial.md` | Beginner-friendly prototype authoring: YAML, inheritance, components, sprites, other prototype kinds, testing |
 | `.ai/guides/porting-from-coyote.md` | Repeatable method for porting Coyote/Floof content into this repo |

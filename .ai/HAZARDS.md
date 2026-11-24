@@ -959,3 +959,39 @@ so these fail only in CI:
 - **Symptoms to suspect this first:** duplicate ropes/beams, effect playing twice per click, an
   effect that appears after the animation already finished, or different clients seeing a different
   number of effects. Check the hook location and the network relay before tuning the visual.
+
+## 31. Atmos temperature ceiling and ported-content persistence invariants (2026-11)
+
+- **Never raise `Atmospherics.Tmax` to make an engine reach its design temperature.** The Funky
+  HFR port first did exactly that (`262144` -> `262144000`), which changed the clamp for every gas
+  mixture in the game, cost float precision, let fires get 1000x hotter before being caught, and
+  made saves written at those temperatures unloadable by any other build. It was reverted: the HFR
+  now expresses its temperatures through `HypertorusFusionReactor.TemperatureScale`
+  (`Atmospherics.Tmax / 25,000,000`). An engine that needs a hotter gas must scale itself, not the
+  world. See `.ai/systems/atmos-gases-hfr.md`.
+- **The `Gas` enum is append-only.** The port appended ids 11-20 after Frontier's `Helium = 10`.
+  Renumbering corrupts saves and every fixed-size reaction array. Use `TotalNumberOfGases` /
+  `AdjustedNumberOfGases` instead of literal 11/21, and remember `AdjustedNumberOfGases` is padded
+  to a multiple of 4 for SIMD.
+- **Do not find saved entities by parentage.** Anchored entities are re-parented to the grid when a
+  map is saved/loaded, so a search of `Transform(turbine).ChildEnumerator` silently misses the pipe
+  stubs that are right there in the save. The turbine stub reuse is by world position on the target
+  tile. If you add a multi-part machine with attached entities, do the same or store positions.
+- **Persist prototype ids, not session-local ints.** `ITileDefinitionManager` tile ids (and most
+  other definition indices) are load-order dependent. The turbine flatpack originally saved tile
+  ids as ints and mangled the deck after a reload; it now stores tile prototype IDs.
+- **Runtime links are not save state.** HFR part UIDs are deliberately not `[DataField]`; they are
+  rebuilt from anchored parts on startup, cleared on `ComponentShutdown`, and every stale deref is
+  guarded (`TryGetPartPipe`, existence checks before `IsPowered`). Conversely, gameplay flags that
+  must survive a save (turbine `Ruined`, flatpack `Deployed`) do need `[DataField]`.
+- **Multi-tile flatpack footprints validate mobs too.** The check rejects living mobs and
+  non-anchored collidable bodies on any footprint tile; the client ghost calls the same
+  `CanPlace`, so do not fork the logic. Subfloor cables and non-primary pipes are the deliberate
+  exceptions.
+- **Chalk marks are bounded.** `ConstructionChalkComponent.MaxMarks` (128) and `MarkLifetime`
+  (15 min, `TimedDespawnComponent`) exist so marks cannot fill the entity table. Do not raise the
+  cap without addressing cleanup.
+- **The HFR's recovered power is intentionally ~95x lower than Funky's.** That is the accepted
+  consequence of running at the fork's atmos range; the tunables are
+  `HypertorusFusionReactor.TemperatureScale`/`FusionMaximumTemperature` and the positive heat cap,
+  not `Tmax`. Gas production was compensated separately, so it still produces the same moles/s.
