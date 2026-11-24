@@ -28,6 +28,7 @@ using Content.Shared.Weapons.Melee.Events;
 using Content.Shared.Weapons.Ranged.Components;
 using Content.Shared.Weapons.Ranged.Events;
 using Content.Shared.Weapons.Ranged.Systems;
+using Content.Shared._PS.Weapons.Melee; // Palmtree
 using Robust.Shared.Audio;
 using Robust.Shared.Audio.Systems;
 using Robust.Shared.Map;
@@ -358,7 +359,8 @@ public abstract partial class SharedMeleeWeaponSystem : EntitySystem
         if (weapon.NextAttack > curTime)
             return false;
 
-        if (!CombatMode.IsInCombatMode(user))
+        // Palmtree: weapons that opt out of combat mode (e.g. whips) can still be used outside it.
+        if (weapon.RequiresCombatMode && !CombatMode.IsInCombatMode(user))
             return false;
 
         EntityUid? target = null;
@@ -434,13 +436,14 @@ public abstract partial class SharedMeleeWeaponSystem : EntitySystem
         // Attack confirmed
         for (var i = 0; i < swings; i++)
         {
-            string animation;
+            string? animation;
 
             switch (attack)
             {
                 case LightAttackEvent light:
                     DoLightAttack(user, light, weaponUid, weapon, session);
-                    animation = weapon.Animation;
+                    // Palmtree: whips use the rope effect on light attacks instead of the weapon arc.
+                    animation = TryComp<WhipComponent>(weaponUid, out _) ? null : weapon.Animation.Id;
                     break;
                 case DisarmAttackEvent disarm:
                     if (!DoDisarm(user, disarm, weaponUid, weapon, session))
@@ -458,7 +461,19 @@ public abstract partial class SharedMeleeWeaponSystem : EntitySystem
                     throw new NotImplementedException();
             }
 
-            DoLungeAnimation(user, weaponUid, weapon.Angle, TransformSystem.ToMapCoordinates(GetCoordinates(attack.Coordinates)), weapon.Range, animation);
+            // Palmtree: heavy attacks can use a different reach than light attacks.
+            var lungeRange = attack is HeavyAttackEvent
+                ? MathF.Max(0f, weapon.HeavyRangeOverride ?? weapon.Range)
+                : weapon.Range;
+
+            DoLungeAnimation(user, weaponUid, weapon.Angle, TransformSystem.ToMapCoordinates(GetCoordinates(attack.Coordinates)), lungeRange, animation);
+        }
+
+        // Palmtree: one lash visual per attack, not one per catch-up swing.
+        if (attack is LightAttackEvent lightAttack &&
+            TryComp<WhipComponent>(weaponUid, out var whip))
+        {
+            DoWhipLash(user, weaponUid, TransformSystem.ToMapCoordinates(GetCoordinates(lightAttack.Coordinates)), whip);
         }
 
         var attackEv = new MeleeAttackEvent(weaponUid);
@@ -583,7 +598,7 @@ public abstract partial class SharedMeleeWeaponSystem : EntitySystem
 
         var userPos = TransformSystem.GetWorldPosition(userXform);
         var direction = targetMap.Position - userPos;
-        var distance = Math.Min(component.Range, direction.Length());
+        var distance = Math.Min(component.HeavyRangeOverride ?? component.Range, direction.Length());
 
         var damage = GetDamage(meleeUid, user, component);
         var resistanceBypass = GetResistanceBypass(meleeUid, user, component);
@@ -963,6 +978,14 @@ public abstract partial class SharedMeleeWeaponSystem : EntitySystem
     }
 
     public abstract void DoLunge(EntityUid user, EntityUid weapon, Angle angle, Vector2 localPos, string? animation, bool predicted = true);
+
+    /// <summary>
+    /// Palmtree: hook for whip lash visuals. The client spawns the rope locally and the server
+    /// relays the attack to other clients.
+    /// </summary>
+    protected virtual void DoWhipLash(EntityUid user, EntityUid weapon, MapCoordinates target, WhipComponent whip)
+    {
+    }
 
     /// <summary>
     /// Used to update the MeleeWeapon component on item toggle.

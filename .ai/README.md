@@ -184,6 +184,10 @@ Fork modules are folder/namespace prefixes:
 - `dotnet run --project Content.YAMLLinter --no-build` uses stale assemblies; rebuild the project
   after C# changes before trusting lint results.
 - Fork-patched core files are common; never assume a file is untouched upstream.
+- Shared attack/action hooks run during client prediction, on prediction replay, and on the server.
+  Client-only visuals must be spawned from a client override with `Timing.IsFirstTimePredicted`,
+  relayed to others with `Filter.PvsExcept`, and deduped; otherwise the effect plays twice
+  (`.ai/HAZARDS.md` §30).
 - Directed vs broadcast events: `RaiseLocalEvent<T>(msg)` does not reach component handlers.
 - Subscribe only in `Initialize()`; subscriptions lock after startup.
 - DB migrations are load-bearing; both SQLite and Postgres must be updated.

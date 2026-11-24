@@ -125,6 +125,11 @@ dotnet run --project Content.Client -c Debug --no-build -- --headless
 - **Server popups**: `SharedPopupSystem.PopupClient` is a no-op on the server (it exists for client
   prediction). Server code must use `PopupEntity(message, entity, recipient)` or popups silently
   never appear.
+- **Prediction hooks**: shared attack/action hooks run during client prediction, again on
+  prediction replay, and on the server. Spawn client-only visuals only in a client override guarded
+  by `Timing.IsFirstTimePredicted`; relay from the server with `Filter.PvsExcept(user)`, ignore the
+  relay for `IPlayerManager.LocalEntity`, and dedupe delayed duplicates by user + time. Otherwise
+  ropes/beams play twice ("out and back, then out and back"). See `.ai/HAZARDS.md` §30.
 - **Runtime-loaded maps**: never pause a map with a player body on it (`EntityPaused` freezes the
   body, e.g. after admin ghosting). Generated rooms need `Gravity: enabled/inherent` (defaults to
   false), `needsPower: false` machines, `anchored: true` props and a serialized `GridAtmosphere`.

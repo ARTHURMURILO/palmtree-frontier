@@ -918,3 +918,44 @@ so these fail only in CI:
   behavior; a later synchronous action first waits for any existing do-after so it cannot confuse
   an old completed/cancelled entry with the new action's result. Keep the do-after index
   comparison wrap-safe (`ushort`).
+
+## 30. Prediction hooks and client-only visual effects (2026-11)
+
+- **A shared attack/action hook can run more than once.** `SharedMeleeWeaponSystem.AttemptAttack`
+  (and similar shared confirmation paths) runs on the client for prediction, again when prediction
+  is replayed after a server state, and on the server for authority. Putting a visual effect
+  directly in that shared hook makes the first client prediction play the effect; a replay or a
+  server-relayed copy then plays it a second time. The classic symptom is a whip/beam/rope "out and
+  back, then out and back again" or several copies at once, even though the attack happened once.
+- **The effect should be client-only, but the server still relays it to observers.** Spawn the
+  local visual from the client-side override, not the shared method:
+
+  ```csharp
+  protected override void DoWhipLash(...)
+  {
+      if (!Timing.IsFirstTimePredicted)
+          return; // ignore prediction replay
+
+      _whipLash.SpawnLash(...);
+  }
+  ```
+
+  The server override should only relay to other clients with
+  `Filter.PvsExcept(user, entityManager: EntityManager)`. A client must also ignore a relayed event
+  for its own `IPlayerManager.LocalEntity`; do not rely on the PVS filter alone (host/singleplayer,
+  attached entities, replay and delayed packets can still produce a duplicate).
+- **Deduplicate by user and time, not just by "a lash is active".** A delayed server event can
+  arrive after the local visual has already retracted. Keep a small per-entity timestamp
+  (`IGameTiming.RealTime`) and ignore a second effect inside the attack cooldown window (for whips,
+  0.9 s with a 1 s attack rate). Replace/queue-delete an existing effect only when the new target is
+  genuinely different; identical duplicate events must not restart the animation.
+- **Keep the effect out of per-swing loops.** `AttemptAttack` has a `swings` catch-up loop; a visual
+  hook inside it can spawn one effect per swing. Hook once after the loop, on the confirmed attack.
+- **Local-only effect entities still need cleanup.** Spawn them on the client, update with
+  `FrameUpdate` + `IGameTiming.RealTime`, clamp elapsed time to `>= 0` (negative time makes easing
+  extrapolate backward and look like a jump), and add a `TimedDespawnComponent` fallback in case the
+  visual system is skipped. Never create a server-side networked entity just to render a local
+  effect.
+- **Symptoms to suspect this first:** duplicate ropes/beams, effect playing twice per click, an
+  effect that appears after the animation already finished, or different clients seeing a different
+  number of effects. Check the hook location and the network relay before tuning the visual.
