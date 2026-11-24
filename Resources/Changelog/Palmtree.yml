@@ -2231,3 +2231,11 @@ Entries:
   id: 90149
   time: '2026-11-23T21:08:28.0000000+00:00'
   url: https://github.com/xTheLifex/palmtree-frontier/pull/15
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: NCPD and MaxTac sirens that can be heard from up to 60 meters away.
+  id: 90150
+  time: '2026-11-24T00:35:37.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/903165ae92c3a30f18e15eafe75f92140adbcf97
