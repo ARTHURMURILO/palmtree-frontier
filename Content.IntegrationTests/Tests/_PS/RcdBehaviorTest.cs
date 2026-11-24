@@ -7,6 +7,8 @@ using Content.Shared.Interaction;
 using Content.Shared.RCD;
 using Content.Shared.RCD.Components;
 using Content.Shared.RCD.Systems;
+using Content.Shared.Tiles;
+using Content.Shared._CS;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
@@ -184,30 +186,28 @@ public sealed class RcdBehaviorTest
             // The RCD starts full, so all of the returned matter must spill out.
             addCharges!.Invoke(rcdSystem, new object[] { rcd, rcdComp, 5, coords });
 
-            var ammo = new List<int>();
+            EntityUid spilled = default;
             var query = entManager.EntityQueryEnumerator<RCDAmmoComponent>();
-            while (query.MoveNext(out _, out var ammoComp))
-                ammo.Add(ammoComp.Charges);
-
-            Assert.Multiple(() =>
+            while (query.MoveNext(out var ammoUid, out var ammoComp))
             {
-                Assert.That(chargesSystem.GetCurrentCharges((rcd, limited)), Is.EqualTo(limited.MaxCharges));
-                Assert.That(ammo, Does.Contain(5), "A full RCD should drop the gained matter as ammo.");
-            });
+                if (ammoComp.Charges == 5)
+                    spilled = ammoUid;
+            }
 
-            // Leave two slots free: two charges go into the tool, three spill out.
+            Assert.That(spilled, Is.Not.EqualTo(default(EntityUid)), "A full RCD should drop the gained matter as ammo.");
+
+            // Leave two slots free: two charges go into the tool, three spill out. The spill should
+            // top up the partial cartridge already on the tile instead of spawning a new pile.
             chargesSystem.SetCharges((rcd, limited), limited.MaxCharges - 2);
             addCharges.Invoke(rcdSystem, new object[] { rcd, rcdComp, 5, coords });
 
-            ammo.Clear();
-            query = entManager.EntityQueryEnumerator<RCDAmmoComponent>();
-            while (query.MoveNext(out _, out var ammoComp))
-                ammo.Add(ammoComp.Charges);
-
             Assert.Multiple(() =>
             {
                 Assert.That(chargesSystem.GetCurrentCharges((rcd, limited)), Is.EqualTo(limited.MaxCharges));
-                Assert.That(ammo, Does.Contain(3), "Only the matter that does not fit should spill out.");
+                Assert.That(
+                    entManager.GetComponent<RCDAmmoComponent>(spilled).Charges,
+                    Is.EqualTo(8),
+                    "Only the matter that does not fit should spill out, merged into the existing partial cartridge.");
             });
         });
 
@@ -295,6 +295,162 @@ public sealed class RcdBehaviorTest
                     entManager.GetComponent<RCDAmmoComponent>(ammo).Charges,
                     Is.EqualTo(15),
                     "Only the 15 matter needed for the last 30 charges should be consumed.");
+            });
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task RpdClickActuallyBuildsAPipe()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+
+        var entManager = server.ResolveDependency<IEntityManager>();
+        var testMap = await pair.CreateTestMap();
+
+        await server.WaitAssertion(() =>
+        {
+            var coords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
+            var user = entManager.SpawnEntity("MobHuman", coords);
+            var rpd = entManager.SpawnEntity("RPD", coords);
+            SetMode(entManager, rpd, "PipeStraight");
+
+            // This is the same event the interaction system raises when the player left-clicks
+            // with the RPD. Raising it directly isolates the server handler from the client ghost.
+            entManager.EventBus.RaiseLocalEvent(rpd, new AfterInteractEvent(user, rpd, null, coords, true));
+        });
+
+        await pair.RunTicksSync(10);
+
+        await server.WaitAssertion(() =>
+        {
+            // Only count pipes on this test's own grid. Other tests in the pooled pair can leave
+            // pipes on their own maps, and CleanReturnAsync only removes the registered TestMap.
+            var pipes = 0;
+            var query = entManager.EntityQueryEnumerator<MetaDataComponent, TransformComponent>();
+            while (query.MoveNext(out _, out var meta, out var xform))
+            {
+                if (meta.EntityPrototype?.ID == "GasPipeStraight" && xform.GridUid == testMap.Grid.Owner)
+                    pipes++;
+            }
+
+            Assert.That(pipes, Is.EqualTo(1), "The RPD click handler should have spawned one pipe.");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task ProtectedGridOnlyBlocksNonAdmins()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var entManager = server.ResolveDependency<IEntityManager>();
+        var rcdSystem = entManager.System<RCDSystem>();
+        var testMap = await pair.CreateTestMap();
+
+        await server.WaitAssertion(() =>
+        {
+            var grid = testMap.Grid;
+            var prot = entManager.AddComponent<ProtectedGridComponent>(grid.Owner);
+            typeof(ProtectedGridComponent)
+                .GetField(nameof(ProtectedGridComponent.PreventRCDUse))!
+                .SetValue(prot, true);
+
+            var coords = new EntityCoordinates(grid.Owner, new Vector2(0.5f, 0.5f));
+            var rcd = entManager.SpawnEntity("RCD", coords);
+            var comp = entManager.GetComponent<RCDComponent>(rcd);
+            var user = entManager.SpawnEntity("MobHuman", coords);
+
+            Assert.That(
+                rcdSystem.IsRcdUseAllowedOnGrid(grid.Owner, user, comp),
+                Is.False,
+                "A normal RCD must stay blocked on a protected grid.");
+
+            var admin = entManager.SpawnEntity("MobHuman", coords);
+            entManager.AddComponent<AdminGhostComponent>(admin);
+            Assert.That(
+                rcdSystem.IsRcdUseAllowedOnGrid(grid.Owner, admin, comp),
+                Is.True,
+                "An admin ghost must be able to build on a protected grid.");
+
+            var adminRcd = entManager.SpawnEntity("RCDExperimental", coords);
+            var adminComp = entManager.GetComponent<RCDComponent>(adminRcd);
+            Assert.That(
+                rcdSystem.IsRcdUseAllowedOnGrid(grid.Owner, user, adminComp),
+                Is.True,
+                "The unrestricted admin RCD must be able to build on a protected grid.");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task RpdDeconstructOverflowDoesNotDoubleRefund()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+
+        var entManager = server.ResolveDependency<IEntityManager>();
+        var rcdSystem = entManager.System<RCDSystem>();
+        var testMap = await pair.CreateTestMap();
+
+        var addCharges = typeof(RCDSystem).GetMethod("AddDeconstructCharges", BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.That(addCharges, Is.Not.Null, "AddDeconstructCharges helper not found");
+
+        await server.WaitAssertion(() =>
+        {
+            var coords = new EntityCoordinates(testMap.Grid.Owner, new Vector2(0.5f, 0.5f));
+            var rpd = entManager.SpawnEntity("RPD", coords);
+            var rpdComp = entManager.GetComponent<RCDComponent>(rpd);
+
+            // A full RPD has nowhere to put the return. One tool charge is half a cartridge
+            // matter unit, so it is held until a second charge completes it; otherwise a pipe
+            // worth one tool charge would refund zero (or a double-charged cartridge).
+            addCharges!.Invoke(rcdSystem, new object[] { rpd, rpdComp, 1, coords });
+
+            var cartridges = 0;
+            var totalCharges = 0;
+            var query = entManager.EntityQueryEnumerator<RCDAmmoComponent, TransformComponent>();
+            while (query.MoveNext(out _, out var ammo, out var xform))
+            {
+                if (xform.GridUid != testMap.Grid.Owner)
+                    continue;
+
+                cartridges++;
+                totalCharges += ammo.Charges;
+            }
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(cartridges, Is.EqualTo(0),
+                    "One leftover tool charge should wait for a second charge instead of spilling zero matter.");
+                Assert.That(rpdComp.PendingMatterCharges, Is.EqualTo(1),
+                    "The RPD should remember the half matter unit.");
+            });
+
+            addCharges.Invoke(rcdSystem, new object[] { rpd, rpdComp, 1, coords });
+
+            cartridges = 0;
+            totalCharges = 0;
+            query = entManager.EntityQueryEnumerator<RCDAmmoComponent, TransformComponent>();
+            while (query.MoveNext(out _, out var ammo, out var xform))
+            {
+                if (xform.GridUid != testMap.Grid.Owner)
+                    continue;
+
+                cartridges++;
+                totalCharges += ammo.Charges;
+            }
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(cartridges, Is.EqualTo(1), "The two half units should merge into one cartridge.");
+                Assert.That(totalCharges, Is.EqualTo(1),
+                    "Two RPD tool charges of overflow are one matter unit, not two.");
+                Assert.That(rpdComp.PendingMatterCharges, Is.EqualTo(0));
             });
         });
 

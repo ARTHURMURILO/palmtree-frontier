@@ -94,6 +94,14 @@ public sealed partial class RCDComponent : Component
     /// </remarks>
     [ViewVariables(VVAccess.ReadOnly)]
     public AtmosPipeLayer LastKnownPipeLayer { get; set; } = AtmosPipeLayer.Primary;
+
+    /// <summary>
+    /// Palmtree: server-only accumulator for the half matter unit left when the RPD spills an odd
+    /// number of tool charges. A cartridge charge is worth two RPD tool charges, so a single
+    /// leftover charge is held here until the next spill can complete a unit.
+    /// </summary>
+    [ViewVariables(VVAccess.ReadOnly)]
+    public int PendingMatterCharges { get; set; }
     // Palmtree end
 
     /// <summary>

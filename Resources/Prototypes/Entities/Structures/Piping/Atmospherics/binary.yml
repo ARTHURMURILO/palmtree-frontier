@@ -6,9 +6,8 @@
     mode: AlignAtmosPipeLayers # starlight
   components:
   - type: AtmosDevice
-  - type: Tag
-    tags:
-      - Unstackable
+  # Palmtree: pumps and valves are exempt from the Unstackable rule so several inline devices
+  # can share a tile (the node-aware overlap check still rejects conflicting ports).
   - type: SubFloorHide
     blockInteractions: false
     blockAmbience: false

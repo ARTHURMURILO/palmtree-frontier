@@ -874,24 +874,28 @@ Follow-up on the RCD/RPD after the second pass:
   below zero are ignored, and `InstantConstruction` still forces a 0 delay.
 - **No atmos stacking (node-aware)**: `GasPipeSansLayers` is deliberately *not* `Unstackable`.
   A vent, pump or sensor is built onto the pipe that feeds it, and construction's
-  `NoUnstackableInTile` is layer-agnostic, so tagging plain pipes rejected every legitimate
-  device-on-pipe placement. Instead the RCD/RPD raises `RCDAtmosOverlapAttemptEvent`, and the
+  `NoUnstackableOnPipeLayer` (under `Content.Shared/_PS/Construction/Conditions`) compares the
+  target `AtmosPipeLayer`, so tagging plain pipes would still reject every legitimate
+  device-on-pipe placement. Both the base recipes and the upstream Starlight alt recipes use the
+  layer-aware condition; the alt recipes must not fall back to `NoUnstackableInTile`. Instead the RCD/RPD raises `RCDAtmosOverlapAttemptEvent`, and the
   server's `PipeRestrictOverlapSystem` compares the placement's resolved prototype nodes (mirror
   flip + RPD layer variant included) with the anchored nodes on the tile: only a same-layer,
   same-direction overlap is vetoed. The layer itself comes from `RPDLayerEvent`, because the
   server's click location is snapped to the tile centre; `RCDComponent.LastKnownPipeLayer` is
-  server-only working state and the resolved value rides in `RCDDoAfterEvent.Layer`. `Unstackable` remains on the devices themselves (vents, pumps,
-  sensors), so a second device on the same layer is still rejected.
-- **Pipe segments never share a layer.** The `AtmosPipeSegment` tag (`_PS/tags.yml`) marks the five
-  plain pipe shapes, the manifold and the broken pipe. Two segments on one layer have the same
-  sprite draw depth and z-fight even when their node directions do not overlap, so
-  `IsConstructionLocationValid` rejects that pair outright. Devices are exempt: their sprites use
-  a different draw depth, and the node check decides whether they fit. The tag is networked, so
-  the client's placement ghost also shows the stack as invalid; the client still cannot read the
-  server-only `PipeNode` data used for direction conflicts.
-- Test: `Content.IntegrationTests/Tests/_PS/RcdAtmosStackingTest.cs` (pipe-on-pipe same layer
-  blocked, empty tile allowed, another layer allowed, valid vent-on-pipe allowed, conflicting
-  vent node blocked, second device blocked).
+  server-only working state and the resolved value rides in `RCDDoAfterEvent.Layer`.
+  `Unstackable` remains on unary devices (vents, scrubbers, sensors) so a second device on the
+  same layer is still rejected. Binary inline devices (pumps, valves) are deliberately exempt so
+  two of them may share a tile when their ports do not conflict; their body sprites can overlap
+  visually, which is accepted for compact atmos builds.
+- **Pipe segments may share a layer when their nodes do not overlap.** The old
+  `AtmosPipeSegment` tag (and its client test) was removed. Perpendicular crossings are valid
+  construction; a same-layer same-direction overlap is still rejected by the node-aware check.
+  The client cannot read server-only `PipeNode` data, so it uses the networked
+  `AtmosPipeNodeDirectionsComponent` summary to show the same result on the ghost.
+- Test: `Content.IntegrationTests/Tests/_PS/RcdAtmosStackingTest.cs` (perpendicular crossing
+  allowed, same-direction pipe blocked, empty tile allowed, another layer allowed, valid
+  vent-on-pipe allowed, conflicting vent node blocked, second unary device blocked, two inline
+  binary devices with non-conflicting ports allowed, dual-port layered recipes/nodes covered).
 - **Client ghost parity (2026-11)**: the placement ghost used to stay green for a node conflict
   because `NodeContainerComponent.Nodes` is `serverOnly`. The server now maintains a networked
   `AtmosPipeNodeDirectionsComponent` (one `PipeDirection` mask per atmos layer) on entities with
@@ -906,6 +910,15 @@ Follow-up on the RCD/RPD after the second pass:
   half-filling it. The RCD stays 1:1. Only as much of the cartridge as the missing charges need is
   consumed (a half-full RPD uses 15 of the 30, leaving 15). Test: `RcdBehaviorTest`
   (`OneCompressedMatterCartridgeFillsTheTool`, `RpdUsesOnlyAsMuchMatterAsTheMissingCharges`).
+- **Protected grids and admin ghosts (2026-11)**: `ProtectedGridComponent.PreventRCDUse` is set
+  from map YAML, so it is `AutoNetworkedField` and the client's RCD/RPD ghost turns red on the
+  outpost and admin gallery. `RCDSystem.IsRcdUseAllowedOnGrid` is the shared rule; admin ghosts and
+  the unrestricted admin RCD bypass it, normal players do not.
+- **RPD spills are matter units (2026-11)**: the tool's charges are tool charges, but an
+  `RCDAmmo` cartridge charge is one matter unit and the RPD gets two tool charges per unit inside
+  its tank. Deconstruction overflow therefore converts back at 2:1 before topping up or spawning
+  cartridges; an odd leftover tool charge waits in `RCDComponent.PendingMatterCharges` for the next
+  spill instead of being lost or double-refunded. Test: `RcdBehaviorTest`.
 
 ## 25. 2026-10 Salto expedition ship (Coyote `_CS`)
 
