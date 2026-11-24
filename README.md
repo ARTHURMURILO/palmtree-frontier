@@ -1,60 +1,95 @@
-<div class="header" align="center">
-<img alt="Frontier Station" height="300" src="https://github.com/new-frontiers-14/frontier-station-14/blob/master/Resources/Textures/_NF/Logo/logo.png?raw=true" />
+<div align="center">
+<img alt="Palmtree Station" height="280" src="Resources/Textures/_PS/Logo/logo.png" />
 </div>
 
-Frontier Station is a fork of [Space Station 14](https://github.com/space-wizards/space-station-14) that runs on [Robust Toolbox](https://github.com/space-wizards/RobustToolbox) engine written in C#.
+# Palmtree Station
 
-This is the primary repo for Frontier Station.
+**Palmtree Station** is a private, community-run [Space Station 14](https://github.com/space-wizards/space-station-14)
+server. It runs on a customized [Frontier Station](https://github.com/new-frontiers-14/frontier-station-14)
+codebase — itself a fork of Space Station 14 — on the
+[Robust Toolbox](https://github.com/space-wizards/RobustToolbox) engine.
 
-If you want to host or create content for Frontier Station, this is the repo you need. It contains both RobustToolbox and the content pack for development of new content packs.
+This repository is the server's content pack. It is public so players and contributors can see
+exactly what runs on the server. Palmtree Station is not affiliated with Frontier Station, Wizard's
+Den, or any other server.
 
-## Links
+Fork history: Space Station 14 → Frontier Station → **Palmtree Station** (previously based on
+Coyote Sector). Palmtree-specific content lives under the `_PS` prefix.
 
-<div class="header" align="center">
+## Features
 
-[Discord](https://discord.gg/rKNHDAGPvd) | [Steam](https://store.steampowered.com/app/1255460/Space_Station_14/) | [Patreon](https://www.patreon.com/frontierstation14) | [Wiki](https://frontierstation.wiki.gg/)
+### Frontier gameplay
 
-</div>
+- Hub outpost, shipyard, ship deeds and ship purchasing
+- Economy, banking and cargo contracts, plus Palmtree's RIX bank transfers
+- Salvage, expeditions, sectors, pirates and NFSD content
+- **Bluespace Dock** and **Ship Registrar** for persistent ship storage
 
-## Documentation/Wiki
+### Character and roleplay
 
-Our [wiki](https://frontierstation.wiki.gg/) has documentation on Frontier Station's content.
+- **Hilbert's Hotel**: private rooms with shareable codes, loaded on demand
+- **Interaction panel**: data-driven social interactions with per-player consent
+- An **18+ account gate**; NSFW content is opt-in and consent is enforced
+- Extended markings, genital organs and an undies/ERP toggle layer (Coyote and Floof ports)
+- Species including Synth, Anthromorph, Tajaran, Vulpkanin, Harpy, Rodentia and Resomi
+- Concealable clothing through a backpack implant, and rings on gloves
 
-## Contributing
+### Engineering and content
 
-We are happy to accept contributions from anybody. Get in Discord if you want to help. We've got a [list of ideas](https://discord.com/channels/1123826877245694004/1127017858833068114) that can be done and anybody can pick them up. Don't be afraid to ask for help either!
-
-We are not currently accepting translations of the game on our main repository. If you would like to translate the game into another language, consider creating a fork or contributing to a fork.
-
-If you make any contributions, note that any changes made to files belonging to our upstream should be properly marked with comments (see the "Changes to upstream files" section in [CONTRIBUTING.md](https://github.com/new-frontiers-14/frontier-station-14/blob/master/CONTRIBUTING.md)).
+- Custom atmospherics: heat pump, temperature gate/pump, heat exchanger and atmos meter, all
+  pipe-layer aware and constructible in-game
+- A **circuitry editor** with Lua scripting
+- Palmtree weapons, grenades and expedition loot
+- Lobby backgrounds and a music rotation
+- NanoChat group chats and an emoji picker
 
 ## Building
 
-1. Clone this repo:
-```shell
-git clone https://github.com/new-frontiers-14/frontier-station-14.git
-```
-2. Go to the project folder and run `RUN_THIS.py` to initialize the submodules and load the engine:
-```shell
-cd frontier-station-14
-python RUN_THIS.py
-```
-3. Compile the solution:
+Requirements: the .NET 9 SDK and Python 3. The engine is a git submodule, so clone with submodules
+or run the setup script below.
 
-Build the server using `dotnet build`.
+1. Clone the repository:
 
-[More detailed instructions on building the project.](https://docs.spacestation14.com/en/general-development/setup.html)
+   ```shell
+   git clone https://github.com/xTheLifex/palmtree-frontier.git
+   cd palmtree-frontier
+   ```
+
+2. Initialize the submodule and engine:
+
+   ```shell
+   python RUN_THIS.py
+   ```
+
+3. Build the solution:
+
+   ```shell
+   dotnet build
+   ```
+
+See the [Space Station 14 development docs](https://docs.spacestation14.com/en/general-development/setup.html)
+for the full toolchain. The server itself is private; a local build is for development and testing.
+
+## Contributing
+
+Contributions are welcome from the community. Read [CONTRIBUTING.md](CONTRIBUTING.md) first. In
+short:
+
+- New Palmtree content goes under `_PS`; ported content keeps its origin prefix (`_NF`, `_CS`,
+  `_Floof`, `_DEN`, ...).
+- Mark edits to upstream files with a `// Palmtree`, `# Palmtree`, `// Coyote` or `# Coyote` comment
+  so future upstream merges stay manageable.
+- Do not use GitHub's web editor to submit changes.
+- Player-visible changes need a `:cl:` block in the commit message.
 
 ## License
 
-Read [LEGAL.md](https://github.com/new-frontiers-14/frontier-station-14/blob/master/LEGAL.md) for legal information regarding code licensing, including a table of attributions for each namespace within the codebase.
+The project as a whole is licensed under the [AGPLv3](LICENSE-AGPLv3.txt). Code inherited from
+Space Station 14 is used under the [MIT license](LICENSE-MIT.txt). Assets keep their individual
+licenses; see the `meta.json` and `attributions.yml` files next to each asset.
 
-Most assets are licensed under CC-BY-SA 3.0 unless stated otherwise. Assets have their license and the copyright in the metadata file. Example.
+Read [LEGAL.md](LEGAL.md) for the full attribution table.
 
-Code taken from Emberfall was specifically relicensed under MIT terms with [permission from MilonPL](https://github.com/new-frontiers-14/frontier-station-14/pull/3607)
-
-[2fca06eaba205ae6fe3aceb8ae2a0594f0effee0](https://github.com/new-frontiers-14/frontier-station-14/commit/2fca06eaba205ae6fe3aceb8ae2a0594f0effee0) was pushed on July 1, 2024 at 16:04 UTC
-
-Most assets are licensed under [CC-BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) unless stated otherwise. Assets have their license and copyright specified in the metadata file. For example, see the [metadata for a crowbar](https://github.com/new-frontiers-14/frontier-station-14/blob/master/Resources/Textures/Objects/Tools/crowbar.rsi/meta.json).
-
-Note that some assets are licensed under the non-commercial [CC-BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/) or similar non-commercial licenses and will need to be removed if you wish to use this project commercially.
+Palmtree Station is a fork of [Frontier Station](https://github.com/new-frontiers-14/frontier-station-14),
+which is a fork of [Space Station 14](https://github.com/space-wizards/space-station-14). All credit
+for the original game and for Frontier's content belongs to their respective authors.

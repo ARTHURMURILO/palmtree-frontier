@@ -15,11 +15,11 @@
   while chassis construction, sound and balance work remain. Phase 5 (hardening) is in progress:
   grid and Bluespace Dock persistence, ownership administration, a Lua kill switch, editor coverage,
   Lua soak/queue tests and a many-assembly stress test are in place.
-- Validation: solution build, YAMLLinter, Content.Tests, and 39 targeted `Circuitry*` integration
+- Validation: solution build, YAMLLinter, Content.Tests, and 40 targeted `Circuitry*` integration
   tests pass (assembly/Lua, hearing, inspect, BUI open, analyzers/dispenser, ChemMaster, security,
   radio, power budget, scan kinds, signals, item/solution autonomy, decals/doors, puddles, events,
   editor Run auto-save, gas analyzer, grid save/load, Bluespace Dock round-trip, many-assembly
-  stress, 16-tile sensor range, dense-room find, sensor-query throttling, synchronous and async walk-to, entity-handle walking, no-path retries, held-item UI/examine, power transfer, ranged shooting at sight range, GLua-style event hooks, combat-mode melee, robot pointing, and synchronous do-after actions).
+  stress, 16-tile sensor range, dense-room find, sensor-query throttling, synchronous and async walk-to, entity-handle walking, no-path retries, held-item UI/examine, power transfer, ranged shooting at sight range, GLua-style event hooks, combat-mode melee, robot pointing, two-handed wielding, and synchronous do-after actions).
   The BUI test covers the installed-CPU editor and a CPU held in hand.
 
 ### Implemented Phases 1–3
@@ -77,6 +77,10 @@
   `attack` temporarily enables combat mode and restores the previous stance; `robot.combat(true/
   false)` sets a persistent stance. `point` spawns the normal pointing arrow and requires a
   manipulator. Action APIs return `false, reason` on failure instead of a bare `false`.
+- Two-handed weapons are wielded with `robot.wield([enabled])`. The assembly needs a second free
+  or droppable manipulator hand; wielding a gun while holding something else may drop that item.
+  `item_status(handle).wielded` reports the state, and `shoot` reports `weapon must be wielded`
+  for guns that require it. Saved mining and wielding examples live in the Lua API reference.
 - Reagent transfers update both the source and destination solutions. Emptying a bucket, beaker or
   dispenser updates its sprite, examine text and UI immediately; empty/full failures report
   `beaker slot N is empty`, `target is full` and similar reasons.

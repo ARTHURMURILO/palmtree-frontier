@@ -1367,6 +1367,10 @@
           GlassBeaker:
             amount: 1
             defaultPrototype: Beaker
+    - type: Construction # Frontier
+      graph: DrinkDispenserBoard # Frontier
+      deconstructionTarget: null # Frontier
+      node: boozeDispenser # Frontier
 
 - type: entity
   id: CargoTelepadMachineCircuitboard
@@ -1418,6 +1422,10 @@
           GlassBeaker:
             amount: 1
             defaultPrototype: Beaker
+    - type: Construction # Frontier
+      graph: DrinkDispenserBoard # Frontier
+      deconstructionTarget: null # Frontier
+      node: sodaDispenser # Frontier
 
 - type: entity
   id: TelecomServerCircuitboard

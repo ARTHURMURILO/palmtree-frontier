@@ -8,17 +8,16 @@ using Robust.Shared.Timing;
 
 namespace Content.Shared.RCD.Systems;
 
-public sealed class RCDAmmoSystem : EntitySystem
+public sealed partial class RCDAmmoSystem : EntitySystem
 {
+    [Dependency] private SharedChargesSystem _sharedCharges = default!;
+    [Dependency] private SharedPopupSystem _popup = default!;
+    [Dependency] private IGameTiming _timing = default!;
     /// <summary>
     /// Palmtree: the RPD's 60-charge tank should take one standard 30-charge compressed-matter
     /// cartridge, so its cartridge charges are worth two tool charges each. The RCD stays 1:1.
     /// </summary>
     private const int RpdAmmoChargeMultiplier = 2;
-
-    [Dependency] private readonly SharedChargesSystem _sharedCharges = default!;
-    [Dependency] private readonly SharedPopupSystem _popup = default!;
-    [Dependency] private readonly IGameTiming _timing = default!;
 
     public override void Initialize()
     {

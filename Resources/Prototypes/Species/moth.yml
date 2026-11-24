@@ -18,6 +18,8 @@
   id: MobMothSprites
   sprites:
     Genital: MobHumanoidAnyMarking
+    GenitalUnder: MobHumanoidAnyMarking
+    GenitalLow: MobHumanoidAnyMarking
     TailBehind: MobHumanoidAnyMarking
     Head: MobMothHead
     Snout: MobHumanoidAnyMarking

@@ -20,6 +20,8 @@
   id: MobArachnidSprites
   sprites:
     Genital: MobHumanoidAnyMarking
+    GenitalUnder: MobHumanoidAnyMarking
+    GenitalLow: MobHumanoidAnyMarking
     TailBehind: MobHumanoidAnyMarking
     Head: MobArachnidHead
     Snout: MobHumanoidAnyMarking

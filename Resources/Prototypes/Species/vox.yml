@@ -20,6 +20,8 @@
   id: MobVoxSprites
   sprites:
     Genital: MobHumanoidAnyMarking
+    GenitalUnder: MobHumanoidAnyMarking
+    GenitalLow: MobHumanoidAnyMarking
     TailBehind: MobHumanoidAnyMarking
     Head: MobVoxHead
     Snout: MobHumanoidAnyMarking

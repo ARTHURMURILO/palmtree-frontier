@@ -2189,3 +2189,45 @@ Entries:
   id: 90145
   time: '2026-11-15T20:55:14.0000000+00:00'
   url: https://github.com/xTheLifex/palmtree-frontier/pull/12
+- author: xTheLifex
+  changes:
+    - type: Add
+      message: >-
+        Added robot.wield([enabled]) for circuit assemblies, plus a wielded field in
+        robot.item_status. Assemblies need a free or droppable manipulator hand to wield
+        two-handed weapons.
+    - type: Fix
+      message: >-
+        Circuit robot.shoot now reports "weapon must be wielded" for guns that require wielding
+        instead of silently attempting an invalid shot.
+  id: 90146
+  time: '2026-11-15T21:13:43.0000000+00:00'
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: Fixed leg markings rendering above the butt and genitals.
+    - type: Fix
+      message: Breasts now render above exposed butt markings when facing south.
+  id: 90147
+  time: '2026-11-16T03:57:21.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/c6a3cc004ad71f07289a15888560b624c77458f2
+- author: xTheLifex
+  changes:
+    - type: Fix
+      message: Tails no longer render over underwear when facing south.
+    - type: Fix
+      message: Right-leg markings now render correctly when facing east.
+  id: 90148
+  time: '2026-11-23T15:07:19.0000000+00:00'
+  url: >-
+    https://github.com/xTheLifex/palmtree-frontier/commit/46d9ec367fc7153fec01fe70d435bc8d94010828
+- author: ARTHURMURILO
+  changes:
+    - type: Fix
+      message: >-
+        Wrenching a supermatter shard now bolts it down instead of eating the
+        wrench and activating the crystal.
+  id: 90149
+  time: '2026-11-23T21:08:28.0000000+00:00'
+  url: https://github.com/xTheLifex/palmtree-frontier/pull/15

@@ -134,6 +134,101 @@ public sealed class GenitalRenderTest
         await pair.CleanReturnAsync();
     }
 
+    /// <summary>
+    /// Palmtree: an exposed south-facing butt uses the dedicated GenitalUnder sublayer, which sits
+    /// above body/leg markings but below the breast/neck group.
+    /// </summary>
+    [Test]
+    [NonParallelizable] // NsfwGate is a process-wide static.
+    public async Task SouthExposedButtUsesGenitalUnderLayer()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings
+        {
+            Connected = true,
+            DummyTicker = false,
+        });
+
+        var server = pair.Server;
+        var client = pair.Client;
+        var serverPlayers = server.ResolveDependency<IPlayerManager>();
+
+        await server.WaitAssertion(() =>
+        {
+            var attached = serverPlayers.Sessions.Single().AttachedEntity;
+            Assert.That(attached, Is.Not.Null);
+
+            var settings = new GenitalOrganSettings();
+            settings.Set(GenitalType.Breasts, new GenitalOrganData
+            {
+                Prototype = "BreastsSplurt",
+                Size = 1,
+                Visibility = GenitalVisibility.VisibleUnderClothes,
+            });
+            settings.Set(GenitalType.Butt, new GenitalOrganData
+            {
+                Prototype = "ButtStandard",
+                Size = 1,
+                Visibility = GenitalVisibility.VisibleUnderClothes,
+            });
+
+            server.System<SharedHumanoidAppearanceSystem>().LoadProfile(attached.Value,
+                HumanoidCharacterProfile.DefaultWithSpecies("Human").WithGenitals(settings));
+        });
+
+        await pair.RunTicksSync(10);
+
+        await client.WaitAssertion(() =>
+        {
+            var clientEntMan = client.ResolveDependency<IEntityManager>();
+            var mob = client.Session.AttachedEntity;
+            Assert.That(mob, Is.Not.Null);
+
+            var previousNsfwState = NsfwGate.State;
+            NsfwGate.SetState(NsfwConsentState.Allowed);
+
+            try
+            {
+                var appearance = client.System<HumanoidAppearanceSystem>();
+                var direction = clientEntMan.EnsureComponent<HumanoidLayerDirectionComponent>(mob.Value);
+                direction.Direction = RsiDirection.South;
+                appearance.RefreshSprite(mob.Value);
+
+                var sprite = clientEntMan.GetComponent<SpriteComponent>(mob.Value);
+                var spriteSystem = client.System<SpriteSystem>();
+
+                Assert.That(spriteSystem.LayerMapTryGet((mob.Value, sprite),
+                    "GenitalButt1-butt_pair_2_0_FRONT", out var buttLayer, false), Is.True);
+                Assert.That(spriteSystem.LayerMapTryGet((mob.Value, sprite),
+                    "PSGenitalBreasts0-m_breasts_pair_0_FRONT_primary", out var breastLayer, false), Is.True);
+                Assert.That(spriteSystem.LayerMapTryGet((mob.Value, sprite),
+                    HumanoidVisualLayers.LLeg, out var legLayer, false), Is.True);
+
+                Assert.That(buttLayer, Is.GreaterThan(legLayer),
+                    "butt must stay above body/leg layers");
+                Assert.That(buttLayer, Is.LessThan(breastLayer),
+                    "breasts must render above butt facing south");
+            }
+            finally
+            {
+                clientEntMan.RemoveComponent<HumanoidLayerDirectionComponent>(mob.Value);
+                NsfwGate.SetState(previousNsfwState);
+            }
+        });
+
+        await server.WaitAssertion(() =>
+        {
+            var attached = serverPlayers.Sessions.Single().AttachedEntity;
+            if (attached != null)
+            {
+                server.System<SharedHumanoidAppearanceSystem>().LoadProfile(attached.Value,
+                    HumanoidCharacterProfile.DefaultWithSpecies("Human"));
+            }
+        });
+
+        await pair.RunTicksSync(5);
+        await pair.CleanReturnAsync();
+    }
+
     private static bool HasGenitalMarking(HumanoidAppearanceComponent humanoid)
     {
         return humanoid.MarkingSet.TryGetCategory(MarkingCategories.Genital, out var markings)
@@ -261,8 +356,6 @@ public sealed class GenitalRenderTest
 
                 Assert.That(buttLayer, Is.LessThan(underwearLayer),
                     "bottom organs must render under back undergarments");
-                Assert.That(breastLayer, Is.GreaterThan(buttLayer),
-                    "breasts must render above the butt facing east or west");
 
                 Assert.That(spriteSystem.LayerMapTryGet(
                     (mob.Value, sprite),
@@ -299,6 +392,14 @@ public sealed class GenitalRenderTest
 
                 Assert.That(spriteSystem.LayerMapTryGet(
                     (mob.Value, sprite),
+                    HumanoidVisualLayers.LLeg,
+                    out var southLegLayer,
+                    false), Is.True, "the left-leg layer must exist");
+                Assert.That(southButtLayer, Is.GreaterThan(southLegLayer),
+                    "clamped bottom organs must stay above leg markings");
+
+                Assert.That(spriteSystem.LayerMapTryGet(
+                    (mob.Value, sprite),
                     "neck",
                     out var neckLayer,
                     false), Is.True, "the neck layer must exist");
@@ -310,9 +411,6 @@ public sealed class GenitalRenderTest
 
                 Assert.That(neckLayer, Is.GreaterThan(southBreastLayer),
                     "neck clothing must render above breasts facing south");
-
-                Assert.That(southBreastLayer, Is.GreaterThan(southButtLayer),
-                    "breasts must render above the butt facing south");
 
                 Assert.That(spriteSystem.LayerMapTryGet(
                     (mob.Value, sprite),

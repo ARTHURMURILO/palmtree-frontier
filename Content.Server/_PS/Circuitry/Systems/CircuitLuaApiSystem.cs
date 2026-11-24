@@ -64,6 +64,8 @@ using Content.Shared.Storage;
 using Content.Shared.Toggleable;
 using Content.Shared.Weapons.Ranged.Components;
 using Content.Shared.Weapons.Ranged.Systems;
+using Content.Shared.Wieldable;
+using Content.Shared.Wieldable.Components;
 using MoonSharp.Interpreter;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
@@ -384,6 +386,7 @@ public sealed class CircuitLuaApiSystem : EntitySystem
     [Dependency] private readonly SharedInteractionSystem _interaction = default!;
     [Dependency] private readonly SharedSolutionContainerSystem _solutions = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
+    [Dependency] private readonly SharedWieldableSystem _wieldable = default!;
     [Dependency] private readonly WantedStatusSystem _wanted = default!;
 
     public void Configure(Script script, Table robot, CircuitLuaRuntime runtime)
@@ -475,6 +478,7 @@ public sealed class CircuitLuaApiSystem : EntitySystem
 
         robot.Set("attack", DynValue.NewCallback((_, args) => Attack(runtime, args), "attack"));
         robot.Set("shoot", DynValue.NewCallback((_, args) => Shoot(runtime, args), "shoot"));
+        robot.Set("wield", DynValue.NewCallback((_, args) => Wield(runtime, args), "wield"));
         robot.Set("point", DynValue.NewCallback((_, args) => Point(runtime, args), "point"));
         robot.Set("combat", DynValue.NewCallback((_, args) => Combat(runtime, args), "combat"));
 
@@ -1990,6 +1994,9 @@ public sealed class CircuitLuaApiSystem : EntitySystem
         if (_appearance.TryGetData<bool>(target, ToggleableVisuals.Enabled, out var activated))
             table.Set("activated", DynValue.NewBoolean(activated));
 
+        if (TryComp<WieldableComponent>(target, out var wieldable))
+            table.Set("wielded", DynValue.NewBoolean(wieldable.Wielded));
+
         if (TryComp<InjectorComponent>(target, out var injector))
         {
             var injectorTable = NewTable(runtime);
@@ -2772,10 +2779,22 @@ public sealed class CircuitLuaApiSystem : EntitySystem
 
         runtime.NextSignal = _timing.CurTime + TimeSpan.FromSeconds(0.5);
 
+        var hasWieldable = TryComp<WieldableComponent>(target, out var wieldable);
+        var wasWielded = wieldable?.Wielded ?? false;
+
         var ev = new UseInHandEvent(runtime.Assembly);
         RaiseLocalEvent(target, ev);
         if (!ev.Handled)
             return Bool(false, "held item did not handle use");
+
+        // WieldableSystem always marks a wield attempt as handled, even when the wield fails.
+        // Compare the state so scripts get a useful reason instead of a silent no-op.
+        if (hasWieldable && wieldable!.Wielded == wasWielded)
+        {
+            return Bool(false, wasWielded
+                ? "could not unwield weapon"
+                : "could not wield weapon: needs a free manipulator hand or item is on cooldown");
+        }
 
         return Bool(true);
     }
@@ -2929,6 +2948,49 @@ public sealed class CircuitLuaApiSystem : EntitySystem
             : Bool(false, "attack failed");
     }
 
+    private DynValue Wield(CircuitLuaRuntime runtime, CallbackArguments args)
+    {
+        if (!TryComp<CircuitAssemblyComponent>(runtime.Assembly, out var component))
+            return Bool(false, "assembly is missing");
+
+        if (!component.Capabilities.HasFlag(CircuitCapability.Manipulator))
+            return Bool(false, "no manipulator module");
+
+        if (!component.Powered)
+            return Bool(false, "no power");
+
+        if (!_hands.TryGetActiveItem((runtime.Assembly, (HandsComponent?) null), out var held) ||
+            !TryComp<WieldableComponent>(held.Value, out var wieldable))
+        {
+            return Bool(false, "no wieldable item in the active hand");
+        }
+
+        bool? enable = null;
+        if (args.Count > 0)
+        {
+            if (args[0].Type != DataType.Boolean)
+                return Bool(false, "wield expects true or false");
+
+            enable = args[0].Boolean;
+        }
+
+        var wanted = enable ?? !wieldable.Wielded;
+        if (wanted == wieldable.Wielded)
+            return Bool(true);
+
+        if (wanted)
+        {
+            if (!_wieldable.TryWield(held.Value, wieldable, runtime.Assembly))
+                return Bool(false, "could not wield weapon: needs a free manipulator hand or item is on cooldown");
+        }
+        else if (!_wieldable.TryUnwield(held.Value, wieldable, runtime.Assembly))
+        {
+            return Bool(false, "could not unwield weapon");
+        }
+
+        return Bool(true);
+    }
+
     private DynValue Combat(CircuitLuaRuntime runtime, CallbackArguments args)
     {
         if (!TryComp<CircuitAssemblyComponent>(runtime.Assembly, out _))
@@ -2996,6 +3058,13 @@ public sealed class CircuitLuaApiSystem : EntitySystem
             !TryComp<GunComponent>(held.Value, out var gun))
         {
             return Bool(false, "no gun in hand");
+        }
+
+        if (TryComp<GunRequiresWieldComponent>(held.Value, out _) &&
+            TryComp<WieldableComponent>(held.Value, out var wieldable) &&
+            !wieldable.Wielded)
+        {
+            return Bool(false, "weapon must be wielded");
         }
 
         // Ranged attacks use sight range, not the manipulator's 1.5-tile hand range.

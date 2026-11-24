@@ -22,16 +22,16 @@ using Robust.Shared.Utility;
 
 namespace Content.Client.Humanoid;
 
-public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
+public sealed partial class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
 {
-    [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
-    [Dependency] private readonly MarkingManager _markingManager = default!;
-    [Dependency] private readonly IConfigurationManager _configurationManager = default!;
-    [Dependency] private readonly DisplacementMapSystem _displacement = default!;
-    [Dependency] private readonly SpriteSystem _sprite = default!;
-    [Dependency] private readonly IEyeManager _eyeManager = default!;
-    [Dependency] private readonly SharedTransformSystem _transform = default!;
-    [Dependency] private readonly InventorySystem _inventory = default!;
+    [Dependency] private IPrototypeManager _prototypeManager = default!;
+    [Dependency] private MarkingManager _markingManager = default!;
+    [Dependency] private IConfigurationManager _configurationManager = default!;
+    [Dependency] private DisplacementMapSystem _displacement = default!;
+    [Dependency] private SpriteSystem _sprite = default!;
+    [Dependency] private IEyeManager _eyeManager = default!;
+    [Dependency] private SharedTransformSystem _transform = default!;
+    [Dependency] private InventorySystem _inventory = default!;
 
     public override void Initialize()
     {
@@ -117,24 +117,6 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
 
         return _inventory.TryGetSlotEntity(uid, "jumpsuit", out _, inventory)
                || _inventory.TryGetSlotEntity(uid, "outerClothing", out _, inventory);
-    }
-
-    /// <summary>
-    /// Palmtree: stable insertion point for bottom genital organs, below the undergarments but
-    /// above the body. The leg layers do not move when we insert above them.
-    /// </summary>
-    private int GetBottomOrganAnchor(EntityUid uid, SpriteComponent sprite)
-    {
-        if (_sprite.LayerMapTryGet((uid, sprite), HumanoidVisualLayers.LLeg, out var leftLegLayer, false))
-            return leftLegLayer + 1;
-
-        if (_sprite.LayerMapTryGet((uid, sprite), HumanoidVisualLayers.RLeg, out var rightLegLayer, false))
-            return rightLegLayer + 1;
-
-        if (_sprite.LayerMapTryGet((uid, sprite), "jumpsuit", out var jumpsuitLayer, false))
-            return jumpsuitLayer - 1;
-
-        return -1;
     }
 
     private bool HasVisibleUndergarment(HumanoidAppearanceComponent humanoid, MarkingCategories category)
@@ -620,6 +602,18 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
         // Palmtree/Floof: track the sprite order for markings that place several sprites on one layer.
         var layerDict = new Dictionary<string, int>();
 
+        // Palmtree: in the side views both leg base sprites occupy the same pixels and the fixed
+        // layer order always draws LLeg above RLeg. A marking on the leg nearest the camera must sit
+        // above the far leg's base sprite or it is hidden underneath it. Facing east the right leg
+        // is nearest; facing west the left leg already sits on top. Capture the stable top-of-leg
+        // anchor once so a multi-sprite marking keeps its order without climbing above GenitalLow.
+        var eastRightLegAnchor = -1;
+        if (screenDirection == RsiDirection.East
+            && _sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.GenitalLow, out var genitalLowAnchor, false))
+        {
+            eastRightLegAnchor = genitalLowAnchor;
+        }
+
         for (var j = 0; j < markingPrototype.Sprites.Count; j++)
         {
             var markingSprite = markingPrototype.Sprites[j];
@@ -638,6 +632,33 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
                 layerSlot = parsedLayer;
             }
 
+            // Palmtree: exposed south-facing butt markings go to the dedicated sublayer below the
+            // breast/neck group, keeping them above body/leg markings. Clothed or covered butts keep
+            // the normal Genital layer and its under-clothing clamp.
+            if (layerSlot == HumanoidVisualLayers.Genital
+                && renderBelowNeck
+                && !renderOverClothing
+                && screenDirection == RsiDirection.South
+                && !HasCoveringClothing(entity.Owner)
+                && !HasVisibleUndergarment(humanoid, MarkingCategories.UndergarmentBottom))
+            {
+                layerSlot = HumanoidVisualLayers.GenitalUnder;
+            }
+
+            // Palmtree: in the front view the body sits between the camera and a tail hanging from
+            // the back, so a tail using the general Tail layer must render behind the body instead
+            // of over underwear, clothing and limbs. Split tails already send their BEHIND sprites
+            // to TailBehind, and their FRONT sprites are empty facing south; this aligns the rest.
+            var visibilityLayer = layerSlot;
+            if (layerSlot is HumanoidVisualLayers.Tail or HumanoidVisualLayers.TailExtras
+                && screenDirection == RsiDirection.South
+                && humanoid.BaseLayers.TryGetValue(HumanoidVisualLayers.TailBehind, out var tailBehindSetting)
+                && tailBehindSetting.AllowsMarkings
+                && _sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.TailBehind, out _, false))
+            {
+                layerSlot = HumanoidVisualLayers.TailBehind;
+            }
+
             if (!_sprite.LayerMapTryGet((entity.Owner, sprite), layerSlot, out var targetLayer, false))
             {
                 continue;
@@ -645,6 +666,9 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
 
             var layerVisible = visible;
             layerVisible &= !IsHidden(humanoid, layerSlot);
+            // Keep layer-visibility rules aimed at the original layer (e.g. harpies hiding Tail
+            // when wearing a wings-hiding coat) applying to rerouted tail sprites too.
+            layerVisible &= !IsHidden(humanoid, visibilityLayer);
             layerVisible &= humanoid.BaseLayers.TryGetValue(layerSlot, out var setting)
                && setting.AllowsMarkings;
 
@@ -661,6 +685,10 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
 
             var layerOrder = layerDict[layerSlot.ToString()];
             var targLayerAdj = targetLayer + layerOrder + 1;
+
+            // Palmtree: lift right-leg markings over the left-leg base while facing east.
+            if (eastRightLegAnchor >= 0 && layerSlot == HumanoidVisualLayers.RLeg)
+                targLayerAdj = eastRightLegAnchor + layerOrder;
 
             // Palmtree: tails tuck under hair when the character is seen from the side (east/west).
             // Hair is a marking layer, so insert the tail before the current hair layer instead of
@@ -711,14 +739,6 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
                     if (neckLayer < targLayerAdj)
                         targLayerAdj = neckLayer;
                 }
-                else if (screenDirection == RsiDirection.South && renderBelowNeck)
-                {
-                    // South-facing butt sprites sit below the breast/neck group so breasts draw
-                    // over them. Other directions keep their existing order.
-                    var layerAnchor = GetBottomOrganAnchor(entity.Owner, sprite);
-                    if (layerAnchor >= 0)
-                        targLayerAdj = Math.Min(targLayerAdj, layerAnchor + layerOrder);
-                }
                 else if (screenDirection != RsiDirection.South
                          || hasCoveringClothing
                          || hasUndergarment)
@@ -737,7 +757,18 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
                     }
                     else
                     {
-                        layerAnchor = GetBottomOrganAnchor(entity.Owner, sprite);
+                        if (_sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.GenitalLow, out var genitalLowLayer, false))
+                            layerAnchor = genitalLowLayer + 1;
+                        else if (_sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.LLeg, out var leftLegLayer, false))
+                            layerAnchor = leftLegLayer + 1;
+                        else if (_sprite.LayerMapTryGet((entity.Owner, sprite), HumanoidVisualLayers.RLeg, out var rightLegLayer, false))
+                            layerAnchor = rightLegLayer + 1;
+                    }
+
+                    if (layerAnchor < 0 &&
+                        _sprite.LayerMapTryGet((entity.Owner, sprite), "jumpsuit", out var jumpsuitLayer, false))
+                    {
+                        layerAnchor = jumpsuitLayer - 1;
                     }
 
                     if (layerAnchor >= 0)

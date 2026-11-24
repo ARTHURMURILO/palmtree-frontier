@@ -1,0 +1,230 @@
+- type: constructionGraph
+  id: GasBinaryStarlight
+  start: start
+  graph:
+    - node: start
+      edges:
+      # connector port
+      - to: portAlt1
+        steps:
+        - material: Steel
+          amount: 2
+          doAfter: 1
+
+      - to: portAlt2
+        steps:
+        - material: Steel
+          amount: 2
+          doAfter: 1
+
+      # dual port vent
+      - to: dualportventpumpAlt1
+        steps:
+        - material: Steel
+          amount: 2
+          doAfter: 1
+
+      - to: dualportventpumpAlt2
+        steps:
+        - material: Steel
+          amount: 2
+          doAfter: 1
+
+      # Palmtree: temperature devices
+      - to: temperaturegate
+        steps:
+        - material: Steel
+          amount: 2
+          doAfter: 1
+
+      - to: temperaturegateAlt1
+        steps:
+        - material: Steel
+          amount: 2
+          doAfter: 1
+
+      - to: temperaturegateAlt2
+        steps:
+        - material: Steel
+          amount: 2
+          doAfter: 1
+
+      - to: temperaturepump
+        steps:
+        - material: Steel
+          amount: 2
+          doAfter: 1
+
+      - to: temperaturepumpAlt1
+        steps:
+        - material: Steel
+          amount: 2
+          doAfter: 1
+
+      - to: temperaturepumpAlt2
+        steps:
+        - material: Steel
+          amount: 2
+          doAfter: 1
+
+    # connector port
+    - node: portAlt1
+      entity: GasPortAlt1
+      edges:
+      - to: start
+        conditions:
+        - !type:EntityAnchored
+          anchored: false
+        completed:
+        - !type:SpawnPrototype
+          prototype: SheetSteel1
+          amount: 2
+        - !type:DeleteEntity
+        steps:
+        - tool: Welding
+          doAfter: 1
+
+    - node: portAlt2
+      entity: GasPortAlt2
+      edges:
+      - to: start
+        conditions:
+        - !type:EntityAnchored
+          anchored: false
+        completed:
+        - !type:SpawnPrototype
+          prototype: SheetSteel1
+          amount: 2
+        - !type:DeleteEntity
+        steps:
+        - tool: Welding
+          doAfter: 1
+
+    # dual port vent
+    - node: dualportventpumpAlt1
+      entity: GasDualPortVentPumpAlt1
+      edges:
+      - to: start
+        conditions:
+        - !type:EntityAnchored
+          anchored: false
+        completed:
+        - !type:SpawnPrototype
+          prototype: SheetSteel1
+          amount: 2
+        - !type:DeleteEntity
+        steps:
+        - tool: Screwing
+          doAfter: 1
+        - tool: Welding
+          doAfter: 1
+
+    - node: dualportventpumpAlt2
+      entity: GasDualPortVentPumpAlt2
+      edges:
+      - to: start
+        conditions:
+        - !type:EntityAnchored
+          anchored: false
+        completed:
+        - !type:SpawnPrototype
+          prototype: SheetSteel1
+          amount: 2
+        - !type:DeleteEntity
+        steps:
+        - tool: Screwing
+          doAfter: 1
+        - tool: Welding
+          doAfter: 1
+
+    # Palmtree: temperature devices
+    - node: temperaturegate
+      entity: GasTemperatureGate
+      edges:
+      - to: start
+        conditions:
+        - !type:EntityAnchored
+          anchored: false
+        completed:
+        - !type:SpawnPrototype
+          prototype: SheetSteel1
+          amount: 2
+        - !type:DeleteEntity
+        steps:
+        - tool: Welding
+          doAfter: 1
+    - node: temperaturegateAlt1
+      entity: GasTemperatureGateAlt1
+      edges:
+      - to: start
+        conditions:
+        - !type:EntityAnchored
+          anchored: false
+        completed:
+        - !type:SpawnPrototype
+          prototype: SheetSteel1
+          amount: 2
+        - !type:DeleteEntity
+        steps:
+        - tool: Welding
+          doAfter: 1
+    - node: temperaturegateAlt2
+      entity: GasTemperatureGateAlt2
+      edges:
+      - to: start
+        conditions:
+        - !type:EntityAnchored
+          anchored: false
+        completed:
+        - !type:SpawnPrototype
+          prototype: SheetSteel1
+          amount: 2
+        - !type:DeleteEntity
+        steps:
+        - tool: Welding
+          doAfter: 1
+    - node: temperaturepump
+      entity: GasTemperaturePump
+      edges:
+      - to: start
+        conditions:
+        - !type:EntityAnchored
+          anchored: false
+        completed:
+        - !type:SpawnPrototype
+          prototype: SheetSteel1
+          amount: 2
+        - !type:DeleteEntity
+        steps:
+        - tool: Welding
+          doAfter: 1
+    - node: temperaturepumpAlt1
+      entity: GasTemperaturePumpAlt1
+      edges:
+      - to: start
+        conditions:
+        - !type:EntityAnchored
+          anchored: false
+        completed:
+        - !type:SpawnPrototype
+          prototype: SheetSteel1
+          amount: 2
+        - !type:DeleteEntity
+        steps:
+        - tool: Welding
+          doAfter: 1
+    - node: temperaturepumpAlt2
+      entity: GasTemperaturePumpAlt2
+      edges:
+      - to: start
+        conditions:
+        - !type:EntityAnchored
+          anchored: false
+        completed:
+        - !type:SpawnPrototype
+          prototype: SheetSteel1
+          amount: 2
+        - !type:DeleteEntity
+        steps:
+        - tool: Welding
+          doAfter: 1

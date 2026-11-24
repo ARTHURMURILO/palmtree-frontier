@@ -443,6 +443,36 @@ namespace Content.Server.Construction
             construction.Graph = graphId;
             return ChangeNode(uid, userUid, nodeId, performActions, construction);
         }
+
+        /// <summary>
+        /// Palmtree: re-syncs an entity's construction component with its prototype when the graph stored
+        /// in a save no longer exists (renamed, folded into another graph, or removed). Returns true when
+        /// the component was repaired or removed. Used by the bluespace dock when loading stored ships.
+        /// </summary>
+        public bool TryRepairConstruction(EntityUid uid, ConstructionComponent? construction = null)
+        {
+            if (!Resolve(uid, ref construction, false))
+                return false;
+
+            if (PrototypeManager.HasIndex<ConstructionGraphPrototype>(construction.Graph))
+                return false;
+
+            var prototype = MetaData(uid).EntityPrototype;
+            if (prototype is not null
+                && prototype.TryGetComponent<ConstructionComponent>(out var prototypeConstruction, EntityManager.ComponentFactory)
+                && PrototypeManager.HasIndex<ConstructionGraphPrototype>(prototypeConstruction.Graph))
+            {
+                construction.Graph = prototypeConstruction.Graph;
+                construction.Node = prototypeConstruction.Node;
+                construction.EdgeIndex = null;
+                construction.StepIndex = 0;
+                construction.DeconstructionNode = prototypeConstruction.DeconstructionNode;
+                return true;
+            }
+
+            RemComp<ConstructionComponent>(uid);
+            return true;
+        }
     }
 
     /// <summary>

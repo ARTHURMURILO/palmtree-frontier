@@ -177,8 +177,9 @@ namespace Content.Shared.Humanoid.Markings
         public bool RenderUnderTopUndergarment;
 
         /// <summary>
-        ///     Palmtree: draw this genital marking below the breast/neck group when facing south.
-        ///     Used by butt sprites so breasts render above them.
+        ///     Palmtree: render this genital marking on the GenitalUnder sublayer when exposed while
+        ///     facing south. Used by butt sprites so breasts render above them without dropping the
+        ///     butt below body/leg markings.
         /// </summary>
         [DataField("renderBelowNeck")]
         public bool RenderBelowNeck;

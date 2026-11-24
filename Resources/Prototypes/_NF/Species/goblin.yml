@@ -19,6 +19,8 @@
   id: MobGoblinSprites
   sprites:
     Genital: MobHumanoidAnyMarking
+    GenitalUnder: MobHumanoidAnyMarking
+    GenitalLow: MobHumanoidAnyMarking
     TailBehind: MobHumanoidAnyMarking
     Head: MobGoblinHead
     Hair: MobHumanoidAnyMarking
