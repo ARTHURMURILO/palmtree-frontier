@@ -10,7 +10,9 @@ using Content.Shared.Construction.Steps;
 using Content.Shared.Hands.EntitySystems;
 using Content.Shared.Interaction;
 using Content.Shared.Interaction.Events;
+using Content.Shared.Popups;
 using Robust.Shared.Audio.Systems;
+using Robust.Shared.Spawners;
 using Robust.Shared.Timing;
 using Robust.Shared.Map;
 using Robust.Shared.Physics;
@@ -29,6 +31,7 @@ public sealed partial class ConstructionChalkSystem : SharedConstructionChalkSys
     [Dependency] private SharedAudioSystem _audio = null!;
     [Dependency] private SharedPhysicsSystem _physics = null!;
     [Dependency] private EntityLookupSystem _lookup = null!;
+    [Dependency] private SharedPopupSystem _popup = null!;
     [Dependency] private IGameTiming _timing = null!;
 
     private const string ChalkMarkPrototype = "ConstructionChalkMark";
@@ -68,19 +71,34 @@ public sealed partial class ConstructionChalkSystem : SharedConstructionChalkSys
         chalkComp.NextPlace = _timing.CurTime + TimeSpan.FromSeconds(0.25);
 
         var coords = GetCoordinates(ev.Coordinates);
-        var mapPos = _transform.ToMapCoordinates(coords);
-        if (mapPos.MapId == MapId.Nullspace)
-            return;
-
         if (!IsChalkableRecipe(ev.ConstructionPrototype, chalkComp.Mode) ||
             !_proto.TryIndex<ConstructionPrototype>(ev.ConstructionPrototype, out var recipe))
         {
             return;
         }
 
+        TryPlaceMark(user, chalkComp, coords, recipe, ev.Rotation);
+    }
+
+    /// <summary>
+    ///     Validates a mark placement and spawns the mark if it is allowed. Split out of the network
+    ///     handler so the placement rules (range, recipe conditions and the mark cap) can be
+    ///     exercised directly.
+    /// </summary>
+    internal bool TryPlaceMark(
+        EntityUid user,
+        ConstructionChalkComponent chalkComp,
+        EntityCoordinates coords,
+        ConstructionPrototype recipe,
+        Angle rotation)
+    {
+        var mapPos = _transform.ToMapCoordinates(coords);
+        if (mapPos.MapId == MapId.Nullspace)
+            return false;
+
         // just checks the same recipe...
-        if (MarkAlreadyPresent(mapPos, ev.ConstructionPrototype))
-            return;
+        if (MarkAlreadyPresent(mapPos, recipe.ID))
+            return false;
 
         bool IgnoreOccupied(EntityUid e)
         {
@@ -92,21 +110,52 @@ public sealed partial class ConstructionChalkSystem : SharedConstructionChalkSys
         }
 
         if (!_interaction.InRangeUnobstructed(user, mapPos, predicate: IgnoreOccupied))
-            return;
+            return false;
 
-        if (recipe.Conditions.Any(condition => !condition.Condition(user, coords, ev.Rotation.GetCardinalDir())))
+        if (recipe.Conditions.Any(condition => !condition.Condition(user, coords, rotation.GetCardinalDir())))
+            return false;
+
+        if (AtMarkLimit(chalkComp))
         {
-            return;
+            _popup.PopupEntity(Loc.GetString("chalk-mark-limit"), user, user);
+            return false;
         }
 
         var mark = Spawn(ChalkMarkPrototype, coords);
         var comp = EnsureComp<ConstructionChalkMarkComponent>(mark);
-        comp.ConstructionPrototype = ev.ConstructionPrototype;
-        comp.Rotation = recipe.CanRotate ? ev.Rotation : Angle.Zero;
+        comp.ConstructionPrototype = recipe.ID;
+        comp.Rotation = recipe.CanRotate ? rotation : Angle.Zero;
         Dirty(mark, comp);
         _transform.SetLocalRotation(mark, comp.Rotation);
 
+        // Marks are ephemeral pointers to a plan; let them expire so stale marks cannot pile up.
+        if (chalkComp.MarkLifetime > TimeSpan.Zero)
+        {
+            var despawn = EnsureComp<TimedDespawnComponent>(mark);
+            despawn.Lifetime = (float) chalkComp.MarkLifetime.TotalSeconds;
+        }
+
         _audio.PlayPvs(chalkComp.PlaceSound, mark);
+        return true;
+    }
+
+    /// <summary>
+    ///     Whether the world already holds the maximum number of chalk marks this chalk may place.
+    /// </summary>
+    private bool AtMarkLimit(ConstructionChalkComponent chalkComp)
+    {
+        if (chalkComp.MaxMarks <= 0)
+            return false;
+
+        var count = 0;
+        var query = EntityQueryEnumerator<ConstructionChalkMarkComponent>();
+        while (query.MoveNext(out _, out _))
+        {
+            if (++count >= chalkComp.MaxMarks)
+                return true;
+        }
+
+        return false;
     }
 
     private void OnMarkInteractUsing(Entity<ConstructionChalkMarkComponent> ent, ref InteractUsingEvent args)

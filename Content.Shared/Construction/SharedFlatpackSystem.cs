@@ -1,4 +1,6 @@
 using Content.Shared.Construction.Components;
+using Content.Shared._PS.Construction; // Palmtree: multi-tile flatpack footprint checks
+using Content.Shared._PS.Construction.Components; // Palmtree
 using Content.Shared.Administration.Logs;
 using Content.Shared.Containers.ItemSlots;
 using Content.Shared.Database;
@@ -65,6 +67,7 @@ public abstract partial class SharedFlatpackSystem : EntitySystem
 
         args.Handled = true;
 
+        // Palmtree: flatpacks with an unpack delay run a do-after before spawning their machine.
         if (comp.UnpackDelay > TimeSpan.Zero)
         {
             _tool.UseTool(args.Used,
@@ -90,6 +93,8 @@ public abstract partial class SharedFlatpackSystem : EntitySystem
     /// <summary>
     ///     Checks that the flatpack has somewhere to go and, on the server, spawns its contents.
     /// </summary>
+    // Palmtree: split out of the interaction handler so the delayed unpack do-after can share it,
+    // and so multi-tile flatpacks can veto the placement through FlatpackUnpackAttemptEvent.
     private void TryUnpack(Entity<FlatpackComponent> ent, EntityUid user)
     {
         var (uid, comp) = ent;

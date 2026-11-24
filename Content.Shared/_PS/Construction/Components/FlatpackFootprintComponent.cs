@@ -1,6 +1,6 @@
 using Robust.Shared.GameStates;
 
-namespace Content.Shared.Construction.Components;
+namespace Content.Shared._PS.Construction.Components;
 
 /// <summary>
 ///     Marks a flatpack whose machine occupies more than one tile. The footprint is validated before

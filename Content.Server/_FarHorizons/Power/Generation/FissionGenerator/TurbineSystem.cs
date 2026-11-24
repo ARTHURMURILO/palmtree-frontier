@@ -25,6 +25,8 @@ using Content.Server.NodeContainer.Nodes;
 using Content.Shared.DeviceLinking.Events;
 using Content.Server.DeviceLinking.Systems;
 using System.Numerics;
+using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
 using Robust.Shared.Physics;
 
 namespace Content.Server._FarHorizons.Power.Generation.FissionGenerator;
@@ -45,6 +47,7 @@ public sealed class TurbineSystem : SharedTurbineSystem
     [Dependency] private readonly TransformSystem _transformSystem = default!;
     [Dependency] private readonly UserInterfaceSystem _uiSystem = null!;
     [Dependency] private readonly DeviceLinkSystem _signal = default!;
+    [Dependency] private readonly SharedMapSystem _mapSystem = default!;
 
     private readonly List<string> _damageSoundList = [
         "/Audio/_FarHorizons/Effects/engine_grump1.ogg",
@@ -53,6 +56,8 @@ public sealed class TurbineSystem : SharedTurbineSystem
         "/Audio/Effects/metal_slam5.ogg",
         "/Audio/Effects/metal_scrape2.ogg"
     ];
+
+    private const string PipeStubPrototype = "TurbineGasPipe";
 
     public override void Initialize()
     {
@@ -126,30 +131,66 @@ public sealed class TurbineSystem : SharedTurbineSystem
     }
 
     /// <summary>
-    ///     Reuse a pipe stub that was saved with the grid instead of spawning another one on top of
-    ///     it. The stub entities are children of the turbine and survive a map save/load, but the
-    ///     runtime UID fields do not, so without this every reload doubled the pipe nodes.
+    ///     Reuse a pipe stub that was saved with the map instead of spawning another one on top of
+    ///     it. The stub positions are stable, but the runtime UIDs are not serialized, and the map
+    ///     loader parents anchored stubs to the grid rather than to the turbine, so the stubs have
+    ///     to be found by position rather than as turbine children. Any duplicate already sitting
+    ///     on the tile (from a save written before this fix) is deleted.
     /// </summary>
     private EntityUid FindOrSpawnPipe(EntityUid uid, Vector2 offset, float rotation)
     {
-        EntityUid? found = null;
-        var children = Transform(uid).ChildEnumerator;
-        while (children.MoveNext(out var child))
-        {
-            if (MetaData(child).EntityPrototype?.ID != "TurbineGasPipe")
-                continue;
+        var target = new EntityCoordinates(uid, offset);
+        var targetMap = _transformSystem.ToMapCoordinates(target);
 
-            if ((Transform(child).LocalPosition - offset).LengthSquared() > 0.01f)
-                continue;
+        EntityUid? found = null;
+
+        void Consider(EntityUid candidate)
+        {
+            if (candidate == found || TerminatingOrDeleted(candidate))
+                return;
+
+            if (MetaData(candidate).EntityPrototype?.ID != PipeStubPrototype)
+                return;
+
+            // The stubs sit on tile-sized spacing (the inlet and outlet are two tiles apart on every
+            // turbine prototype), so a metre of slack cannot confuse the two.
+            if ((_transformSystem.GetWorldPosition(candidate) - targetMap.Position).LengthSquared() > 1f)
+                return;
 
             if (found == null)
-                found = child;
-            else
-                QueueDel(child);
+            {
+                found = candidate;
+                return;
+            }
+
+            // Duplicates can be left over from saves written before the stubs were deduplicated by
+            // position: keep the first one and clean the rest up.
+            QueueDel(candidate);
         }
 
+        // Runtime case: stubs spawned (or still parented) by the turbine are its children.
+        var children = Transform(uid).ChildEnumerator;
+        while (children.MoveNext(out var child))
+            Consider(child);
         children.Dispose();
-        return found ?? SpawnAttachedTo("TurbineGasPipe", new(uid, offset), rotation: Angle.FromDegrees(rotation));
+
+        // Save/load case: anchored entities are re-parented to the grid, so also look on the tile.
+        if (Transform(uid).GridUid is { } gridUid && TryComp<MapGridComponent>(gridUid, out var grid))
+        {
+            var tile = _mapSystem.TileIndicesFor(gridUid, grid, target);
+            foreach (var anchored in _mapSystem.GetAnchoredEntities((gridUid, grid), tile))
+                Consider(anchored);
+        }
+
+        if (found is not { } stub)
+            return SpawnAttachedTo(PipeStubPrototype, target, rotation: Angle.FromDegrees(rotation));
+
+        // A reused stub has to stay anchored or CheckAnchoredPipes would delete it again next tick.
+        var stubXform = Transform(stub);
+        if (!stubXform.Anchored)
+            _transformSystem.AnchorEntity(stub);
+
+        return stub;
     }
 
     #region Main Loop

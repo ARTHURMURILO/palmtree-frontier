@@ -57,10 +57,11 @@ public sealed partial class TurbineAssemblyComponent : Component
     public List<TurbineFloorRestore> Floors = new();
 
     /// <summary>
-    ///     The floor tile the flatpack laid down, used to avoid restoring a deck the crew has since changed.
+    ///     Prototype ID of the floor tile the flatpack laid down, used to avoid restoring a deck the
+    ///     crew has since changed. Persisted by ID rather than by the session-local numeric tile ID.
     /// </summary>
     [DataField]
-    public int FloorTile;
+    public string? FloorTileId;
 }
 
 [DataDefinition]
@@ -69,6 +70,11 @@ public sealed partial class TurbineFloorRestore
     [DataField]
     public Vector2i Position;
 
+    /// <summary>
+    ///     Prototype ID of the tile that was under this position before the flatpack laid its floor,
+    ///     or null if the tile was empty. Persisted by ID rather than by the session-local numeric
+    ///     tile ID.
+    /// </summary>
     [DataField]
-    public int OriginalTileType;
+    public string? OriginalTileId;
 }

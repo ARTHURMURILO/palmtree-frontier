@@ -3,7 +3,7 @@ using Robust.Shared.Map;
 using Robust.Shared.Maths;
 using Robust.Shared.Serialization;
 
-namespace Content.Shared.Construction;
+namespace Content.Shared._PS.Construction;
 
 /// <summary>
 ///     Raised on a flatpack just before it unpacks, so that multi-entity assemblies can veto the placement.

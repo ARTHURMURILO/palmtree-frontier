@@ -1,12 +1,15 @@
+using Content.Shared._PS.Construction.Components;
 using Content.Shared.Atmos.Components;
 using Content.Shared.Construction.Components;
 using Content.Shared.Electrocution;
 using Content.Shared.Maps;
+using Content.Shared.Mobs.Components;
 using Content.Shared.SubFloor;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
+using Robust.Shared.Physics.Components;
 
-namespace Content.Shared.Construction;
+namespace Content.Shared._PS.Construction;
 
 /// <summary>
 ///     Shared footprint validation for flatpacks that spawn multi-tile machines. The server uses it to
@@ -75,9 +78,9 @@ public sealed class SharedFlatpackPlacementSystem : EntitySystem
                 return false;
             }
 
-            if (HasDraggableObstacle(tileRef, flatpack))
+            if (GetFootprintObstacle(tileRef, flatpack) is { } obstacle)
             {
-                reason = "flatpack-unpack-obstructed";
+                reason = obstacle;
                 return false;
             }
         }
@@ -85,21 +88,40 @@ public sealed class SharedFlatpackPlacementSystem : EntitySystem
         return true;
     }
 
-    private bool HasDraggableObstacle(TileRef tile, EntityUid ignore)
+    /// <summary>
+    ///     Returns the localisation key of the first loose entity that would end up inside the
+    ///     machine after unpacking, or null when the tile is clear.
+    /// </summary>
+    private string? GetFootprintObstacle(TileRef tile, EntityUid flatpack)
     {
         _found.Clear();
         _lookup.GetEntitiesInTile(tile, _found, LookupFlags.Dynamic | LookupFlags.Sundries);
 
         foreach (var other in _found)
         {
-            if (other == ignore || Transform(other).Anchored)
+            // The flatpack itself is about to be consumed.
+            if (other == flatpack)
                 continue;
 
+            // Anchored machines, pipes and structures are rejected by the anchored-entity pass above.
+            if (Transform(other).Anchored)
+                continue;
+
+            // Living mobs have no AnchorableComponent, but spawning a machine inside a player or
+            // NPC would trap them in a solid body.
+            if (HasComp<MobStateComponent>(other))
+                return "flatpack-unpack-mob";
+
             if (HasComp<AnchorableComponent>(other))
-                return true;
+                return "flatpack-unpack-obstructed";
+
+            // Any other loose collidable body (crates, lockers, loose machinery) would also be
+            // sealed inside the machine once it unpacks, so it has to move first.
+            if (TryComp<PhysicsComponent>(other, out var body) && body.CanCollide)
+                return "flatpack-unpack-obstructed";
         }
 
-        return false;
+        return null;
     }
 
     private static Vector2i RotateOffset(Vector2i offset, Direction rotation)

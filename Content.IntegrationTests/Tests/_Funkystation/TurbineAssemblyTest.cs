@@ -1,18 +1,24 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using Content.Server.Power.Components;
 using Content.Server._FarHorizons.Power.Generation.FissionGenerator;
 using Content.Shared._FarHorizons.Power.Generation.FissionGenerator;
+using Content.Shared._PS.Construction;
+using Content.Shared._PS.Construction.Components;
 using Content.Shared.Construction;
 using Content.Shared.Construction.Components;
 using Content.Shared.DoAfter;
 using Content.Shared.Power;
 using NUnit.Framework;
+using Robust.Shared.ContentPack;
+using Robust.Shared.EntitySerialization.Systems;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Maths;
+using Robust.Shared.Utility;
 
 namespace Content.IntegrationTests.Tests._Funkystation;
 
@@ -169,6 +175,121 @@ public sealed class TurbineAssemblyTest
         });
 
         await pair.CleanReturnAsync();
+    }
+
+    [Test]
+    public async Task FloorRestoreUsesPrototypeIdsAndSurvivesMapReload()
+    {
+        var savePath = new ResPath("/Maps/Test/TurbineFloorReload.yml");
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var entMan = server.EntMan;
+        var mapManager = server.ResolveDependency<IMapManager>();
+        var mapLoader = entMan.System<MapLoaderSystem>();
+        var mapSys = entMan.System<SharedMapSystem>();
+        var resManager = server.ResolveDependency<IResourceManager>();
+        var tiles = server.ResolveDependency<ITileDefinitionManager>();
+
+        await server.WaitAssertion(() =>
+        {
+            resManager.UserData.CreateDir(savePath.Directory);
+            mapSys.CreateMap(out var mapId);
+            var grid = mapManager.CreateGridEntity(mapId);
+            LayFloor(mapSys, tiles, grid.Owner, grid.Comp);
+
+            var coords = new EntityCoordinates(grid.Owner, new Vector2(0.5f, 0.5f));
+            var flatpack = entMan.SpawnEntity("GasTurbineFlatpack", coords);
+            var turbine = entMan.SpawnEntity("Turbine", coords);
+            var assembly = entMan.GetComponent<TurbineAssemblyComponent>(turbine);
+            var footprint = entMan.GetComponent<FlatpackFootprintComponent>(flatpack);
+            var center = mapSys.TileIndicesFor(grid.Owner, grid.Comp, coords);
+
+            entMan.EventBus.RaiseLocalEvent(turbine, new FlatpackUnpackedEvent(flatpack, EntityUid.Invalid, turbine), true);
+
+            var footprintTiles = Tiles(center, footprint).ToList();
+            Assert.Multiple(() =>
+            {
+                Assert.That(assembly.FloorTileId, Is.EqualTo("FloorReinforced"),
+                    "the laid floor has to be persisted as a tile prototype id, not a session-local int");
+                Assert.That(assembly.Floors, Has.Count.EqualTo(footprintTiles.Count));
+                Assert.That(assembly.Floors.All(f => f.OriginalTileId == "Plating"),
+                    "the original tile has to be persisted as a tile prototype id");
+            });
+
+            Assert.That(mapLoader.TrySaveMap(mapId, savePath), Is.True, "failed to save the test map");
+            mapSys.DeleteMap(mapId);
+        });
+
+        await server.WaitIdleAsync();
+
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(mapLoader.TryLoadMap(savePath, out var loadedMap, out _), Is.True);
+            var loadedMapId = loadedMap!.Value.Comp.MapId;
+
+            EntityUid turbine = default;
+            var turbineCount = 0;
+            var turbineQuery = entMan.EntityQueryEnumerator<TurbineComponent>();
+            while (turbineQuery.MoveNext(out var uid, out _))
+            {
+                turbine = uid;
+                turbineCount++;
+            }
+
+            Assert.That(turbineCount, Is.EqualTo(1), "expected exactly one turbine on the loaded map");
+            var assembly = entMan.GetComponent<TurbineAssemblyComponent>(turbine);
+            var xform = entMan.GetComponent<TransformComponent>(turbine);
+            Assert.That(xform.GridUid, Is.Not.Null, "the reloaded turbine should be anchored on the grid");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(assembly.FloorTileId, Is.EqualTo("FloorReinforced"),
+                    "the floor tile id did not survive the save/load");
+                Assert.That(assembly.Floors.All(f => f.OriginalTileId == "Plating"),
+                    "the original tile ids did not survive the save/load");
+            });
+
+            // The deck the flatpack laid is still there after the reload...
+            var reinforced = tiles["FloorReinforced"];
+            foreach (var floor in assembly.Floors)
+            {
+                Assert.That(mapSys.TryGetTileRef(xform.GridUid!.Value,
+                        entMan.GetComponent<MapGridComponent>(xform.GridUid.Value), floor.Position, out var tileRef), Is.True);
+                Assert.That(tileRef.Tile.TypeId, Is.EqualTo(reinforced.TileId));
+            }
+
+            // ...and packing up after a reload still restores the deck that was there before.
+            // Packing clears the recorded floors, so keep a copy of the positions to check.
+            var floors = assembly.Floors.Select(f => f.Position).ToList();
+            var loadedGridUid = xform.GridUid!.Value;
+            var loadedGrid = entMan.GetComponent<MapGridComponent>(loadedGridUid);
+
+            entMan.EventBus.RaiseLocalEvent(turbine, MakePackEvent(entMan, turbine));
+            Assert.That(entMan.IsQueuedForDeletion(turbine), Is.True, "packing should remove the turbine");
+
+            var plating = tiles["Plating"];
+            foreach (var pos in floors)
+            {
+                Assert.That(mapSys.TryGetTileRef(loadedGridUid, loadedGrid, pos, out var tileRef), Is.True);
+                Assert.That(tileRef.Tile.TypeId, Is.EqualTo(plating.TileId),
+                    $"packing after a reload did not restore the original deck at {pos}");
+            }
+
+            mapSys.DeleteMap(loadedMapId);
+        });
+
+        await server.WaitIdleAsync();
+        await pair.CleanReturnAsync();
+    }
+
+    private static void LayFloor(SharedMapSystem mapSys, ITileDefinitionManager tiles, EntityUid gridUid, MapGridComponent grid)
+    {
+        var plating = tiles["Plating"];
+        for (var x = -4; x <= 4; x++)
+        {
+            for (var y = -4; y <= 4; y++)
+                mapSys.SetTile(gridUid, grid, new Vector2i(x, y), new Tile(plating.TileId));
+        }
     }
 
     private static TurbinePackDoAfterEvent MakePackEvent(IEntityManager entMan, EntityUid turbine)

@@ -1,8 +1,8 @@
-using Content.Shared.Construction;
-using Content.Shared.Construction.Components;
+using Content.Shared._PS.Construction;
+using Content.Shared._PS.Construction.Components;
 using Robust.Shared.Map.Components;
 
-namespace Content.Server.Construction;
+namespace Content.Server._PS.Construction;
 
 /// <summary>
 ///     Validates the footprint of multi-tile flatpacks before they unpack.

@@ -1,6 +1,8 @@
 using System.Linq;
 using System.Numerics;
 using Content.Client.Hands.Systems;
+using Content.Shared._PS.Construction;
+using Content.Shared._PS.Construction.Components;
 using Content.Shared.Construction;
 using Content.Shared.Construction.Components;
 using Content.Shared.Hands.Components;
