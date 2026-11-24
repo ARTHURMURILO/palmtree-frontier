@@ -207,7 +207,9 @@ public sealed partial class HFRCoreComponent : Component
     [ViewVariables(VVAccess.ReadWrite)]
     public bool HasReachedEmergency;
 
-    [DataField("lastWarning")]
+    // Palmtree: runtime clock, not saved. It is compared against IGameTiming.CurTime, so a value
+    // from before a save/load is an absolute timestamp in a different clock and would mute the
+    // reactor's containment alerts until CurTime caught up.
     [ViewVariables(VVAccess.ReadWrite)]
     public TimeSpan LastWarning;
 
