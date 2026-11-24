@@ -2239,3 +2239,26 @@ Entries:
   time: '2026-11-24T00:35:37.0000000+00:00'
   url: >-
     https://github.com/xTheLifex/palmtree-frontier/commit/903165ae92c3a30f18e15eafe75f92140adbcf97
+- author: ARTHURMURILO
+  changes:
+    - type: Fix
+      message: >-
+        The RCD/RPD placement ghost now turns red on grids that forbid
+        construction.
+    - type: Tweak
+      message: Admin ghosts and the admin RCD can build on protected grids again.
+    - type: Fix
+      message: RCD/RPD clicks no longer get stuck on a closed construction menu.
+    - type: Fix
+      message: >-
+        RPD deconstruction no longer over-refunds or loses compressed matter
+        when the tank is full.
+    - type: Tweak
+      message: Changing a pipe's layer with a screwdriver is instant.
+    - type: Tweak
+      message: >-
+        Pipe segments can cross on the same layer when their pipe connections do
+        not collide.
+  id: 90151
+  time: '2026-11-24T00:57:15.0000000+00:00'
+  url: https://github.com/xTheLifex/palmtree-frontier/pull/16
