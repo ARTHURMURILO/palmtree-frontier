@@ -100,11 +100,27 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
             return true;
         }
 
+        /// <summary>
+        /// Resolves a pipe node on one of the reactor's parts, tolerating a stale/deleted part UID.
+        /// </summary>
+        public bool TryGetPartPipe(EntityUid? partUid, string nodeName, out PipeNode? pipe)
+        {
+            pipe = null;
+            return partUid != null &&
+                   EntityManager.EntityExists(partUid.Value) &&
+                   _nodeContainer.TryGetNode(partUid.Value, nodeName, out pipe);
+        }
+
         /**
         * Toggles active status of all parts connected to the core
         */
         public void ToggleActiveState(EntityUid coreUid, HFRCoreComponent core, bool isActive)
         {
+            // Palmtree: never start a reactor that is missing (or has a stale) part. The console
+            // checks this too, but this is the one gate every activation path goes through.
+            if (isActive && !AreAllPartsConnected(coreUid, core))
+                return;
+
             core.IsActive = isActive;
 
             // Update core
@@ -133,10 +149,9 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
                 {
                     _appearanceSystem.SetData(core.ConsoleUid.Value, HFRVisuals.IsActive, isActive, consoleAppearance);
                 }
-                if (TryComp<ApcPowerReceiverComponent>(core.ConsoleUid.Value, out var consolePower))
-                {
-                    consolePower.Load = isActive ? 100000f : (core.PowerLevel > 0 ? consolePower.Load : 350f);
-                }
+                // The console's 350 W idle / 100 kW running draw is applied by
+                // HFRConsoleSystem.SetPowerState (called through UpdateConsolePowerState below),
+                // which also knows how to drop back to idle after a meltdown.
                 if (isActive)
                 {
                     if (EntityManager.HasComponent<AnchorableComponent>(core.ConsoleUid.Value))
@@ -255,19 +270,11 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
             core.CoolantTemperatureArchived = core.CoolantTemperature;
             core.CoolantTemperature = _nodeContainer.TryGetNode(coreUid, "pipe", out PipeNode? corePipe) ? corePipe?.Air.Temperature ?? 0f : 0f;
             core.OutputTemperatureArchived = core.OutputTemperature;
-            core.OutputTemperature = core.WasteOutputUid != null && _nodeContainer.TryGetNode(core.WasteOutputUid.Value, "pipe", out PipeNode? wastePipe) ? wastePipe?.Air.Temperature ?? 0f : 0f;
-            core.TemperaturePeriod = secondsPerTick;
+            core.OutputTemperature = TryGetPartPipe(core.WasteOutputUid, "pipe", out var wastePipe) ? wastePipe?.Air.Temperature ?? 0f : 0f;
 
-            core.PowerLevel = core.FusionTemperature switch
-            {
-                <= 500 => 0,
-                <= 1000 => 1,
-                <= 10000 => 2,
-                <= 100000 => 3,
-                <= 1000000 => 4,
-                <= 10000000 => 5,
-                _ => 6
-            };
+            // Palmtree: one shared threshold table for the server and the console graph. The values
+            // are the fork's scaled version of Funky's power levels (see HypertorusFusionReactor).
+            core.PowerLevel = HypertorusFusionReactor.GetPowerLevel(core.FusionTemperature);
         }
 
         /// <summary>
@@ -347,7 +354,8 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
                 !_prototypeManager.TryIndex<FusionRecipePrototype>(core.SelectedRecipeId, out var recipe))
                 return false;
 
-            return recipe.Requirements.All(gas => core.InternalFusion.GetMoles(Enum.Parse<Gas>(gas)) >= HypertorusFusionReactor.FusionMoleThreshold);
+            return HypertorusFusionReactor.ParseGases(recipe.Requirements)
+                .All(gas => core.InternalFusion.GetMoles(gas) >= HypertorusFusionReactor.FusionMoleThreshold);
         }
 
         /**
@@ -359,9 +367,9 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
                 return false;
 
             var contents = fuelPipe.Air;
-            foreach (var gas in recipe.Requirements)
+            foreach (var gas in HypertorusFusionReactor.ParseGases(recipe.Requirements))
             {
-                if (contents.GetMoles(Enum.Parse<Gas>(gas)) <= 0)
+                if (contents.GetMoles(gas) <= 0)
                     return false;
             }
 
@@ -373,12 +381,12 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
          */
         public void DumpGases(EntityUid coreUid, HFRCoreComponent core)
         {
-            if (core.WasteOutputUid != null && _nodeContainer.TryGetNode(core.WasteOutputUid.Value, "pipe", out PipeNode? wastePipe) && core.InternalFusion != null)
-            {
-                var remove = core.InternalFusion;
-                core.InternalFusion = new GasMixture { Volume = 5000 };
-                _atmosSystem.Merge(wastePipe.Air, remove);
-            }
+            if (core.InternalFusion == null || !TryGetPartPipe(core.WasteOutputUid, "pipe", out var wastePipe) || wastePipe == null)
+                return;
+
+            var remove = core.InternalFusion;
+            core.InternalFusion = new GasMixture(HypertorusFusionReactor.InternalFusionVolume);
+            _atmosSystem.Merge(wastePipe.Air, remove);
         }
 
         /**
@@ -752,23 +760,25 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
                 }
             }
 
-            // Gas emission - currently does not double for critical explosions as I feel this scales horribly. Someone please make this more workable.
+            // Gas emission. Every mole in the two internal mixtures is emitted exactly once: the old
+            // code silently dropped the leftovers of each RemoveRatio batch (~12% of the whole fusion
+            // mix and ~63% of the 20% batch) and only moved ~65% of the final 3x3 dump.
             var transform = _entityManager.GetComponent<TransformComponent>(coreUid);
             var coords = transform.Coordinates;
-            if (_transformSystem.IsValid(coords) && _mapManager.TryFindGridAt(_transformSystem.ToMapCoordinates(coords), out var gridUid, out var gridComp))
+
+            if (_transformSystem.IsValid(coords) &&
+                _mapManager.TryFindGridAt(_transformSystem.ToMapCoordinates(coords), out var gridUid, out var gridComp) &&
+                TryComp<GridAtmosphereComponent>(gridUid, out var gridAtmos) &&
+                TryComp<GasTileOverlayComponent>(gridUid, out var gasOverlay))
             {
-                var gridEntity = new Entity<GridAtmosphereComponent?, GasTileOverlayComponent?>(
-                    gridUid,
-                    _entityManager.GetComponent<GridAtmosphereComponent>(gridUid),
-                    _entityManager.GetComponent<GasTileOverlayComponent>(gridUid)
-                );
+                var gridEntity = new Entity<GridAtmosphereComponent?, GasTileOverlayComponent?>(gridUid, gridAtmos, gasOverlay);
                 var mapUid = _mapManager.GetMapEntityId(transform.MapID);
                 var mapEntity = new Entity<MapAtmosphereComponent?>(
                     mapUid,
                     _entityManager.TryGetComponent<MapAtmosphereComponent>(mapUid, out var mapAtmos) ? mapAtmos : null
                 );
 
-                // Get tiles in circular range for 20% gas distribution
+                // Get tiles in circular range for the 20% gas distribution.
                 var centerTile = _mapSystem.CoordinatesToTile(gridUid, gridComp, coords);
                 var tiles = new List<TileRef>();
                 var tileSize = gridComp.TileSize;
@@ -778,76 +788,14 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
                 foreach (var tileRef in _mapSystem.GetLocalTilesIntersecting(gridUid, gridComp, circle, ignoreEmpty: true))
                 {
                     if (!_atmosSystem.IsTileAirBlocked(gridUid, tileRef.GridIndices))
-                    {
                         tiles.Add(tileRef);
-                    }
                 }
 
-                // Distribute fusion gas (20% to random tiles)
-                if (core.InternalFusion != null && core.InternalFusion.TotalMoles > 0)
-                {
-                    var fusionToRemove = core.InternalFusion.RemoveRatio(0.2f);
-                    if (fusionToRemove != null && tiles.Count > 0)
-                    {
-                        var gasPerPocket = 1f / gasPockets;
-                        var shuffledTiles = tiles.ToList();
-                        for (int i = shuffledTiles.Count - 1; i > 0; i--)
-                        {
-                            var j = _random.Next(i + 1);
-                            (shuffledTiles[i], shuffledTiles[j]) = (shuffledTiles[j], shuffledTiles[i]);
-                        }
-
-                        for (int i = 0; i < Math.Min(gasPockets, shuffledTiles.Count); i++)
-                        {
-                            var tileRef = shuffledTiles[i];
-                            var mixture = _atmosSystem.GetTileMixture(gridEntity, mapEntity, tileRef.GridIndices, excite: true);
-                            if (mixture != null)
-                            {
-                                var pocket = fusionToRemove.RemoveRatio(gasPerPocket);
-                                if (pocket != null)
-                                {
-                                    _atmosSystem.Merge(mixture, pocket);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Distribute moderator gas (20% to random tiles)
-                if (core.ModeratorInternal != null && core.ModeratorInternal.TotalMoles > 0)
-                {
-                    var moderatorToRemove = core.ModeratorInternal.RemoveRatio(0.2f);
-                    if (moderatorToRemove != null && tiles.Count > 0)
-                    {
-                        var gasPerPocket = 1f / gasPockets;
-                        var shuffledTiles = tiles.ToList();
-                        for (int i = shuffledTiles.Count - 1; i > 0; i--)
-                        {
-                            var j = _random.Next(i + 1);
-                            (shuffledTiles[i], shuffledTiles[j]) = (shuffledTiles[j], shuffledTiles[i]);
-                        }
-
-                        for (int i = 0; i < Math.Min(gasPockets, shuffledTiles.Count); i++)
-                        {
-                            var tileRef = shuffledTiles[i];
-                            var mixture = _atmosSystem.GetTileMixture(gridEntity, mapEntity, tileRef.GridIndices, excite: true);
-                            if (mixture != null)
-                            {
-                                var pocket = moderatorToRemove.RemoveRatio(gasPerPocket);
-                                if (pocket != null)
-                                {
-                                    _atmosSystem.Merge(mixture, pocket);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Dump remaining gas into 3x3 area around core tile
+                // The 3x3 tiles around the core receive whatever the 20% distribution did not.
                 var coreAreaTiles = new List<TileRef>();
-                for (int x = -1; x <= 1; x++)
+                for (var x = -1; x <= 1; x++)
                 {
-                    for (int y = -1; y <= 1; y++)
+                    for (var y = -1; y <= 1; y++)
                     {
                         var tileIndices = centerTile + new Vector2i(x, y);
                         if (_mapSystem.TryGetTileRef(gridUid, gridComp, tileIndices, out var tileRef) &&
@@ -859,80 +807,31 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
                     }
                 }
 
-                if (coreAreaTiles.Count > 0)
-                {
-                    var gasPerTile = 1f / coreAreaTiles.Count;
+                EmitGasPockets(core.InternalFusion, 0.2f, tiles, gasPockets, gridEntity, mapEntity);
+                EmitGasPockets(core.ModeratorInternal, 0.2f, tiles, gasPockets, gridEntity, mapEntity);
 
-                    // Dump remaining fusion gas into 3x3 area
-                    if (core.InternalFusion != null && core.InternalFusion.TotalMoles > 0)
-                    {
-                        foreach (var tileRef in coreAreaTiles)
-                        {
-                            var mixture = _atmosSystem.GetTileMixture(gridEntity, mapEntity, tileRef.GridIndices, excite: true);
-                            if (mixture != null)
-                            {
-                                var pocket = core.InternalFusion.RemoveRatio(gasPerTile);
-                                if (pocket != null)
-                                {
-                                    _atmosSystem.Merge(mixture, pocket);
-                                }
-                            }
-                        }
-                    }
+                var emitted = EmitRemainingGas(core.InternalFusion, coreAreaTiles, gridEntity, mapEntity);
+                emitted |= EmitRemainingGas(core.ModeratorInternal, coreAreaTiles, gridEntity, mapEntity);
 
-                    // Dump remaining moderator gas into 3x3 area
-                    if (core.ModeratorInternal != null && core.ModeratorInternal.TotalMoles > 0)
-                    {
-                        foreach (var tileRef in coreAreaTiles)
-                        {
-                            var mixture = _atmosSystem.GetTileMixture(gridEntity, mapEntity, tileRef.GridIndices, excite: true);
-                            if (mixture != null)
-                            {
-                                var pocket = core.ModeratorInternal.RemoveRatio(gasPerTile);
-                                if (pocket != null)
-                                {
-                                    _atmosSystem.Merge(mixture, pocket);
-                                }
-                            }
-                        }
-                    }
-                }
-                else
+                if (!emitted)
                 {
-                    // No valid tiles in 3x3 area, dump into core tile
-                    var coreTileMixture = _atmosSystem.GetContainingMixture(coreUid, excite: true);
-                    if (coreTileMixture != null)
-                    {
-                        if (core.InternalFusion != null && core.InternalFusion.TotalMoles > 0)
-                        {
-                            _atmosSystem.Merge(coreTileMixture, core.InternalFusion);
-                        }
-                        if (core.ModeratorInternal != null && core.ModeratorInternal.TotalMoles > 0)
-                        {
-                            _atmosSystem.Merge(coreTileMixture, core.ModeratorInternal);
-                        }
-                    }
+                    // No usable tile in the 3x3 area, dump into the core tile instead.
+                    EmitIntoTile(coreUid, core.InternalFusion);
+                    EmitIntoTile(coreUid, core.ModeratorInternal);
                 }
 
                 _gasOverlaySystem.UpdateSessions();
             }
             else
             {
-                // No valid grid, just dump all gas into core tile
-                var coreTileMixture = _atmosSystem.GetContainingMixture(coreUid, excite: false);
-                if (coreTileMixture != null)
-                {
-                    if (core.InternalFusion != null && core.InternalFusion.TotalMoles > 0)
-                    {
-                        _atmosSystem.Merge(coreTileMixture, core.InternalFusion);
-                    }
-                    if (core.ModeratorInternal != null && core.ModeratorInternal.TotalMoles > 0)
-                    {
-                        _atmosSystem.Merge(coreTileMixture, core.ModeratorInternal);
-                    }
-                }
+                // No valid grid, dump all gas into the core tile.
+                EmitIntoTile(coreUid, core.InternalFusion);
+                EmitIntoTile(coreUid, core.ModeratorInternal);
                 _gasOverlaySystem.UpdateSessions();
             }
+
+            core.InternalFusion = null;
+            core.ModeratorInternal = null;
 
             // Explosion
             // Palmtree: Funky multiplies by 100, which is station-scale. Ships are much smaller,
@@ -984,6 +883,98 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
             ToggleActiveState(coreUid, core, false);
             var despawn = _entityManager.EnsureComponent<TimedDespawnComponent>(coreUid);
             despawn.Lifetime = 1.1f;
+        }
+
+        /// <summary>
+        /// Removes <paramref name="ratio"/> of <paramref name="source"/> and splits it evenly across
+        /// up to <paramref name="maxPockets"/> of the given tiles. Any part that no tile accepts is
+        /// merged back into the source, so gas is never silently deleted.
+        /// </summary>
+        private void EmitGasPockets(GasMixture? source, float ratio, List<TileRef> candidates, int maxPockets,
+            Entity<GridAtmosphereComponent?, GasTileOverlayComponent?> grid, Entity<MapAtmosphereComponent?> map)
+        {
+            if (source == null || source.TotalMoles <= 0f || ratio <= 0f || candidates.Count == 0 || maxPockets <= 0)
+                return;
+
+            var toEmit = source.RemoveRatio(ratio);
+            if (toEmit.TotalMoles <= 0f)
+                return;
+
+            var shuffled = new List<TileRef>(candidates);
+            for (var i = shuffled.Count - 1; i > 0; i--)
+            {
+                var j = _random.Next(i + 1);
+                (shuffled[i], shuffled[j]) = (shuffled[j], shuffled[i]);
+            }
+
+            var targetCount = Math.Min(maxPockets, shuffled.Count);
+            for (var i = 0; i < targetCount && toEmit.TotalMoles > 0f; i++)
+            {
+                var mixture = _atmosSystem.GetTileMixture(grid, map, shuffled[i].GridIndices, excite: true);
+                if (mixture == null)
+                    continue;
+
+                // Split the remainder across the tiles that are still to come, so the last pocket
+                // takes exactly what is left.
+                var pocket = toEmit.RemoveRatio(1f / (targetCount - i));
+                if (pocket.TotalMoles > 0f)
+                    _atmosSystem.Merge(mixture, pocket);
+            }
+
+            if (toEmit.TotalMoles > 0f)
+                _atmosSystem.Merge(source, toEmit);
+        }
+
+        /// <summary>
+        /// Removes all gas from <paramref name="source"/> and splits it evenly across the given
+        /// tiles. Returns false if nothing could be emitted (the gas is then still in the source).
+        /// </summary>
+        private bool EmitRemainingGas(GasMixture? source, List<TileRef> tiles,
+            Entity<GridAtmosphereComponent?, GasTileOverlayComponent?> grid, Entity<MapAtmosphereComponent?> map)
+        {
+            if (source == null || source.TotalMoles <= 0f || tiles.Count == 0)
+                return false;
+
+            var toEmit = source.RemoveRatio(1f);
+            if (toEmit.TotalMoles <= 0f)
+                return false;
+
+            var emitted = false;
+            for (var i = 0; i < tiles.Count && toEmit.TotalMoles > 0f; i++)
+            {
+                var mixture = _atmosSystem.GetTileMixture(grid, map, tiles[i].GridIndices, excite: true);
+                if (mixture == null)
+                    continue;
+
+                var remainingTiles = tiles.Count - i;
+                var pocket = toEmit.RemoveRatio(remainingTiles <= 1 ? 1f : 1f / remainingTiles);
+                if (pocket.TotalMoles > 0f)
+                {
+                    _atmosSystem.Merge(mixture, pocket);
+                    emitted = true;
+                }
+            }
+
+            if (!emitted && toEmit.TotalMoles > 0f)
+                _atmosSystem.Merge(source, toEmit);
+
+            return emitted;
+        }
+
+        /// <summary>
+        /// Merges a mixture into whatever mixture the core's own tile contains.
+        /// </summary>
+        private bool EmitIntoTile(EntityUid coreUid, GasMixture? mixture)
+        {
+            if (mixture == null || mixture.TotalMoles <= 0f)
+                return false;
+
+            var tileMixture = _atmosSystem.GetContainingMixture(coreUid, excite: true);
+            if (tileMixture == null)
+                return false;
+
+            _atmosSystem.Merge(tileMixture, mixture);
+            return true;
         }
 
         /**

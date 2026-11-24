@@ -33,6 +33,13 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
              * Pre-checks
              */
 
+            // Palmtree: parts can be destroyed after the reactor was started (unbolting is blocked
+            // while active, but deletion is not). Do not keep a half-assembled reactor fuelled and
+            // running; deactivating restores the weld guards so it can be repaired. The reaction
+            // itself keeps running at power level > 0, exactly like a normal shutdown attempt.
+            if (core.IsActive && !AreAllPartsConnected(coreUid, core))
+                ToggleActiveState(coreUid, core, false);
+
             core.AreaPower = GetAreaCellPercent(coreUid);
             HandleSoundLoop(coreUid, core);
 
@@ -65,7 +72,12 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
             // Fusion Rework Counter: Please increment this if you make a major overhaul to this system again.
             // 7 reworks
 
-            // Check if the console exists and is powered
+            // Check if the console exists and is powered. PowerReceiverSystem.IsPowered returns true
+            // for a deleted receiver, so a stale console UID would otherwise keep the reactor fuelling
+            // with no UI to control it.
+            if (core.ConsoleUid != null && !EntityManager.EntityExists(core.ConsoleUid.Value))
+                core.ConsoleUid = null;
+
             bool isConsolePowered = core.ConsoleUid != null && _powerReceiver.IsPowered(core.ConsoleUid.Value);
 
             // Define local variables for settings
@@ -126,7 +138,9 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
                 negativeTemperatureMultiplier = recipe.NegativeTemperatureMultiplier;
                 temperatureModifier = recipe.TemperatureChangeMultiplier;
 
-                var requiredGases = recipe.Requirements.Concat(recipe.PrimaryProducts).Select(gasId => Enum.Parse<Gas>(gasId)).Distinct();
+                var requiredGases = HypertorusFusionReactor.ParseGases(recipe.Requirements)
+                    .Concat(HypertorusFusionReactor.ParseGases(recipe.PrimaryProducts))
+                    .Distinct();
                 foreach (var gas in requiredGases)
                 {
                     float amount = core.InternalFusion?.GetMoles(gas) ?? 0f;
@@ -231,9 +245,9 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
 
             if (recipe != null)
             {
-                var fuel1 = recipe.Requirements.Count > 0 ? Enum.Parse<Gas>(recipe.Requirements[0]) : Gas.Hydrogen;
-                var fuel2 = recipe.Requirements.Count > 1 ? Enum.Parse<Gas>(recipe.Requirements[1]) : Gas.Tritium;
-                var product = recipe.PrimaryProducts.Count > 0 ? Enum.Parse<Gas>(recipe.PrimaryProducts[0]) : Gas.Helium;
+                var fuel1 = HypertorusFusionReactor.ParseGasOr(recipe.Requirements.Count > 0 ? recipe.Requirements[0] : null, Gas.Hydrogen);
+                var fuel2 = HypertorusFusionReactor.ParseGasOr(recipe.Requirements.Count > 1 ? recipe.Requirements[1] : null, Gas.Tritium);
+                var product = HypertorusFusionReactor.ParseGasOr(recipe.PrimaryProducts.Count > 0 ? recipe.PrimaryProducts[0] : null, Gas.Helium);
                 energyModifiers += scaledFuelList.GetValueOrDefault(fuel1, 0f) +
                                 scaledFuelList.GetValueOrDefault(fuel2, 0f) -
                                 scaledFuelList.GetValueOrDefault(product, 0f);
@@ -260,9 +274,9 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
 
             if (recipe != null)
             {
-                var fuel1 = recipe.Requirements.Count > 0 ? Enum.Parse<Gas>(recipe.Requirements[0]) : Gas.Hydrogen;
-                var fuel2 = recipe.Requirements.Count > 1 ? Enum.Parse<Gas>(recipe.Requirements[1]) : Gas.Tritium;
-                var product = recipe.PrimaryProducts.Count > 0 ? Enum.Parse<Gas>(recipe.PrimaryProducts[0]) : Gas.Helium;
+                var fuel1 = HypertorusFusionReactor.ParseGasOr(recipe.Requirements.Count > 0 ? recipe.Requirements[0] : null, Gas.Hydrogen);
+                var fuel2 = HypertorusFusionReactor.ParseGasOr(recipe.Requirements.Count > 1 ? recipe.Requirements[1] : null, Gas.Tritium);
+                var product = HypertorusFusionReactor.ParseGasOr(recipe.PrimaryProducts.Count > 0 ? recipe.PrimaryProducts[0] : null, Gas.Helium);
                 // Power of the gas mixture
                 core.InternalPower = (scaledFuelList.GetValueOrDefault(fuel1, 0f) * powerModifier / 100f) *
                                      (scaledFuelList.GetValueOrDefault(fuel2, 0f) * powerModifier / 100f) *
@@ -290,7 +304,7 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
             // The remaining wavelength that actually can do damage to mobs.
             core.Radiation = Math.Max(-(HypertorusFusionReactor.PlanckLightConstant / 5e-18f) * radiationModifier * core.DeltaTemperature, 0f);
             core.PowerOutput = core.Efficiency * (core.InternalPower - core.Conduction - core.Radiation);
-            // Hotter air is easier to heat up and cool down
+            // Hotter air is easier to heat up and cool down. These caps are kelvin per second.
             core.HeatLimiterModifier = 10f * MathF.Pow(10, core.PowerLevel) * (heatingConductor / 100f);
             if (!float.IsFinite(core.HeatLimiterModifier))
             {
@@ -298,8 +312,13 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
                 core.HeatLimiterModifier = 0f;
             }
 
-            // The amount of heat that is finally emitted, based on the power output. Min and max are variables that depend on the modifier
-            core.HeatOutputMin = -core.HeatLimiterModifier * 0.01f * negativeTemperatureMultiplier;
+            // The amount of heat that is finally emitted, based on the power output. Min and max are variables that depend on the modifier.
+            // Palmtree: the positive cap is calibrated against the heat output at ambient temperature
+            // (h2+tritium at 293 K emits ~48.4 K/s against a 50 K/s cap), so it stays in absolute
+            // kelvin; scaling it down would make the reactor take tens of minutes to leave power
+            // level 0. The negative cap only limits high-power endothermic collapse, which is
+            // relative to the reactor's temperature range, so it follows the temperature scale.
+            core.HeatOutputMin = -core.HeatLimiterModifier * 0.01f * negativeTemperatureMultiplier * HypertorusFusionReactor.TemperatureScale;
             core.HeatOutputMax = core.HeatLimiterModifier * positiveTemperatureMultiplier;
             if (!float.IsFinite(core.HeatOutputMin))
                 core.HeatOutputMin = 0f;
@@ -327,10 +346,14 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
             // Phew. Let's calculate what this means in practice.
             float fuelConsumptionRate = Math.Clamp(fuelInputRate * 0.01f * 5f * core.PowerLevel, 0.05f, 30f);
             float consumptionAmount = fuelConsumptionRate * secondsPerTick;
+            // Palmtree: gas production is derived from the heat output, and the heat output is ~95x
+            // smaller at the scaled ceiling. Divide the temperature scale back out so a given power
+            // level still makes roughly the same moles of byproduct per second as Funky did.
+            var scaledHeatOutput = core.HeatOutput / HypertorusFusionReactor.TemperatureScale;
             float productionAmount = core.PowerLevel switch
             {
-                3 or 4 => Math.Clamp(core.HeatOutput * 5e-4f, 0f, fuelConsumptionRate) * secondsPerTick,
-                _ => Math.Clamp(core.HeatOutput / MathF.Pow(10, core.PowerLevel + 1), 0f, fuelConsumptionRate) * secondsPerTick
+                3 or 4 => Math.Clamp(scaledHeatOutput * 5e-4f, 0f, fuelConsumptionRate) * secondsPerTick,
+                _ => Math.Clamp(scaledHeatOutput / MathF.Pow(10, core.PowerLevel + 1), 0f, fuelConsumptionRate) * secondsPerTick
             };
 
             // Antinob production is special, and uses its own calculations from how stale the fusion mix is (via byproduct ratio and fresh fuel rate)
@@ -358,54 +381,56 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
             float fuelConsumption = consumptionAmount * 0.85f * fuel.FuelConsumptionMultiplier;
             float scaledProduction = productionAmount * fuel.GasProductionMultiplier;
 
-            foreach (var gas in fuel.Requirements.Select(gasId => Enum.Parse<Gas>(gasId)))
+            foreach (var gas in HypertorusFusionReactor.ParseGases(fuel.Requirements))
             {
                 core.InternalFusion.SetMoles(gas, Math.Max(core.InternalFusion.GetMoles(gas) - Math.Min(fuelList.GetValueOrDefault(gas, 0f), fuelConsumption), 0f));
             }
 
-            foreach (var gas in fuel.PrimaryProducts.Select(gasId => Enum.Parse<Gas>(gasId)))
+            foreach (var gas in HypertorusFusionReactor.ParseGases(fuel.PrimaryProducts))
             {
                 core.InternalFusion.AdjustMoles(gas, fuelConsumption * 0.5f);
             }
 
             // Each recipe provides a tier list of output gases.
             // Which gases are produced depend on what the fusion level is.
-            var tier = fuel.SecondaryProducts;
-            if (tier.Count < 6)
+            // Palmtree: parse the tier list once per call instead of throwing Enum.Parse in each of
+            // the tier cases below; the prototype test asserts no shipped recipe has an invalid id.
+            var tier = HypertorusFusionReactor.ParseGases(fuel.SecondaryProducts).ToArray();
+            if (tier.Length < 6)
             {
-                Log.Error($"Fusion recipe {fuel.ID} needs at least six secondary products, has {tier.Count}; skipping secondary production.");
+                Log.Error($"Fusion recipe {fuel.ID} needs at least six secondary products, has {tier.Length}; skipping secondary production.");
                 return;
             }
 
             switch (core.PowerLevel)
             {
                 case 1:
-                    core.ModeratorInternal?.AdjustMoles(Enum.Parse<Gas>(tier[0]), scaledProduction * 0.95f);
-                    core.ModeratorInternal?.AdjustMoles(Enum.Parse<Gas>(tier[1]), scaledProduction * 0.75f);
+                    core.ModeratorInternal?.AdjustMoles(tier[0], scaledProduction * 0.95f);
+                    core.ModeratorInternal?.AdjustMoles(tier[1], scaledProduction * 0.75f);
                     break;
                 case 2:
-                    core.ModeratorInternal?.AdjustMoles(Enum.Parse<Gas>(tier[0]), scaledProduction * 1.65f);
-                    core.ModeratorInternal?.AdjustMoles(Enum.Parse<Gas>(tier[1]), scaledProduction);
+                    core.ModeratorInternal?.AdjustMoles(tier[0], scaledProduction * 1.65f);
+                    core.ModeratorInternal?.AdjustMoles(tier[1], scaledProduction);
                     if (moderatorList.GetValueOrDefault(Gas.Plasma, 0f) > 50f)
-                        core.ModeratorInternal?.AdjustMoles(Enum.Parse<Gas>(tier[2]), scaledProduction * 1.15f);
+                        core.ModeratorInternal?.AdjustMoles(tier[2], scaledProduction * 1.15f);
 
                     break;
                 case 3:
-                    core.ModeratorInternal?.AdjustMoles(Enum.Parse<Gas>(tier[1]), scaledProduction * 0.5f);
-                    core.ModeratorInternal?.AdjustMoles(Enum.Parse<Gas>(tier[2]), scaledProduction * 0.45f);
+                    core.ModeratorInternal?.AdjustMoles(tier[1], scaledProduction * 0.5f);
+                    core.ModeratorInternal?.AdjustMoles(tier[2], scaledProduction * 0.45f);
                     break;
                 case 4:
-                    core.ModeratorInternal?.AdjustMoles(Enum.Parse<Gas>(tier[2]), scaledProduction * 1.65f);
-                    core.ModeratorInternal?.AdjustMoles(Enum.Parse<Gas>(tier[3]), scaledProduction * 1.25f);
+                    core.ModeratorInternal?.AdjustMoles(tier[2], scaledProduction * 1.65f);
+                    core.ModeratorInternal?.AdjustMoles(tier[3], scaledProduction * 1.25f);
                     break;
                 case 5:
-                    core.ModeratorInternal?.AdjustMoles(Enum.Parse<Gas>(tier[3]), scaledProduction * 0.65f);
-                    core.ModeratorInternal?.AdjustMoles(Enum.Parse<Gas>(tier[4]), scaledProduction);
-                    core.ModeratorInternal?.AdjustMoles(Enum.Parse<Gas>(tier[5]), scaledProduction * 0.75f);
+                    core.ModeratorInternal?.AdjustMoles(tier[3], scaledProduction * 0.65f);
+                    core.ModeratorInternal?.AdjustMoles(tier[4], scaledProduction);
+                    core.ModeratorInternal?.AdjustMoles(tier[5], scaledProduction * 0.75f);
                     break;
                 case 6:
-                    core.ModeratorInternal?.AdjustMoles(Enum.Parse<Gas>(tier[4]), scaledProduction * 0.35f);
-                    core.ModeratorInternal?.AdjustMoles(Enum.Parse<Gas>(tier[5]), scaledProduction);
+                    core.ModeratorInternal?.AdjustMoles(tier[4], scaledProduction * 0.35f);
+                    core.ModeratorInternal?.AdjustMoles(tier[5], scaledProduction);
                     break;
             }
         }
@@ -419,8 +444,11 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
         */
         public void ModeratorCommonProcess(EntityUid coreUid, HFRCoreComponent core, float secondsPerTick, float scaledProduction, GasMixture internalOutput, Dictionary<Gas, float> moderatorList, float dirtyProductionRate, float heatOutput, float radiationModifier, float temperatureModifier)
         {
+            // Palmtree: these variables used to be modified below and then thrown away (the consumer
+            // used the originals). modifiedRadiation scales the radiation emission modifier, not the
+            // raw radiation output used for power balance above.
             float modifiedHeatOutput = heatOutput;
-            float modifiedRadiation = core.Radiation;
+            float modifiedRadiation = radiationModifier;
 
             switch (core.PowerLevel)
             {
@@ -511,7 +539,7 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
                             core.ModeratorInternal?.AdjustMoles(Gas.Healium, -Math.Min(moderatorList.GetValueOrDefault(Gas.Healium, 0f), scaledProduction * 20f));
                         }
                     }
-                    if ((core.ModeratorInternal?.Temperature < 1e7f) || (moderatorList.GetValueOrDefault(Gas.Plasma, 0f) > 100f && moderatorList.GetValueOrDefault(Gas.BZ, 0f) > 50f))
+                    if ((core.ModeratorInternal?.Temperature < 1e7f * HypertorusFusionReactor.TemperatureScale) || (moderatorList.GetValueOrDefault(Gas.Plasma, 0f) > 100f && moderatorList.GetValueOrDefault(Gas.BZ, 0f) > 50f))
                     {
                         internalOutput.AdjustMoles(Gas.AntiNoblium, dirtyProductionRate * 0.9f / 0.065f * secondsPerTick);
                     }
@@ -558,16 +586,24 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
 
                 if (core.InternalFusion.Temperature <= maximumTemperature)
                 {
-                    core.InternalFusion.Temperature = Math.Clamp(core.InternalFusion.Temperature + core.HeatOutput, Atmospherics.TCMB, maximumTemperature);
+                    // Palmtree: heat output is kelvin per second, so scale it with the event's dt
+                    // (a change of atmos.tickrate must not change the heat balance).
+                    var appliedHeat = modifiedHeatOutput * secondsPerTick;
+                    core.InternalFusion.Temperature = Math.Clamp(core.InternalFusion.Temperature + appliedHeat, Atmospherics.TCMB, maximumTemperature);
                 }
                 else
                 {
-                    core.InternalFusion.Temperature -= core.HeatLimiterModifier * 0.01f * secondsPerTick;
+                    // Palmtree: this overflow cooling is relative to the reactor's temperature range,
+                    // so it follows the temperature scale and keeps the cool-down time similar.
+                    core.InternalFusion.Temperature -= core.HeatLimiterModifier * HypertorusFusionReactor.TemperatureScale * 0.01f * secondsPerTick;
                 }
+
+                // Keep the stored value in sync with what was actually applied.
+                core.HeatOutput = modifiedHeatOutput;
             }
 
             // Heat up and output what's in the internal_output into the linked_output port
-            if (internalOutput.TotalMoles > 0f && core.WasteOutputUid != null && _nodeContainer.TryGetNode(core.WasteOutputUid.Value, "pipe", out PipeNode? wastePipe))
+            if (internalOutput.TotalMoles > 0f && TryGetPartPipe(core.WasteOutputUid, "pipe", out var wastePipe) && wastePipe != null)
             {
                 var outputTemperature = core.ModeratorInternal != null && core.ModeratorInternal.TotalMoles > 0f
                     ? core.ModeratorInternal.Temperature * HypertorusFusionReactor.HighEfficiencyConductivity
@@ -580,7 +616,7 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
 
             EvaporateModerator(core, secondsPerTick);
 
-            ProcessRadiation(coreUid, core, radiationModifier, secondsPerTick);
+            ProcessRadiation(coreUid, core, modifiedRadiation, secondsPerTick);
 
             CheckLightningArcs(coreUid, core, moderatorList);
 
@@ -859,8 +895,8 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
             // Gases can be removed from the moderator internal by using the interface.
             if (!isWasteRemoving
                 || core.PowerLevel >= 5
-                || core.WasteOutputUid == null
-                || !_nodeContainer.TryGetNode(core.WasteOutputUid.Value, "pipe", out PipeNode? wastePipe)
+                || !TryGetPartPipe(core.WasteOutputUid, "pipe", out var wastePipe)
+                || wastePipe == null
                 || wastePipe.Air.TotalMoles > 5000f)
                 return;
 
@@ -897,7 +933,7 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
             FusionRecipePrototype? recipe = null;
             if (!string.IsNullOrEmpty(core.SelectedRecipeId) && _prototypeManager.TryIndex<FusionRecipePrototype>(core.SelectedRecipeId, out recipe) && core.InternalFusion != null)
             {
-                foreach (var gas in recipe.PrimaryProducts.Select(gasId => Enum.Parse<Gas>(gasId)))
+                foreach (var gas in HypertorusFusionReactor.ParseGases(recipe.PrimaryProducts))
                 {
                     float moles = core.InternalFusion.GetMoles(gas);
                     if (moles > 0f)
@@ -982,7 +1018,7 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
             if (core.FuelInputUid != null && _nodeContainer.TryGetNode(core.FuelInputUid.Value, "pipe", out PipeNode? fuelPipe) && core.InternalFusion != null)
             {
                 var fuelMix = new GasMixture();
-                foreach (var gas in recipe.Requirements.Select(gasId => Enum.Parse<Gas>(gasId)))
+                foreach (var gas in HypertorusFusionReactor.ParseGases(recipe.Requirements))
                 {
                     float moles = fuelPipe.Air.GetMoles(gas);
                     if (moles > 0f)

@@ -17,13 +17,11 @@ using Content.Shared._Funkystation.Atmos.Visuals;
 using Content.Server.NodeContainer.Nodes;
 using Content.Server.NodeContainer.EntitySystems;
 using Content.Server._Funkystation.Atmos.HFR.Systems;
-using Robust.Shared.Timing;
 
 namespace Content.Server._Funkystation.Atmos.Systems;
 
 public sealed class HFRCoreSystem : EntitySystem
 {
-    [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly SharedMapSystem _mapSystem = default!;
     [Dependency] private readonly SharedTransformSystem _transformSystem = default!;
@@ -51,6 +49,42 @@ public sealed class HFRCoreSystem : EntitySystem
         SubscribeLocalEvent<HFRCoreComponent, ComponentStartup>(OnStartup);
         SubscribeLocalEvent<HFRCoreComponent, AnchorStateChangedEvent>(OnAnchorChanged);
         SubscribeLocalEvent<HFRCoreComponent, AtmosDeviceUpdateEvent>(OnDeviceAtmosUpdate);
+        SubscribeLocalEvent<HFRCoreComponent, ComponentShutdown>(OnCoreShutdown);
+    }
+
+    /// <summary>
+    /// Palmtree: clear the part links in both directions when the core is removed/deleted. The old
+    /// code had no cleanup at all, so a deleted core left every part pointing at a UID that could be
+    /// recycled by a later spawn.
+    /// </summary>
+    private void OnCoreShutdown(EntityUid uid, HFRCoreComponent core, ref ComponentShutdown args)
+    {
+        if (core.ConsoleUid is { } consoleUid && TryComp<HFRConsoleComponent>(consoleUid, out var consoleComp))
+        {
+            consoleComp.CoreUid = null;
+            _hfrConsoleSystem.SetPowerState(consoleUid, consoleComp);
+        }
+
+        if (core.FuelInputUid is { } fuelUid && TryComp<HFRFuelInputComponent>(fuelUid, out var fuelComp))
+            fuelComp.CoreUid = null;
+
+        if (core.ModeratorInputUid is { } moderatorUid && TryComp<HFRModeratorInputComponent>(moderatorUid, out var modComp))
+            modComp.CoreUid = null;
+
+        if (core.WasteOutputUid is { } wasteUid && TryComp<HFRWasteOutputComponent>(wasteUid, out var wasteComp))
+            wasteComp.CoreUid = null;
+
+        foreach (var cornerUid in core.CornerUids)
+        {
+            if (TryComp<HFRCornerComponent>(cornerUid, out var cornerComp))
+                cornerComp.CoreUid = null;
+        }
+
+        core.ConsoleUid = null;
+        core.FuelInputUid = null;
+        core.ModeratorInputUid = null;
+        core.WasteOutputUid = null;
+        core.CornerUids.Clear();
     }
 
     private void OnStartup(EntityUid uid, HFRCoreComponent core, ComponentStartup args)
@@ -138,10 +172,9 @@ public sealed class HFRCoreSystem : EntitySystem
         if (core.ModeratorInternal != null)
             _atmosSystem.React(core.ModeratorInternal, null);
 
-        float secondsPerTick = core.LastTick == TimeSpan.Zero ? 0.5f : (float)(_timing.CurTime - core.LastTick).TotalSeconds;
-
-        _hfrSystem.Process(uid, core, secondsPerTick);
-        core.LastTick = _timing.CurTime;
+        // Palmtree: use the atmos device event's dt. Deriving it from CurTime means a paused or
+        // skipped atmos tick produces a huge delta that is applied as one step of heat.
+        _hfrSystem.Process(uid, core, args.dt);
         UpdateReactorUI(uid, core);
     }
 
@@ -227,25 +260,17 @@ public sealed class HFRCoreSystem : EntitySystem
                 outputMoles));
     }
 
-    public bool TryLinkComponent<TComp>(EntityUid coreUid, HFRCoreComponent core, EntityUid componentUid, TComp component, Action<HFRCoreComponent, EntityUid?> setField) where TComp : Component
+    public bool TryLinkComponent<TComp>(EntityUid coreUid, HFRCoreComponent core, EntityUid componentUid) where TComp : Component
     {
         TryLinkSurroundingComponents(coreUid, core);
-        EntityUid? linkedUid = null;
-        foreach (var (compType, field) in _singleComponents)
-        {
-            if (compType == typeof(TComp))
-            {
-                linkedUid = compType == typeof(HFRConsoleComponent) ? core.ConsoleUid :
-                            compType == typeof(HFRFuelInputComponent) ? core.FuelInputUid :
-                            compType == typeof(HFRModeratorInputComponent) ? core.ModeratorInputUid :
-                            core.WasteOutputUid;
-                break;
-            }
-        }
+        EntityUid? linkedUid = typeof(TComp) == typeof(HFRConsoleComponent) ? core.ConsoleUid :
+            typeof(TComp) == typeof(HFRFuelInputComponent) ? core.FuelInputUid :
+            typeof(TComp) == typeof(HFRModeratorInputComponent) ? core.ModeratorInputUid :
+            typeof(TComp) == typeof(HFRWasteOutputComponent) ? core.WasteOutputUid : null;
         return linkedUid == componentUid;
     }
 
-    public bool TryLinkCorner(EntityUid coreUid, HFRCoreComponent core, EntityUid cornerUid, HFRCornerComponent corner)
+    public bool TryLinkCorner(EntityUid coreUid, HFRCoreComponent core, EntityUid cornerUid)
     {
         TryLinkSurroundingComponents(coreUid, core);
         return core.CornerUids.Contains(cornerUid);
@@ -303,7 +328,7 @@ public sealed class HFRCoreSystem : EntitySystem
                         if (offset == expectedCoreOffset)
                         {
                             setField(core, entity);
-                            ((dynamic)comp).CoreUid = coreUid;
+                            comp.CoreUid = coreUid;
                             break;
                         }
                     }
@@ -323,7 +348,7 @@ public sealed class HFRCoreSystem : EntitySystem
                         if (offset == expectedCoreOffset)
                         {
                             setField(core, entity);
-                            ((dynamic)comp).CoreUid = coreUid;
+                            comp.CoreUid = coreUid;
                             break;
                         }
                     }
@@ -343,7 +368,7 @@ public sealed class HFRCoreSystem : EntitySystem
                         if (offset == expectedCoreOffset)
                         {
                             setField(core, entity);
-                            ((dynamic)comp).CoreUid = coreUid;
+                            comp.CoreUid = coreUid;
                             break;
                         }
                     }
@@ -363,7 +388,7 @@ public sealed class HFRCoreSystem : EntitySystem
                         if (offset == expectedCoreOffset)
                         {
                             setField(core, entity);
-                            ((dynamic)comp).CoreUid = coreUid;
+                            comp.CoreUid = coreUid;
                             break;
                         }
                     }

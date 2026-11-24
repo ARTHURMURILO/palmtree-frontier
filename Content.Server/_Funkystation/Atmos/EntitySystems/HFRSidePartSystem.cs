@@ -163,22 +163,22 @@ public sealed class HFRSidePartSystem : EntitySystem
         {
             if (TryComp<TransformComponent>(entity, out var entityXform) && entityXform.Anchored && entityXform.GridUid == gridUid)
             {
-                // Check which component the side part has and pass it to TryLinkComponent
-                if (TryComp<HFRConsoleComponent>(uid, out var consoleComp))
+                // Check which component the side part has and let the core link it.
+                if (HasComp<HFRConsoleComponent>(uid))
                 {
-                    _coreSystem.TryLinkComponent(entity, coreComp, uid, consoleComp, (core, compUid) => core.ConsoleUid = compUid);
+                    _coreSystem.TryLinkComponent<HFRConsoleComponent>(entity, coreComp, uid);
                 }
-                else if (TryComp<HFRFuelInputComponent>(uid, out var fuelInputComp))
+                else if (HasComp<HFRFuelInputComponent>(uid))
                 {
-                    _coreSystem.TryLinkComponent(entity, coreComp, uid, fuelInputComp, (core, compUid) => core.FuelInputUid = compUid);
+                    _coreSystem.TryLinkComponent<HFRFuelInputComponent>(entity, coreComp, uid);
                 }
-                else if (TryComp<HFRModeratorInputComponent>(uid, out var moderatorInputComp))
+                else if (HasComp<HFRModeratorInputComponent>(uid))
                 {
-                    _coreSystem.TryLinkComponent(entity, coreComp, uid, moderatorInputComp, (core, compUid) => core.ModeratorInputUid = compUid);
+                    _coreSystem.TryLinkComponent<HFRModeratorInputComponent>(entity, coreComp, uid);
                 }
-                else if (TryComp<HFRWasteOutputComponent>(uid, out var wasteOutputComp))
+                else if (HasComp<HFRWasteOutputComponent>(uid))
                 {
-                    _coreSystem.TryLinkComponent(entity, coreComp, uid, wasteOutputComp, (core, compUid) => core.WasteOutputUid = compUid);
+                    _coreSystem.TryLinkComponent<HFRWasteOutputComponent>(entity, coreComp, uid);
                 }
 
                 break;

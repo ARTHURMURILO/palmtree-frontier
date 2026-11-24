@@ -24,6 +24,7 @@ public sealed class HFRFuelInputSystem : EntitySystem
     {
         base.Initialize();
         SubscribeLocalEvent<HFRFuelInputComponent, AnchorStateChangedEvent>(OnAnchorChanged);
+        SubscribeLocalEvent<HFRFuelInputComponent, ComponentShutdown>(OnShutdown);
     }
 
     private void OnAnchorChanged(EntityUid uid, HFRFuelInputComponent fuelInput, ref AnchorStateChangedEvent args)
@@ -50,5 +51,18 @@ public sealed class HFRFuelInputSystem : EntitySystem
         {
             _hfrSidePartSystem.TryFindCore(uid);
         }
+    }
+
+    private void OnShutdown(EntityUid uid, HFRFuelInputComponent fuelInput, ref ComponentShutdown args)
+    {
+        // Palmtree: a deleted part must not stay linked from the core; the core would otherwise keep
+        // treating a recycled UID as its fuel input link.
+        if (fuelInput.CoreUid is { } coreUid && EntityManager.TryGetComponent<HFRCoreComponent>(coreUid, out var core))
+        {
+            if (core.FuelInputUid == uid)
+                core.FuelInputUid = null;
+        }
+
+        fuelInput.CoreUid = null;
     }
 }

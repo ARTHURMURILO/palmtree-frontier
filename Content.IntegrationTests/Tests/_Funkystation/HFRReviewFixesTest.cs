@@ -3,18 +3,25 @@ using System.Linq;
 using System.Reflection;
 using System.Numerics;
 using Content.Server._Funkystation.Atmos.Components;
+using Content.Server._Funkystation.Atmos.Systems;
 using Content.Server._Funkystation.Atmos.HFR.Systems;
 using Content.Server.Construction.Conditions;
+using Content.Server.Power.Components;
 using Content.Server.Singularity.Components;
+using Content.Shared._Funkystation.Atmos.Components;
+using Content.Shared._Funkystation.Atmos.HFR;
 using Content.Shared._Funkystation.Atmos.Prototypes;
 using Content.Shared.Atmos;
 using Content.Shared.Construction.Prototypes;
 using NUnit.Framework;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
 using Robust.Shared.Maths;
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Prototypes;
+using Robust.Shared.Spawners;
+using Robust.UnitTesting;
 
 namespace Content.IntegrationTests.Tests._Funkystation;
 
@@ -194,6 +201,237 @@ public sealed class HFRReviewFixesTest
         });
 
         await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    ///     A part that has been unbolted or deleted must block activation: otherwise the reactor
+    ///     starts without a waste/fuel path and cannot be shut down again once its power level rises.
+    /// </summary>
+    [Test]
+    public async Task ActivationIsRefusedWhenTheAssemblyIsIncomplete()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var entMan = server.EntMan;
+        var testMap = await pair.CreateTestMap();
+        var hfr = entMan.System<HypertorusFusionReactorSystem>();
+
+        EntityUid core = default;
+        EntityUid console = default;
+        EntityUid waste = default;
+
+        await server.WaitAssertion(() =>
+        {
+            (core, console, _, _, waste, _) = SpawnAssembly(server, testMap.Grid);
+        });
+        await pair.RunTicksSync(2);
+
+        await server.WaitAssertion(() =>
+        {
+            var coreComp = entMan.GetComponent<HFRCoreComponent>(core);
+            Assert.That(hfr.AreAllPartsConnected(core, coreComp), Is.True, "the test reactor did not assemble");
+
+            // Unbolting a part must break the assembly.
+            server.System<SharedTransformSystem>().Unanchor(waste, entMan.GetComponent<TransformComponent>(waste));
+        });
+        await pair.RunTicksSync(2);
+
+        await server.WaitAssertion(() =>
+        {
+            var coreComp = entMan.GetComponent<HFRCoreComponent>(core);
+            Assert.That(hfr.AreAllPartsConnected(core, coreComp), Is.False, "an unbolted part still counts as connected");
+
+            entMan.EventBus.RaiseLocalEvent(console, new HFRConsoleTogglePowerMessage());
+            Assert.That(coreComp.IsActive, Is.False, "the reactor was activated with an unbolted part");
+        });
+
+        // Re-anchoring the part restores the assembly, and only then may the reactor start.
+        await server.WaitAssertion(() =>
+        {
+            server.System<SharedTransformSystem>().AnchorEntity(waste, entMan.GetComponent<TransformComponent>(waste));
+        });
+        await pair.RunTicksSync(2);
+
+        await server.WaitAssertion(() =>
+        {
+            var coreComp = entMan.GetComponent<HFRCoreComponent>(core);
+            Assert.That(hfr.AreAllPartsConnected(core, coreComp), Is.True, "the re-anchored part was not re-linked");
+
+            entMan.EventBus.RaiseLocalEvent(console, new HFRConsoleTogglePowerMessage());
+            Assert.That(coreComp.IsActive, Is.True, "the assembled reactor did not start");
+
+            // Losing a part while running deactivates the reactor on the next fusion tick, and the
+            // reaction still behaves like a normal shutdown (power level keeps it melting down).
+            entMan.DeleteEntity(waste);
+            hfr.Process(core, coreComp, 10f / 15f);
+            Assert.That(coreComp.IsActive, Is.False, "the reactor kept running after losing a part");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    ///     The meltdown flags are read from the selected recipe at detonation, so the recipe must not
+    ///     be swappable while the reactor is running or counting down.
+    /// </summary>
+    [Test]
+    public async Task RecipeCannotBeSwappedWhileRunning()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var entMan = server.EntMan;
+        var testMap = await pair.CreateTestMap();
+        var protoMan = server.ResolveDependency<IPrototypeManager>();
+        var hfr = entMan.System<HypertorusFusionReactorSystem>();
+
+        EntityUid core = default;
+        EntityUid console = default;
+
+        await server.WaitAssertion(() =>
+        {
+            (core, console, _, _, _, _) = SpawnAssembly(server, testMap.Grid);
+        });
+        await pair.RunTicksSync(2);
+
+        await server.WaitAssertion(() =>
+        {
+            var coreComp = entMan.GetComponent<HFRCoreComponent>(core);
+            var firstRecipe = protoMan.EnumeratePrototypes<FusionRecipePrototype>().First();
+            var secondRecipe = protoMan.EnumeratePrototypes<FusionRecipePrototype>().Last();
+            Assert.That(firstRecipe.ID, Is.Not.EqualTo(secondRecipe.ID));
+
+            // Idle reactor: the change is allowed, and leftover fusion gases are dumped.
+            coreComp.SelectedRecipeId = firstRecipe.ID;
+            coreComp.InternalFusion = new GasMixture(HypertorusFusionReactor.InternalFusionVolume) { Temperature = Atmospherics.T20C };
+            coreComp.InternalFusion.SetMoles(Gas.Hydrogen, 100f);
+            entMan.EventBus.RaiseLocalEvent(console, new HFRConsoleSelectRecipeMessage(secondRecipe.ID));
+            Assert.That(coreComp.SelectedRecipeId, Is.EqualTo(secondRecipe.ID), "an idle reactor refused a recipe change");
+            Assert.That(coreComp.InternalFusion.TotalMoles, Is.Zero, "the old fusion gases were not dumped on a recipe change");
+
+            // Running reactor (active or merely still hot): the change must be rejected.
+            coreComp.SelectedRecipeId = firstRecipe.ID;
+            coreComp.IsActive = true;
+            entMan.EventBus.RaiseLocalEvent(console, new HFRConsoleSelectRecipeMessage(secondRecipe.ID));
+            Assert.That(coreComp.SelectedRecipeId, Is.EqualTo(firstRecipe.ID), "the recipe was swapped while the reactor was active");
+
+            coreComp.IsActive = false;
+            coreComp.PowerLevel = 1;
+            entMan.EventBus.RaiseLocalEvent(console, new HFRConsoleSelectRecipeMessage(secondRecipe.ID));
+            Assert.That(coreComp.SelectedRecipeId, Is.EqualTo(firstRecipe.ID), "the recipe was swapped while the reactor was hot");
+
+            coreComp.PowerLevel = 0;
+            hfr.ToggleActiveState(core, coreComp, false);
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    ///     The console must drop its 100 kW running draw when the core melts down and despawns. The
+    ///     old code kept it at 100 kW forever because the load was only written on an active toggle.
+    /// </summary>
+    [Test]
+    public async Task ConsoleDropsToIdleLoadAfterMeltdown()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var entMan = server.EntMan;
+        var testMap = await pair.CreateTestMap();
+        var protoMan = server.ResolveDependency<IPrototypeManager>();
+        var hfr = entMan.System<HypertorusFusionReactorSystem>();
+
+        EntityUid core = default;
+        EntityUid console = default;
+
+        await server.WaitAssertion(() =>
+        {
+            (core, console, _, _, _, _) = SpawnAssembly(server, testMap.Grid);
+        });
+        await pair.RunTicksSync(2);
+
+        await server.WaitAssertion(() =>
+        {
+            var coreComp = entMan.GetComponent<HFRCoreComponent>(core);
+            var consolePower = entMan.GetComponent<ApcPowerReceiverComponent>(console);
+
+            hfr.ToggleActiveState(core, coreComp, true);
+            Assert.Multiple(() =>
+            {
+                Assert.That(coreComp.IsActive, Is.True, "the reactor did not start");
+                Assert.That(consolePower.Load, Is.EqualTo(HFRConsoleSystem.RunningPowerLoad),
+                    "a running reactor's console does not draw the running load");
+            });
+
+            // Fill the reactor up so the meltdown emits a meaningful amount of gas.
+            coreComp.PowerLevel = 6;
+            var recipe = protoMan.EnumeratePrototypes<FusionRecipePrototype>().First(candidate => candidate.Requirements.Count > 0);
+            HFRTemperatureScaleTest.FillCoreForRecipe(coreComp, recipe);
+
+            hfr.Meltdown(core, coreComp);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(entMan.HasComponent<TimedDespawnComponent>(core), Is.True,
+                    "the core was not scheduled to despawn after the meltdown");
+                Assert.That(consolePower.Load, Is.EqualTo(HFRConsoleSystem.IdlePowerLoad),
+                    "the console kept the running load after the meltdown");
+                Assert.That(coreComp.InternalFusion?.TotalMoles ?? 0f, Is.Zero,
+                    "the meltdown leaked fusion gas instead of emitting all of it");
+                Assert.That(coreComp.ModeratorInternal?.TotalMoles ?? 0f, Is.Zero,
+                    "the meltdown leaked moderator gas instead of emitting all of it");
+            });
+        });
+
+        // Wait for the core to despawn and make sure the surviving console stays on idle power.
+        await pair.RunTicksSync(90);
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(entMan.EntityExists(core), Is.False, "the melted down core did not despawn");
+            var consolePower = entMan.GetComponent<ApcPowerReceiverComponent>(console);
+            var consoleComp = entMan.GetComponent<HFRConsoleComponent>(console);
+            Assert.Multiple(() =>
+            {
+                Assert.That(consolePower.Load, Is.EqualTo(HFRConsoleSystem.IdlePowerLoad),
+                    "the console is still drawing the running load after the core despawned");
+                Assert.That(consoleComp.CoreUid, Is.Null, "the console kept a link to the despawned core");
+            });
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    ///     Spawns the full 3x3 HFR multiblock on a test grid.
+    /// </summary>
+    private static (EntityUid Core, EntityUid Console, EntityUid Fuel, EntityUid Moderator, EntityUid Waste, EntityUid[] Corners)
+        SpawnAssembly(RobustIntegrationTest.ServerIntegrationInstance server, Entity<MapGridComponent> grid)
+    {
+        var entMan = server.EntMan;
+        var mapSys = server.System<SharedMapSystem>();
+        var tiles = server.ResolveDependency<ITileDefinitionManager>();
+
+        var plating = tiles["Plating"];
+        for (var x = -1; x <= 1; x++)
+        {
+            for (var y = -1; y <= 1; y++)
+                mapSys.SetTile(grid.Owner, grid.Comp, new Vector2i(x, y), new Tile(plating.TileId));
+        }
+
+        var center = new EntityCoordinates(grid.Owner, new System.Numerics.Vector2(0.5f, 0.5f));
+        var core = entMan.SpawnEntity("HFRCore", center);
+        var console = entMan.SpawnEntity("HFRConsole", center.Offset(new System.Numerics.Vector2(0f, 1f)));
+        var fuel = entMan.SpawnEntity("HFRFuelInput", center.Offset(new System.Numerics.Vector2(1f, 0f)));
+        var moderator = entMan.SpawnEntity("HFRModeratorInput", center.Offset(new System.Numerics.Vector2(-1f, 0f)));
+        var waste = entMan.SpawnEntity("HFRWasteOutput", center.Offset(new System.Numerics.Vector2(0f, -1f)));
+        var corners = new[]
+        {
+            entMan.SpawnEntity("HFRCorner", center.Offset(new System.Numerics.Vector2(1f, 1f))),
+            entMan.SpawnEntity("HFRCorner", center.Offset(new System.Numerics.Vector2(-1f, 1f))),
+            entMan.SpawnEntity("HFRCorner", center.Offset(new System.Numerics.Vector2(1f, -1f))),
+            entMan.SpawnEntity("HFRCorner", center.Offset(new System.Numerics.Vector2(-1f, -1f))),
+        };
+
+        return (core, console, fuel, moderator, waste, corners);
     }
 
     /// <summary>

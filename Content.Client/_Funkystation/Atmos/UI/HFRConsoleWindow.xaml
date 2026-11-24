@@ -329,11 +329,6 @@ SPDX-License-Identifier: AGPL-3.0-or-later AND MIT
                         <FloatSpinBox Access="Public" Name="HeatingConductorSpinBox" Value="0" MinSize="140 20" HorizontalAlignment="Center" />
                         <Label Text="{Loc 'hfr-console-heating-conductor'}" HorizontalAlignment="Center" />
                     </BoxContainer>
-                    <!-- Cooling Volume -->
-                    <BoxContainer Orientation="Vertical" HorizontalExpand="True" Margin="5 0">
-                        <FloatSpinBox Access="Public" Name="CoolingVolumeSpinBox" Value="0" MinSize="140 20" HorizontalAlignment="Center" />
-                        <Label Text="{Loc 'hfr-console-cooling-volume'}" HorizontalAlignment="Center" />
-                    </BoxContainer>
                     <!-- Magnetic Constrictor -->
                     <BoxContainer Orientation="Vertical" HorizontalExpand="True" Margin="5 0">
                         <FloatSpinBox Access="Public" Name="MagneticConstrictorSpinBox" Value="0" MinSize="140 20" HorizontalAlignment="Center" />

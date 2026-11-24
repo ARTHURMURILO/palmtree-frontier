@@ -54,7 +54,6 @@ public sealed class HFRConsoleBoundUserInterface : BoundUserInterface
         _menu.OnSetFuelInputRate += rate => SendMessage(new HFRConsoleSetFuelInputRateMessage(rate));
         _menu.OnSetModeratorInputRate += rate => SendMessage(new HFRConsoleSetModeratorInputRateMessage(rate));
         _menu.OnSetHeatingConductor += rate => SendMessage(new HFRConsoleSetHeatingConductorMessage(rate));
-        _menu.OnSetCoolingVolume += rate => SendMessage(new HFRConsoleSetCoolingVolumeMessage(rate));
         _menu.OnSetMagneticConstrictor += rate => SendMessage(new HFRConsoleSetMagneticConstrictorMessage(rate));
         _menu.OnSetCurrentDamper += rate => SendMessage(new HFRConsoleSetCurrentDamperMessage(rate));
         _menu.OnSetModeratorFilteringRate += rate => SendMessage(new HFRConsoleSetModeratorFilteringRateMessage(rate));

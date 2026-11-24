@@ -14,24 +14,21 @@ namespace Content.Server._Funkystation.Atmos.Components;
 public sealed partial class HFRCoreComponent : Component
 {
     // Connected Parts
+    // Palmtree: runtime links only. They are rebuilt from the anchored parts on startup/anchor, and
+    // serialising entity ids means a save/load can resurrect a dead or recycled UID.
     [ViewVariables(VVAccess.ReadWrite)]
-    [DataField("consoleUid")]
     public EntityUid? ConsoleUid;
 
     [ViewVariables(VVAccess.ReadWrite)]
-    [DataField("fuelInputUid")]
     public EntityUid? FuelInputUid;
 
     [ViewVariables(VVAccess.ReadWrite)]
-    [DataField("moderatorInputUid")]
     public EntityUid? ModeratorInputUid;
 
     [ViewVariables(VVAccess.ReadWrite)]
-    [DataField("wasteOutputUid")]
     public EntityUid? WasteOutputUid;
 
     [ViewVariables(VVAccess.ReadWrite)]
-    [DataField("cornerUids")]
     public List<EntityUid> CornerUids = new();
 
     // Console Inputs
@@ -68,10 +65,6 @@ public sealed partial class HFRCoreComponent : Component
     public float HeatingConductor = 50f;
 
     [ViewVariables(VVAccess.ReadWrite)]
-    [DataField("coolingVolume")]
-    public int CoolingVolume = 50;
-
-    [ViewVariables(VVAccess.ReadWrite)]
     [DataField("magneticConstrictor")]
     public float MagneticConstrictor = 50f;
 
@@ -91,19 +84,14 @@ public sealed partial class HFRCoreComponent : Component
     [DataField("filterGases")]
     public HashSet<Gas> FilterGases = new();
 
-    // State and Control
-    [DataField("fusionStarted")]
-    [ViewVariables(VVAccess.ReadWrite)]
-    public bool FusionStarted;
-
     // Gas Mixtures
     [DataField("internalFusion")]
     [ViewVariables(VVAccess.ReadWrite)]
-    public GasMixture? InternalFusion = new GasMixture(volume: 5000f);
+    public GasMixture? InternalFusion = new GasMixture(volume: HypertorusFusionReactor.InternalFusionVolume);
 
     [DataField("moderatorInternal")]
     [ViewVariables(VVAccess.ReadWrite)]
-    public GasMixture? ModeratorInternal = new GasMixture(volume: 10000f);
+    public GasMixture? ModeratorInternal = new GasMixture(volume: HypertorusFusionReactor.ModeratorInternalVolume);
 
     // Fusion Parameters
     [DataField("energy")]
@@ -257,10 +245,6 @@ public sealed partial class HFRCoreComponent : Component
     [ViewVariables(VVAccess.ReadWrite)]
     public float OutputTemperatureArchived;
 
-    [DataField("temperaturePeriod")]
-    [ViewVariables(VVAccess.ReadWrite)]
-    public float TemperaturePeriod = 1;
-
     // Meltdown
     [ViewVariables(VVAccess.ReadWrite)]
     public bool FinalCountdown;
@@ -290,7 +274,4 @@ public sealed partial class HFRCoreComponent : Component
 
     [ViewVariables(VVAccess.ReadWrite)]
     public TimeSpan NextZap;
-
-    [ViewVariables(VVAccess.ReadWrite)]
-    public TimeSpan LastTick;
 }
