@@ -15,8 +15,8 @@ namespace Content.Server.Shuttles.Systems;
 
 public sealed partial class ShuttleSystem
 {
-    [Dependency] private readonly RadarConsoleSystem _radarConsole = default!;
-    [Dependency] private readonly RadarBlipSystem _radarBlips = default!; // Palmtree/Coyote: radar proximity alerts
+    [Dependency] private RadarConsoleSystem _radarConsole = default!;
+    [Dependency] private RadarBlipSystem _radarBlips = default!; // Palmtree/Coyote: radar proximity alerts
     private const float SpaceFrictionStrength = 0.0075f;
     private const float DampenDampingStrength = 0.25f;
     private const float AnchorDampingStrength = 2.5f;

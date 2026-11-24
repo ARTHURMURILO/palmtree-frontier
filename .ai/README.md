@@ -32,7 +32,7 @@ Read this file first, then the document that matches your task.
 - Maintainer constraints (see `.ai/HUMAN_CONTEXT.md`): engine must not be modified; new code goes
   under `_PS` folders; content ported from other forks keeps its original prefix for merge sanity.
 - Current branch: **`master`** (the `ps-erp` port branch was merged and deleted; Frontier base
-  `df24c19f08`, last upstream sync `b40510417e` on 2026-10-23 — see
+  `df24c19f08`, last upstream sync `a2d4b0d703` on 2026-11-23 — see
   `.ai/guides/upstream-sync.md`). The port history and decisions are in `.ai/PORTING.md`.
 
 ## 2. Major architectural layers

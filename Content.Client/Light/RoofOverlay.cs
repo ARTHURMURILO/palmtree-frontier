@@ -13,12 +13,12 @@ using Robust.Shared.Physics;
 
 namespace Content.Client.Light;
 
-public sealed class RoofOverlay : Overlay
+public sealed partial class RoofOverlay : Overlay
 {
     private readonly IEntityManager _entManager;
-    [Dependency] private readonly IMapManager _mapManager = default!;
-    [Dependency] private readonly IOverlayManager _overlay = default!;
-    [Dependency] private readonly IConfigurationManager _cfg = default!; // Palmtree: tile overlay guard
+    [Dependency] private IMapManager _mapManager = default!;
+    [Dependency] private IOverlayManager _overlay = default!;
+    [Dependency] private IConfigurationManager _cfg = default!; // Palmtree: tile overlay guard
 
     private readonly EntityLookupSystem _lookup;
     private readonly SharedMapSystem _mapSystem;

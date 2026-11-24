@@ -11,10 +11,10 @@ namespace Content.Server.Salvage;
 /// <summary>
 /// Transports attached entities to the linked beacon after a timer has elapsed.
 /// </summary>
-public sealed class FultonSystem : SharedFultonSystem
+public sealed partial class FultonSystem : SharedFultonSystem
 {
-    [Dependency] private readonly IRobustRandom _random = default!;
-    [Dependency] private readonly EntityStorageSystem _entityStorage = default!; // Palmtree
+    [Dependency] private IRobustRandom _random = default!;
+    [Dependency] private EntityStorageSystem _entityStorage = default!; // Palmtree
 
     public override void Initialize()
     {

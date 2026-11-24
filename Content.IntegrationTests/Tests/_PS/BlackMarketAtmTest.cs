@@ -71,21 +71,21 @@ public sealed class BlackMarketAtmTest
             var regular = entMan.SpawnEntity(null, testMap.GridCoords);
             entMan.EnsureComponent<BankATMComponent>(regular);
 
-            var attempt = new ActivatableUIOpenAttemptEvent(citizen);
+            var attempt = new ActivatableUIOpenAttemptEvent(citizen, silent: false);
             entMan.EventBus.RaiseLocalEvent(regular, attempt);
             Assert.That(attempt.Cancelled, Is.False, "Regular ATMs serve law-abiding citizens.");
 
-            attempt = new ActivatableUIOpenAttemptEvent(citizen);
+            attempt = new ActivatableUIOpenAttemptEvent(citizen, silent: false);
             entMan.EventBus.RaiseLocalEvent(blackMarket, attempt);
             Assert.That(attempt.Cancelled, Is.False, "Black market ATMs serve law-abiding citizens too.");
 
             Assert.That(wanted.TrySetWanted(citizen, "test"), Is.True);
 
-            attempt = new ActivatableUIOpenAttemptEvent(citizen);
+            attempt = new ActivatableUIOpenAttemptEvent(citizen, silent: false);
             entMan.EventBus.RaiseLocalEvent(regular, attempt);
             Assert.That(attempt.Cancelled, Is.True, "Regular ATMs must refuse wanted criminals.");
 
-            attempt = new ActivatableUIOpenAttemptEvent(citizen);
+            attempt = new ActivatableUIOpenAttemptEvent(citizen, silent: false);
             entMan.EventBus.RaiseLocalEvent(blackMarket, attempt);
             Assert.That(attempt.Cancelled, Is.False, "Black market ATMs serve wanted criminals.");
 

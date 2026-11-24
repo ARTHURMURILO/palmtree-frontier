@@ -291,7 +291,7 @@ public sealed class RcdAtmosStackingTest
     }
 
     [Test]
-    public async Task UnaryDevicesHaveLayeredConstructionRecipes()
+    public async Task UnaryDevicesHaveLayeredConstructionPrototypes()
     {
         await using var pair = await PoolManager.GetServerClient();
         var server = pair.Server;
@@ -318,17 +318,7 @@ public sealed class RcdAtmosStackingTest
                     Assert.That(
                         recipe.AlternativePrototypes.Select(p => p.Id),
                         Is.EqualTo(new[] { baseId, alt1Id, alt2Id }),
-                        $"{baseId} must offer the three pipe-layer recipes in enum order.");
-                });
-
-                var alt1 = protoManager.Index<ConstructionPrototype>(alt1Id);
-                var alt2 = protoManager.Index<ConstructionPrototype>(alt2Id);
-                Assert.Multiple(() =>
-                {
-                    Assert.That(alt1.Hide, Is.True);
-                    Assert.That(alt2.Hide, Is.True);
-                    Assert.That(alt1.TargetNode, Is.EqualTo($"{node}Alt1"));
-                    Assert.That(alt2.TargetNode, Is.EqualTo($"{node}Alt2"));
+                        $"{baseId} must offer the three pipe-layer entities in enum order.");
                 });
             }
         });

@@ -26,8 +26,8 @@ public sealed partial class RadarBlipSystem : SharedRadarBlipSystem
     private uint _cachedShuttleContactTick = uint.MaxValue;
     // End Palmtree/Coyote
 
-    [Dependency] private readonly IGameTiming _timing = default!;
-    [Dependency] private readonly SharedTransformSystem _xform = default!;
+    [Dependency] private IGameTiming _timing = default!;
+    [Dependency] private SharedTransformSystem _xform = default!;
 
     private Dictionary<NetUserId, TimeSpan> _nextBlipRequestPerUser = new();
 

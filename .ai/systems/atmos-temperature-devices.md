@@ -15,7 +15,7 @@
 | Server systems (the gas/heat maths) | `Content.Server/_PS/Atmos/EntitySystems/` |
 | Client systems + XAML windows + BUIs | `Content.Client/_PS/Atmos/` |
 | Prototypes (3 pipe layers each) | `Resources/Prototypes/_PS/Entities/Structures/Piping/Atmospherics/temperature_devices.yml` |
-| Construction graph + recipes | `Resources/Prototypes/_PS/Recipes/Construction/` |
+| Construction graph + recipes | Recipes under `Resources/Prototypes/_PS/Recipes/Construction/`; graph nodes live in Frontier's `GasUnaryStarlight` / `GasBinaryStarlight` graphs (`Resources/Prototypes/_NF/Recipes/Construction/Graphs/utilities/atmos_{unary,binary}.yml`) |
 | Sprites | `Resources/Textures/_PS/Structures/Piping/Atmospherics/` |
 | Sprite generator | `Tools/gen_atmos_tg_sprites.py` |
 | Locale | `Resources/Locale/en-US/_PS/atmos-devices.ftl` |
@@ -23,12 +23,22 @@
 | RPD modes | `Resources/Prototypes/_PS/RCD/rpd.yml` |
 | Tests | `Content.IntegrationTests/Tests/_PS/Atmos/TemperatureDevicesTest.cs` |
 
-Everything lives under the `_PS` prefix so upstream merges stay clean. Only two upstream files are
-touched, each with a single line or block:
+Everything lives under the `_PS` prefix so upstream merges stay clean. Four upstream files are
+touched:
 
 - `Resources/Prototypes/Guidebook/engineering.yml` - one child entry for the guidebook page.
 - `Resources/Prototypes/Entities/Objects/Tools/tools.yml` - five ids added to the RPD's
   `availablePrototypes` (the four new devices plus `PassiveGate`).
+- `Resources/Prototypes/_NF/Recipes/Construction/Graphs/utilities/atmos_unary.yml` - the heat
+  exchanger and atmos meter nodes, appended to `GasUnaryStarlight` with a `# Palmtree` marker.
+- `Resources/Prototypes/_NF/Recipes/Construction/Graphs/utilities/atmos_binary.yml` - the
+  temperature gate and temperature pump nodes, appended to `GasBinaryStarlight`.
+
+The devices used to have a private `GasTemperature` graph. It was folded into Frontier's Starlight
+graphs during the 2026-11 sync so there is one construction family for every pipe-layer device; the
+recipes and the prototypes' `Construction` components point at the shared graphs. The Bluespace Dock
+repairs saved ships whose `Construction` component still names a removed graph
+(`ConstructionSystem.TryRepairConstruction`), so old saves keep working without a data migration.
 
 ## Devices
 

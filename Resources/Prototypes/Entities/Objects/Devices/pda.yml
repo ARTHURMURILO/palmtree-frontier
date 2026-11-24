@@ -534,6 +534,7 @@
     - NotekeeperCartridge
     - NanoTaskCartridge
     - NewsReaderCartridge
+    - BountyContractsCartridge # Frontier
     - AstroNavCartridge
     - NanoChatCartridge # Palmtree
     - PSBankTransferCartridge # Palmtree
@@ -1030,6 +1031,7 @@
       - MedTekCartridge
       - WantedListCartridge
       - LogProbeCartridge
+      - BountyContractsCartridge # Frontier
       - AstroNavCartridge
       - NanoChatCartridge # Palmtree
       - PSBankTransferCartridge # Palmtree
@@ -1187,6 +1189,8 @@
     preinstalled:
       - NotekeeperCartridge
       - NanoTaskCartridge
+      - NewsReaderCartridge # Frontier
+      - BountyContractsCartridge # Frontier
       - AstroNavCartridge # Frontier
       - NanoChatCartridge # Palmtree
       - PSBankTransferCartridge # Palmtree
@@ -1584,6 +1588,8 @@
      enum.PdaVisuals.PdaType:
        !type:String
        pda-pirate
+  - type: PdaBorderColor # Frontier
+    borderColor: "#333333" # Frontier
   - type: Icon
     state: pda-pirate
 

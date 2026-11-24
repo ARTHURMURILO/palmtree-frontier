@@ -1,0 +1,24 @@
+# Palmtree: shuttle map previews for ships retained after Frontier removed them.
+# The sprites stay under _NF because they are unmodified Frontier assets.
+
+- type: entity
+  parent: PosterBase
+  id: ShuttleMapAdder
+  name: "LVHI Adder"
+  description: "Detailed map of a Adder shuttle."
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: _NF/Guidebook/shuttle_maps/128x96.rsi
+    state: adder
+
+- type: entity
+  parent: PosterBase
+  id: ShuttleMapWasp
+  name: "NSF Wasp"
+  description: "Detailed map of a Wasp shuttle."
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: _NF/Guidebook/shuttle_maps/128x96.rsi
+    state: wasp

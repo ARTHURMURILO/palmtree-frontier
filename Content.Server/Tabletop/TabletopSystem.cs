@@ -23,14 +23,14 @@ namespace Content.Server.Tabletop
     [UsedImplicitly]
     public sealed partial class TabletopSystem : SharedTabletopSystem
     {
-        [Dependency] private readonly SharedMapSystem _map = default!;
-        [Dependency] private readonly EyeSystem _eye = default!;
-        [Dependency] private readonly ViewSubscriberSystem _viewSubscriberSystem = default!;
-        [Dependency] private readonly PopupSystem _popupSystem = default!;
-        [Dependency] private readonly IConfigurationManager _cfg = default!;
-        [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
-        [Dependency] private readonly ISharedAdminLogManager _adminLog = default!;
-        [Dependency] private readonly MetaDataSystem _meta = default!;
+        [Dependency] private SharedMapSystem _map = default!;
+        [Dependency] private EyeSystem _eye = default!;
+        [Dependency] private ViewSubscriberSystem _viewSubscriberSystem = default!;
+        [Dependency] private PopupSystem _popupSystem = default!;
+        [Dependency] private IConfigurationManager _cfg = default!;
+        [Dependency] private SharedAppearanceSystem _appearance = default!;
+        [Dependency] private ISharedAdminLogManager _adminLog = default!;
+        [Dependency] private MetaDataSystem _meta = default!;
 
         /// <summary>
         /// Palmtree: maximum number of placed pieces per board. Bounds the entity spam that

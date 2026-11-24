@@ -14,7 +14,7 @@
   - ShipyardProwler
   - ShipyardRogue
   - ShipyardTemplar
-  - ShipyardWasp
+  - ShipyardWasp # Palmtree: retained after Frontier removed the ship
 
 - type: guideEntry
   id: ShipyardBroadhead
@@ -70,8 +70,3 @@
   id: ShipyardTemplar
   name: guide-entry-shipyard-templar
   text: "/ServerInfo/_NF/Guidebook/Shipyard/Templar.xml"
-
-- type: guideEntry
-  id: ShipyardWasp
-  name: guide-entry-shipyard-wasp
-  text: "/ServerInfo/_NF/Guidebook/Shipyard/Wasp.xml"
