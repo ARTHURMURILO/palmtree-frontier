@@ -17,6 +17,7 @@ using Content.Shared.Popups;
 using Content.Shared.Power;
 using Content.Shared.Verbs;
 using Content.Shared._NSV13.Reactor;
+using Content.Shared._PS.Construction; // Palmtree: flatpack events moved under _PS
 using Robust.Shared.Containers;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;

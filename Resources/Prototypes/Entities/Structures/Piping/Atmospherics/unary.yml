@@ -81,12 +81,6 @@
     - type: Weldable
     - type: AtmosMonitoringConsoleDevice
       navMapBlip: GasVentOpening
-    # Palmtree: per-layer alt entities + construction recipes
-    - type: AtmosPipeLayers
-      alternativePrototypes:
-        Primary: GasVentPump
-        Secondary: GasVentPumpAlt1
-        Tertiary: GasVentPumpAlt2
     - type: GuideHelp
       guides:
       - AirVent
@@ -128,12 +122,6 @@
       node: passivevent
     - type: AtmosMonitoringConsoleDevice
       navMapBlip: GasVentOpening
-    # Palmtree: per-layer alt entities + construction recipes
-    - type: AtmosPipeLayers
-      alternativePrototypes:
-        Primary: GasPassiveVent
-        Secondary: GasPassiveVentAlt1
-        Tertiary: GasPassiveVentAlt2
     - type: GuideHelp
       guides:
       - PassiveVent
@@ -199,12 +187,6 @@
     - type: Weldable
     - type: AtmosMonitoringConsoleDevice
       navMapBlip: GasVentScrubber
-    # Palmtree: per-layer alt entities + construction recipes
-    - type: AtmosPipeLayers
-      alternativePrototypes:
-        Primary: GasVentScrubber
-        Secondary: GasVentScrubberAlt1
-        Tertiary: GasVentScrubberAlt2
     - type: GuideHelp
       guides:
       - AirScrubber
@@ -257,12 +239,6 @@
       - enum.LightLayers.Unshaded
     - type: AtmosMonitoringConsoleDevice
       navMapBlip: GasVentOpening
-    # Palmtree: per-layer alt entities + construction recipes
-    - type: AtmosPipeLayers
-      alternativePrototypes:
-        Primary: GasOutletInjector
-        Secondary: GasOutletInjectorAlt1
-        Tertiary: GasOutletInjectorAlt2
     - type: GuideHelp
       guides:
       - AirInjector

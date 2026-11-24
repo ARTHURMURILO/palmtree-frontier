@@ -37,8 +37,9 @@ public sealed class HFRTemperatureScaleTest
         {
             Assert.That(Atmospherics.Tmax, Is.EqualTo(262144f),
                 "the fork-wide atmos temperature ceiling was raised again; the HFR must scale instead");
-            Assert.That(Atmospherics.TotalNumberOfGases, Is.EqualTo(21),
-                "the 10 new /tg/ gases were dropped");
+            // experimental branch: NSV13's Nucleium keeps gas id 11, so BZ..AntiNoblium are 12..21
+            Assert.That(Atmospherics.TotalNumberOfGases, Is.EqualTo(22),
+                "a gas was dropped or an id was renumbered");
 
             Assert.That(HypertorusFusionReactor.FusionMaximumTemperature, Is.LessThanOrEqualTo(Atmospherics.Tmax),
                 "the fusion ceiling is above the atmos clamp, so fusion temperatures would be silently capped");

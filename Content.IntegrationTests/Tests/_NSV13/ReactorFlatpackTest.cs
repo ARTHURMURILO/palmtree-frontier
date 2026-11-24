@@ -14,6 +14,7 @@ using Content.Shared.DoAfter;
 using Content.Shared.NodeContainer;
 using Content.Shared.Power;
 using Content.Shared._NSV13.Reactor;
+using Content.Shared._PS.Construction; // Palmtree: flatpack events moved under _PS
 using Robust.Shared.Containers;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;

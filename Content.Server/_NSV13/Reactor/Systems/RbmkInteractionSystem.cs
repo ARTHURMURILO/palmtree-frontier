@@ -327,10 +327,9 @@ public sealed class RbmkInteractionSystem : EntitySystem
                 continue;
             }
 
-            // Food uses EdibleComponent on this fork; FoodComponent is the obsolete predecessor and
-            // most recipes no longer carry it, so checking only that made the grill never fire.
-            var isFood = HasComp<FoodComponent>(entity) ||
-                         TryComp<EdibleComponent>(entity, out var edible) && edible.Edible == IngestionSystem.Food;
+            // Food uses EdibleComponent on this fork (the old FoodComponent is gone as of the
+            // 2026-11 upstream sync), so check the edible kind directly or the grill never fires.
+            var isFood = TryComp<EdibleComponent>(entity, out var edible) && edible.Edible == IngestionSystem.Food;
 
             if (HasComp<TemperatureComponent>(entity) && !isFood)
             {
