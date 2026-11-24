@@ -153,7 +153,7 @@ public sealed class HFRCoreSystem : EntitySystem
         if (core.ConsoleUid == null || !EntityManager.EntityExists(core.ConsoleUid.Value))
             return;
 
-        if (!TryComp<UserInterfaceComponent>(core.ConsoleUid.Value, out var consoleUi))
+        if (!_userInterfaceSystem.IsUiOpen(core.ConsoleUid.Value, HFRConsoleUiKey.Key))
             return;
 
         var internalFusionMoles = new Dictionary<Gas, float>();
@@ -201,9 +201,6 @@ public sealed class HFRCoreSystem : EntitySystem
             outputTemperature = wastePipe.Air.Temperature;
             outputTemperatureArchived = outputTemperature;
         }
-
-        if (!_userInterfaceSystem.IsUiOpen(core.ConsoleUid.Value, HFRConsoleUiKey.Key))
-            return;
 
         _userInterfaceSystem.ServerSendUiMessage(core.ConsoleUid.Value, HFRConsoleUiKey.Key,
             new HFRConsoleUpdateReactorMessage(

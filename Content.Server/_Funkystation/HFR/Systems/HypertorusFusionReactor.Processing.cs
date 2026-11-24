@@ -92,6 +92,14 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
 
             UpdateTemperatureStatus(coreUid, core, secondsPerTick);
 
+            // Palmtree: never let a non-finite temperature take root in the fusion mix. It would
+            // survive Math.Clamp and leak into the heat calculations and the waste pipe below.
+            if (core.InternalFusion != null && !float.IsFinite(core.InternalFusion.Temperature))
+            {
+                Log.Warning($"HFR {ToPrettyString(coreUid)} has a non-finite fusion temperature; resetting it.");
+                core.InternalFusion.Temperature = Atmospherics.T20C;
+            }
+
             // Store the temperature of the gases after one cycle of the fusion reaction
             float archivedHeat = core.InternalFusion?.Temperature ?? Atmospherics.T20C;
             // Store the volume of the fusion reaction multiplied by the force of the magnets that controls how big it will be
@@ -166,11 +174,20 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
 
 
             // Calculate instability
+            // Palmtree: gasPower comes from the fusion mix, which can be contaminated with NaN/Inf by
+            // an upstream atmos bug. An overflowing gasPowerFactor turns the modulo into NaN, so keep
+            // the value finite before it is stored and shown on the console.
+            if (!float.IsFinite(gasPower))
+                gasPower = 0f;
+
             float gasPowerFactor = MathF.Pow(gasPower * HypertorusFusionReactor.InstabilityGasPowerFactor, 2);
-            float gasPowerRemainder = gasPowerFactor % toroidalSize;
+            float gasPowerRemainder = float.IsFinite(gasPowerFactor) && float.IsFinite(toroidalSize) && toroidalSize != 0f
+                ? gasPowerFactor % toroidalSize
+                : 0f;
             float damper = currentDamper * 0.01f;
             float ironContent = core.IronContent * 0.05f;
-            core.Instability = gasPowerRemainder + damper - ironContent;
+            var instability = gasPowerRemainder + damper - ironContent;
+            core.Instability = float.IsFinite(instability) ? instability : 0f;
 
             // Effective reaction instability (determines if the energy is used/released)
             float internalInstability = core.Instability * 0.5f < HypertorusFusionReactor.FusionInstabilityEndothermality ? 1f : -1f;
@@ -275,10 +292,32 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
             core.PowerOutput = core.Efficiency * (core.InternalPower - core.Conduction - core.Radiation);
             // Hotter air is easier to heat up and cool down
             core.HeatLimiterModifier = 10f * MathF.Pow(10, core.PowerLevel) * (heatingConductor / 100f);
+            if (!float.IsFinite(core.HeatLimiterModifier))
+            {
+                Log.Warning($"HFR {ToPrettyString(coreUid)} computed a non-finite heat limiter; clamping it.");
+                core.HeatLimiterModifier = 0f;
+            }
+
             // The amount of heat that is finally emitted, based on the power output. Min and max are variables that depend on the modifier
             core.HeatOutputMin = -core.HeatLimiterModifier * 0.01f * negativeTemperatureMultiplier;
             core.HeatOutputMax = core.HeatLimiterModifier * positiveTemperatureMultiplier;
-            core.HeatOutput = Math.Clamp(internalInstability * core.PowerOutput * heatModifier / 100f, core.HeatOutputMin, core.HeatOutputMax);
+            if (!float.IsFinite(core.HeatOutputMin))
+                core.HeatOutputMin = 0f;
+            if (!float.IsFinite(core.HeatOutputMax))
+                core.HeatOutputMax = 0f;
+            if (core.HeatOutputMin > core.HeatOutputMax)
+                core.HeatOutputMin = core.HeatOutputMax;
+
+            // Palmtree: a single NaN/Inf here ends up in the fusion mix temperature and, from there,
+            // in the waste pipe. Chill the core instead of poisoning the gas network.
+            var heatOutput = internalInstability * core.PowerOutput * heatModifier / 100f;
+            if (!float.IsFinite(heatOutput))
+            {
+                Log.Warning($"HFR {ToPrettyString(coreUid)} produced non-finite heat output; resetting it.");
+                heatOutput = 0f;
+            }
+
+            core.HeatOutput = Math.Clamp(heatOutput, core.HeatOutputMin, core.HeatOutputMax);
 
             // Is the fusion process actually going to run?
             // Note we have to always perform the above calculations to keep the UI updated, so we can't use this to early return.
@@ -513,9 +552,13 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
             // Modifies the internal_fusion temperature with the amount of heat output
             if (core.InternalFusion != null)
             {
-                if (core.InternalFusion.Temperature <= HypertorusFusionReactor.FusionMaximumTemperature * temperatureModifier)
+                var maximumTemperature = HypertorusFusionReactor.FusionMaximumTemperature * temperatureModifier;
+                if (!float.IsFinite(maximumTemperature) || maximumTemperature <= Atmospherics.TCMB)
+                    maximumTemperature = HypertorusFusionReactor.FusionMaximumTemperature;
+
+                if (core.InternalFusion.Temperature <= maximumTemperature)
                 {
-                    core.InternalFusion.Temperature = Math.Clamp(core.InternalFusion.Temperature + core.HeatOutput, Atmospherics.TCMB, HypertorusFusionReactor.FusionMaximumTemperature * temperatureModifier);
+                    core.InternalFusion.Temperature = Math.Clamp(core.InternalFusion.Temperature + core.HeatOutput, Atmospherics.TCMB, maximumTemperature);
                 }
                 else
                 {
@@ -526,9 +569,12 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
             // Heat up and output what's in the internal_output into the linked_output port
             if (internalOutput.TotalMoles > 0f && core.WasteOutputUid != null && _nodeContainer.TryGetNode(core.WasteOutputUid.Value, "pipe", out PipeNode? wastePipe))
             {
-                internalOutput.Temperature = core.ModeratorInternal != null && core.ModeratorInternal.TotalMoles > 0f
+                var outputTemperature = core.ModeratorInternal != null && core.ModeratorInternal.TotalMoles > 0f
                     ? core.ModeratorInternal.Temperature * HypertorusFusionReactor.HighEfficiencyConductivity
                     : core.InternalFusion?.Temperature * HypertorusFusionReactor.MetallicVoidConductivity ?? Atmospherics.T20C;
+
+                // Palmtree: a bad temperature here would merge NaN/Inf into the waste pipe net.
+                internalOutput.Temperature = float.IsFinite(outputTemperature) ? outputTemperature : Atmospherics.T20C;
                 _atmosSystem.Merge(wastePipe.Air, internalOutput);
             }
 
@@ -764,14 +810,23 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
                 if (core.CriticalThresholdProximity > 650f)
                     maxRange *= 1.2f;
 
-                // Clamp range to reasonable bounds
-                maxRange = Math.Clamp(maxRange, 0.5f, 3.0f);
+                // Clamp range to reasonable bounds. Level 6 is meant to reach further than level 5.
+                maxRange = Math.Clamp(maxRange, 0.5f, 4.8f);
 
-                // Update gravity well's MaxRange
+                // Palmtree: the well's MaxRange is also used by GravityWellSystem's own periodic
+                // pulse, so overwriting it permanently left the HFR pulling at its last pulse range
+                // forever. Borrow it for this pulse and hand the configured value back afterwards.
+                var originalMaxRange = gravityWell.MaxRange;
                 gravityWell.MaxRange = maxRange;
-
-                // Trigger the gravitational pulse
-                _gravityWell.GravPulse(coreUid, maxRange, 0.0f, gravityWell.BaseRadialAcceleration, gravityWell.BaseTangentialAcceleration);
+                try
+                {
+                    // Trigger the gravitational pulse
+                    _gravityWell.GravPulse(coreUid, maxRange, 0.0f, gravityWell.BaseRadialAcceleration, gravityWell.BaseTangentialAcceleration);
+                }
+                finally
+                {
+                    gravityWell.MaxRange = originalMaxRange;
+                }
 
                 // Set the next pulse time
                 core.NextGravityPulse = _timing.CurTime + TimeSpan.FromSeconds(GetPulsePeriod(core));
