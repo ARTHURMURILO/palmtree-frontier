@@ -876,7 +876,8 @@ Follow-up on the RCD/RPD after the second pass:
   A vent, pump or sensor is built onto the pipe that feeds it, and construction's
   `NoUnstackableOnPipeLayer` (under `Content.Shared/_PS/Construction/Conditions`) compares the
   target `AtmosPipeLayer`, so tagging plain pipes would still reject every legitimate
-  device-on-pipe placement. Instead the RCD/RPD raises `RCDAtmosOverlapAttemptEvent`, and the
+  device-on-pipe placement. Both the base recipes and the upstream Starlight alt recipes use the
+  layer-aware condition; the alt recipes must not fall back to `NoUnstackableInTile`. Instead the RCD/RPD raises `RCDAtmosOverlapAttemptEvent`, and the
   server's `PipeRestrictOverlapSystem` compares the placement's resolved prototype nodes (mirror
   flip + RPD layer variant included) with the anchored nodes on the tile: only a same-layer,
   same-direction overlap is vetoed. The layer itself comes from `RPDLayerEvent`, because the

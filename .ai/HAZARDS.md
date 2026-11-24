@@ -719,11 +719,14 @@ so these fail only in CI:
   `InlineBinaryDevicesMayShareATileWhenTheirPortsDoNotConflict` covers the placement rule.
 - **Per-layer unary devices are entity + construction recipe pairs.** `GasVentPump`, `GasVentScrubber`,
   `GasPassiveVent`, `GasOutletInjector` and `GasDualPortVentPump` have `Gas*Alt1/Alt2` entity
-  prototypes in `_PS/.../unary_layers.yml` and hidden `Gas*Alt1/Alt2` construction recipes plus
-  `ventpumpAlt1`-style `GasUnary` graph nodes. The alt entity overrides only the pipe-connector
-  sprite layer (alt RSI) and the `Construction.node`; the body sprite is inherited. If a new unary
-  device is added, add the matching `alternativePrototypes` map, alt entities, graph nodes and
-  construction recipes, or the RPD layer picker will silently keep placing it on primary.
+  prototypes in `_NF/.../alt_layers.yml` and hidden `Gas*Alt1/Alt2` construction recipes in
+  `_NF/Recipes/Construction/utilities.yml` plus `ventpumpAlt1`-style `GasUnaryStarlight` graph
+  nodes. The alt entity overrides only the pipe-connector sprite layer (alt RSI) and the
+  `Construction.node`; the body sprite is inherited. Both the base and the alt construction
+  recipes must use `NoUnstackableOnPipeLayer` with their own layer; the old `NoUnstackableInTile`
+  on an alt recipe rejects a valid different-layer placement. If a new unary device is added, add
+  the matching `alternativePrototypes` map, alt entities, graph nodes and construction recipes, or
+  the RPD layer picker will silently keep placing it on primary.
 - **Admin ghosts must keep the RCD/RPD ghost at any range.** The server already bypasses range via
   the `BypassInteractionRangeChecks` tag, but `AlignRCDConstruction`/`AlignRPDAtmosPipeLayers`
   used to hide the ghost beyond `InteractionRange`. Both now skip that check (and the RPD layer
