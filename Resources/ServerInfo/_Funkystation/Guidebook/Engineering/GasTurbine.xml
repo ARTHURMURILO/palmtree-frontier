@@ -46,6 +46,12 @@
 
   The turbine reports [bold]overspeed[/bold], [bold]overtemperature[/bold], [bold]stalling[/bold] and [bold]undertemperature[/bold] states in its UI. A damaged blade set still turns, but it loses efficiency and eventually fails.
 
+  ## Limits
+
+  - [bold]Maximum inlet temperature: 3000 K.[/bold] Gas at or above that is dumped overboard instead of being used, no power is generated and the overtemperature alarm sounds. The alarm starts warning at 2500 K. A reactor waste line or burn chamber is far hotter than this, so blend or cool it down before it reaches the inlet.
+  - [bold]Minimum inlet temperature: 20 °C (293.15 K).[/bold] Colder gas stalls the rotor and the undertemperature alarm sounds.
+  - [bold]Best speed: 600 RPM.[/bold] Running above it overspeeds and damages the blades; the stator load is what pushes the RPM down.
+
   ## Repair
 
   Weld the turbine with a welding tool to repair blade damage. Each repair costs welding fuel and time; sparks and smoke show how badly the blades are damaged.

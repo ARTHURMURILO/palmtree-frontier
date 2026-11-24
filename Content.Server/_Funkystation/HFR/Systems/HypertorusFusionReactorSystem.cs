@@ -12,11 +12,11 @@ using Content.Shared._Funkystation.Atmos.HFR;
 using Content.Server.Power.EntitySystems;
 using System.Linq;
 using Content.Server.Chat.Systems;
+using Content.Server._PS.Ships; // Palmtree: Shortband engine alarms
 using Content.Server.Administration.Logs;
 using Content.Shared.Database;
 using Robust.Shared.Timing;
 using Robust.Shared.Random;
-using Content.Server.Radio.EntitySystems;
 using Content.Shared._Funkystation.Atmos.Prototypes;
 using Content.Server.NodeContainer.EntitySystems;
 using Content.Server.Explosion.EntitySystems;
@@ -49,8 +49,8 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
         [Dependency] private readonly IGameTiming _timing = default!;
         [Dependency] private readonly IRobustRandom _random = default!;
         [Dependency] private readonly AudioSystem _audioSystem = default!;
-        [Dependency] private readonly RadioSystem _radioSystem = default!;
         [Dependency] private readonly ChatSystem _chatSystem = default!;
+        [Dependency] private readonly ShipEventSystem _shipEvent = default!;
         [Dependency] private readonly IAdminLogManager _logSystem = default!;
         [Dependency] private readonly NodeContainerSystem _nodeContainer = default!;
         [Dependency] private readonly TransformSystem _transformSystem = default!;
@@ -489,21 +489,23 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
         }
 
         /**
-         * Sends the given message to local chat and a radio channel
-         * @param global If true, sends the message to the common radio channel
+         * Sends the given message to local chat and the ship's Shortband.
+         * @param global Kept for the call sites, but engine alarms no longer go out on Common:
+         *               a reactor failure is the ship's problem, not the sector's.
          */
         public void SendHypertorusAnnouncement(EntityUid coreUid, HFRCoreComponent core, string message, bool global = false)
         {
             if (string.IsNullOrEmpty(message))
                 return;
 
-            var channel = global ? "Common" : "Engineering";
             core.LastWarning = _timing.CurTime;
             core.LastWarningThresholdProximity = core.CriticalThresholdProximity;
 
-            // Send to in-game IC chat and radio
+            // Palmtree: engine alarms belong on the Shortband (`Traffic`), the same range-degraded
+            // channel the supermatter console and the NSV13 reactors use. Engineering/Common are
+            // map-wide station channels and every trade post in the sector would hear the reactor.
             _chatSystem.TrySendInGameICMessage(coreUid, message, InGameICChatType.Speak, hideChat: false, checkRadioPrefix: true);
-            _radioSystem.SendRadioMessage(coreUid, message, channel, coreUid);
+            _shipEvent.EngineAnnounce(coreUid, message);
         }
 
         /**

@@ -482,6 +482,19 @@
   components:
   - type: LimitedCharges
     lastCharges: -1
+
+# Palmtree: admin/experimental RPD, mirroring RCDExperimental. Charges are never consumed and
+# deconstruction accepts any anchored fixture, so it is effectively infinite for admins.
+- type: entity
+  id: RPDExperimental
+  parent: RPD
+  suffix: Admeme
+  name: experimental RPD
+  description: A bluespace-enhanced rapid piping device that passively generates its own compressed matter.
+  components:
+  - type: RCD
+    instantConstruction: true
+    unrestricted: true # Palmtree: free construction and unrestricted deconstruction
 # Palmtree end
 
 - type: entity
