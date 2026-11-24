@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Numerics;
 using Content.Server._Funkystation.Atmos.Components;
+using Content.Server.Atmos.Components;
+using Content.Server.Atmos.EntitySystems;
 using Content.Server._Funkystation.Atmos.Systems;
 using Content.Server._Funkystation.Atmos.HFR.Systems;
 using Content.Server.Construction.Conditions;
@@ -12,14 +15,18 @@ using Content.Shared._Funkystation.Atmos.Components;
 using Content.Shared._Funkystation.Atmos.HFR;
 using Content.Shared._Funkystation.Atmos.Prototypes;
 using Content.Shared.Atmos;
+using Content.Shared.Atmos.Components;
 using Content.Shared.Construction.Prototypes;
 using NUnit.Framework;
+using Robust.Shared.ContentPack;
+using Robust.Shared.EntitySerialization.Systems;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Maths;
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Prototypes;
+using Robust.Shared.Utility;
 using Robust.Shared.Spawners;
 using Robust.UnitTesting;
 
@@ -395,6 +402,171 @@ public sealed class HFRReviewFixesTest
                     "the console is still drawing the running load after the core despawned");
                 Assert.That(consoleComp.CoreUid, Is.Null, "the console kept a link to the despawned core");
             });
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+
+    /// <summary>
+    ///     Every mole in the fusion and moderator mixtures has to be emitted when the core melts down.
+    ///     The old meltdown dropped ~12% of the fusion mix in the leftover of each RemoveRatio batch,
+    ///     ~63% of the 20% pocket batch and ~35% of the final 3x3 dump, so this checks the tile air
+    ///     instead of only checking that the component fields were nulled.
+    /// </summary>
+    [Test]
+    public async Task MeltdownEmitsEveryMoleIntoTiles()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var entMan = server.EntMan;
+        var testMap = await pair.CreateTestMap();
+        var protoMan = server.ResolveDependency<IPrototypeManager>();
+        var hfr = entMan.System<HypertorusFusionReactorSystem>();
+        var atmos = entMan.System<AtmosphereSystem>();
+        var mapManager = server.ResolveDependency<IMapManager>();
+
+        EntityUid core = default;
+        await server.WaitAssertion(() =>
+        {
+            (core, _, _, _, _, _) = SpawnAssembly(server, testMap.Grid);
+
+            // A flat test grid only gets its GridAtmosphereComponent from AutomaticAtmosSystem once
+            // it is heavy enough, and the tiles set by SpawnAssembly must be processed into
+            // TileAtmosphere entries before meltdown can emit into them. Force that now.
+            var gridAtmos = entMan.GetComponent<GridAtmosphereComponent>(testMap.Grid.Owner);
+            atmos.InvalidateAllTiles((testMap.Grid.Owner, testMap.Grid.Comp, gridAtmos));
+        });
+        await pair.RunTicksSync(10);
+
+        await server.WaitAssertion(() =>
+        {
+            var coreComp = entMan.GetComponent<HFRCoreComponent>(core);
+            coreComp.PowerLevel = 6;
+
+            var recipe = protoMan.EnumeratePrototypes<FusionRecipePrototype>()
+                .First(candidate => candidate.Requirements.Count > 0);
+            HFRTemperatureScaleTest.FillCoreForRecipe(coreComp, recipe);
+
+            // Deliberately introduce clearly identifiable extra gas in both mixtures. Meltdown does
+            // not consume anything, so every mole is expected in the tile air afterwards.
+            coreComp.InternalFusion!.SetMoles(Gas.Hydrogen, 400f);
+            coreComp.ModeratorInternal!.SetMoles(Gas.Nitrogen, 300f);
+            var expected = coreComp.InternalFusion.TotalMoles + coreComp.ModeratorInternal.TotalMoles;
+            Assert.That(expected, Is.GreaterThan(0f), "the test core has no gas to emit");
+
+            // The meltdown queues an explosion for the next tick; the gas is emitted synchronously,
+            // so summing right now measures emission before any explosion processing touches tiles.
+            hfr.Meltdown(core, coreComp);
+
+            var mapId = entMan.GetComponent<TransformComponent>(core).MapID;
+            var mapUid = mapManager.GetMapEntityId(mapId);
+            var gridEntity = new Entity<GridAtmosphereComponent?, GasTileOverlayComponent?>(
+                testMap.Grid.Owner,
+                entMan.GetComponent<GridAtmosphereComponent>(testMap.Grid.Owner),
+                entMan.GetComponent<GasTileOverlayComponent>(testMap.Grid.Owner));
+            var mapEntity = new Entity<MapAtmosphereComponent?>(
+                mapUid,
+                entMan.TryGetComponent<MapAtmosphereComponent>(mapUid, out var mapAtmos) ? mapAtmos : null);
+
+            var emitted = 0f;
+            var emittedAtoms = 0f;
+            for (var x = -1; x <= 1; x++)
+            {
+                for (var y = -1; y <= 1; y++)
+                {
+                    var mixture = atmos.GetTileMixture(gridEntity, mapEntity, new Vector2i(x, y));
+                    if (mixture == null)
+                        continue;
+
+                    emitted += mixture.TotalMoles;
+                    emittedAtoms += mixture.GetMoles(Gas.Hydrogen) + mixture.GetMoles(Gas.Nitrogen);
+                }
+            }
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(emitted, Is.GreaterThan(0f), "the meltdown emitted no gas at all");
+                Assert.That(emitted, Is.EqualTo(expected).Within(Math.Max(expected * 0.005f, 0.1f)),
+                    $"the meltdown emitted {emitted} of {expected} moles");
+                // The extra marker gases must be recognisable in the emitted air too.
+                Assert.That(emittedAtoms, Is.GreaterThanOrEqualTo(690f),
+                    "the extra fusion/moderator gas was not emitted into the tiles");
+            });
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    ///     The HFR part links are runtime state that is rebuilt from the anchored parts. A saved and
+    ///     reloaded reactor must come back assembled (and keep its running flag), otherwise a cargo
+    ///     shuttle or ship save would leave the reactor dead after a restart.
+    /// </summary>
+    [Test]
+    public async Task AssemblyRelinksAfterSaveLoad()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var entMan = server.EntMan;
+        var testMap = await pair.CreateTestMap();
+        var resManager = server.ResolveDependency<IResourceManager>();
+        var mapLoader = entMan.System<MapLoaderSystem>();
+        var mapSystem = entMan.System<SharedMapSystem>();
+        var hfr = entMan.System<HypertorusFusionReactorSystem>();
+        var savePath = new ResPath("/Maps/Test/HFRAssemblyReload.yml");
+
+        await server.WaitAssertion(() =>
+        {
+            resManager.UserData.CreateDir(savePath.Directory);
+            var (core, _, _, _, _, _) = SpawnAssembly(server, testMap.Grid);
+            entMan.GetComponent<HFRCoreComponent>(core).IsActive = true;
+            Assert.That(mapLoader.TrySaveMap(testMap.MapId, savePath), Is.True);
+            mapSystem.DeleteMap(testMap.MapId);
+        });
+
+        await server.WaitIdleAsync();
+
+        MapId loadedMap = default;
+        await server.WaitAssertion(() =>
+        {
+            Assert.That(mapLoader.TryLoadMap(savePath, out var loaded, out _), Is.True);
+            loadedMap = loaded!.Value.Comp.MapId;
+        });
+
+        await pair.RunTicksSync(10);
+
+        await server.WaitAssertion(() =>
+        {
+            var cores = new List<Entity<HFRCoreComponent>>();
+            var query = entMan.EntityQueryEnumerator<HFRCoreComponent>();
+            while (query.MoveNext(out var uid, out var comp))
+                cores.Add((uid, comp));
+
+            Assert.That(cores, Has.Count.EqualTo(1), "expected exactly one reactor after the load");
+            var (core, coreComp) = cores[0];
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(coreComp.IsActive, Is.True, "the running state did not survive the save/load");
+                Assert.That(hfr.AreAllPartsConnected(core, coreComp), Is.True,
+                    "the reactor parts did not relink after the save/load");
+            });
+
+            // Every part should have its reverse link rebuilt too.
+            foreach (var cornerUid in coreComp.CornerUids)
+            {
+                Assert.That(entMan.GetComponent<HFRCornerComponent>(cornerUid).CoreUid, Is.EqualTo(core),
+                    "a corner did not relink to the core");
+            }
+
+            if (coreComp.ConsoleUid is { } consoleUid)
+            {
+                Assert.That(entMan.GetComponent<HFRConsoleComponent>(consoleUid).CoreUid, Is.EqualTo(core),
+                    "the console did not relink to the core");
+            }
+
+            mapSystem.DeleteMap(loadedMap);
         });
 
         await pair.CleanReturnAsync();

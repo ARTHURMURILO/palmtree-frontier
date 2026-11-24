@@ -24,7 +24,7 @@ public sealed class FlatpackPlacementSystem : EntitySystem
         if (!TryComp<MapGridComponent>(args.Grid, out var grid))
             return;
 
-        if (_placement.CanPlace(ent, args.Grid, grid, args.Position, out var reason))
+        if (_placement.CanPlace(ent, args.Grid, grid, args.Position, out var reason, args.User))
             return;
 
         args.Cancelled = true;

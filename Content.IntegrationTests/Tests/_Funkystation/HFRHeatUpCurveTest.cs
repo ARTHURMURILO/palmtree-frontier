@@ -89,8 +89,11 @@ public sealed class HFRHeatUpCurveTest
 
         for (var tick = 0; tick < maxTicks; tick++)
         {
-            // Approximate a continuous fuel feed and follow the guide's heating conductor schedule.
-            core.HeatingConductor = core.PowerLevel <= 1 ? 500f : 100f;
+            // Approximate a continuous fuel feed. The core has no console in this harness, so
+            // FusionProcess uses its unpowered fallback of 500 K/s for the heating conductor - the same
+            // setting the guide tells players to use to kick the reaction off. A powered console
+            // starts at the component default (50) and heats proportionally slower until the player
+            // raises it.
             foreach (var gas in recipe.Requirements)
                 core.InternalFusion!.SetMoles(Enum.Parse<Gas>(gas), 1000f);
 

@@ -108,7 +108,9 @@ public sealed class FlatpackPlacementGhostSystem : EntitySystem
 
         var position = _map.TileIndicesFor(gridUid, grid, xform.Coordinates);
         var direction = xform.LocalRotation.GetCardinalDir();
-        var valid = _placement.CanPlace((target, footprint), gridUid, grid, position, out _);
+        // Same ignored-mob rule as the server: the player who legally unpacks a large footprint is
+        // standing on it, so the preview must be green for them and red for anyone else.
+        var valid = _placement.CanPlace((target, footprint), gridUid, grid, position, out _, player);
 
         if (_ghost is not { } ghost || _ghostEntity != entity)
         {

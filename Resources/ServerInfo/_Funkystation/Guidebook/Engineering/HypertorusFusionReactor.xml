@@ -37,7 +37,7 @@
   1. Open the console and pick a [bold]recipe[/bold] in the recipe table. The table shows the fuel pair, the products and the multipliers so you can compare recipes before starting.
   2. Set the [bold]fuel input rate[/bold] and [bold]moderator input rate[/bold] (0.1–150 mol/s).
   3. Press [bold]Start Power[/bold], then [bold]Start Cooling[/bold]. The console will report the fusion temperature, efficiency, instability and the current power level.
-  4. At level 1, drop the [bold]Heating Conductor[/bold] from its starting 500 to about 100. If the temperature keeps climbing, raise the [bold]Current Damper[/bold] and the [bold]Magnetic Constrictor[/bold].
+  4. The console starts the [bold]Heating Conductor[/bold] at 50; raise it to 500 until the reaction has kicked off, then drop it to about 100 once you are at level 1. If the temperature keeps climbing, raise the [bold]Current Damper[/bold] and the [bold]Magnetic Constrictor[/bold].
   5. The reaction only starts once the fuel mix is hot enough. A 50/50 tritium/hydrogen mix of roughly 2000 mol, with only about 1000 mol let into the core at first, is the standard kickstart.
 
   ## Recipes
@@ -52,7 +52,7 @@
 
   ## Failure
 
-  If the core overheats it will melt down: a large explosion, an EMP, spreading fire and a radiation pulse. The console shows the instability and the time left; use the [bold]filter gases[/bold] controls to strip helium and anti-noblium from the moderator loop, or flood the moderator loop with hyper-noblium to bring the power down.
+  If the core overheats it will melt down: a large explosion, an EMP, spreading fire and a radiation pulse. The console shows the reactor integrity and the instability, and the radio calls out the countdown; use the [bold]filter gases[/bold] controls to strip helium and anti-noblium from the moderator loop, or flood the moderator loop with hyper-noblium to bring the power down.
 
   The reactor cannot be dismantled or powered off while its power level is above 0. If the APC dies, the fusion keeps running but the coolant stops — fix the power before the temperature reaches the melting point.
 

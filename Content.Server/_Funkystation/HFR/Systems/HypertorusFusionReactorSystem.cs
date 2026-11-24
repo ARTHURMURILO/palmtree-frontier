@@ -37,6 +37,7 @@ using Content.Shared.Radiation.Components;
 using Robust.Shared.Spawners;
 using System.Text;
 using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
 using Content.Server.Atmos.Components;
 using Content.Shared.Atmos.Components;
 using Content.Server.Power.Components;
@@ -87,6 +88,26 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
             if (core.CornerUids.Count != DiagonalOffsets.Length)
                 return false;
 
+            // Palmtree: count alone is not enough. Two corners on the same diagonal plus a missing
+            // one would also be four links, so require exactly one corner per core-relative diagonal.
+            if (Transform(coreUid).GridUid is not { } gridUid || !TryComp<MapGridComponent>(gridUid, out var grid))
+            {
+                // Without a grid we cannot validate the corners geometrically; fall back to existence.
+                foreach (var cornerUid in core.CornerUids)
+                {
+                    if (!EntityManager.EntityExists(cornerUid) ||
+                        !EntityManager.TryGetComponent<HFRCornerComponent>(cornerUid, out var cornerComp) ||
+                        cornerComp.CoreUid != coreUid)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            var coreTile = _mapSystem.TileIndicesFor(gridUid, grid, Transform(coreUid).Coordinates);
+            var seenDiagonals = new HashSet<Vector2i>();
             foreach (var cornerUid in core.CornerUids)
             {
                 if (!EntityManager.EntityExists(cornerUid) ||
@@ -95,6 +116,14 @@ namespace Content.Server._Funkystation.Atmos.HFR.Systems
                 {
                     return false;
                 }
+
+                var cornerXform = Transform(cornerUid);
+                if (cornerXform.GridUid != gridUid)
+                    return false;
+
+                var offset = _mapSystem.TileIndicesFor(gridUid, grid, cornerXform.Coordinates) - coreTile;
+                if (Array.IndexOf(DiagonalOffsets, offset) < 0 || !seenDiagonals.Add(offset))
+                    return false;
             }
 
             return true;

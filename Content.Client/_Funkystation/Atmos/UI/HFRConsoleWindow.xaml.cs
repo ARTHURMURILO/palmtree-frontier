@@ -549,7 +549,7 @@ public sealed partial class HFRConsoleWindow : FancyWindow
 
         var integrityPercent = Math.Max(0, 100 - (_currentState.CriticalThresholdProximity / _currentState.MeltingPoint * 100));
         ReactorIntegrityLabel.Text = $"{integrityPercent:0}%";
-        IronContentLabel.Text = $"{_currentState.IronContent:0}%";
+        IronContentLabel.Text = $"{_currentState.IronContent*100:0}%";
         AreaPowerLabel.Text = $"{_currentState.AreaPower:0}%";
         FusionLevelLabel.Text = $"{_currentState.PowerLevel}";
         float energyValue;

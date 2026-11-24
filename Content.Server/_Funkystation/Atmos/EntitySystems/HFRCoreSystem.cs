@@ -59,6 +59,12 @@ public sealed class HFRCoreSystem : EntitySystem
     /// </summary>
     private void OnCoreShutdown(EntityUid uid, HFRCoreComponent core, ref ComponentShutdown args)
     {
+        // Palmtree: a deleted core must not leave its parts active - HFRIsActive would block welding
+        // the survivors back together. Deactivate first (the core itself is already terminating, so
+        // ToggleActiveState's own Anchorable restore guard skips it).
+        if (core.IsActive)
+            _hfrSystem.ToggleActiveState(uid, core, false);
+
         if (core.ConsoleUid is { } consoleUid && TryComp<HFRConsoleComponent>(consoleUid, out var consoleComp))
         {
             consoleComp.CoreUid = null;
@@ -415,12 +421,15 @@ public sealed class HFRCoreSystem : EntitySystem
                     var cornerRotation = cornerXform.LocalRotation;
                     var cornerDir = cornerRotation.GetCardinalDir();
 
-                    // Find expected direction based on offset
+                    // Find expected direction based on offset. Only the first matching corner per
+                    // diagonal is linked, so a duplicate on one diagonal cannot stand in for a
+                    // missing corner elsewhere (AreAllPartsConnected now verifies the geometry too).
                     var expectedDir = GetExpectedCornerDirection(offset);
-                    if (cornerDir == expectedDir)
+                    if (cornerDir == expectedDir && !core.CornerUids.Contains(entity))
                     {
                         cornerComp.CoreUid = coreUid;
                         core.CornerUids.Add(entity);
+                        break;
                     }
                 }
             }

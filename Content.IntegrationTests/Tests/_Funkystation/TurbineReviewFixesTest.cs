@@ -24,7 +24,7 @@ namespace Content.IntegrationTests.Tests._Funkystation;
 [TestFixture]
 public sealed class TurbineReviewFixesTest
 {
-    // The integration test harness has a 20 minute cap for the whole suite (PoolManagerTestEventHandler).
+    // The integration test harness has a 30 minute cap for the whole suite (PoolManagerTestEventHandler).
     // These tests must not create fresh (destructive) pairs: each one costs a full server+client boot
     // on CI. They use the pooled pair instead and clean up the maps they create.
     private static readonly ResPath RuinedSavePath = new("/Maps/Test/TurbineRuined.yml");

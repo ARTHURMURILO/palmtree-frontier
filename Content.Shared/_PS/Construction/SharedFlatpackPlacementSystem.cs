@@ -44,7 +44,13 @@ public sealed class SharedFlatpackPlacementSystem : EntitySystem
     ///     Returns whether the flatpack's footprint fits at <paramref name="position"/>. When it does
     ///     not, <paramref name="reason"/> is a localisation key describing the first problem found.
     /// </summary>
-    public bool CanPlace(Entity<FlatpackFootprintComponent> flatpack, EntityUid gridUid, MapGridComponent grid, Vector2i position, out string? reason)
+    /// <param name="ignoreMob">
+    ///     Mob to ignore in the obstacle check. A player unpacking a large flatpack cannot reach it
+    ///     from outside a 3x5 footprint (interaction range is 1.5 m), so their own body must not veto
+    ///     the placement; everyone else's still does. The client ghost passes the local player.
+    /// </param>
+    public bool CanPlace(Entity<FlatpackFootprintComponent> flatpack, EntityUid gridUid, MapGridComponent grid,
+        Vector2i position, out string? reason, EntityUid? ignoreMob = null)
     {
         reason = null;
 
@@ -78,7 +84,7 @@ public sealed class SharedFlatpackPlacementSystem : EntitySystem
                 return false;
             }
 
-            if (GetFootprintObstacle(tileRef, flatpack) is { } obstacle)
+            if (GetFootprintObstacle(tileRef, flatpack, ignoreMob) is { } obstacle)
             {
                 reason = obstacle;
                 return false;
@@ -92,7 +98,7 @@ public sealed class SharedFlatpackPlacementSystem : EntitySystem
     ///     Returns the localisation key of the first loose entity that would end up inside the
     ///     machine after unpacking, or null when the tile is clear.
     /// </summary>
-    private string? GetFootprintObstacle(TileRef tile, EntityUid flatpack)
+    private string? GetFootprintObstacle(TileRef tile, EntityUid flatpack, EntityUid? ignoreMob)
     {
         _found.Clear();
         _lookup.GetEntitiesInTile(tile, _found, LookupFlags.Dynamic | LookupFlags.Sundries);
@@ -101,6 +107,10 @@ public sealed class SharedFlatpackPlacementSystem : EntitySystem
         {
             // The flatpack itself is about to be consumed.
             if (other == flatpack)
+                continue;
+
+            // The player doing the unpacking has to stand on the footprint to reach it.
+            if (other == ignoreMob)
                 continue;
 
             // Anchored machines, pipes and structures are rejected by the anchored-entity pass above.
